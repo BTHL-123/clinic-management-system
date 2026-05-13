@@ -1,15 +1,35 @@
-1. Quy tắc Quản lý Nhánh (Git Branching Strategy)
-Để tránh việc đè code lên nhau, tuyệt đối không code trực tiếp trên nhánhhand. Hãy áp dụng mô hìnhFeature Branching:
-hand: Nhánh chứa code ổn định nhất để demo/triển khai. Chỉ merge từ nhánhdevelop.
-develop: Nhánh tích hợp các tính năng mới đã hoàn thành.
-feature/ten-tinh-nang: Nhánh con để từng thành viên làm việc (Ví dụ:feature/chatbot-integration,feature/login-page,feature/voice-to-text).
-hotfix/ten-law: Nhánh sửa lỗi gấp trên bản production.
+# Hệ thống Quản lý Phòng Khám Thông minh (AI Clinic Management System)
 
-2. Quy tắc Đặt tên Commit (Conventional Commits)
-Nhìn vào lịch sử GitHub, mọi người phải hiểu thay đổi đó là gì. This is what it says:<type>: <description>
-feat: Một tính năng mới (Ví dụ:feat: add voice-to-text recording button)
-fix: Sửa lỗi (Ví dụ:fix: resolve chatbot timeout issue)
-docs: Thay đổi tài liệu, README (Ví dụ:docs: update API documentation)
-style: Thay đổi liên quan đến định dạng (khoảng trắng, dấu phẩy...) không đổi logic code.
-refactor: Sửa code nhưng không thay đổi chức năng (Ví dụ:refactor: optimize AI prompt logic)
-chore: Các việc vặt như cập nhật thư viện, cài đặt môi trường.
+## 1. Giới thiệu & Phạm vi (Introduction & Scope)
+- **Giới thiệu:** Dự án tập trung tối ưu hóa quy trình y tế từ khâu đặt lịch đến khám chữa bệnh thông qua việc chuyển đổi số (Digital Transformation) và tích hợp trí tuệ nhân tạo (AI Integration).
+- **Phạm vi (Scope):** Gói gọn quy trình từ khi Bệnh nhân có nhu cầu khám -> Tiếp đón -> Khám bệnh & Kê đơn -> Theo dõi sau khám.
+- **Đối tượng (Target Audience):** Các phòng khám đa khoa hoặc bệnh viện quy mô vừa và nhỏ.
+
+## 2. Các phân hệ chính (Core Modules)
+1. **Quản lý Đặt lịch (Appointment Management):** AI Chatbot tư vấn chuyên khoa dựa trên triệu chứng, hỗ trợ đặt lịch trực tuyến/trực tiếp (Online/Offline).
+2. **Hồ sơ bệnh án điện tử (Electronic Health Record - EHR):** Lưu trữ tập trung, sử dụng mô hình ngôn ngữ lớn (LLM) để tóm tắt (Summarize) bệnh án.
+3. **Hỗ trợ Khám bệnh & Kê đơn (Clinical Decision Support):** Nhập liệu bằng giọng nói (Voice-to-Text), cảnh báo tương tác thuốc (Drug Interaction) tự động.
+4. **Điều hướng & Trải nghiệm (Patient Navigation):** Hệ thống số thứ tự thông minh và dự báo thời gian chờ dự kiến.
+
+## 3. Quy tắc phát triển (Development Guidelines)
+
+### Chiến lược phân nhánh (Branching Strategy)
+Để tránh việc ghi đè mã nguồn (code) lên nhau, dự án áp dụng mô hình **Feature Branching**:
+- **`main`**: Nhánh (branch) chứa mã nguồn ổn định nhất để demo/triển khai (deploy). Tuyệt đối KHÔNG lập trình trực tiếp trên nhánh này. Chỉ gộp (merge) từ nhánh `dev`.
+- **`dev`**: Nhánh tích hợp (integration) các tính năng mới đã hoàn thành.
+- **`feature/ten-tinh-nang`**: Nhánh con để từng thành viên làm việc độc lập. (Ví dụ: `feature/chatbot-ui`, `feature/voice-to-text`).
+- **`hotfix/ten-loi`**: Nhánh sửa lỗi gấp trên bản phát hành (production).
+
+### Quy tắc đặt tên Commit (Conventional Commits)
+- `feat`: Một tính năng (feature) mới.
+- `fix`: Sửa lỗi (bug fix).
+- `docs`: Thay đổi tài liệu, README (documentation).
+- `style`: Thay đổi định dạng (format) code, không đổi logic.
+- `refactor`: Tái cấu trúc mã nguồn (refactoring) để tối ưu hơn.
+- `chore`: Các việc vặt (cài đặt thư viện, cấu hình môi trường).
+
+## 4. Cấu trúc thư mục (Project Structure)
+- `backend/`: Mã nguồn máy chủ (Server-side code).
+- `frontend/`: Mã nguồn giao diện (Client-side code).
+- `ai-services/`: Các module xử lý trí tuệ nhân tạo (AI services).
+- `docs/`: Tài liệu đặc tả và sơ đồ hệ thống.
