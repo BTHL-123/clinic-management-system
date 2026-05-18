@@ -1630,70 +1630,7 @@ Khi viết migration SQL, nên tạo bảng theo thứ tự sau để tránh l�
 
 ---
 
-# 25. Bảng nên làm trước cho MVP
 
-Nếu nhóm không đủ thời gian, nên ưu tiên các bảng này:
-
-```text
-users
-roles
-user_roles
-patients
-departments
-doctors
-staff
-doctor_schedules
-appointment_slots
-appointments
-queue_tickets
-consultation_sessions
-medical_records
-lab_tests
-lab_requests
-lab_results
-medicines
-prescriptions
-prescription_items
-invoices
-payments
-notifications
-ai_chat_sessions
-ai_chat_messages
-ai_specialty_suggestions
-```
-
-Các bảng có thể làm sau:
-
-```text
-drug_interaction_checks
-medicine_batches
-stock_transactions
-medicine_stock_alerts
-refunds
-reviews
-articles
-audit_logs
-system_settings
-ai_voice_transcriptions
-```
-
----
-
-# 26. Gợi ý đặt file trong project
-
-Nên đặt file này tại:
-
-```text
-docs/database-design.md
-```
-
-Nếu dùng Spring Boot và Flyway, có thể tách schema SQL ra file:
-
-```text
-src/main/resources/db/migration/V1__init_schema.sql
-```
-
----
 
 # 27. Ghi chú triển khai
 
@@ -1717,16 +1654,6 @@ LabRequest
 Notification
 ```
 
-## 27.2. Với MySQL
-
-Thiết kế trên dùng cú pháp MySQL như:
-
-```text
-AUTO_INCREMENT
-ENUM
-DATETIME
-JSON
-```
 
 Nếu dùng PostgreSQL thì nên đổi:
 
@@ -1736,28 +1663,4 @@ ENUM → VARCHAR + CHECK constraint hoặc custom type
 DATETIME → TIMESTAMP
 ```
 
-## 27.3. Với dự án nhỏ
 
-Có thể bỏ bớt một số bảng phức tạp như:
-
-```text
-permissions
-role_permissions
-audit_logs
-system_settings
-medicine_stock_alerts
-drug_interaction_checks
-```
-
-Nhưng không nên bỏ các bảng cốt lõi như:
-
-```text
-users
-patients
-doctors
-appointments
-consultation_sessions
-medical_records
-prescriptions
-payments
-```
