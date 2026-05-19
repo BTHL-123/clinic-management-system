@@ -1,11 +1,10 @@
-import { CalendarDays, LayoutDashboard, Shield, UsersRound } from "lucide-react";
+import { LayoutDashboard, Shield, UsersRound } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 const items = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/dashboard", label: "Users", icon: UsersRound },
-  { to: "/dashboard", label: "Security", icon: Shield },
-  { to: "/dashboard", label: "Appointments", icon: CalendarDays },
+  { to: "/dashboard/users", label: "Users", icon: UsersRound },
+  { to: "/dashboard/security", label: "Security", icon: Shield },
 ];
 
 export default function Sidebar() {
@@ -19,7 +18,12 @@ export default function Sidebar() {
         {items.map((item) => {
           const Icon = item.icon;
           return (
-            <NavLink key={item.label} to={item.to} className="nav-item">
+            <NavLink
+              key={item.label}
+              to={item.to}
+              className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}
+              end={item.to === "/dashboard"}
+            >
               <Icon size={18} />
               <span>{item.label}</span>
             </NavLink>
