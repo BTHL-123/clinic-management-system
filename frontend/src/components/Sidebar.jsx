@@ -1,12 +1,14 @@
-import { Building2, CalendarDays, LayoutDashboard, Shield, UsersRound } from "lucide-react";
+import { Building2, CalendarDays, LayoutDashboard, Shield, UsersRound, UserRound, Users } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 const items = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/dashboard/departments", label: "Chuyên khoa", icon: Building2 },
-  { to: "/dashboard", label: "Users", icon: UsersRound },
-  { to: "/dashboard", label: "Security", icon: Shield },
-  { to: "/dashboard", label: "Appointments", icon: CalendarDays },
+  { to: "/dashboard/doctors", label: "Bác sĩ", icon: UserRound },
+  { to: "/dashboard/patients", label: "Bệnh nhân", icon: Users },
+  { to: "/dashboard/users", label: "Tài khoản", icon: UsersRound },
+  { to: "/dashboard/security", label: "Bảo mật", icon: Shield },
+  { to: "/dashboard/appointments", label: "Lịch khám", icon: CalendarDays },
 ];
 
 export default function Sidebar() {
