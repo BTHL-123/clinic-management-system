@@ -1,8 +1,9 @@
-import { CalendarDays, LayoutDashboard, Shield, UsersRound } from "lucide-react";
+import { Building2, CalendarDays, LayoutDashboard, Shield, UsersRound } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 const items = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
+  { to: "/dashboard/departments", label: "Chuyên khoa", icon: Building2 },
   { to: "/dashboard", label: "Users", icon: UsersRound },
   { to: "/dashboard", label: "Security", icon: Shield },
   { to: "/dashboard", label: "Appointments", icon: CalendarDays },
@@ -19,7 +20,7 @@ export default function Sidebar() {
         {items.map((item) => {
           const Icon = item.icon;
           return (
-            <NavLink key={item.label} to={item.to} className="nav-item">
+            <NavLink key={item.label} to={item.to} end={item.end} className="nav-item">
               <Icon size={18} />
               <span>{item.label}</span>
             </NavLink>
