@@ -1,8 +1,9 @@
-import { LayoutDashboard, Shield, UsersRound } from "lucide-react";
+import { Building2, LayoutDashboard, Shield, UsersRound } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 const items = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
+  { to: "/dashboard/departments", label: "Chuyên khoa", icon: Building2 },
   { to: "/dashboard/users", label: "Users", icon: UsersRound },
   { to: "/dashboard/security", label: "Security", icon: Shield },
 ];
@@ -22,7 +23,7 @@ export default function Sidebar() {
               key={item.label}
               to={item.to}
               className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}
-              end={item.to === "/dashboard"}
+              end={item.end}
             >
               <Icon size={18} />
               <span>{item.label}</span>
