@@ -1,7 +1,8 @@
-import { Building2, CalendarDays, LayoutDashboard, Shield, UsersRound } from "lucide-react";
+import { Building2, CalendarDays, LayoutDashboard, Search, Shield, UsersRound } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../context/useAuth.js";
 
-const items = [
+const adminItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/dashboard/departments", label: "Chuyên khoa", icon: Building2 },
   { to: "/dashboard", label: "Users", icon: UsersRound },
@@ -9,7 +10,16 @@ const items = [
   { to: "/dashboard/appointments", label: "Appointments", icon: CalendarDays },
 ];
 
+const patientItems = [
+  { to: "/dashboard", label: "Trang chủ", icon: LayoutDashboard, end: true },
+  { to: "/dashboard/available-slots", label: "Tìm ca khám trống", icon: Search },
+];
+
 export default function Sidebar() {
+  const { user } = useAuth();
+  const isPatient = user?.roles?.includes("PATIENT");
+  const items = isPatient ? patientItems : adminItems;
+
   return (
     <aside className="sidebar">
       <div className="brand-lockup">
@@ -30,3 +40,4 @@ export default function Sidebar() {
     </aside>
   );
 }
+

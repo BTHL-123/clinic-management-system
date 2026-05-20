@@ -219,6 +219,20 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<TimeSlotResponse> getAvailableSlots(Long doctorId, LocalDate workDate) {
+        return timeSlotRepository.findAvailableSlotsByDoctorAndDate(doctorId, workDate).stream()
+                .map(ts -> new TimeSlotResponse(
+                        ts.getId(),
+                        ts.getDoctorSchedule().getId(),
+                        ts.getStartTime(),
+                        ts.getEndTime(),
+                        ts.getStatus()
+                ))
+                .collect(Collectors.toList());
+    }
+
     private DoctorScheduleResponse mapToResponse(DoctorSchedule schedule) {
         return new DoctorScheduleResponse(
                 schedule.getId(),

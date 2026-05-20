@@ -72,6 +72,15 @@ public class DoctorScheduleController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    @GetMapping("/available-slots")
+    public ResponseEntity<ApiResponse<List<TimeSlotResponse>>> getAvailableSlots(
+            @RequestParam Long doctorId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate workDate
+    ) {
+        List<TimeSlotResponse> response = doctorScheduleService.getAvailableSlots(doctorId, workDate);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
     @PutMapping("/{scheduleId}/cancel")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<DoctorScheduleResponse>> cancelScheduleByPut(

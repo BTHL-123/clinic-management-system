@@ -16,4 +16,5 @@ public interface DoctorScheduleService {
     DoctorScheduleResponse cancelSchedule(Long id, String reason);
     GenerateSlotsResponse generateSlots(Long id, int slotDurationMinutes);
     List<TimeSlotResponse> getSlotsByScheduleId(Long scheduleId);
+    List<TimeSlotResponse> getAvailableSlots(Long doctorId, LocalDate workDate);
 }

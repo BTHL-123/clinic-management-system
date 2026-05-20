@@ -13,4 +13,9 @@ export const cancelSchedule = (id) =>
   axiosClient.delete(`/doctor-schedules/${id}`);
 
 export const getSlotsByScheduleId = (id) =>
-  axiosClient.get(`v1/admin/schedules/${id}/slots`);
+  axiosClient.get(`/doctor-schedules/${id}/slots`);
+
+export const getAvailableSlots = (doctorId, workDate) =>
+  axiosClient.get("/doctor-schedules/available-slots", {
+    params: { doctorId, workDate },
+  });
