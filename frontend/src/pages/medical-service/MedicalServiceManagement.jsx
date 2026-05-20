@@ -10,7 +10,7 @@ import {
 const EMPTY_FORM = {
   serviceCode: "",
   serviceName: "",
-  serviceType: "EXAM",
+  serviceType: "CONSULTATION",
   price: "",
   description: "",
   status: "ACTIVE",
@@ -70,7 +70,7 @@ export default function MedicalServiceManagement() {
     setFormData({
       serviceCode: service.serviceCode,
       serviceName: service.serviceName,
-      serviceType: service.serviceType || "EXAM",
+      serviceType: service.serviceType || "CONSULTATION",
       price: service.price || 0,
       description: service.description || "",
       status: service.status,
@@ -144,12 +144,14 @@ export default function MedicalServiceManagement() {
 
   const formatServiceType = (type) => {
     switch (type) {
-      case "EXAM":
+      case "CONSULTATION":
         return "Khám bệnh";
-      case "TEST":
+      case "LAB_TEST":
         return "Xét nghiệm";
-      case "PROCEDURE":
-        return "Thủ thuật";
+      case "PACKAGE":
+        return "Gói khám";
+      case "OTHER":
+        return "Khác";
       default:
         return type;
     }
@@ -302,9 +304,10 @@ export default function MedicalServiceManagement() {
                   value={formData.serviceType}
                   onChange={handleChange}
                 >
-                  <option value="EXAM">Khám bệnh</option>
-                  <option value="TEST">Xét nghiệm</option>
-                  <option value="PROCEDURE">Thủ thuật</option>
+                  <option value="CONSULTATION">Khám bệnh</option>
+                  <option value="LAB_TEST">Xét nghiệm</option>
+                  <option value="PACKAGE">Gói khám</option>
+                  <option value="OTHER">Khác</option>
                 </select>
               </div>
 
