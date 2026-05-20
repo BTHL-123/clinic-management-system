@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  Banknote,
   Edit,
   Eye,
   Plus,
@@ -15,6 +16,7 @@ import {
   getInvoices,
   updateInvoice,
 } from "../../services/invoiceService";
+import { createPayment, confirmCashPayment } from "../../services/paymentService";
 
 const STATUS_OPTIONS = [
   { value: "", label: "Tất cả" },
@@ -64,6 +66,12 @@ export default function InvoiceManagement() {
 
   // cancel confirm
   const [cancelTarget, setCancelTarget] = useState(null);
+
+  // payment modal
+  const [payTarget, setPayTarget] = useState(null);
+  const [payMethod, setPayMethod] = useState("CASH");
+  const [paySubmitting, setPaySubmitting] = useState(false);
+  const [payError, setPayError] = useState("");
 
   /* ── Fetch ─────────────────────────────────────────────── */
   const fetchInvoices = async () => {
@@ -231,6 +239,36 @@ export default function InvoiceManagement() {
     }
   };
 
+  /* ── Payment handlers ────────────────────────────────────── */
+  const openPayment = (inv) => {
+    setPayTarget(inv);
+    setPayMethod("CASH");
+    setPayError("");
+  };
+
+  const handlePayment = async () => {
+    if (!payTarget) return;
+    try {
+      setPaySubmitting(true);
+      const res = await createPayment({
+        invoiceId: payTarget.invoiceId,
+        appointmentId: null,
+        paymentType: "FINAL_PAYMENT",
+        paymentMethod: payMethod,
+        amount: payTarget.finalAmount,
+      });
+      if (payMethod === "CASH") {
+        await confirmCashPayment(res.data.paymentId);
+      }
+      setPayTarget(null);
+      await fetchInvoices();
+    } catch (err) {
+      setPayError(err.message);
+    } finally {
+      setPaySubmitting(false);
+    }
+  };
+
   /* ── Helpers ───────────────────────────────────────────── */
   const formatPrice = (price) =>
     new Intl.NumberFormat("vi-VN", {
@@ -359,6 +397,14 @@ export default function InvoiceManagement() {
                       </button>
                       {inv.status === "UNPAID" && (
                         <>
+                          <button
+                            className="icon-button"
+                            title="Thanh toán"
+                            style={{ color: "#16a34a", borderColor: "#bbf7d0" }}
+                            onClick={() => openPayment(inv)}
+                          >
+                            <Banknote size={15} />
+                          </button>
                           <button
                             className="icon-button"
                             title="Chỉnh sửa"
@@ -616,6 +662,55 @@ export default function InvoiceManagement() {
               </button>
               <button className="danger-button" onClick={confirmCancel}>
                 Hủy hóa đơn
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Payment Modal ──────────────────────────────────── */}
+      {payTarget && (
+        <div className="modal-overlay" onClick={() => setPayTarget(null)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Thanh toán hóa đơn {payTarget.invoiceCode}</h2>
+              <button className="icon-button" onClick={() => setPayTarget(null)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            {payError && <div className="error-box">{payError}</div>}
+
+            <div style={{ display: "grid", gap: 10, marginBottom: 16, fontSize: "0.95rem" }}>
+              <div><strong>Bệnh nhân:</strong> {payTarget.patientName}</div>
+              <div><strong>Thành tiền:</strong>{" "}
+                <span style={{ fontWeight: 700, color: "#0f766e", fontSize: "1.1rem" }}>
+                  {formatPrice(payTarget.finalAmount)}
+                </span>
+              </div>
+            </div>
+
+            <div className="field" style={{ marginBottom: 16 }}>
+              <label>Phương thức thanh toán</label>
+              <select
+                value={payMethod}
+                onChange={(e) => setPayMethod(e.target.value)}
+              >
+                <option value="CASH">Tiền mặt</option>
+                <option value="ONLINE">Chuyển khoản</option>
+              </select>
+            </div>
+
+            <div className="form-actions">
+              <button className="secondary-button" onClick={() => setPayTarget(null)}>
+                Hủy
+              </button>
+              <button
+                className="primary-button"
+                onClick={handlePayment}
+                disabled={paySubmitting}
+              >
+                {paySubmitting ? "Đang xử lý..." : payMethod === "CASH" ? "Xác nhận đã thu tiền" : "Tạo giao dịch"}
               </button>
             </div>
           </div>

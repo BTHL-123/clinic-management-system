@@ -6,6 +6,7 @@ import DashboardHome from "./pages/dashboard/DashboardHome.jsx";
 import DepartmentManagement from "./pages/department/DepartmentManagement.jsx";
 import MedicalServiceManagement from "./pages/medical-service/MedicalServiceManagement.jsx";
 import InvoiceManagement from "./pages/invoice/InvoiceManagement.jsx";
+import PaymentManagement from "./pages/payment/PaymentManagement.jsx";
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 
 export default function App() {
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="departments" element={<DepartmentManagement />} />
         <Route path="medical-services" element={<MedicalServiceManagement />} />
         <Route path="invoices" element={<InvoiceManagement />} />
+        <Route path="payments" element={<PaymentManagement />} />
       </Route>
     </Routes>
   );
