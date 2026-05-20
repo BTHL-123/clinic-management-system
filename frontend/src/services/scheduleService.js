@@ -19,3 +19,9 @@ export const getAvailableSlots = (doctorId, workDate) =>
   axiosClient.get("/doctor-schedules/available-slots", {
     params: { doctorId, workDate },
   });
+
+export const lockSlot = (slotId) =>
+  axiosClient.post(`/doctor-schedules/slots/${slotId}/lock`);
+
+export const releaseLock = (slotId) =>
+  axiosClient.delete(`/doctor-schedules/slots/${slotId}/lock`);
