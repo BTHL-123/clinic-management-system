@@ -107,6 +107,37 @@ public class PatientService {
         return PatientResponse.from(patientRepository.save(patient));
     }
 
+    @Transactional(readOnly = true)
+    public PatientResponse getMyProfile(Long userId) {
+        Patient patient = patientRepository.findByUser_UserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tài khoản của bạn chưa được liên kết với hồ sơ bệnh nhân nào."));
+        return PatientResponse.from(patient);
+    }
+
+    @Transactional
+    public PatientResponse updateMyProfile(Long userId, PatientProfileUpdateRequest request) {
+        Patient patient = patientRepository.findByUser_UserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tài khoản của bạn chưa được liên kết với hồ sơ bệnh nhân nào."));
+
+        patient.setFullName(request.fullName());
+        if (request.gender() != null) {
+            patient.setGender(request.gender());
+        }
+        patient.setDateOfBirth(request.dateOfBirth());
+        patient.setPhone(request.phone());
+        patient.setEmail(request.email());
+        patient.setAddress(request.address());
+        patient.setIdentityNumber(request.identityNumber());
+        patient.setInsuranceNumber(request.insuranceNumber());
+        patient.setEmergencyContactName(request.emergencyContactName());
+        patient.setEmergencyContactPhone(request.emergencyContactPhone());
+        patient.setBloodType(request.bloodType());
+        patient.setAllergies(request.allergies());
+        patient.setMedicalHistory(request.medicalHistory());
+
+        return PatientResponse.from(patientRepository.save(patient));
+    }
+
     @Transactional
     public void delete(Long id) {
         Patient patient = patientRepository.findById(id)

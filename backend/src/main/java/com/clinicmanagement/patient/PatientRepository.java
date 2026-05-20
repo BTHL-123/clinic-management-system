@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface PatientRepository extends JpaRepository<Patient, Long> {
     Optional<Patient> findTopByOrderByPatientIdDesc();
+    Optional<Patient> findByUser_UserId(Long userId);
 
     @Query("SELECT p FROM Patient p WHERE " +
            "(LOWER(p.fullName) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) " +
