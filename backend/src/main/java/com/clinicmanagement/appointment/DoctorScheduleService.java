@@ -2,10 +2,11 @@ package com.clinicmanagement.appointment;
 
 import com.clinicmanagement.appointment.dto.DoctorScheduleRequest;
 import com.clinicmanagement.appointment.dto.DoctorScheduleResponse;
+import com.clinicmanagement.appointment.dto.GenerateSlotsResponse;
+import com.clinicmanagement.appointment.dto.TimeSlotResponse;
 
 import java.time.LocalDate;
 import java.util.List;
-import com.clinicmanagement.appointment.dto.GenerateSlotsResponse;
 
 public interface DoctorScheduleService {
     DoctorScheduleResponse createSchedule(DoctorScheduleRequest request);
@@ -14,4 +15,5 @@ public interface DoctorScheduleService {
     DoctorScheduleResponse getScheduleById(Long id);
     DoctorScheduleResponse cancelSchedule(Long id, String reason);
     GenerateSlotsResponse generateSlots(Long id, int slotDurationMinutes);
+    List<TimeSlotResponse> getSlotsByScheduleId(Long scheduleId);
 }

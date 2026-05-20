@@ -5,6 +5,7 @@ import com.clinicmanagement.appointment.dto.DoctorScheduleRequest;
 import com.clinicmanagement.appointment.dto.DoctorScheduleResponse;
 import com.clinicmanagement.appointment.dto.GenerateSlotsRequest;
 import com.clinicmanagement.appointment.dto.GenerateSlotsResponse;
+import com.clinicmanagement.appointment.dto.TimeSlotResponse;
 import com.clinicmanagement.common.dto.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -63,13 +64,30 @@ public class DoctorScheduleController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    @GetMapping("/{id}/slots")
+    public ResponseEntity<ApiResponse<List<TimeSlotResponse>>> getSlotsByScheduleId(
+            @PathVariable Long id
+    ) {
+        List<TimeSlotResponse> response = doctorScheduleService.getSlotsByScheduleId(id);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
     @PutMapping("/{scheduleId}/cancel")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<DoctorScheduleResponse>> cancelSchedule(
+    public ResponseEntity<ApiResponse<DoctorScheduleResponse>> cancelScheduleByPut(
             @PathVariable Long scheduleId,
             @Valid @RequestBody CancelScheduleRequest request
     ) {
         DoctorScheduleResponse response = doctorScheduleService.cancelSchedule(scheduleId, request.reason());
+        return ResponseEntity.ok(ApiResponse.success("Hủy lịch làm việc thành công", response));
+    }
+
+    @DeleteMapping("/{scheduleId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<DoctorScheduleResponse>> cancelSchedule(
+            @PathVariable Long scheduleId
+    ) {
+        DoctorScheduleResponse response = doctorScheduleService.cancelSchedule(scheduleId, null);
         return ResponseEntity.ok(ApiResponse.success("Hủy lịch làm việc thành công", response));
     }
 

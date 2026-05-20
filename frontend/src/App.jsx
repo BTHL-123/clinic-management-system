@@ -4,7 +4,7 @@ import LoginPage from "./pages/auth/LoginPage.jsx";
 import RegisterPage from "./pages/auth/RegisterPage.jsx";
 import DashboardHome from "./pages/dashboard/DashboardHome.jsx";
 import DepartmentManagement from "./pages/department/DepartmentManagement.jsx";
-import AppointmentManagement from "./pages/appointment/AppointmentManagement.jsx";
+import AppointmentManagement from "./pages/appointment/Appointments.tsx";
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 
 export default function App() {

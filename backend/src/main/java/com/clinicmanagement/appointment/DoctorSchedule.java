@@ -3,6 +3,8 @@ package com.clinicmanagement.appointment;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "doctor_schedules")
@@ -31,6 +33,9 @@ public class DoctorSchedule {
     @Column(name = "status", nullable = false)
     private String status;
 
+    @OneToMany(mappedBy = "doctorSchedule", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<TimeSlot> timeSlots = new ArrayList<>();
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -51,4 +56,7 @@ public class DoctorSchedule {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public List<TimeSlot> getTimeSlots() { return timeSlots; }
+    public void setTimeSlots(List<TimeSlot> timeSlots) { this.timeSlots = timeSlots; }
 }

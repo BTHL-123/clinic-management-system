@@ -3,14 +3,16 @@ package com.clinicmanagement.appointment;
 import com.clinicmanagement.appointment.dto.DoctorScheduleRequest;
 import com.clinicmanagement.appointment.dto.DoctorScheduleResponse;
 import com.clinicmanagement.appointment.dto.GenerateSlotsResponse;
+import com.clinicmanagement.appointment.dto.TimeSlotResponse;
 import com.clinicmanagement.common.exception.BusinessException;
 import com.clinicmanagement.common.exception.ResourceNotFoundException;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,6 +21,9 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
 
     private final DoctorScheduleRepository doctorScheduleRepository;
     private final TimeSlotRepository timeSlotRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public DoctorScheduleServiceImpl(DoctorScheduleRepository doctorScheduleRepository, TimeSlotRepository timeSlotRepository) {
         this.doctorScheduleRepository = doctorScheduleRepository;
@@ -47,26 +52,19 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         schedule.setMaxPatients(request.maxPatients() != null ? request.maxPatients() : 20);
         schedule.setStatus("AVAILABLE");
 
-        DoctorSchedule savedSchedule = doctorScheduleRepository.save(schedule);
-
-        // Generate default 30-minute slots
-        List<TimeSlot> timeSlots = new ArrayList<>();
         LocalTime currentSlotTime = request.startTime();
-
-        while (currentSlotTime.plusMinutes(30).isBefore(request.endTime()) || 
+        while (currentSlotTime.plusMinutes(30).isBefore(request.endTime()) ||
                currentSlotTime.plusMinutes(30).equals(request.endTime())) {
             TimeSlot timeSlot = new TimeSlot();
-            timeSlot.setDoctorSchedule(savedSchedule);
+            timeSlot.setDoctorSchedule(schedule);
             timeSlot.setStartTime(currentSlotTime);
             timeSlot.setEndTime(currentSlotTime.plusMinutes(30));
             timeSlot.setStatus("AVAILABLE");
-            timeSlots.add(timeSlot);
-
+            schedule.getTimeSlots().add(timeSlot);
             currentSlotTime = currentSlotTime.plusMinutes(30);
         }
 
-        timeSlotRepository.saveAll(timeSlots);
-
+        DoctorSchedule savedSchedule = doctorScheduleRepository.save(schedule);
         return mapToResponse(savedSchedule);
     }
 
@@ -84,6 +82,11 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
             throw new BusinessException("Start time must be before end time");
         }
 
+        boolean hasBookedSlots = timeSlotRepository.existsByScheduleIdAndStatus(id, "BOOKED");
+        if (hasBookedSlots) {
+            throw new BusinessException("Cannot update schedule because there are already booked appointments");
+        }
+
         List<DoctorSchedule> overlappingSchedules = doctorScheduleRepository.findActiveSchedulesByDoctorAndDateExcluding(
                 request.doctorId(), request.workDate(), id);
         for (DoctorSchedule existing : overlappingSchedules) {
@@ -92,47 +95,29 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
             }
         }
 
-        boolean timeOrDateChanged = !schedule.getWorkDate().equals(request.workDate()) ||
-                                   !schedule.getStartTime().equals(request.startTime()) ||
-                                   !schedule.getEndTime().equals(request.endTime());
+        timeSlotRepository.deleteAllByScheduleId(id);
+        entityManager.flush();
 
-        if (timeOrDateChanged) {
-            boolean hasBookedSlots = timeSlotRepository.existsByScheduleIdAndStatus(id, "BOOKED");
-            if (hasBookedSlots) {
-                throw new BusinessException("Cannot change schedule date or time because there are already booked appointments");
-            }
-        }
-
+        schedule.getTimeSlots().clear();
         schedule.setDoctorId(request.doctorId());
         schedule.setWorkDate(request.workDate());
         schedule.setStartTime(request.startTime());
         schedule.setEndTime(request.endTime());
         schedule.setMaxPatients(request.maxPatients() != null ? request.maxPatients() : 20);
 
-        DoctorSchedule savedSchedule = doctorScheduleRepository.save(schedule);
-
-        if (timeOrDateChanged) {
-            List<TimeSlot> existingSlots = timeSlotRepository.findByScheduleId(id);
-            timeSlotRepository.deleteAll(existingSlots);
-
-            // Generate default 30-minute slots
-            List<TimeSlot> newSlots = new ArrayList<>();
-            LocalTime currentSlotTime = request.startTime();
-
-            while (currentSlotTime.plusMinutes(30).isBefore(request.endTime()) || 
-                   currentSlotTime.plusMinutes(30).equals(request.endTime())) {
-                TimeSlot timeSlot = new TimeSlot();
-                timeSlot.setDoctorSchedule(savedSchedule);
-                timeSlot.setStartTime(currentSlotTime);
-                timeSlot.setEndTime(currentSlotTime.plusMinutes(30));
-                timeSlot.setStatus("AVAILABLE");
-                newSlots.add(timeSlot);
-
-                currentSlotTime = currentSlotTime.plusMinutes(30);
-            }
-            timeSlotRepository.saveAll(newSlots);
+        LocalTime currentSlotTime = request.startTime();
+        while (currentSlotTime.plusMinutes(30).isBefore(request.endTime()) ||
+               currentSlotTime.plusMinutes(30).equals(request.endTime())) {
+            TimeSlot timeSlot = new TimeSlot();
+            timeSlot.setDoctorSchedule(schedule);
+            timeSlot.setStartTime(currentSlotTime);
+            timeSlot.setEndTime(currentSlotTime.plusMinutes(30));
+            timeSlot.setStatus("AVAILABLE");
+            schedule.getTimeSlots().add(timeSlot);
+            currentSlotTime = currentSlotTime.plusMinutes(30);
         }
 
+        DoctorSchedule savedSchedule = doctorScheduleRepository.save(schedule);
         return mapToResponse(savedSchedule);
     }
 
@@ -159,20 +144,23 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         DoctorSchedule schedule = doctorScheduleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor schedule not found with id: " + id));
 
-        if ("CANCELLED".equals(schedule.getStatus())) {
-            throw new BusinessException("Schedule is already cancelled");
+        boolean hasBookedSlots = timeSlotRepository.existsByScheduleIdAndStatus(id, "BOOKED");
+        if (hasBookedSlots) {
+            throw new BusinessException("Cannot cancel schedule because there are already booked appointments");
         }
 
-        schedule.setStatus("CANCELLED");
-        DoctorSchedule savedSchedule = doctorScheduleRepository.save(schedule);
+        DoctorScheduleResponse response = new DoctorScheduleResponse(
+                schedule.getId(),
+                schedule.getDoctorId(),
+                schedule.getWorkDate(),
+                schedule.getStartTime(),
+                schedule.getEndTime(),
+                schedule.getMaxPatients(),
+                "CANCELLED"
+        );
 
-        List<TimeSlot> slots = timeSlotRepository.findByScheduleId(id);
-        for (TimeSlot slot : slots) {
-            slot.setStatus("CANCELLED");
-        }
-        timeSlotRepository.saveAll(slots);
-
-        return mapToResponse(savedSchedule);
+        doctorScheduleRepository.delete(schedule);
+        return response;
     }
 
     @Override
@@ -194,27 +182,41 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
             throw new BusinessException("Cannot regenerate slots because there are already booked appointments");
         }
 
-        List<TimeSlot> existingSlots = timeSlotRepository.findByScheduleId(id);
-        timeSlotRepository.deleteAll(existingSlots);
+        schedule.getTimeSlots().clear();
+        doctorScheduleRepository.save(schedule);
 
-        List<TimeSlot> newSlots = new ArrayList<>();
         LocalTime currentSlotTime = schedule.getStartTime();
-
-        while (currentSlotTime.plusMinutes(slotDurationMinutes).isBefore(schedule.getEndTime()) || 
+        int slotCount = 0;
+        while (currentSlotTime.plusMinutes(slotDurationMinutes).isBefore(schedule.getEndTime()) ||
                currentSlotTime.plusMinutes(slotDurationMinutes).equals(schedule.getEndTime())) {
             TimeSlot timeSlot = new TimeSlot();
             timeSlot.setDoctorSchedule(schedule);
             timeSlot.setStartTime(currentSlotTime);
             timeSlot.setEndTime(currentSlotTime.plusMinutes(slotDurationMinutes));
             timeSlot.setStatus("AVAILABLE");
-            newSlots.add(timeSlot);
-
+            schedule.getTimeSlots().add(timeSlot);
+            slotCount++;
             currentSlotTime = currentSlotTime.plusMinutes(slotDurationMinutes);
         }
 
-        timeSlotRepository.saveAll(newSlots);
+        doctorScheduleRepository.save(schedule);
+        return new GenerateSlotsResponse(id, slotCount);
+    }
 
-        return new GenerateSlotsResponse(id, newSlots.size());
+    @Override
+    @Transactional(readOnly = true)
+    public List<TimeSlotResponse> getSlotsByScheduleId(Long scheduleId) {
+        doctorScheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor schedule not found with id: " + scheduleId));
+        return timeSlotRepository.findByDoctorScheduleId(scheduleId).stream()
+                .map(ts -> new TimeSlotResponse(
+                        ts.getId(),
+                        scheduleId,
+                        ts.getStartTime(),
+                        ts.getEndTime(),
+                        ts.getStatus()
+                ))
+                .collect(Collectors.toList());
     }
 
     private DoctorScheduleResponse mapToResponse(DoctorSchedule schedule) {
