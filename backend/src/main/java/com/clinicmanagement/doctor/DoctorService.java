@@ -5,6 +5,8 @@ import com.clinicmanagement.common.exception.BusinessException;
 import com.clinicmanagement.common.exception.ResourceNotFoundException;
 import com.clinicmanagement.department.Department;
 import com.clinicmanagement.department.DepartmentRepository;
+import com.clinicmanagement.role.Role;
+import com.clinicmanagement.role.RoleRepository;
 import com.clinicmanagement.user.User;
 import com.clinicmanagement.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ public class DoctorService {
     private final DoctorRepository doctorRepository;
     private final UserRepository userRepository;
     private final DepartmentRepository departmentRepository;
+    private final RoleRepository roleRepository;
 
     @Transactional(readOnly = true)
     public PageResponse<DoctorResponse> getDoctors(Long departmentId, String keyword, String status, Pageable pageable) {
@@ -47,6 +50,13 @@ public class DoctorService {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy User với ID: " + request.userId()));
         Department department = departmentRepository.findById(request.departmentId())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Chuyên khoa với ID: " + request.departmentId()));
+
+        boolean hasDoctorRole = user.getRoles().stream().anyMatch(r -> r.getRoleName().equals("DOCTOR"));
+        if (!hasDoctorRole) {
+            Role doctorRole = roleRepository.findByRoleName("DOCTOR")
+                    .orElseThrow(() -> new BusinessException("Không tìm thấy quyền DOCTOR trong hệ thống"));
+            user.getRoles().add(doctorRole);
+        }
 
         Doctor doctor = new Doctor();
         doctor.setUser(user);
@@ -97,6 +107,13 @@ public class DoctorService {
         }
 
         return DoctorResponse.from(doctorRepository.save(doctor));
+    }
+
+    @Transactional(readOnly = true)
+    public DoctorResponse getMyProfile(Long userId) {
+        Doctor doctor = doctorRepository.findByUser_UserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tài khoản của bạn chưa được liên kết với hồ sơ bác sĩ nào."));
+        return DoctorResponse.from(doctor);
     }
 
     @Transactional

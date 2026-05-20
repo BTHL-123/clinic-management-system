@@ -6,7 +6,7 @@ import DashboardHome from "./pages/dashboard/DashboardHome.jsx";
 import DepartmentManagement from "./pages/department/DepartmentManagement.jsx";
 import DoctorManagement from "./pages/doctor/DoctorManagement.jsx";
 import PatientManagement from "./pages/patient/PatientManagement.jsx";
-import PatientProfile from "./pages/patient/PatientProfile.jsx";
+import ProfilePage from "./pages/profile/ProfilePage.jsx";
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 
 export default function App() {
@@ -24,7 +24,7 @@ export default function App() {
         }
       >
         <Route index element={<DashboardHome />} />
-        <Route path="profile" element={<PatientProfile />} />
+        <Route path="profile" element={<ProfilePage />} />
         <Route path="departments" element={<DepartmentManagement />} />
         <Route path="doctors" element={<DoctorManagement />} />
         <Route path="patients" element={<PatientManagement />} />

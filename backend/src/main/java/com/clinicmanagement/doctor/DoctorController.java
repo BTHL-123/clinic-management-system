@@ -62,6 +62,21 @@ public class DoctorController {
         );
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<DoctorResponse>> getMyProfile() {
+        Long userId = getAuthenticatedUserId();
+        return ResponseEntity.ok(ApiResponse.success(doctorService.getMyProfile(userId)));
+    }
+
+    private Long getAuthenticatedUserId() {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || auth.getPrincipal() instanceof String) {
+            throw new com.clinicmanagement.common.exception.BusinessException("Không thể xác thực thông tin người dùng.");
+        }
+        com.clinicmanagement.security.CustomUserDetails userDetails = (com.clinicmanagement.security.CustomUserDetails) auth.getPrincipal();
+        return userDetails.getUser().getUserId();
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         doctorService.deleteDoctor(id);
