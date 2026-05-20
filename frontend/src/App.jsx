@@ -4,6 +4,7 @@ import LoginPage from "./pages/auth/LoginPage.jsx";
 import RegisterPage from "./pages/auth/RegisterPage.jsx";
 import DashboardHome from "./pages/dashboard/DashboardHome.jsx";
 import DepartmentManagement from "./pages/department/DepartmentManagement.jsx";
+import AppointmentManagement from "./pages/appointment/AppointmentManagement.jsx";
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 
 export default function App() {
@@ -22,6 +23,7 @@ export default function App() {
       >
         <Route index element={<DashboardHome />} />
         <Route path="departments" element={<DepartmentManagement />} />
+        <Route path="appointments" element={<AppointmentManagement />} />
       </Route>
     </Routes>
   );

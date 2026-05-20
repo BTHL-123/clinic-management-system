@@ -6,7 +6,7 @@ const items = [
   { to: "/dashboard/departments", label: "Chuyên khoa", icon: Building2 },
   { to: "/dashboard", label: "Users", icon: UsersRound },
   { to: "/dashboard", label: "Security", icon: Shield },
-  { to: "/dashboard", label: "Appointments", icon: CalendarDays },
+  { to: "/dashboard/appointments", label: "Appointments", icon: CalendarDays },
 ];
 
 export default function Sidebar() {
