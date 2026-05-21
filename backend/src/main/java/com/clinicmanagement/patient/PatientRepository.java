@@ -9,6 +9,9 @@ import org.springframework.data.repository.query.Param;
 
 public interface PatientRepository extends JpaRepository<Patient, Long> {
     Optional<Patient> findTopByOrderByPatientIdDesc();
+
+    Optional<Patient> findByUserUserId(Long userId);
+
     Optional<Patient> findByUser_UserId(Long userId);
 
     @Query("SELECT p FROM Patient p WHERE " +
@@ -20,4 +23,5 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
     boolean existsByPatientCode(String patientCode);
     
     boolean existsByUser_UserId(Long userId);
+
 }

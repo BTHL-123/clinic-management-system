@@ -17,15 +17,22 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.clinicmanagement.appointment.dto.SlotLockResponse;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.clinicmanagement.security.CustomUserDetails;
+
 @RestController
 @RequestMapping("/doctor-schedules")
 public class DoctorScheduleController {
 
     private final DoctorScheduleService doctorScheduleService;
+    private final SlotLockService slotLockService;
 
-    public DoctorScheduleController(DoctorScheduleService doctorScheduleService) {
+    public DoctorScheduleController(DoctorScheduleService doctorScheduleService, SlotLockService slotLockService) {
         this.doctorScheduleService = doctorScheduleService;
+        this.slotLockService = slotLockService;
     }
+
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -109,4 +116,25 @@ public class DoctorScheduleController {
         GenerateSlotsResponse response = doctorScheduleService.generateSlots(scheduleId, request.slotDurationMinutes());
         return ResponseEntity.ok(ApiResponse.success("Tạo các slot hẹn thành công", response));
     }
+
+    @PostMapping("/slots/{slotId}/lock")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<SlotLockResponse>> lockSlot(
+            @PathVariable Long slotId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        SlotLockResponse response = slotLockService.lockSlot(slotId, userDetails.getUser().getUserId());
+        return ResponseEntity.ok(ApiResponse.success("Giữ chỗ ca khám thành công", response));
+    }
+
+    @DeleteMapping("/slots/{slotId}/lock")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> releaseLock(
+            @PathVariable Long slotId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        slotLockService.releaseLock(slotId, userDetails.getUser().getUserId());
+        return ResponseEntity.ok(ApiResponse.success("Hủy giữ chỗ thành công", null));
+    }
 }
+

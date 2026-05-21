@@ -146,6 +146,9 @@ public class DataSeeder implements CommandLineRunner {
         patient.setPhone("0911222333");
         patient.setPasswordHash(passwordEncoder.encode("123456"));
         patient.setRoles(Set.of(patientRole));
-        userRepository.save(patient);
+        User savedUser = userRepository.save(patient);
+
+        jdbcTemplate.update("INSERT INTO patients (user_id, patient_code, full_name, gender, phone, email, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                savedUser.getUserId(), "PAT000001", "Nguyễn Văn Test", "MALE", "0911222333", email);
     }
 }

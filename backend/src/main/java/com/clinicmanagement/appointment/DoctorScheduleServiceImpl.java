@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -220,16 +221,24 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public List<TimeSlotResponse> getAvailableSlots(Long doctorId, LocalDate workDate) {
-        return timeSlotRepository.findAvailableSlotsByDoctorAndDate(doctorId, workDate).stream()
-                .map(ts -> new TimeSlotResponse(
-                        ts.getId(),
-                        ts.getDoctorSchedule().getId(),
-                        ts.getStartTime(),
-                        ts.getEndTime(),
-                        ts.getStatus()
-                ))
+        List<TimeSlot> slots = timeSlotRepository.findAllSlotsByDoctorAndDate(doctorId, workDate);
+        LocalDateTime now = LocalDateTime.now();
+        return slots.stream()
+                .map(ts -> {
+                    String status = ts.getStatus();
+                    if ("LOCKED".equals(status) && ts.getLockedUntil() != null && ts.getLockedUntil().isBefore(now)) {
+                        status = "AVAILABLE";
+                    }
+                    return new TimeSlotResponse(
+                            ts.getId(),
+                            ts.getDoctorSchedule().getId(),
+                            ts.getStartTime(),
+                            ts.getEndTime(),
+                            status
+                    );
+                })
                 .collect(Collectors.toList());
     }
 
