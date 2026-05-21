@@ -128,7 +128,11 @@ a {
 }
 
 .primary-button {
+  display: inline-flex;
   min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   border: 0;
   border-radius: 8px;
   padding: 10px 14px;
@@ -137,9 +141,58 @@ a {
   font-weight: 700;
 }
 
+.primary-button.compact {
+  min-height: 40px;
+}
+
+.ghost-button {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #d7dee8;
+  border-radius: 8px;
+  padding: 9px 12px;
+  background: #ffffff;
+  color: #405064;
+  font-weight: 700;
+}
+
+.ghost-button:disabled,
+.primary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .secondary-link {
   color: #0f766e;
   font-weight: 700;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #65758b;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  height: 1px;
+  flex: 1;
+  background: #d7dee8;
+  content: "";
+}
+
+.google-login-button {
+  min-height: 44px;
+}
+
+.google-login-button > div {
+  width: 100% !important;
 }
 
 .error-box {
@@ -147,6 +200,13 @@ a {
   padding: 10px 12px;
   background: #fee2e2;
   color: #991b1b;
+}
+
+.success-box {
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #dcfce7;
+  color: #166534;
 }
 
 .app-shell {
@@ -198,6 +258,7 @@ a {
 
 .icon-button {
   display: inline-grid;
+  flex: 0 0 auto;
   width: 40px;
   height: 40px;
   place-items: center;
@@ -207,8 +268,259 @@ a {
   color: #405064;
 }
 
+.icon-button.danger {
+  color: #b42318;
+}
+
 .content {
   padding: 28px;
+}
+
+.page-stack {
+  display: grid;
+  gap: 18px;
+}
+
+.page-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.page-heading h1,
+.panel h1,
+.panel h2,
+.panel h3 {
+  margin-top: 0;
+}
+
+.heading-actions,
+.form-actions,
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel {
+  border: 1px solid #dfe5ec;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 18px;
+}
+
+.toolbar {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) 180px 200px 40px;
+  gap: 12px;
+  align-items: center;
+}
+
+.toolbar select,
+.search-box input,
+.form-grid input,
+.form-grid select {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid #d7dee8;
+  border-radius: 8px;
+  padding: 9px 11px;
+  color: #1f2933;
+  background: #ffffff;
+}
+
+.search-box {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #d7dee8;
+  border-radius: 8px;
+  padding: 0 10px;
+  background: #ffffff;
+  color: #65758b;
+}
+
+.search-box input {
+  min-height: unset;
+  border: 0;
+  padding: 0;
+  outline: 0;
+}
+
+.split-layout {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.85fr) minmax(0, 1.45fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.security-layout {
+  grid-template-columns: minmax(280px, 0.7fr) minmax(0, 1.5fr);
+}
+
+.form-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.table-panel {
+  min-width: 0;
+}
+
+.table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.table-header h2,
+.table-header h3 {
+  margin-bottom: 0;
+}
+
+.data-table {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid #e7ecf2;
+  border-radius: 8px;
+}
+
+.table-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.2fr) minmax(140px, 0.8fr) 120px 104px;
+  gap: 12px;
+  align-items: center;
+  min-height: 64px;
+  border-bottom: 1px solid #e7ecf2;
+  padding: 10px 12px;
+}
+
+.table-row:last-child {
+  border-bottom: 0;
+}
+
+.table-head {
+  min-height: 42px;
+  background: #f6f7f9;
+  color: #65758b;
+  font-size: 0.86rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.text-button {
+  display: grid;
+  gap: 3px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #1f2933;
+  text-align: left;
+}
+
+.text-button span,
+.role-card small,
+.permission-item small {
+  color: #65758b;
+}
+
+.status-pill {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: #eef2f7;
+  color: #405064;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.status-pill.active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-pill.locked {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.empty-state {
+  padding: 20px;
+  color: #65758b;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 14px;
+  color: #65758b;
+}
+
+.role-list {
+  display: grid;
+  gap: 10px;
+}
+
+.role-card {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  border: 1px solid #dfe5ec;
+  border-radius: 8px;
+  padding: 12px;
+  background: #ffffff;
+  color: #1f2933;
+  text-align: left;
+}
+
+.role-card.selected {
+  border-color: #0f766e;
+  background: #e8f7f4;
+}
+
+.role-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 8px;
+  background: #eef2f7;
+  color: #0f766e;
+}
+
+.permission-section {
+  display: grid;
+  gap: 10px;
+}
+
+.permission-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.permission-item {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 10px;
+  align-items: flex-start;
+  border: 1px solid #dfe5ec;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.permission-item strong {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.92rem;
 }
 
 .metric-grid {
@@ -255,6 +567,27 @@ a {
 
   .metric-grid {
     grid-template-columns: 1fr;
+  }
+
+  .page-heading,
+  .heading-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbar,
+  .split-layout,
+  .security-layout,
+  .permission-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .table-row {
+    grid-template-columns: 1fr;
+  }
+
+  .row-actions {
+    justify-content: flex-start;
   }
 }
 
@@ -514,4 +847,3 @@ a {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
