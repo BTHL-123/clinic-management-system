@@ -1,6 +1,8 @@
 import axiosClient from "./axiosClient";
 
-export const getDepartments = () => axiosClient.get("/departments");
+export const getDepartments = (params) => axiosClient.get("/departments", { params });
+
+export const getActiveDepartments = () => axiosClient.get("/departments/active");
 
 export const getDepartmentById = (id) => axiosClient.get(`/departments/${id}`);
 
