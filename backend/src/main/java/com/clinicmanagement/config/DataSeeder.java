@@ -36,6 +36,7 @@ public class DataSeeder implements CommandLineRunner {
         seedPermissions();
         seedAdmin();
         seedDoctor();
+        seedPatient();
     }
 
     private void seedRoles() {
@@ -130,5 +131,21 @@ public class DataSeeder implements CommandLineRunner {
         System.out.println("\n=======================================================");
         System.out.println("=== DỰ ÁN CLINIC: DANH SÁCH ID BÁC SĨ ĐANG CÓ: " + doctorIds + " ===");
         System.out.println("=======================================================\n");
+    }
+
+    private void seedPatient() {
+        String email = "patient@example.com";
+        if (userRepository.existsByEmail(email)) {
+            return;
+        }
+        Role patientRole = roleRepository.findByRoleName("PATIENT")
+                .orElseThrow(() -> new IllegalStateException("PATIENT role has not been seeded"));
+        User patient = new User();
+        patient.setFullName("Nguyễn Văn Test");
+        patient.setEmail(email);
+        patient.setPhone("0911222333");
+        patient.setPasswordHash(passwordEncoder.encode("123456"));
+        patient.setRoles(Set.of(patientRole));
+        userRepository.save(patient);
     }
 }

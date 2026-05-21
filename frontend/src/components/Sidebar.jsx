@@ -1,8 +1,14 @@
+
+import { Building2, CalendarDays, LayoutDashboard, Search, Shield, UsersRound } from "lucide-react";
+import { NavLink } from "react-router-dom";
+import { useAuth } from "../context/useAuth.js";
+
 import { Building2, CalendarDays, LayoutDashboard, Shield, UsersRound, UserRound, Users, UserSquare } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 
-const items = [
+
+const adminItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
 
   { to: "/dashboard/departments", label: "Chuyên khoa", icon: Building2 },
@@ -20,14 +26,24 @@ const items = [
 
 ];
 
+const patientItems = [
+  { to: "/dashboard", label: "Trang chủ", icon: LayoutDashboard, end: true },
+  { to: "/dashboard/available-slots", label: "Tìm ca khám trống", icon: Search },
+];
+
 export default function Sidebar() {
   const { user } = useAuth();
+
+  const isPatient = user?.roles?.includes("PATIENT");
+  const items = isPatient ? patientItems : adminItems;
+
   const userRoles = user?.roles || [];
 
   const filteredItems = items.filter(item => {
     if (!item.roles) return true; // No roles defined = accessible to everyone
     return item.roles.some(role => userRoles.includes(role));
   });
+
 
   return (
     <aside className="sidebar">
@@ -54,3 +70,4 @@ export default function Sidebar() {
     </aside>
   );
 }
+
