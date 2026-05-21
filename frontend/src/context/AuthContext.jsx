@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { AuthContext } from "./AuthContextObject.js";
-import { getCurrentUser, login as loginRequest } from "../services/authService";
+import {
+  getCurrentUser,
+  login as loginRequest,
+  logout as logoutRequest,
+} from "../services/authService";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -29,7 +33,15 @@ export function AuthProvider({ children }) {
     return response.data.user;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const refreshToken = localStorage.getItem("refreshToken");
+    if (refreshToken) {
+      try {
+        await logoutRequest({ refreshToken });
+      } catch {
+        // Local logout should still succeed if the server cannot revoke the token.
+      }
+    }
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     setUser(null);

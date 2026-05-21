@@ -32,7 +32,12 @@ export default function Sidebar() {
         {filteredItems.map((item) => {
           const Icon = item.icon;
           return (
-            <NavLink key={item.label} to={item.to} end={item.end} className="nav-item">
+            <NavLink
+              key={item.label}
+              to={item.to}
+              className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}
+              end={item.end}
+            >
               <Icon size={18} />
               <span>{item.label}</span>
             </NavLink>
