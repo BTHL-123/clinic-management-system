@@ -1,5 +1,6 @@
 import { Lock, Plus, RefreshCw, Search, Trash2, Unlock, UserRoundPlus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { getActiveDepartments } from "../../services/departmentService";
 import {
   createUser,
   deleteUser,
@@ -10,19 +11,28 @@ import {
 } from "../../services/userService";
 
 const roleOptions = ["ADMIN", "RECEPTIONIST", "DOCTOR", "PHARMACIST", "LAB_TECHNICIAN", "PATIENT"];
-const emptyForm = {
+const createEmptyForm = () => ({
   fullName: "",
   email: "",
   password: "123456",
   phone: "",
   role: "RECEPTIONIST",
-};
+  doctorProfile: {
+    departmentId: "",
+    doctorCode: "",
+    degree: "",
+    specialization: "",
+    yearsOfExperience: 0,
+    consultationFee: 0,
+  },
+});
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
   const [pagination, setPagination] = useState({ page: 0, totalPages: 0, totalElements: 0 });
   const [filters, setFilters] = useState({ keyword: "", status: "", role: "" });
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(createEmptyForm);
+  const [departments, setDepartments] = useState([]);
   const [editingUserId, setEditingUserId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -64,9 +74,25 @@ export default function UsersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryParams]);
 
+  useEffect(() => {
+    getActiveDepartments()
+      .then((response) => setDepartments(response.data ?? []))
+      .catch((err) => setError(err.message));
+  }, []);
+
   const resetForm = () => {
-    setForm(emptyForm);
+    setForm(createEmptyForm());
     setEditingUserId(null);
+  };
+
+  const updateDoctorProfile = (field, value) => {
+    setForm((current) => ({
+      ...current,
+      doctorProfile: {
+        ...current.doctorProfile,
+        [field]: value,
+      },
+    }));
   };
 
   const handleSubmit = async (event) => {
@@ -82,12 +108,25 @@ export default function UsersPage() {
         });
         setMessage("User updated successfully.");
       } else {
+        const roles = [form.role];
+        const doctorProfile = form.role === "DOCTOR"
+          ? {
+              ...form.doctorProfile,
+              departmentId: Number(form.doctorProfile.departmentId),
+              doctorCode: form.doctorProfile.doctorCode || null,
+              yearsOfExperience: Number(form.doctorProfile.yearsOfExperience || 0),
+              consultationFee: Number(form.doctorProfile.consultationFee || 0),
+              status: "ACTIVE",
+            }
+          : null;
+
         await createUser({
           fullName: form.fullName,
           email: form.email,
           password: form.password,
           phone: form.phone,
-          roles: [form.role],
+          roles,
+          doctorProfile,
         });
         setMessage("User created successfully.");
       }
@@ -106,6 +145,7 @@ export default function UsersPage() {
       password: "",
       phone: user.phone || "",
       role: user.roles?.[0] || "RECEPTIONIST",
+      doctorProfile: createEmptyForm().doctorProfile,
     });
   };
 
@@ -243,6 +283,72 @@ export default function UsersPage() {
                   ))}
                 </select>
               </div>
+            )}
+            {!editingUserId && form.role === "DOCTOR" && (
+              <>
+                <div className="field">
+                  <label htmlFor="doctorDepartment">Doctor department</label>
+                  <select
+                    id="doctorDepartment"
+                    value={form.doctorProfile.departmentId}
+                    onChange={(event) => updateDoctorProfile("departmentId", event.target.value)}
+                    required
+                  >
+                    <option value="">Select department</option>
+                    {departments.map((department) => (
+                      <option key={department.departmentId} value={department.departmentId}>
+                        {department.departmentName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="field">
+                  <label htmlFor="doctorCode">Doctor code</label>
+                  <input
+                    id="doctorCode"
+                    value={form.doctorProfile.doctorCode}
+                    onChange={(event) => updateDoctorProfile("doctorCode", event.target.value)}
+                    placeholder="Auto-generated if empty"
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="doctorDegree">Degree</label>
+                  <input
+                    id="doctorDegree"
+                    value={form.doctorProfile.degree}
+                    onChange={(event) => updateDoctorProfile("degree", event.target.value)}
+                    placeholder="MD, BS.CKI, ThS..."
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="doctorSpecialization">Specialization</label>
+                  <input
+                    id="doctorSpecialization"
+                    value={form.doctorProfile.specialization}
+                    onChange={(event) => updateDoctorProfile("specialization", event.target.value)}
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="doctorExperience">Years of experience</label>
+                  <input
+                    id="doctorExperience"
+                    type="number"
+                    min="0"
+                    value={form.doctorProfile.yearsOfExperience}
+                    onChange={(event) => updateDoctorProfile("yearsOfExperience", event.target.value)}
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="doctorFee">Consultation fee</label>
+                  <input
+                    id="doctorFee"
+                    type="number"
+                    min="0"
+                    value={form.doctorProfile.consultationFee}
+                    onChange={(event) => updateDoctorProfile("consultationFee", event.target.value)}
+                  />
+                </div>
+              </>
             )}
             <div className="form-actions">
               <button className="primary-button" type="submit">

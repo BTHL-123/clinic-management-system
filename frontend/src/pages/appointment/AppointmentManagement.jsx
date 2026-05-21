@@ -7,6 +7,7 @@ import {
   cancelSchedule,
   getSlotsByScheduleId,
 } from "../../services/scheduleService";
+import { getDoctors } from "../../services/doctorService";
 
 const PANEL = { CREATE: "create", UPDATE: "update", CANCEL: "cancel" };
 const INIT_FORM = { doctorId: "", workDate: "", startTime: "", endTime: "" };
@@ -59,14 +60,21 @@ function TabBtn({ active, onClick, icon, label }) {
   );
 }
 
-function FormFields({ form, onChange }) {
+function FormFields({ form, onChange, doctors }) {
   return (
     <>
       <div className="field">
         <label htmlFor="f-doctorId">ID Bác sĩ *</label>
-        <input type="number" id="f-doctorId" name="doctorId"
+        <select id="f-doctorId" name="doctorId"
           value={form.doctorId} onChange={onChange}
-          placeholder="Nhập ID bác sĩ" min="1" />
+        >
+          <option value="">Chọn bác sĩ</option>
+          {doctors.map((doctor) => (
+            <option key={doctor.doctorId} value={doctor.doctorId}>
+              {doctor.doctorCode} - {doctor.fullName}
+            </option>
+          ))}
+        </select>
       </div>
       <div className="field">
         <label htmlFor="f-workDate">Ngày làm việc *</label>
@@ -87,7 +95,7 @@ function FormFields({ form, onChange }) {
   );
 }
 
-function CreatePanel({ onDone }) {
+function CreatePanel({ doctors, onDone }) {
   const [form, setForm] = useState(INIT_FORM);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
@@ -115,7 +123,7 @@ function CreatePanel({ onDone }) {
     <form className="form-stack" style={{ marginTop: 0 }} onSubmit={onSubmit}>
       <Toast message={msg} type="success" />
       <Toast message={err} type="error" />
-      <FormFields form={form} onChange={onChange} />
+      <FormFields form={form} onChange={onChange} doctors={doctors} />
       <div className="form-actions" style={{ marginTop: "20px" }}>
         <button type="submit" className="primary-button" disabled={busy}
           style={{ width: "100%", justifyContent: "center", minHeight: "44px" }}>
@@ -126,7 +134,7 @@ function CreatePanel({ onDone }) {
   );
 }
 
-function UpdatePanel({ onDone }) {
+function UpdatePanel({ doctors, onDone }) {
   const [scheduleId, setScheduleId] = useState("");
   const [form, setForm] = useState(INIT_FORM);
   const [msg, setMsg] = useState("");
@@ -168,7 +176,7 @@ function UpdatePanel({ onDone }) {
         />
       </div>
       <div style={{ height: "1px", background: "#e2e8f0", margin: "2px 0 4px" }} />
-      <FormFields form={form} onChange={onChange} />
+      <FormFields form={form} onChange={onChange} doctors={doctors} />
       <div className="form-actions" style={{ marginTop: "20px" }}>
         <button type="submit" className="primary-button" disabled={busy}
           style={{ width: "100%", justifyContent: "center", minHeight: "44px" }}>
@@ -408,6 +416,7 @@ function ScheduleTable({ schedules, loading, error, onRefresh }) {
 export default function AppointmentManagement() {
   const [activePanel, setActivePanel] = useState(PANEL.CREATE);
   const [schedules, setSchedules] = useState([]);
+  const [doctors, setDoctors] = useState([]);
   const [tableLoading, setTableLoading] = useState(false);
   const [tableError, setTableError] = useState("");
 
@@ -425,7 +434,22 @@ export default function AppointmentManagement() {
     }
   }, []);
 
+  const loadDoctors = useCallback(async () => {
+    try {
+      const res = await getDoctors({ size: 200 });
+      const data = Array.isArray(res?.data?.content)
+        ? res.data.content
+        : Array.isArray(res?.data)
+          ? res.data
+          : [];
+      setDoctors(data);
+    } catch (e) {
+      setTableError(e?.message || "Không thể tải danh sách bác sĩ.");
+    }
+  }, []);
+
   useEffect(() => { loadSchedules(); }, [loadSchedules]);
+  useEffect(() => { loadDoctors(); }, [loadDoctors]);
 
   return (
     <>
@@ -455,8 +479,8 @@ export default function AppointmentManagement() {
         borderRadius: "12px", border: "1px solid #dfe5ec",
         boxShadow: "0 2px 12px rgba(0,0,0,0.05)",
       }}>
-        {activePanel === PANEL.CREATE && <CreatePanel onDone={loadSchedules} />}
-        {activePanel === PANEL.UPDATE && <UpdatePanel onDone={loadSchedules} />}
+        {activePanel === PANEL.CREATE && <CreatePanel doctors={doctors} onDone={loadSchedules} />}
+        {activePanel === PANEL.UPDATE && <UpdatePanel doctors={doctors} onDone={loadSchedules} />}
         {activePanel === PANEL.CANCEL && <CancelPanel onDone={loadSchedules} />}
       </div>
 
