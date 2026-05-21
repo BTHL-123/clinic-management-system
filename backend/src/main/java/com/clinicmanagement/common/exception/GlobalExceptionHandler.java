@@ -36,9 +36,23 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(exception.getMessage()));
     }
 
-    @ExceptionHandler({BusinessException.class, DataIntegrityViolationException.class})
-    public ResponseEntity<ApiResponse<Void>> handleBusiness(RuntimeException exception) {
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBusiness(BusinessException exception) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(exception.getMessage()));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrity(DataIntegrityViolationException exception) {
+        String message = "Dữ liệu không hợp lệ hoặc vi phạm ràng buộc cơ sở dữ liệu.";
+        String rootCause = exception.getRootCause() != null ? exception.getRootCause().getMessage() : exception.getMessage();
+        if (rootCause != null) {
+            if (rootCause.contains("fk_doctor_schedules_doctor")) {
+                message = "Bác sĩ không tồn tại trong hệ thống. Vui lòng kiểm tra lại ID bác sĩ.";
+            } else if (rootCause.contains("uq_doctor_schedule")) {
+                message = "Bác sĩ đã có một lịch làm việc khác trùng khớp thời gian trên ngày này.";
+            }
+        }
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(message));
     }
 
     @ExceptionHandler(BadCredentialsException.class)

@@ -4,6 +4,12 @@ import { useAuth } from "../context/useAuth";
 
 const items = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
+
+  { to: "/dashboard/departments", label: "Chuyên khoa", icon: Building2 },
+  { to: "/dashboard", label: "Users", icon: UsersRound },
+  { to: "/dashboard", label: "Security", icon: Shield },
+  { to: "/dashboard/appointments", label: "Appointments", icon: CalendarDays },
+
   { to: "/dashboard/profile", label: "Hồ sơ của tôi", icon: UserSquare, roles: ["PATIENT", "DOCTOR", "STAFF"] },
   { to: "/dashboard/departments", label: "Chuyên khoa", icon: Building2, roles: ["ADMIN", "STAFF"] },
   { to: "/dashboard/doctors", label: "Bác sĩ", icon: UserRound, roles: ["ADMIN", "STAFF"] },
@@ -11,6 +17,7 @@ const items = [
   { to: "/dashboard/users", label: "Tài khoản", icon: UsersRound, roles: ["ADMIN"] },
   { to: "/dashboard/security", label: "Bảo mật", icon: Shield, roles: ["ADMIN"] },
   { to: "/dashboard/appointments", label: "Lịch khám", icon: CalendarDays },
+
 ];
 
 export default function Sidebar() {

@@ -61,8 +61,13 @@ public class SecurityConfig {
                                 "/auth/reset-password",
                                 "/departments/**",
                                 "/departments",
+
+                                "/doctor-schedules/**",
+                                "/doctor-schedules"
+
                                 "/doctors/**",
                                 "/doctors"
+
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
