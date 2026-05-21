@@ -37,6 +37,7 @@ public class DataSeeder implements CommandLineRunner {
         seedAdmin();
         seedDoctor();
         seedPatient();
+        seedReceptionist();
     }
 
     private void seedRoles() {
@@ -150,5 +151,37 @@ public class DataSeeder implements CommandLineRunner {
 
         jdbcTemplate.update("INSERT INTO patients (user_id, patient_code, full_name, gender, phone, email, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
                 savedUser.getUserId(), "PAT000001", "Nguyễn Văn Test", "MALE", "0911222333", email);
+    }
+
+    private void seedReceptionist() {
+        String email = "receptionist@example.com";
+        if (userRepository.existsByEmail(email)) {
+            return;
+        }
+        Role receptionistRole = roleRepository.findByRoleName("RECEPTIONIST")
+                .orElseThrow(() -> new IllegalStateException("RECEPTIONIST role has not been seeded"));
+        User receptionist = new User();
+        receptionist.setFullName("Lễ Tân Test");
+        receptionist.setEmail(email);
+        receptionist.setPhone("0912223334");
+        receptionist.setPasswordHash(passwordEncoder.encode("123456"));
+        receptionist.setRoles(Set.of(receptionistRole));
+        User savedUser = userRepository.save(receptionist);
+        try {
+            List<Long> existingStaff = jdbcTemplate.query("SELECT staff_id FROM staff WHERE user_id = ?",
+                    (rs, rowNum) -> rs.getLong("staff_id"), savedUser.getUserId());
+            if (existingStaff.isEmpty()) {
+                jdbcTemplate.update("INSERT INTO staff (user_id, staff_code, staff_type, position, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                        savedUser.getUserId(), "STF000001", "RECEPTIONIST", "Receptionist", "ACTIVE");
+            }
+        } catch (Exception e) {
+            System.out.println("Bảng 'staff' không tồn tại trong DB hiện tại (H2 database có thể không tạo bảng này). Bỏ qua bước chèn vào bảng staff.");
+        }
+
+        System.out.println("\n=======================================================");
+        System.out.println("=== DỰ ÁN CLINIC: TÀI KHOẢN LỄ TÂN SEED THÀNH CÔNG ===");
+        System.out.println("Email: receptionist@example.com");
+        System.out.println("Password: 123456");
+        System.out.println("=======================================================\n");
     }
 }

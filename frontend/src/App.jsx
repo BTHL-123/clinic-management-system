@@ -18,6 +18,14 @@ function DashboardIndex() {
   return <DashboardHome />;
 }
 
+function AppointmentRoute() {
+  const { user } = useAuth();
+  if (user?.roles?.includes("RECEPTIONIST")) {
+    return <AvailableSlots />;
+  }
+  return <AppointmentManagement />;
+}
+
 export default function App() {
   return (
     <Routes>
@@ -34,7 +42,7 @@ export default function App() {
       >
         <Route index element={<DashboardIndex />} />
         <Route path="departments" element={<DepartmentManagement />} />
-        <Route path="appointments" element={<AppointmentManagement />} />
+        <Route path="appointments" element={<AppointmentRoute />} />
         <Route path="available-slots" element={<AvailableSlots />} />
       </Route>
     </Routes>

@@ -25,3 +25,7 @@ export const lockSlot = (slotId) =>
 
 export const releaseLock = (slotId) =>
   axiosClient.delete(`/doctor-schedules/slots/${slotId}/lock`);
+
+export const createAppointment = (payload) =>
+  axiosClient.post("/appointments", payload);
+
