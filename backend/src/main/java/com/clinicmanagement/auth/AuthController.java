@@ -30,6 +30,11 @@ public class AuthController {
         return ApiResponse.success(authService.login(request));
     }
 
+    @PostMapping("/google")
+    public ApiResponse<LoginResponse> googleLogin(@Valid @RequestBody GoogleLoginRequest request) {
+        return ApiResponse.success(authService.loginWithGoogle(request));
+    }
+
     @PostMapping("/refresh-token")
     public ApiResponse<TokenResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
         return ApiResponse.success(authService.refreshToken(request));

@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -19,6 +20,7 @@ public class PatientController {
     private final PatientService patientService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'DOCTOR')")
     public ResponseEntity<ApiResponse<PageResponse<PatientResponse>>> getAll(
             @RequestParam(required = false, defaultValue = "") String keyword,
             @RequestParam(defaultValue = "0") int page,
@@ -37,11 +39,13 @@ public class PatientController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'DOCTOR')")
     public ResponseEntity<ApiResponse<PatientResponse>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(patientService.getById(id)));
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
     public ResponseEntity<ApiResponse<PatientResponse>> create(
             @Valid @RequestBody PatientRequest request
     ) {
@@ -51,6 +55,7 @@ public class PatientController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
     public ResponseEntity<ApiResponse<PatientResponse>> update(
             @PathVariable Long id,
             @Valid @RequestBody PatientRequest request
@@ -61,12 +66,14 @@ public class PatientController {
     }
 
     @GetMapping("/me")
+    @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<ApiResponse<PatientResponse>> getMyProfile() {
         Long userId = getAuthenticatedUserId();
         return ResponseEntity.ok(ApiResponse.success(patientService.getMyProfile(userId)));
     }
 
     @PutMapping("/me")
+    @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<ApiResponse<PatientResponse>> updateMyProfile(
             @Valid @RequestBody PatientProfileUpdateRequest request
     ) {
@@ -86,6 +93,7 @@ public class PatientController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         patientService.delete(id);
         return ResponseEntity.ok(ApiResponse.success("Xóa hồ sơ bệnh nhân thành công", null));
