@@ -37,6 +37,7 @@ public class DataSeeder implements CommandLineRunner {
         seedAdmin();
         seedDoctor();
         seedPatient();
+        syncPostgresSequences();
     }
 
     private void seedRoles() {
@@ -105,9 +106,8 @@ public class DataSeeder implements CommandLineRunner {
         String[] phones = {"0912345678", "0987654321", "0909090909"};
 
         for (int i = 0; i < emails.length; i++) {
-            Long docId = (long)(i + 1);
-            List<Long> existingDoc = jdbcTemplate.query("SELECT doctor_id FROM doctors WHERE doctor_id = ?",
-                    (rs, rowNum) -> rs.getLong("doctor_id"), docId);
+            List<Long> existingDoc = jdbcTemplate.query("SELECT doctor_id FROM doctors WHERE doctor_code = ?",
+                    (rs, rowNum) -> rs.getLong("doctor_id"), codes[i]);
             if (existingDoc.isEmpty()) {
                 Long doctorUserId;
                 String email = emails[i];
@@ -122,11 +122,10 @@ public class DataSeeder implements CommandLineRunner {
                     doctorUserId = userIds.get(0);
                 }
 
-                jdbcTemplate.update("INSERT INTO doctors (doctor_id, user_id, department_id, doctor_code, degree, specialization, years_of_experience, biography, consultation_fee, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
-                        docId, doctorUserId, departmentId, codes[i], "MD", "General Practitioner", 10 + i, "A highly experienced practitioner", 150000.0, "ACTIVE");
+                jdbcTemplate.update("INSERT INTO doctors (user_id, department_id, doctor_code, degree, specialization, years_of_experience, biography, consultation_fee, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                        doctorUserId, departmentId, codes[i], "MD", "General Practitioner", 10 + i, "A highly experienced practitioner", 150000.0, "ACTIVE");
             }
         }
-
         List<Long> doctorIds = jdbcTemplate.query("SELECT doctor_id FROM doctors", (rs, rowNum) -> rs.getLong("doctor_id"));
         System.out.println("\n=======================================================");
         System.out.println("=== DỰ ÁN CLINIC: DANH SÁCH ID BÁC SĨ ĐANG CÓ: " + doctorIds + " ===");
@@ -150,5 +149,32 @@ public class DataSeeder implements CommandLineRunner {
 
         jdbcTemplate.update("INSERT INTO patients (user_id, patient_code, full_name, gender, phone, email, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
                 savedUser.getUserId(), "PAT000001", "Nguyễn Văn Test", "MALE", "0911222333", email);
+    }
+
+    private void syncPostgresSequences() {
+        syncPostgresSequence("doctors", "doctor_id");
+        syncPostgresSequence("doctor_schedules", "schedule_id");
+        syncPostgresSequence("appointment_slots", "slot_id");
+    }
+
+    private void syncPostgresSequence(String tableName, String idColumn) {
+        jdbcTemplate.execute((org.springframework.jdbc.core.ConnectionCallback<Void>) connection -> {
+            if (!"PostgreSQL".equalsIgnoreCase(connection.getMetaData().getDatabaseProductName())) {
+                return null;
+            }
+
+            String sequenceName = tableName + "_" + idColumn + "_seq";
+            String sql = """
+                    SELECT setval(
+                        '%s',
+                        COALESCE((SELECT MAX(%s) FROM %s), 1),
+                        (SELECT MAX(%s) IS NOT NULL FROM %s)
+                    )
+                    """.formatted(sequenceName, idColumn, tableName, idColumn, tableName);
+            try (var statement = connection.createStatement()) {
+                statement.execute(sql);
+            }
+            return null;
+        });
     }
 }
