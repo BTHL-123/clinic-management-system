@@ -55,11 +55,19 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/auth/register",
                                 "/auth/login",
+                                "/auth/google",
                                 "/auth/refresh-token",
                                 "/auth/forgot-password",
                                 "/auth/reset-password",
                                 "/departments/**",
-                                "/departments"
+                                "/departments",
+
+                                "/doctor-schedules/**",
+                                "/doctor-schedules"
+
+                                "/doctors/**",
+                                "/doctors"
+
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

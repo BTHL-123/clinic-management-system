@@ -170,6 +170,31 @@ a {
   font-weight: 700;
 }
 
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #65758b;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  height: 1px;
+  flex: 1;
+  background: #d7dee8;
+  content: "";
+}
+
+.google-login-button {
+  min-height: 44px;
+}
+
+.google-login-button > div {
+  width: 100% !important;
+}
+
 .error-box {
   border-radius: 8px;
   padding: 10px 12px;
@@ -822,4 +847,3 @@ a {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
