@@ -54,13 +54,24 @@ export default function PatientHome() {
         </div>
 
         <div
+          onClick={() => navigate("/dashboard/my-appointments?tab=upcoming")}
           style={{
             background: "#ffffff",
             border: "1px solid #dfe5ec",
             borderRadius: "14px",
             padding: "28px 24px",
             color: "#334155",
+            cursor: "pointer",
             boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+            transition: "transform 0.18s ease, box-shadow 0.18s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateY(-3px)";
+            e.currentTarget.style.boxShadow = "0 8px 24px rgba(0, 0, 0, 0.08)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)";
           }}
         >
           <CalendarDays size={32} style={{ marginBottom: "14px", color: "#0f766e" }} />
@@ -68,32 +79,29 @@ export default function PatientHome() {
             Lịch hẹn của tôi
           </div>
           <div style={{ fontSize: "13px", color: "#64748b", lineHeight: 1.5 }}>
-            Xem và quản lý các lịch hẹn khám bệnh của bạn.
-          </div>
-          <div
-            style={{
-              marginTop: "16px",
-              display: "inline-block",
-              fontSize: "12px",
-              fontWeight: 600,
-              padding: "4px 12px",
-              borderRadius: "20px",
-              background: "#f1f5f9",
-              color: "#94a3b8",
-            }}
-          >
-            Sắp ra mắt
+            Xem và quản lý các lịch hẹn khám bệnh sắp tới của bạn.
           </div>
         </div>
 
         <div
+          onClick={() => navigate("/dashboard/my-appointments?tab=history")}
           style={{
             background: "#ffffff",
             border: "1px solid #dfe5ec",
             borderRadius: "14px",
             padding: "28px 24px",
             color: "#334155",
+            cursor: "pointer",
             boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+            transition: "transform 0.18s ease, box-shadow 0.18s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateY(-3px)";
+            e.currentTarget.style.boxShadow = "0 8px 24px rgba(0, 0, 0, 0.08)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)";
           }}
         >
           <Clock size={32} style={{ marginBottom: "14px", color: "#0f766e" }} />
@@ -101,21 +109,7 @@ export default function PatientHome() {
             Lịch sử khám bệnh
           </div>
           <div style={{ fontSize: "13px", color: "#64748b", lineHeight: 1.5 }}>
-            Tra cứu hồ sơ và kết quả khám bệnh trước đây.
-          </div>
-          <div
-            style={{
-              marginTop: "16px",
-              display: "inline-block",
-              fontSize: "12px",
-              fontWeight: 600,
-              padding: "4px 12px",
-              borderRadius: "20px",
-              background: "#f1f5f9",
-              color: "#94a3b8",
-            }}
-          >
-            Sắp ra mắt
+            Tra cứu các ca khám bệnh và lịch sử đặt lịch trước đây.
           </div>
         </div>
       </div>
