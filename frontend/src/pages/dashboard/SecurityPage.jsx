@@ -11,6 +11,29 @@ import {
 
 const emptyRole = { roleName: "", description: "" };
 
+const roleDescriptions = {
+  "Patient role": "Vai trò Bệnh nhân",
+  "Doctor role": "Vai trò Bác sĩ",
+  "Receptionist role": "Vai trò Lễ tân",
+  "Administrator role": "Vai trò Quản trị viên",
+  "Pharmacist role": "Vai trò Dược sĩ",
+  "Lab technician role": "Vai trò Kỹ thuật viên xét nghiệm"
+};
+
+const permissionDescriptions = {
+  "Manage user accounts": "Quản lý tài khoản người dùng",
+  "Manage staff information": "Quản lý thông tin nhân viên",
+  "View patient medical record": "Xem hồ sơ bệnh án",
+  "Manage appointment": "Quản lý lịch khám",
+  "Manage medicine stock": "Quản lý kho thuốc",
+  "Manage system settings": "Quản lý cài đặt hệ thống",
+  "Manage doctor information": "Quản lý thông tin bác sĩ",
+  "Manage departments": "Quản lý chuyên khoa",
+  "Create appointment": "Tạo lịch khám",
+  "Create prescription": "Kê đơn thuốc",
+  "View reports": "Xem báo cáo thống kê"
+};
+
 export default function SecurityPage() {
   const [roles, setRoles] = useState([]);
   const [permissions, setPermissions] = useState([]);
@@ -74,11 +97,11 @@ export default function SecurityPage() {
       if (selectedRoleId) {
         const response = await updateRole(selectedRoleId, roleForm);
         savedRole = response.data;
-        setMessage("Role updated successfully.");
+        setMessage("Cập nhật vai trò thành công.");
       } else {
         const response = await createRole(roleForm);
         savedRole = response.data;
-        setMessage("Role created successfully.");
+        setMessage("Tạo vai trò thành công.");
       }
       await assignPermissions(savedRole.roleId, selectedPermissions);
       await loadSecurity();
@@ -96,7 +119,7 @@ export default function SecurityPage() {
     setMessage("");
     try {
       await deleteRole(selectedRoleId);
-      setMessage("Role deleted successfully.");
+      setMessage("Xóa vai trò thành công.");
       resetRoleForm();
       await loadSecurity();
     } catch (err) {
@@ -116,17 +139,17 @@ export default function SecurityPage() {
     <div className="page-stack">
       <section className="page-heading">
         <div>
-          <h1>Security</h1>
-          <p className="muted">Manage roles and assign permissions for protected modules.</p>
+          <h1>Bảo mật & Phân quyền</h1>
+          <p className="muted">Quản lý vai trò và phân quyền truy cập cho các module hệ thống.</p>
         </div>
         <div className="heading-actions">
           <button className="ghost-button" type="button" onClick={loadSecurity}>
             <RefreshCw size={17} />
-            Refresh
+            Làm mới
           </button>
           <button className="primary-button compact" type="button" onClick={resetRoleForm}>
             <Plus size={17} />
-            New role
+            Thêm vai trò
           </button>
         </div>
       </section>
@@ -138,12 +161,12 @@ export default function SecurityPage() {
       <section className="split-layout security-layout">
         <div className="panel table-panel">
           <div className="table-header">
-            <h2>Roles</h2>
-            <span className="muted">{roles.length} total</span>
+            <h2>Danh sách vai trò</h2>
+            <span className="muted">{roles.length} vai trò</span>
           </div>
           <div className="role-list">
             {loading ? (
-              <div className="empty-state">Loading roles...</div>
+              <div className="empty-state">Đang tải danh sách vai trò...</div>
             ) : (
               roles.map((role) => (
                 <button
@@ -155,10 +178,10 @@ export default function SecurityPage() {
                   <span className="role-icon">
                     <ShieldCheck size={18} />
                   </span>
-                  <span>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "2px" }}>
                     <strong>{role.roleName}</strong>
-                    <small>{role.description || "No description"}</small>
-                  </span>
+                    <small>{roleDescriptions[role.description] || role.description || "Không có mô tả"}</small>
+                  </div>
                 </button>
               ))
             )}
@@ -167,7 +190,7 @@ export default function SecurityPage() {
 
         <div className="panel">
           <div className="table-header">
-            <h2>{selectedRole ? "Role details" : "Create role"}</h2>
+            <h2>{selectedRole ? "Chi tiết vai trò" : "Tạo vai trò"}</h2>
             {selectedRole && (
               <button className="icon-button danger" type="button" onClick={handleDeleteRole}>
                 <Trash2 size={16} />
@@ -176,7 +199,7 @@ export default function SecurityPage() {
           </div>
           <form className="form-grid" onSubmit={handleSaveRole}>
             <div className="field">
-              <label htmlFor="roleName">Role name</label>
+              <label htmlFor="roleName">Tên vai trò</label>
               <input
                 id="roleName"
                 value={roleForm.roleName}
@@ -185,7 +208,7 @@ export default function SecurityPage() {
               />
             </div>
             <div className="field">
-              <label htmlFor="roleDescription">Description</label>
+              <label htmlFor="roleDescription">Mô tả</label>
               <input
                 id="roleDescription"
                 value={roleForm.description}
@@ -195,8 +218,8 @@ export default function SecurityPage() {
 
             <div className="permission-section">
               <div className="table-header">
-                <h3>Permissions</h3>
-                <span className="muted">{selectedPermissions.length} selected</span>
+                <h3>Danh sách quyền</h3>
+                <span className="muted">{selectedPermissions.length} đã chọn</span>
               </div>
               <div className="permission-grid">
                 {permissions.map((permission) => (
@@ -211,7 +234,7 @@ export default function SecurityPage() {
                         <KeyRound size={15} />
                         {permission.permissionCode}
                       </strong>
-                      <small>{permission.description || "No description"}</small>
+                      <small>{permissionDescriptions[permission.description] || permission.description || "Không có mô tả"}</small>
                     </span>
                   </label>
                 ))}
@@ -221,10 +244,10 @@ export default function SecurityPage() {
             <div className="form-actions">
               <button className="primary-button" type="submit">
                 <Save size={17} />
-                Save role
+                Lưu vai trò
               </button>
               <button className="ghost-button" type="button" onClick={resetRoleForm}>
-                Clear
+                Hủy
               </button>
             </div>
           </form>

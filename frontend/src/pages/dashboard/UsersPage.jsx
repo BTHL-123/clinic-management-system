@@ -106,7 +106,7 @@ export default function UsersPage() {
           phone: form.phone,
           status: "ACTIVE",
         });
-        setMessage("User updated successfully.");
+        setMessage("Cập nhật tài khoản thành công.");
       } else {
         const roles = [form.role];
         const doctorProfile = form.role === "DOCTOR"
@@ -128,7 +128,7 @@ export default function UsersPage() {
           roles,
           doctorProfile,
         });
-        setMessage("User created successfully.");
+        setMessage("Tạo tài khoản thành công.");
       }
       resetForm();
       await loadUsers();
@@ -165,12 +165,12 @@ export default function UsersPage() {
     <div className="page-stack">
       <section className="page-heading">
         <div>
-          <h1>User Management</h1>
-          <p className="muted">Create staff accounts, scan users, and lock or unlock access.</p>
+          <h1>Quản lý Tài khoản</h1>
+          <p className="muted">Tạo tài khoản nhân viên, tìm kiếm và quản lý quyền truy cập.</p>
         </div>
         <button className="primary-button compact" onClick={resetForm}>
           <Plus size={17} />
-          New user
+          Tạo tài khoản
         </button>
       </section>
 
@@ -184,7 +184,7 @@ export default function UsersPage() {
                 setPagination((current) => ({ ...current, page: 0 }));
                 setFilters({ ...filters, keyword: event.target.value });
               }}
-              placeholder="Search name or email"
+              placeholder="Tìm tên hoặc email"
             />
           </label>
           <select
@@ -194,10 +194,10 @@ export default function UsersPage() {
               setFilters({ ...filters, status: event.target.value });
             }}
           >
-            <option value="">All statuses</option>
-            <option value="ACTIVE">Active</option>
-            <option value="LOCKED">Locked</option>
-            <option value="INACTIVE">Inactive</option>
+            <option value="">Tất cả trạng thái</option>
+            <option value="ACTIVE">Hoạt động</option>
+            <option value="LOCKED">Đã khóa</option>
+            <option value="INACTIVE">Ngừng hoạt động</option>
           </select>
           <select
             value={filters.role}
@@ -206,7 +206,7 @@ export default function UsersPage() {
               setFilters({ ...filters, role: event.target.value });
             }}
           >
-            <option value="">All roles</option>
+            <option value="">Tất cả vai trò</option>
             {roleOptions.map((role) => (
               <option key={role} value={role}>
                 {role}
@@ -225,10 +225,10 @@ export default function UsersPage() {
 
       <section className="split-layout">
         <div className="panel">
-          <h2>{editingUserId ? "Edit user" : "Create user"}</h2>
+          <h2>{editingUserId ? "Sửa tài khoản" : "Tạo tài khoản"}</h2>
           <form className="form-grid" onSubmit={handleSubmit}>
             <div className="field">
-              <label htmlFor="userFullName">Full name</label>
+              <label htmlFor="userFullName">Họ và tên</label>
               <input
                 id="userFullName"
                 value={form.fullName}
@@ -249,7 +249,7 @@ export default function UsersPage() {
             </div>
             {!editingUserId && (
               <div className="field">
-                <label htmlFor="userPassword">Temporary password</label>
+                <label htmlFor="userPassword">Mật khẩu tạm thời</label>
                 <input
                   id="userPassword"
                   type="password"
@@ -261,7 +261,7 @@ export default function UsersPage() {
               </div>
             )}
             <div className="field">
-              <label htmlFor="userPhone">Phone</label>
+              <label htmlFor="userPhone">Số điện thoại</label>
               <input
                 id="userPhone"
                 value={form.phone}
@@ -270,7 +270,7 @@ export default function UsersPage() {
             </div>
             {!editingUserId && (
               <div className="field">
-                <label htmlFor="userRole">Role</label>
+                <label htmlFor="userRole">Vai trò</label>
                 <select
                   id="userRole"
                   value={form.role}
@@ -287,14 +287,14 @@ export default function UsersPage() {
             {!editingUserId && form.role === "DOCTOR" && (
               <>
                 <div className="field">
-                  <label htmlFor="doctorDepartment">Doctor department</label>
+                  <label htmlFor="doctorDepartment">Chuyên khoa</label>
                   <select
                     id="doctorDepartment"
                     value={form.doctorProfile.departmentId}
                     onChange={(event) => updateDoctorProfile("departmentId", event.target.value)}
                     required
                   >
-                    <option value="">Select department</option>
+                    <option value="">Chọn chuyên khoa</option>
                     {departments.map((department) => (
                       <option key={department.departmentId} value={department.departmentId}>
                         {department.departmentName}
@@ -303,16 +303,16 @@ export default function UsersPage() {
                   </select>
                 </div>
                 <div className="field">
-                  <label htmlFor="doctorCode">Doctor code</label>
+                  <label htmlFor="doctorCode">Mã bác sĩ</label>
                   <input
                     id="doctorCode"
                     value={form.doctorProfile.doctorCode}
                     onChange={(event) => updateDoctorProfile("doctorCode", event.target.value)}
-                    placeholder="Auto-generated if empty"
+                    placeholder="Tự động tạo nếu để trống"
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="doctorDegree">Degree</label>
+                  <label htmlFor="doctorDegree">Học vị</label>
                   <input
                     id="doctorDegree"
                     value={form.doctorProfile.degree}
@@ -321,7 +321,7 @@ export default function UsersPage() {
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="doctorSpecialization">Specialization</label>
+                  <label htmlFor="doctorSpecialization">Chuyên môn</label>
                   <input
                     id="doctorSpecialization"
                     value={form.doctorProfile.specialization}
@@ -329,7 +329,7 @@ export default function UsersPage() {
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="doctorExperience">Years of experience</label>
+                  <label htmlFor="doctorExperience">Số năm kinh nghiệm</label>
                   <input
                     id="doctorExperience"
                     type="number"
@@ -339,7 +339,7 @@ export default function UsersPage() {
                   />
                 </div>
                 <div className="field">
-                  <label htmlFor="doctorFee">Consultation fee</label>
+                  <label htmlFor="doctorFee">Phí khám</label>
                   <input
                     id="doctorFee"
                     type="number"
@@ -353,11 +353,11 @@ export default function UsersPage() {
             <div className="form-actions">
               <button className="primary-button" type="submit">
                 <UserRoundPlus size={17} />
-                {editingUserId ? "Save changes" : "Create user"}
+                {editingUserId ? "Lưu thay đổi" : "Tạo tài khoản"}
               </button>
               {editingUserId && (
                 <button className="ghost-button" type="button" onClick={resetForm}>
-                  Cancel
+                  Hủy
                 </button>
               )}
             </div>
@@ -366,20 +366,20 @@ export default function UsersPage() {
 
         <div className="panel table-panel">
           <div className="table-header">
-            <h2>Users</h2>
-            <span className="muted">{pagination.totalElements} total</span>
+            <h2>Danh sách tài khoản</h2>
+            <span className="muted">{pagination.totalElements} tài khoản</span>
           </div>
           <div className="data-table" role="table" aria-label="Users">
             <div className="table-row table-head" role="row">
-              <span>Name</span>
-              <span>Role</span>
-              <span>Status</span>
-              <span>Actions</span>
+              <span>Tên</span>
+              <span>Vai trò</span>
+              <span>Trạng thái</span>
+              <span>Thao tác</span>
             </div>
             {loading ? (
-              <div className="empty-state">Loading users...</div>
+              <div className="empty-state">Đang tải danh sách...</div>
             ) : users.length === 0 ? (
-              <div className="empty-state">No users found.</div>
+              <div className="empty-state">Không tìm thấy tài khoản nào.</div>
             ) : (
               users.map((user) => (
                 <div className="table-row" role="row" key={user.userId}>
@@ -395,7 +395,7 @@ export default function UsersPage() {
                         className="icon-button"
                         type="button"
                         aria-label="Unlock user"
-                        onClick={() => runAction(() => unlockUser(user.userId), "User unlocked.")}
+                        onClick={() => runAction(() => unlockUser(user.userId), "Đã mở khóa tài khoản.")}
                       >
                         <Unlock size={16} />
                       </button>
@@ -404,7 +404,7 @@ export default function UsersPage() {
                         className="icon-button"
                         type="button"
                         aria-label="Lock user"
-                        onClick={() => runAction(() => lockUser(user.userId), "User locked.")}
+                        onClick={() => runAction(() => lockUser(user.userId), "Đã khóa tài khoản.")}
                       >
                         <Lock size={16} />
                       </button>
@@ -413,7 +413,7 @@ export default function UsersPage() {
                       className="icon-button danger"
                       type="button"
                       aria-label="Delete user"
-                      onClick={() => runAction(() => deleteUser(user.userId), "User deleted.")}
+                      onClick={() => runAction(() => deleteUser(user.userId), "Đã xóa tài khoản.")}
                     >
                       <Trash2 size={16} />
                     </button>
@@ -429,10 +429,10 @@ export default function UsersPage() {
               disabled={pagination.page === 0}
               onClick={() => setPagination((current) => ({ ...current, page: current.page - 1 }))}
             >
-              Previous
+              Trước
             </button>
             <span>
-              Page {pagination.page + 1} of {Math.max(pagination.totalPages, 1)}
+              Trang {pagination.page + 1} / {Math.max(pagination.totalPages, 1)}
             </span>
             <button
               className="ghost-button"
@@ -440,7 +440,7 @@ export default function UsersPage() {
               disabled={pagination.page + 1 >= pagination.totalPages}
               onClick={() => setPagination((current) => ({ ...current, page: current.page + 1 }))}
             >
-              Next
+              Tiếp
             </button>
           </div>
         </div>
