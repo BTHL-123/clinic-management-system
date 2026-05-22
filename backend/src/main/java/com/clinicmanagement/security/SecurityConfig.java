@@ -63,7 +63,7 @@ public class SecurityConfig {
                                 "/departments",
 
                                 "/doctor-schedules/**",
-                                "/doctor-schedules"
+                                "/doctor-schedules",
 
                                 "/doctors/**",
                                 "/doctors"

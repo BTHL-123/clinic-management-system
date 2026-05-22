@@ -2,8 +2,13 @@ package com.clinicmanagement.user;
 
 import com.clinicmanagement.common.exception.BusinessException;
 import com.clinicmanagement.common.exception.ResourceNotFoundException;
+import com.clinicmanagement.department.Department;
+import com.clinicmanagement.department.DepartmentRepository;
+import com.clinicmanagement.doctor.Doctor;
+import com.clinicmanagement.doctor.DoctorRepository;
 import com.clinicmanagement.role.Role;
 import com.clinicmanagement.role.RoleRepository;
+import com.clinicmanagement.user.dto.CreateDoctorProfileRequest;
 import com.clinicmanagement.user.dto.CreateUserRequest;
 import com.clinicmanagement.user.dto.UpdateUserRequest;
 import com.clinicmanagement.user.dto.UserSummaryResponse;
@@ -24,6 +29,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final DoctorRepository doctorRepository;
+    private final DepartmentRepository departmentRepository;
 
     public Page<UserSummaryResponse> getUsers(String keyword, String status, String role, Pageable pageable) {
         return userRepository.findAll(buildSpecification(keyword, status, role), pageable)
@@ -40,13 +47,21 @@ public class UserService {
             throw new BusinessException("Email already exists");
         }
 
+        List<Role> roles = findRoles(request.roles());
+
         User user = new User();
         user.setFullName(request.fullName());
         user.setEmail(request.email());
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setPhone(request.phone());
-        user.setRoles(new HashSet<>(findRoles(request.roles())));
-        return UserMapper.toSummary(userRepository.save(user));
+        user.setRoles(new HashSet<>(roles));
+        User savedUser = userRepository.save(user);
+
+        if (hasRole(roles, "DOCTOR")) {
+            createDoctorProfile(savedUser, request.doctorProfile());
+        }
+
+        return UserMapper.toSummary(savedUser);
     }
 
     @Transactional
@@ -96,6 +111,64 @@ public class UserService {
             throw new BusinessException("At least one role is required");
         }
         return roles;
+    }
+
+    private boolean hasRole(List<Role> roles, String roleName) {
+        return roles.stream().anyMatch(role -> role.getRoleName().equals(roleName));
+    }
+
+    private void createDoctorProfile(User user, CreateDoctorProfileRequest profileRequest) {
+        if (profileRequest == null) {
+            throw new BusinessException("Doctor profile is required when creating a doctor user");
+        }
+        if (profileRequest.departmentId() == null) {
+            throw new BusinessException("Doctor department is required");
+        }
+
+        String doctorCode = blankToNull(profileRequest.doctorCode());
+        if (doctorCode == null) {
+            doctorCode = nextDoctorCode();
+        }
+        if (doctorRepository.existsByDoctorCode(doctorCode)) {
+            throw new BusinessException("Mã bác sĩ đã tồn tại");
+        }
+
+        Department department = departmentRepository.findById(profileRequest.departmentId())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Chuyên khoa với ID: " + profileRequest.departmentId()));
+
+        Doctor doctor = new Doctor();
+        doctor.setUser(user);
+        doctor.setDepartment(department);
+        doctor.setDoctorCode(doctorCode);
+        doctor.setDegree(profileRequest.degree());
+        doctor.setSpecialization(profileRequest.specialization());
+        doctor.setYearsOfExperience(profileRequest.yearsOfExperience() == null ? 0 : profileRequest.yearsOfExperience());
+        doctor.setBiography(profileRequest.biography());
+        doctor.setConsultationFee(profileRequest.consultationFee());
+        doctor.setStatus(blankToNull(profileRequest.status()) == null ? "ACTIVE" : profileRequest.status());
+        doctorRepository.save(doctor);
+    }
+
+    private String nextDoctorCode() {
+        long nextId = doctorRepository.findDoctorCodes().stream()
+                .map(this::extractDoctorCodeNumber)
+                .flatMapToLong(java.util.OptionalLong::stream)
+                .max()
+                .orElse(0L) + 1;
+
+        String doctorCode = "DOC%03d".formatted(nextId);
+        while (doctorRepository.existsByDoctorCode(doctorCode)) {
+            nextId++;
+            doctorCode = "DOC%03d".formatted(nextId);
+        }
+        return doctorCode;
+    }
+
+    private java.util.OptionalLong extractDoctorCodeNumber(String doctorCode) {
+        if (doctorCode == null || !doctorCode.matches("DOC\\d+")) {
+            return java.util.OptionalLong.empty();
+        }
+        return java.util.OptionalLong.of(Long.parseLong(doctorCode.substring(3)));
     }
 
     private String blankToNull(String value) {

@@ -6,8 +6,10 @@ import com.clinicmanagement.appointment.dto.GenerateSlotsResponse;
 import com.clinicmanagement.appointment.dto.TimeSlotResponse;
 import com.clinicmanagement.common.exception.BusinessException;
 import com.clinicmanagement.common.exception.ResourceNotFoundException;
+import com.clinicmanagement.doctor.DoctorRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,18 +24,26 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
 
     private final DoctorScheduleRepository doctorScheduleRepository;
     private final TimeSlotRepository timeSlotRepository;
+    private final DoctorRepository doctorRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
 
-    public DoctorScheduleServiceImpl(DoctorScheduleRepository doctorScheduleRepository, TimeSlotRepository timeSlotRepository) {
+    public DoctorScheduleServiceImpl(
+            DoctorScheduleRepository doctorScheduleRepository,
+            TimeSlotRepository timeSlotRepository,
+            DoctorRepository doctorRepository
+    ) {
         this.doctorScheduleRepository = doctorScheduleRepository;
         this.timeSlotRepository = timeSlotRepository;
+        this.doctorRepository = doctorRepository;
     }
 
     @Override
     @Transactional
     public DoctorScheduleResponse createSchedule(DoctorScheduleRequest request) {
+        ensureDoctorExists(request.doctorId());
+
         if (!request.startTime().isBefore(request.endTime())) {
             throw new BusinessException("Start time must be before end time");
         }
@@ -72,6 +82,8 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     @Override
     @Transactional
     public DoctorScheduleResponse updateSchedule(Long id, DoctorScheduleRequest request) {
+        ensureDoctorExists(request.doctorId());
+
         DoctorSchedule schedule = doctorScheduleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor schedule not found with id: " + id));
 
@@ -125,7 +137,7 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     @Override
     @Transactional(readOnly = true)
     public List<DoctorScheduleResponse> getSchedules(Long doctorId, LocalDate fromDate, LocalDate toDate, String status) {
-        return doctorScheduleRepository.findAllSchedules(doctorId, fromDate, toDate, status)
+        return findSchedules(doctorId, fromDate, toDate, status)
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -223,6 +235,8 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     @Override
     @Transactional
     public List<TimeSlotResponse> getAvailableSlots(Long doctorId, LocalDate workDate) {
+        ensureDoctorExists(doctorId);
+
         List<TimeSlot> slots = timeSlotRepository.findAllSlotsByDoctorAndDate(doctorId, workDate);
         LocalDateTime now = LocalDateTime.now();
         return slots.stream()
@@ -252,5 +266,55 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
                 schedule.getMaxPatients(),
                 schedule.getStatus()
         );
+    }
+
+    private List<DoctorSchedule> findSchedules(Long doctorId, LocalDate fromDate, LocalDate toDate, String status) {
+        Sort sort = Sort.by(Sort.Direction.ASC, "workDate", "startTime");
+        String normalizedStatus = status == null || status.isBlank() ? null : status.trim();
+        boolean hasDoctor = doctorId != null;
+        boolean hasStatus = normalizedStatus != null;
+        boolean hasDateRange = fromDate != null || toDate != null;
+
+        if (!hasDateRange) {
+            if (hasDoctor && hasStatus) {
+                return doctorScheduleRepository.findByDoctorIdAndStatus(doctorId, normalizedStatus, sort);
+            }
+            if (hasDoctor) {
+                return doctorScheduleRepository.findByDoctorId(doctorId, sort);
+            }
+            if (hasStatus) {
+                return doctorScheduleRepository.findByStatus(normalizedStatus, sort);
+            }
+            return doctorScheduleRepository.findAll(sort);
+        }
+
+        LocalDate startDate = fromDate != null ? fromDate : LocalDate.of(1900, 1, 1);
+        LocalDate endDate = toDate != null ? toDate : LocalDate.of(9999, 12, 31);
+        if (startDate.isAfter(endDate)) {
+            throw new BusinessException("From date must be before or equal to to date");
+        }
+
+        if (hasDoctor && hasStatus) {
+            return doctorScheduleRepository.findByDoctorIdAndWorkDateBetweenAndStatus(
+                    doctorId,
+                    startDate,
+                    endDate,
+                    normalizedStatus,
+                    sort
+            );
+        }
+        if (hasDoctor) {
+            return doctorScheduleRepository.findByDoctorIdAndWorkDateBetween(doctorId, startDate, endDate, sort);
+        }
+        if (hasStatus) {
+            return doctorScheduleRepository.findByWorkDateBetweenAndStatus(startDate, endDate, normalizedStatus, sort);
+        }
+        return doctorScheduleRepository.findByWorkDateBetween(startDate, endDate, sort);
+    }
+
+    private void ensureDoctorExists(Long doctorId) {
+        if (doctorId == null || !doctorRepository.existsById(doctorId)) {
+            throw new ResourceNotFoundException("Không tìm thấy bác sĩ với ID: " + doctorId);
+        }
     }
 }
