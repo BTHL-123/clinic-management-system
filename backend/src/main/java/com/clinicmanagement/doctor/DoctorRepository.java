@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import java.util.List;
 
 public interface DoctorRepository extends JpaRepository<Doctor, Long> {
     
@@ -19,6 +20,9 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
                                Pageable pageable);
 
     boolean existsByDoctorCode(String doctorCode);
+
+    @Query("SELECT d.doctorCode FROM Doctor d WHERE d.doctorCode LIKE 'DOC%'")
+    List<String> findDoctorCodes();
     
     java.util.Optional<Doctor> findByUser_UserId(Long userId);
     

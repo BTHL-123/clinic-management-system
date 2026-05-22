@@ -19,6 +19,12 @@ interface TimeSlot {
   status: string;
 }
 
+interface DoctorOption {
+  doctorId: number;
+  doctorCode: string;
+  fullName: string;
+}
+
 const PANEL = { CREATE: "create", UPDATE: "update", CANCEL: "cancel" } as const;
 type PanelType = typeof PANEL[keyof typeof PANEL];
 
@@ -119,23 +125,28 @@ function TabBtn({ active, onClick, icon, label }: TabBtnProps) {
 
 interface FormFieldsProps {
   form: typeof INIT_FORM;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  doctors: DoctorOption[];
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
 }
 
-function FormFields({ form, onChange }: FormFieldsProps) {
+function FormFields({ form, doctors, onChange }: FormFieldsProps) {
   return (
     <>
       <div className="field">
         <label htmlFor="f-doctorId">ID Bác sĩ *</label>
-        <input
-          type="number"
+        <select
           id="f-doctorId"
           name="doctorId"
           value={form.doctorId}
           onChange={onChange}
-          placeholder="Nhập ID bác sĩ (số nguyên)"
-          min="1"
-        />
+        >
+          <option value="">Chọn bác sĩ</option>
+          {doctors.map((doctor) => (
+            <option key={doctor.doctorId} value={doctor.doctorId}>
+              {doctor.doctorCode} - {doctor.fullName}
+            </option>
+          ))}
+        </select>
       </div>
       <div className="field">
         <label htmlFor="f-workDate">Ngày làm việc *</label>
@@ -172,16 +183,17 @@ function FormFields({ form, onChange }: FormFieldsProps) {
 }
 
 interface CreatePanelProps {
+  doctors: DoctorOption[];
   onDone: () => void;
 }
 
-function CreatePanel({ onDone }: CreatePanelProps) {
+function CreatePanel({ doctors, onDone }: CreatePanelProps) {
   const [form, setForm] = useState(INIT_FORM);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
   };
 
@@ -217,7 +229,7 @@ function CreatePanel({ onDone }: CreatePanelProps) {
     <form className="form-stack" style={{ marginTop: 0 }} onSubmit={onSubmit}>
       <Toast message={msg} type="success" />
       <Toast message={err} type="error" />
-      <FormFields form={form} onChange={onChange} />
+      <FormFields form={form} doctors={doctors} onChange={onChange} />
       <div className="form-actions" style={{ marginTop: "20px" }}>
         <button
           type="submit"
@@ -242,17 +254,18 @@ function CreatePanel({ onDone }: CreatePanelProps) {
 }
 
 interface UpdatePanelProps {
+  doctors: DoctorOption[];
   onDone: () => void;
 }
 
-function UpdatePanel({ onDone }: UpdatePanelProps) {
+function UpdatePanel({ doctors, onDone }: UpdatePanelProps) {
   const [scheduleId, setScheduleId] = useState("");
   const [form, setForm] = useState(INIT_FORM);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
   };
 
@@ -311,7 +324,7 @@ function UpdatePanel({ onDone }: UpdatePanelProps) {
         />
       </div>
       <div style={{ height: "1px", background: "#e2e8f0", margin: "8px 0" }} />
-      <FormFields form={form} onChange={onChange} />
+      <FormFields form={form} doctors={doctors} onChange={onChange} />
       <div className="form-actions" style={{ marginTop: "20px" }}>
         <button
           type="submit"
@@ -712,6 +725,7 @@ function ScheduleTable({ schedules, loading, error, onRefresh }: ScheduleTablePr
 export default function AppointmentManagement() {
   const [activePanel, setActivePanel] = useState<PanelType>(PANEL.CREATE);
   const [schedules, setSchedules] = useState<DoctorSchedule[]>([]);
+  const [doctors, setDoctors] = useState<DoctorOption[]>([]);
   const [tableLoading, setTableLoading] = useState(false);
   const [tableError, setTableError] = useState("");
 
@@ -735,9 +749,29 @@ export default function AppointmentManagement() {
     }
   }, []);
 
+  const loadDoctors = useCallback(async () => {
+    try {
+      const response = await fetch("http://localhost:8080/api/doctors?size=200", {
+        headers: getHeaders(),
+      });
+      if (!response.ok) {
+        await handleFetchError(response);
+      }
+      const json = await response.json();
+      const data = json.data?.content || json.data || [];
+      setDoctors(Array.isArray(data) ? data : []);
+    } catch (error: any) {
+      setTableError(error.message || "Không thể tải danh sách bác sĩ.");
+    }
+  }, []);
+
   useEffect(() => {
     loadSchedules();
   }, [loadSchedules]);
+
+  useEffect(() => {
+    loadDoctors();
+  }, [loadDoctors]);
 
   return (
     <>
@@ -782,8 +816,8 @@ export default function AppointmentManagement() {
         border: "1px solid #dfe5ec",
         boxShadow: "0 2px 12px rgba(0,0,0,0.05)",
       }}>
-        {activePanel === PANEL.CREATE && <CreatePanel onDone={loadSchedules} />}
-        {activePanel === PANEL.UPDATE && <UpdatePanel onDone={loadSchedules} />}
+        {activePanel === PANEL.CREATE && <CreatePanel doctors={doctors} onDone={loadSchedules} />}
+        {activePanel === PANEL.UPDATE && <UpdatePanel doctors={doctors} onDone={loadSchedules} />}
         {activePanel === PANEL.CANCEL && <CancelPanel onDone={loadSchedules} />}
       </div>
 

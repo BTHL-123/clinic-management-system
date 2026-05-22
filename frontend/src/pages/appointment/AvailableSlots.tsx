@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { Clock, Search, CalendarDays, ArrowLeft, ShieldAlert } from "lucide-react";
-import { getAvailableSlots, lockSlot, releaseLock } from "../../services/scheduleService";
+import { Clock, Search, CalendarDays, ArrowLeft, ShieldAlert, UserRound } from "lucide-react";
+import { getAvailableSlots, getSchedules, lockSlot, releaseLock } from "../../services/scheduleService";
+import { getDoctors } from "../../services/doctorService";
 
 interface TimeSlot {
   slotId: number;
@@ -8,6 +9,25 @@ interface TimeSlot {
   startTime: string;
   endTime: string;
   status: string;
+}
+
+interface DoctorSchedule {
+  scheduleId: number;
+  doctorId: number;
+  workDate: string;
+  startTime: string;
+  endTime: string;
+  status: string;
+}
+
+interface DoctorOption {
+  doctorId: number;
+  fullName: string;
+  departmentName?: string;
+  doctorCode?: string;
+  degree?: string;
+  specialization?: string;
+  status?: string;
 }
 
 type FetchState = "idle" | "loading" | "done" | "error";
@@ -19,6 +39,10 @@ function formatTime(t: string): string {
 export default function AvailableSlots() {
   const [doctorId, setDoctorId] = useState("");
   const [workDate, setWorkDate] = useState("");
+  const [doctorOptions, setDoctorOptions] = useState<DoctorOption[]>([]);
+  const [scheduleOptions, setScheduleOptions] = useState<DoctorSchedule[]>([]);
+  const [doctorFetchState, setDoctorFetchState] = useState<FetchState>("idle");
+  const [doctorErrorMsg, setDoctorErrorMsg] = useState("");
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [fetchState, setFetchState] = useState<FetchState>("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -35,6 +59,23 @@ export default function AvailableSlots() {
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
+
+  const selectedDoctor = doctorOptions.find((doctor) => String(doctor.doctorId) === doctorId);
+
+  const getDoctorScheduleText = (id: number) => {
+    const schedules = scheduleOptions.filter((schedule) => schedule.doctorId === id);
+    if (schedules.length === 0) return "";
+    const first = schedules[0];
+    const last = schedules[schedules.length - 1];
+    const timeRange = `${formatTime(first.startTime)} - ${formatTime(last.endTime)}`;
+    return schedules.length === 1 ? timeRange : `${timeRange}, ${schedules.length} lịch`;
+  };
+
+  const getDoctorLabel = (doctor?: DoctorOption) => {
+    if (!doctor) return "";
+    const code = doctor.doctorCode || `BS-${doctor.doctorId}`;
+    return `${code} - ${doctor.fullName}`;
+  };
 
   const fetchSlots = useCallback(async (did: string, date: string) => {
     setFetchState("loading");
@@ -59,6 +100,58 @@ export default function AvailableSlots() {
       setSlots([]);
     }
   }, [doctorId, workDate, fetchSlots]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const fetchDoctorsByDate = async () => {
+      setDoctorId("");
+      setSlots([]);
+      setFetchState("idle");
+      setSelectedSlot(null);
+      setBookingStep(false);
+
+      if (!workDate) {
+        setDoctorOptions([]);
+        setScheduleOptions([]);
+        setDoctorFetchState("idle");
+        setDoctorErrorMsg("");
+        return;
+      }
+
+      setDoctorFetchState("loading");
+      setDoctorErrorMsg("");
+      try {
+        const [scheduleJson, doctorJson]: any[] = await Promise.all([
+          getSchedules({ fromDate: workDate, toDate: workDate, status: "AVAILABLE" }),
+          getDoctors({ page: 0, size: 200, status: "ACTIVE", sortBy: "doctorId", direction: "asc" }),
+        ]);
+
+        if (!isActive) return;
+
+        const schedules: DoctorSchedule[] = Array.isArray(scheduleJson.data) ? scheduleJson.data : [];
+        const doctors: DoctorOption[] = Array.isArray(doctorJson.data?.content) ? doctorJson.data.content : [];
+        const scheduledDoctorIds = new Set(schedules.map((schedule) => schedule.doctorId));
+        const availableDoctors = doctors.filter((doctor) => scheduledDoctorIds.has(doctor.doctorId));
+
+        setScheduleOptions(schedules);
+        setDoctorOptions(availableDoctors);
+        setDoctorFetchState("done");
+      } catch (err: any) {
+        if (!isActive) return;
+        setDoctorOptions([]);
+        setScheduleOptions([]);
+        setDoctorErrorMsg(err.message || "Không thể tải danh sách bác sĩ có lịch.");
+        setDoctorFetchState("error");
+      }
+    };
+
+    fetchDoctorsByDate();
+
+    return () => {
+      isActive = false;
+    };
+  }, [workDate]);
 
   useEffect(() => {
     if (!bookingStep || timer <= 0) return;
@@ -159,7 +252,7 @@ export default function AvailableSlots() {
             Tìm kiếm ca khám trống
           </h1>
           <p className="muted">
-            Chọn bác sĩ và ngày khám để xem danh sách các khung giờ còn trống và thực hiện đặt lịch.
+            Chọn ngày khám, sau đó chọn bác sĩ có lịch làm việc trong ngày để xem các khung giờ còn trống.
           </p>
         </div>
       </div>
@@ -180,21 +273,10 @@ export default function AvailableSlots() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 1fr",
+                gridTemplateColumns: "1fr",
                 gap: "16px",
               }}
             >
-              <div className="field">
-                <label htmlFor="as-doctorId">ID Bác sĩ</label>
-                <input
-                  type="number"
-                  id="as-doctorId"
-                  min="1"
-                  placeholder="Nhập ID bác sĩ"
-                  value={doctorId}
-                  onChange={(e) => setDoctorId(e.target.value)}
-                />
-              </div>
               <div className="field">
                 <label htmlFor="as-workDate">Ngày khám</label>
                 <input
@@ -202,12 +284,44 @@ export default function AvailableSlots() {
                   id="as-workDate"
                   min={today}
                   value={workDate}
-                  onChange={(e) => setWorkDate(e.target.value)}
+                  onChange={(e) => {
+                    setWorkDate(e.target.value);
+                    setDoctorId("");
+                    setSlots([]);
+                    setFetchState("idle");
+                  }}
                 />
+              </div>
+
+              <div className="field">
+                <label htmlFor="as-doctorId">Bác sĩ có lịch trong ngày</label>
+                <select
+                  id="as-doctorId"
+                  value={doctorId}
+                  onChange={(e) => setDoctorId(e.target.value)}
+                  disabled={!workDate || doctorFetchState === "loading" || doctorOptions.length === 0}
+                >
+                  <option value="">
+                    {!workDate
+                      ? "Chọn ngày khám trước"
+                      : doctorFetchState === "loading"
+                        ? "Đang tải bác sĩ..."
+                        : doctorOptions.length === 0
+                          ? "Không có bác sĩ phù hợp"
+                          : "Chọn bác sĩ"}
+                  </option>
+                  {doctorOptions.map((doctor) => (
+                    <option key={doctor.doctorId} value={doctor.doctorId}>
+                      {getDoctorLabel(doctor)}
+                      {doctor.departmentName ? ` - ${doctor.departmentName}` : ""}
+                      {getDoctorScheduleText(doctor.doctorId) ? ` (${getDoctorScheduleText(doctor.doctorId)})` : ""}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
-            {doctorId && workDate && (
+            {doctorFetchState === "loading" && (
               <div
                 style={{
                   marginTop: "16px",
@@ -219,12 +333,97 @@ export default function AvailableSlots() {
                 }}
               >
                 <CalendarDays size={14} />
-                Đang hiển thị ca khám của BS-{doctorId} vào ngày {workDate}
+                Đang tìm bác sĩ có lịch làm việc trong ngày {workDate}...
+              </div>
+            )}
+
+            {doctorFetchState === "error" && (
+              <div className="error-box" style={{ marginTop: "16px" }}>
+                {doctorErrorMsg}
+              </div>
+            )}
+
+            {workDate && doctorFetchState === "done" && doctorOptions.length === 0 && (
+              <div
+                style={{
+                  marginTop: "16px",
+                  padding: "12px 14px",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "8px",
+                  background: "#f8fafc",
+                  color: "#64748b",
+                  fontSize: "13px",
+                }}
+              >
+                Không có bác sĩ nào có lịch làm việc trong ngày này. Hãy chọn ngày khác.
+              </div>
+            )}
+
+            {workDate && doctorOptions.length > 0 && (
+              <div
+                style={{
+                  marginTop: "16px",
+                  display: "grid",
+                  gap: "10px",
+                }}
+              >
+                {doctorOptions.map((doctor) => {
+                  const isSelected = String(doctor.doctorId) === doctorId;
+                  return (
+                    <button
+                      key={doctor.doctorId}
+                      type="button"
+                      onClick={() => setDoctorId(String(doctor.doctorId))}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: "12px",
+                        padding: "12px 14px",
+                        borderRadius: "10px",
+                        border: isSelected ? "1.5px solid #0f766e" : "1px solid #dfe5ec",
+                        background: isSelected ? "#f0fdfa" : "#ffffff",
+                        color: "#1e293b",
+                        cursor: "pointer",
+                        textAlign: "left",
+                      }}
+                    >
+                      <span style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+                        <UserRound size={18} color={isSelected ? "#0f766e" : "#64748b"} />
+                        <span style={{ minWidth: 0 }}>
+                          <strong style={{ display: "block", fontSize: "14px" }}>{getDoctorLabel(doctor)}</strong>
+                          <span style={{ display: "block", fontSize: "12px", color: "#64748b" }}>
+                            {[doctor.departmentName, doctor.specialization].filter(Boolean).join(" - ") || "Chưa có chuyên khoa"}
+                          </span>
+                        </span>
+                      </span>
+                      <span style={{ fontSize: "12px", color: "#0f766e", fontWeight: 700, whiteSpace: "nowrap" }}>
+                        {getDoctorScheduleText(doctor.doctorId)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {selectedDoctor && workDate && (
+              <div
+                style={{
+                  marginTop: "16px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  fontSize: "13px",
+                  color: "#65758b",
+                }}
+              >
+                <CalendarDays size={14} />
+                Đang hiển thị ca khám của {getDoctorLabel(selectedDoctor)} vào ngày {workDate}
               </div>
             )}
           </div>
 
-          {fetchState === "idle" && (
+          {fetchState === "idle" && (!workDate || (doctorOptions.length > 0 && !doctorId)) && (
             <div
               style={{
                 textAlign: "center",
@@ -234,7 +433,9 @@ export default function AvailableSlots() {
             >
               <Search size={40} style={{ opacity: 0.3, marginBottom: "12px" }} />
               <p style={{ margin: 0, fontSize: "15px" }}>
-                Vui lòng nhập ID bác sĩ và chọn ngày khám để tìm ca trống.
+                {!workDate
+                  ? "Vui lòng chọn ngày khám để hệ thống đề xuất bác sĩ có lịch làm việc."
+                  : "Vui lòng chọn một bác sĩ trong danh sách đề xuất để xem ca trống."}
               </p>
             </div>
           )}
@@ -295,7 +496,7 @@ export default function AvailableSlots() {
                 Hiện không có ca khám nào trống trong ngày này.
               </p>
               <p style={{ margin: 0, fontSize: "13px", color: "#94a3b8" }}>
-                Bác sĩ này có thể chưa có lịch làm việc hoặc tất cả các ca đã được đặt.
+                Bác sĩ đã hết ca trống trong ngày này hoặc lịch đang được giữ chỗ tạm thời.
               </p>
             </div>
           )}
@@ -506,7 +707,7 @@ export default function AvailableSlots() {
               >
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
                   <span>Bác sĩ:</span>
-                  <strong style={{ color: "#0f172a" }}>BS-{doctorId}</strong>
+                  <strong style={{ color: "#0f172a" }}>{getDoctorLabel(selectedDoctor)}</strong>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
                   <span>Ngày khám:</span>
