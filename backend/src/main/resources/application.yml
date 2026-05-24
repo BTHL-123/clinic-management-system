@@ -28,6 +28,9 @@ app:
     refresh-token-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}
   google:
     client-id: ${GOOGLE_CLIENT_ID:}
+  gemini:
+    api-key: ${GEMINI_API_KEY:}
+    model: ${GEMINI_MODEL:gemini-1.5-flash}
   seed:
     admin-email: ${APP_ADMIN_EMAIL:admin@example.com}
     admin-password: ${APP_ADMIN_PASSWORD:123456}

@@ -15,6 +15,7 @@ import InvoiceManagement from "./pages/invoice/InvoiceManagement.jsx";
 import PaymentManagement from "./pages/payment/PaymentManagement.jsx";
 import AppointmentManagement from "./pages/appointment/Appointments.tsx";
 import AvailableSlots from "./pages/appointment/AvailableSlots.tsx";
+import AiChatPatient from "./pages/ai-chat/AiChatPatient.jsx";
 import DoctorManagement from "./pages/doctor/DoctorManagement.jsx";
 import AlertsDashboard from "./pages/inventory/AlertsDashboard.jsx";
 import InventoryBatches from "./pages/inventory/InventoryBatches.jsx";
@@ -66,6 +67,7 @@ export default function App() {
         <Route path="inventory/alerts" element={<AlertsDashboard />} />
         <Route path="appointments" element={<AppointmentManagement />} />
         <Route path="available-slots" element={<AvailableSlots />} />
+        <Route path="ai-chat" element={<AiChatPatient />} />
         <Route path="my-appointments" element={<MyAppointmentsPage />} />
         <Route path="doctors" element={<DoctorManagement />} />
         <Route path="patients" element={<PatientManagement />} />
@@ -73,7 +75,6 @@ export default function App() {
     </Routes>
   );
 }
-
 
 
 
