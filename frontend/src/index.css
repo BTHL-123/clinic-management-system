@@ -729,6 +729,16 @@ a {
   color: #991b1b;
 }
 
+.badge-info {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.badge-warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
 /* ── Action Buttons ───────────────────────────────────── */
 .action-group {
   display: flex;

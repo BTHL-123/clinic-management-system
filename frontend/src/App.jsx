@@ -10,18 +10,15 @@ import SecurityPage from "./pages/dashboard/SecurityPage.jsx";
 import UsersPage from "./pages/dashboard/UsersPage.jsx";
 
 import DepartmentManagement from "./pages/department/DepartmentManagement.jsx";
-
+import MedicalServiceManagement from "./pages/medical-service/MedicalServiceManagement.jsx";
+import InvoiceManagement from "./pages/invoice/InvoiceManagement.jsx";
+import PaymentManagement from "./pages/payment/PaymentManagement.jsx";
 import AppointmentManagement from "./pages/appointment/Appointments.tsx";
-
 import AvailableSlots from "./pages/appointment/AvailableSlots.tsx";
-
-
 import DoctorManagement from "./pages/doctor/DoctorManagement.jsx";
 import PatientManagement from "./pages/patient/PatientManagement.jsx";
 import ProfilePage from "./pages/profile/ProfilePage.jsx";
 import MyAppointmentsPage from "./pages/patient/MyAppointmentsPage.jsx";
-
-
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import { useAuth } from "./context/useAuth.js";
 
@@ -56,22 +53,18 @@ export default function App() {
         <Route path="security" element={<SecurityPage />} />
 
         <Route path="departments" element={<DepartmentManagement />} />
-
+        <Route path="medical-services" element={<MedicalServiceManagement />} />
+        <Route path="invoices" element={<InvoiceManagement />} />
+        <Route path="payments" element={<PaymentManagement />} />
         <Route path="appointments" element={<AppointmentManagement />} />
-
         <Route path="available-slots" element={<AvailableSlots />} />
         <Route path="my-appointments" element={<MyAppointmentsPage />} />
-
-
         <Route path="doctors" element={<DoctorManagement />} />
         <Route path="patients" element={<PatientManagement />} />
-
-
       </Route>
     </Routes>
   );
 }
-
 
 
 
