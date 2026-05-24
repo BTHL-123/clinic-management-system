@@ -188,10 +188,27 @@ class AppointmentRetrievalTest {
 
     @Test
     void testGetAppointmentById() {
-        AppointmentResponse result = appointmentService.getAppointmentById(upcomingAppointment.getId());
+        // Gọi với isPatient=false (giả lập ADMIN/RECEPTIONIST) để bypass ownership check
+        AppointmentResponse result = appointmentService.getAppointmentById(
+                upcomingAppointment.getId(),
+                savedUser.getUserId(),
+                false
+        );
         assertNotNull(result);
         assertEquals(upcomingAppointment.getAppointmentCode(), result.appointmentCode());
         assertEquals(savedPatient.getPatientId(), result.patientId());
+    }
+
+    @Test
+    void testGetAppointmentByIdAsPatientOwner() {
+        // Patient xem đúng appointment của chính mình → phải thành công
+        AppointmentResponse result = appointmentService.getAppointmentById(
+                upcomingAppointment.getId(),
+                savedUser.getUserId(),
+                true
+        );
+        assertNotNull(result);
+        assertEquals(upcomingAppointment.getAppointmentCode(), result.appointmentCode());
     }
 
     @Test
