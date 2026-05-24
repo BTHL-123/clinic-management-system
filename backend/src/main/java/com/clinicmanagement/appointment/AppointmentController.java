@@ -5,6 +5,7 @@ import com.clinicmanagement.appointment.dto.BookAppointmentRequest;
 import com.clinicmanagement.common.dto.ApiResponse;
 import com.clinicmanagement.common.dto.PageResponse;
 import com.clinicmanagement.security.CustomUserDetails;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -50,8 +51,17 @@ public class AppointmentController {
 
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<AppointmentResponse>> getAppointmentById(@PathVariable Long id) {
-        AppointmentResponse response = appointmentService.getAppointmentById(id);
+    public ResponseEntity<ApiResponse<AppointmentResponse>> getAppointmentById(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        boolean isPatient = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_PATIENT"));
+        AppointmentResponse response = appointmentService.getAppointmentById(
+                id,
+                userDetails.getUser().getUserId(),
+                isPatient
+        );
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -79,7 +89,7 @@ public class AppointmentController {
     @PostMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<AppointmentResponse>> bookAppointment(
-            @RequestBody BookAppointmentRequest request,
+            @Valid @RequestBody BookAppointmentRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         AppointmentResponse response = appointmentService.bookAppointment(request, userDetails.getUser().getUserId());

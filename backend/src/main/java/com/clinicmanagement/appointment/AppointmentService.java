@@ -17,7 +17,7 @@ public interface AppointmentService {
             Pageable pageable
     );
 
-    AppointmentResponse getAppointmentById(Long id);
+    AppointmentResponse getAppointmentById(Long id, Long currentUserId, boolean isPatient);
 
     PageResponse<AppointmentResponse> getMyAppointments(
             Long userId,

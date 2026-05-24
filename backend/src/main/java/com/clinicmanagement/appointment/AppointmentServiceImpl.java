@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Service
@@ -57,9 +58,21 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public AppointmentResponse getAppointmentById(Long id) {
+    public AppointmentResponse getAppointmentById(Long id, Long currentUserId, boolean isPatient) {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + id));
+
+        // Issue #1: Nếu caller là PATIENT, chỉ được xem appointment của chính mình
+        if (isPatient) {
+            Long appointmentOwnerId = appointment.getPatient() != null
+                    && appointment.getPatient().getUser() != null
+                    ? appointment.getPatient().getUser().getUserId()
+                    : null;
+            if (!currentUserId.equals(appointmentOwnerId)) {
+                throw new BusinessException("Bạn không có quyền xem lịch hẹn này.");
+            }
+        }
+
         return mapToResponse(appointment);
     }
 
@@ -103,13 +116,17 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     @Transactional
     public AppointmentResponse bookAppointment(BookAppointmentRequest request, Long userId) {
-        TimeSlot slot = timeSlotRepository.findById(request.slotId())
+        // Issue #3: Dùng pessimistic write lock để tránh race condition
+        TimeSlot slot = timeSlotRepository.findByIdWithPessimisticLock(request.slotId())
                 .orElseThrow(() -> new ResourceNotFoundException("Ca khám không tồn tại với id: " + request.slotId()));
 
-        if ("BOOKED".equals(slot.getStatus())) {
+        // Issue #2: Kiểm tra slot hợp lệ để book
+        String slotStatus = slot.getStatus();
+        if ("BOOKED".equals(slotStatus)) {
             throw new BusinessException("Ca khám này đã được đặt.");
         }
 
+        // Lấy hoặc tạo patient record cho user hiện tại
         Patient patient = patientRepository.findByUserUserId(userId)
                 .orElseGet(() -> {
                     User user = userRepository.findById(userId)
@@ -123,6 +140,21 @@ public class AppointmentServiceImpl implements AppointmentService {
                     p.setGender("OTHER");
                     return patientRepository.save(p);
                 });
+
+        if ("LOCKED".equals(slotStatus)) {
+            // Slot đang bị lock — chỉ đúng patient đang giữ lock mới được book
+            Long lockedBy = slot.getLockedByPatientId();
+            LocalDateTime lockedUntil = slot.getLockedUntil();
+            boolean lockBelongsToCurrentPatient = patient.getPatientId().equals(lockedBy);
+            boolean lockStillValid = lockedUntil != null && LocalDateTime.now().isBefore(lockedUntil);
+
+            if (!lockBelongsToCurrentPatient || !lockStillValid) {
+                throw new BusinessException("Ca khám này đang được người khác giữ chỗ hoặc lock đã hết hạn.");
+            }
+        } else if (!"AVAILABLE".equals(slotStatus)) {
+            // Ngoài BOOKED, LOCKED, AVAILABLE ra là trạng thái không hợp lệ để book
+            throw new BusinessException("Ca khám này không còn khả dụng.");
+        }
 
         slot.setStatus("BOOKED");
         slot.setLockedUntil(null);
