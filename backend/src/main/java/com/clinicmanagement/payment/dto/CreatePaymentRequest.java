@@ -16,6 +16,6 @@ public record CreatePaymentRequest(
         String paymentMethod,
 
         @NotNull(message = "Số tiền không được để trống")
-        @DecimalMin(value = "0.0", message = "Số tiền phải lớn hơn hoặc bằng 0")
+        @DecimalMin(value = "0.01", inclusive = true, message = "Số tiền phải > 0")
         BigDecimal amount
 ) {}

@@ -9,4 +9,6 @@ public interface PaymentRepository extends JpaRepository<Payment, Long>, JpaSpec
     Optional<Payment> findTopByOrderByPaymentIdDesc();
 
     Optional<Payment> findByPaymentCode(String paymentCode);
+
+    java.util.List<Payment> findAllByInvoiceAndStatus(com.clinicmanagement.invoice.Invoice invoice, String status);
 }

@@ -179,9 +179,6 @@ public class InvoiceService {
     }
 
     private String nextInvoiceCode() {
-        Long nextId = invoiceRepository.findTopByOrderByInvoiceIdDesc()
-                .map(inv -> inv.getInvoiceId() + 1)
-                .orElse(1L);
-        return "INV%06d".formatted(nextId);
+        return "INV-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 }

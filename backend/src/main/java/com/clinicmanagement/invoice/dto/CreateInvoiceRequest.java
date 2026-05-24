@@ -33,6 +33,7 @@ public record CreateInvoiceRequest(
             String itemName,
 
             @NotNull(message = "Số lượng không được để trống")
+            @jakarta.validation.constraints.Min(value = 1, message = "Số lượng phải >= 1")
             Integer quantity,
 
             @NotNull(message = "Đơn giá không được để trống")

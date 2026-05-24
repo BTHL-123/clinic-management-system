@@ -72,7 +72,8 @@ public class MedicalServiceService {
     @Transactional
     public void delete(Long id) {
         MedicalService service = findOrThrow(id);
-        medicalServiceRepository.delete(service);
+        service.setStatus("INACTIVE");
+        medicalServiceRepository.save(service);
     }
 
     private MedicalService findOrThrow(Long id) {

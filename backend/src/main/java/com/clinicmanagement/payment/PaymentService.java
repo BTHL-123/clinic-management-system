@@ -93,8 +93,19 @@ public class PaymentService {
 
         if (payment.getInvoice() != null) {
             Invoice invoice = payment.getInvoice();
-            invoice.setStatus("PAID");
-            invoice.setPaidAt(LocalDateTime.now());
+            BigDecimal totalPaid = paymentRepository
+                .findAllByInvoiceAndStatus(invoice, "PAID")
+                .stream()
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .add(payment.getAmount());
+            
+            if (totalPaid.compareTo(invoice.getFinalAmount()) >= 0) {
+                invoice.setStatus("PAID");
+                invoice.setPaidAt(LocalDateTime.now());
+            } else {
+                invoice.setStatus("PARTIALLY_PAID");
+            }
             invoiceRepository.save(invoice);
         }
 
@@ -146,8 +157,19 @@ public class PaymentService {
 
             if (payment.getInvoice() != null) {
                 Invoice invoice = payment.getInvoice();
-                invoice.setStatus("PAID");
-                invoice.setPaidAt(LocalDateTime.now());
+                BigDecimal totalPaid = paymentRepository
+                    .findAllByInvoiceAndStatus(invoice, "PAID")
+                    .stream()
+                    .map(Payment::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add)
+                    .add(payment.getAmount());
+                
+                if (totalPaid.compareTo(invoice.getFinalAmount()) >= 0) {
+                    invoice.setStatus("PAID");
+                    invoice.setPaidAt(LocalDateTime.now());
+                } else {
+                    invoice.setStatus("PARTIALLY_PAID");
+                }
                 invoiceRepository.save(invoice);
             }
         } else {
@@ -164,9 +186,6 @@ public class PaymentService {
     }
 
     private String nextPaymentCode() {
-        Long nextId = paymentRepository.findTopByOrderByPaymentIdDesc()
-                .map(pay -> pay.getPaymentId() + 1)
-                .orElse(1L);
-        return "PAY%06d".formatted(nextId);
+        return "PAY-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 }
