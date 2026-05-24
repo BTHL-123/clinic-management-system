@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Clock, Search, CalendarDays, ArrowLeft, ShieldAlert, UserRound } from "lucide-react";
 import { getAvailableSlots, getSchedules, lockSlot, releaseLock } from "../../services/scheduleService";
 import { getDoctors } from "../../services/doctorService";
+import appointmentService from "../../services/appointmentService";
 
 interface TimeSlot {
   slotId: number;
@@ -215,23 +216,34 @@ export default function AvailableSlots() {
     }
   };
 
-  const handleSubmitBooking = (e: React.FormEvent) => {
+  const handleSubmitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!patientName.trim() || !patientPhone.trim()) {
       alert("Vui lòng điền đầy đủ họ tên và số điện thoại.");
       return;
     }
-    setBookingSuccess(true);
-    setTimeout(() => {
-      setBookingStep(false);
-      setSelectedSlot(null);
-      setPatientName("");
-      setPatientPhone("");
-      setVisitReason("");
-      if (doctorId && workDate) {
-        fetchSlots(doctorId, workDate);
-      }
-    }, 2000);
+    if (!selectedSlot) return;
+
+    try {
+      await appointmentService.bookAppointment({
+        slotId: selectedSlot.slotId,
+        reasonForVisit: visitReason
+      });
+      setBookingSuccess(true);
+      setTimeout(() => {
+        setBookingStep(false);
+        setSelectedSlot(null);
+        setPatientName("");
+        setPatientPhone("");
+        setVisitReason("");
+        if (doctorId && workDate) {
+          fetchSlots(doctorId, workDate);
+        }
+      }, 2000);
+    } catch (err: any) {
+      const apiMsg = err.response?.data?.message || err.message;
+      alert(apiMsg || "Đặt lịch thất bại. Vui lòng thử lại.");
+    }
   };
 
   const minutes = Math.floor(timer / 60);
