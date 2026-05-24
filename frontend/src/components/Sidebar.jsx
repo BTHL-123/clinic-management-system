@@ -1,6 +1,7 @@
 import {
   Building2,
   CalendarDays,
+  MessageSquare,
   History,
   CreditCard,
   PackageOpen,
@@ -42,6 +43,7 @@ const adminItems = [
 const patientItems = [
   { to: "/dashboard", label: "Trang chủ", icon: LayoutDashboard, end: true },
   { to: "/dashboard/available-slots", label: "Tìm ca khám trống", icon: Search },
+  { to: "/dashboard/ai-chat", label: "Tư vấn AI", icon: MessageSquare },
   { to: "/dashboard/my-appointments", label: "Lịch hẹn của tôi", icon: CalendarDays },
   { to: "/dashboard/profile", label: "Hồ sơ của tôi", icon: UserSquare },
 ];

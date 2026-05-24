@@ -29,7 +29,7 @@ public class AiChatController {
     private final AiChatService aiChatService;
 
     @PostMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<ApiResponse<AiChatSessionResponse>> createSession(
             @Valid @RequestBody CreateAiChatSessionRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
@@ -39,7 +39,7 @@ public class AiChatController {
     }
 
     @PostMapping("/{sessionId}/messages")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<ApiResponse<SendChatMessageResponse>> sendMessage(
             @PathVariable Long sessionId,
             @Valid @RequestBody AiChatMessageRequest request,
@@ -50,20 +50,22 @@ public class AiChatController {
     }
 
     @GetMapping("/{sessionId}/messages")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<ApiResponse<List<SendChatMessageResponse.MessageDetail>>> getMessages(
-            @PathVariable Long sessionId
+            @PathVariable Long sessionId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        List<SendChatMessageResponse.MessageDetail> response = aiChatService.getMessages(sessionId);
+        List<SendChatMessageResponse.MessageDetail> response = aiChatService.getMessages(sessionId, userDetails.getUser());
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @PostMapping("/{sessionId}/specialty-suggestion")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<ApiResponse<AiSpecialtySuggestionResponse>> generateSuggestion(
-            @PathVariable Long sessionId
+            @PathVariable Long sessionId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        AiSpecialtySuggestion suggestion = aiChatService.generateSuggestion(sessionId);
+        AiSpecialtySuggestion suggestion = aiChatService.generateSuggestion(sessionId, userDetails.getUser());
         
         AiSpecialtySuggestionResponse response = new AiSpecialtySuggestionResponse(
                 suggestion.getSuggestionId(),

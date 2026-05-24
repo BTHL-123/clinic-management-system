@@ -1,5 +1,5 @@
 import { Bell } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getActiveAlerts } from "../services/inventoryService";
 
@@ -10,14 +10,7 @@ export default function NotificationBell() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchUnreadAlerts();
-    // Poll every 5 minutes
-    const interval = setInterval(fetchUnreadAlerts, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchUnreadAlerts = async () => {
+  const fetchUnreadAlerts = useCallback(async () => {
     try {
       setLoading(true);
       const response = await getActiveAlerts({ page: 0, size: 5 });
@@ -29,7 +22,16 @@ export default function NotificationBell() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const timeout = setTimeout(fetchUnreadAlerts, 0);
+    const interval = setInterval(fetchUnreadAlerts, 5 * 60 * 1000);
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(interval);
+    };
+  }, [fetchUnreadAlerts]);
 
   const handleBellClick = () => {
     setShowDropdown(!showDropdown);

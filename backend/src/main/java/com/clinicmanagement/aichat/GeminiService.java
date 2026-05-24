@@ -22,7 +22,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class GeminiService {
 
-    @Value("${app.gemini.api-key}")
+    @Value("${app.gemini.api-key:}")
     private String apiKey;
 
     @Value("${app.gemini.model:gemini-1.5-flash}")
@@ -34,6 +34,10 @@ public class GeminiService {
     private static final String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s";
 
     public String chat(List<AiChatMessage> history, String newMessage) {
+        if (apiKey == null || apiKey.isBlank()) {
+            return mockChatReply(newMessage);
+        }
+
         try {
             String url = String.format(GEMINI_API_URL, model, apiKey);
 
@@ -95,6 +99,10 @@ public class GeminiService {
     }
 
     public String analyzeSymptoms(List<AiChatMessage> history) {
+        if (apiKey == null || apiKey.isBlank()) {
+            return mockSpecialtySuggestion(history);
+        }
+
         try {
             String url = String.format(GEMINI_API_URL, model, apiKey);
 
@@ -143,5 +151,38 @@ public class GeminiService {
             log.error("Error calling Gemini API for analysis", e);
             return "{}";
         }
+    }
+
+    private String mockChatReply(String newMessage) {
+        String normalized = newMessage == null ? "" : newMessage.toLowerCase();
+        if (normalized.contains("đau ngực") || normalized.contains("tim") || normalized.contains("khó thở")) {
+            return "Bạn đang mô tả triệu chứng có thể liên quan tim mạch hoặc hô hấp. Nếu đau ngực dữ dội, khó thở nhiều, vã mồ hôi hoặc choáng, bạn nên đi cấp cứu ngay. Nếu triệu chứng nhẹ hơn, tôi gợi ý bạn đặt lịch khám Tim mạch để được kiểm tra.";
+        }
+        if (normalized.contains("sốt") || normalized.contains("ho") || normalized.contains("đau họng")) {
+            return "Các triệu chứng sốt, ho hoặc đau họng thường cần được bác sĩ thăm khám để phân biệt nhiễm siêu vi, hô hấp hoặc tai mũi họng. Bạn nên uống đủ nước, theo dõi nhiệt độ và đặt lịch khám Nội khoa hoặc Tai Mũi Họng nếu kéo dài.";
+        }
+        if (normalized.contains("đau bụng") || normalized.contains("tiêu chảy") || normalized.contains("buồn nôn")) {
+            return "Triệu chứng tiêu hóa như đau bụng, tiêu chảy hoặc buồn nôn nên được đánh giá thêm về vị trí đau, thời gian kéo dài và dấu hiệu mất nước. Tôi gợi ý bạn khám Tiêu hóa để được tư vấn phù hợp.";
+        }
+        return "Tôi đã ghi nhận triệu chứng của bạn. Bạn có thể nói rõ hơn triệu chứng bắt đầu từ khi nào, mức độ nặng nhẹ, có sốt/đau/khó thở không và bạn đã dùng thuốc gì chưa? Tôi sẽ dựa vào đó để gợi ý chuyên khoa phù hợp.";
+    }
+
+    private String mockSpecialtySuggestion(List<AiChatMessage> history) {
+        String combinedText = history.stream()
+                .filter(message -> "PATIENT".equalsIgnoreCase(message.getSenderType()))
+                .map(AiChatMessage::getMessageText)
+                .reduce("", (left, right) -> left + " " + right)
+                .toLowerCase();
+
+        if (combinedText.contains("đau ngực") || combinedText.contains("tim")) {
+            return "{\"departmentName\":\"Tim mạch\",\"confidenceScore\":88,\"explanation\":\"Triệu chứng có dấu hiệu liên quan tim mạch nên cần kiểm tra chuyên khoa để loại trừ nguy cơ.\"}";
+        }
+        if (combinedText.contains("đau họng") || combinedText.contains("tai") || combinedText.contains("mũi") || combinedText.contains("ho")) {
+            return "{\"departmentName\":\"Tai Mũi Họng\",\"confidenceScore\":82,\"explanation\":\"Các triệu chứng tập trung ở đường hô hấp trên, phù hợp để khám Tai Mũi Họng.\"}";
+        }
+        if (combinedText.contains("đau bụng") || combinedText.contains("tiêu chảy") || combinedText.contains("buồn nôn")) {
+            return "{\"departmentName\":\"Tiêu hóa\",\"confidenceScore\":84,\"explanation\":\"Triệu chứng chủ yếu thuộc hệ tiêu hóa, nên khám chuyên khoa Tiêu hóa để đánh giá thêm.\"}";
+        }
+        return "{\"departmentName\":\"Khám tổng quát\",\"confidenceScore\":75,\"explanation\":\"Thông tin triệu chứng còn chung chung, khám tổng quát sẽ giúp bác sĩ định hướng bước tiếp theo.\"}";
     }
 }
