@@ -5,8 +5,10 @@ import com.clinicmanagement.common.exception.BusinessException;
 import com.clinicmanagement.common.exception.ResourceNotFoundException;
 import com.clinicmanagement.medicine.dto.MedicineRequest;
 import com.clinicmanagement.medicine.dto.MedicineResponse;
+import java.util.ArrayList;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,8 +20,24 @@ public class MedicineService {
 
     @Transactional(readOnly = true)
     public PageResponse<MedicineResponse> getAll(String status, String keyword, Pageable pageable) {
+        Specification<Medicine> spec = (root, query, cb) -> {
+            var predicates = new ArrayList<jakarta.persistence.criteria.Predicate>();
+            if (status != null && !status.isBlank()) {
+                predicates.add(cb.equal(root.get("status"), status));
+            }
+            if (keyword != null && !keyword.isBlank()) {
+                String pattern = "%" + keyword.toLowerCase() + "%";
+                predicates.add(cb.or(
+                        cb.like(cb.lower(root.get("medicineName")), pattern),
+                        cb.like(cb.lower(root.get("medicineCode")), pattern),
+                        cb.like(cb.lower(root.get("activeIngredient")), pattern)
+                ));
+            }
+            return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
+
         return PageResponse.from(
-                medicineRepository.findByFilters(status, keyword, pageable)
+                medicineRepository.findAll(spec, pageable)
                         .map(MedicineResponse::from)
         );
     }
