@@ -19,6 +19,7 @@ import AvailableSlots from "./pages/appointment/AvailableSlots.tsx";
 import DoctorManagement from "./pages/doctor/DoctorManagement.jsx";
 import PatientManagement from "./pages/patient/PatientManagement.jsx";
 import ProfilePage from "./pages/profile/ProfilePage.jsx";
+import MyAppointmentsPage from "./pages/patient/MyAppointmentsPage.jsx";
 
 
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
@@ -59,6 +60,7 @@ export default function App() {
         <Route path="appointments" element={<AppointmentManagement />} />
 
         <Route path="available-slots" element={<AvailableSlots />} />
+        <Route path="my-appointments" element={<MyAppointmentsPage />} />
 
 
         <Route path="doctors" element={<DoctorManagement />} />

@@ -26,6 +26,8 @@ const adminItems = [
 const patientItems = [
   { to: "/dashboard", label: "Trang chủ", icon: LayoutDashboard, end: true },
   { to: "/dashboard/available-slots", label: "Tìm ca khám trống", icon: Search },
+  { to: "/dashboard/my-appointments", label: "Lịch hẹn của tôi", icon: CalendarDays },
+  { to: "/dashboard/profile", label: "Hồ sơ của tôi", icon: UserSquare },
 ];
 
 export default function Sidebar() {
