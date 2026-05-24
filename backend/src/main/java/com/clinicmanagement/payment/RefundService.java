@@ -84,7 +84,6 @@ public class RefundService {
         if (payment.getInvoice() != null) {
             Invoice invoice = payment.getInvoice();
             invoice.setStatus("REFUNDED");
-            invoice.setNotes("Lý do hoàn tiền: " + (request.reason() != null && !request.reason().isBlank() ? request.reason() : "Không có"));
             invoiceRepository.save(invoice);
         }
 
