@@ -2,9 +2,9 @@ spring:
   application:
     name: clinic-management-backend
   datasource:
-    url: jdbc:postgresql://localhost:5432/clinic_management
-    username: postgres
-    password: 12345
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/clinic_management}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:lonkdemon171}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
