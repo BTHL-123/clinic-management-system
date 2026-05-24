@@ -35,7 +35,7 @@ public class GeminiService {
 
     public String chat(List<AiChatMessage> history, String newMessage) {
         if (apiKey == null || apiKey.isBlank()) {
-            return mockChatReply(newMessage);
+            return mockChatReply(history, newMessage);
         }
 
         try {
@@ -153,16 +153,35 @@ public class GeminiService {
         }
     }
 
-    private String mockChatReply(String newMessage) {
-        String normalized = newMessage == null ? "" : newMessage.toLowerCase();
-        if (normalized.contains("đau ngực") || normalized.contains("tim") || normalized.contains("khó thở")) {
+    private String mockChatReply(List<AiChatMessage> history, String newMessage) {
+        String currentMessage = normalizeText(newMessage);
+        String allPatientMessages = normalizeText(history.stream()
+                .filter(message -> "PATIENT".equalsIgnoreCase(message.getSenderType()))
+                .map(AiChatMessage::getMessageText)
+                .reduce("", (left, right) -> left + " " + right + " ")
+                + " " + newMessage);
+
+        if (asksForSpecialty(currentMessage)) {
+            if (hasDigestiveSymptoms(allPatientMessages)) {
+                return "Với thông tin bạn bị tiêu chảy/đi ngoài liên tục khoảng 2 ngày, không sốt và chưa dùng thuốc, chuyên khoa phù hợp nhất là Tiêu hóa. Bạn nên đi khám sớm nếu đi ngoài nhiều lần trong ngày, mất nước, đau bụng tăng, phân có máu hoặc triệu chứng không giảm.";
+            }
+            if (hasChestOrBreathingSymptoms(allPatientMessages)) {
+                return "Với triệu chứng đau ngực, tim hoặc khó thở, bạn nên ưu tiên khám Tim mạch. Nếu đau ngực dữ dội, khó thở nhiều, choáng hoặc vã mồ hôi thì nên đi cấp cứu ngay.";
+            }
+            if (hasEntSymptoms(allPatientMessages)) {
+                return "Với ho, đau họng hoặc triệu chứng vùng tai mũi họng, bạn nên chọn Tai Mũi Họng. Nếu kèm sốt cao hoặc khó thở thì nên đi khám sớm hơn.";
+            }
+            return "Hiện thông tin triệu chứng còn ít nên tôi chưa thể chọn chuyên khoa thật chắc. Nếu phải chọn ngay, bạn nên chọn Khám tổng quát để bác sĩ sàng lọc ban đầu.";
+        }
+
+        if (hasChestOrBreathingSymptoms(allPatientMessages)) {
             return "Bạn đang mô tả triệu chứng có thể liên quan tim mạch hoặc hô hấp. Nếu đau ngực dữ dội, khó thở nhiều, vã mồ hôi hoặc choáng, bạn nên đi cấp cứu ngay. Nếu triệu chứng nhẹ hơn, tôi gợi ý bạn đặt lịch khám Tim mạch để được kiểm tra.";
         }
-        if (normalized.contains("sốt") || normalized.contains("ho") || normalized.contains("đau họng")) {
-            return "Các triệu chứng sốt, ho hoặc đau họng thường cần được bác sĩ thăm khám để phân biệt nhiễm siêu vi, hô hấp hoặc tai mũi họng. Bạn nên uống đủ nước, theo dõi nhiệt độ và đặt lịch khám Nội khoa hoặc Tai Mũi Họng nếu kéo dài.";
+        if (hasDigestiveSymptoms(allPatientMessages)) {
+            return "Tình trạng tiêu chảy/đi ngoài liên tục trong 2 ngày thường phù hợp để khám chuyên khoa Tiêu hóa. Trước mắt bạn nên uống đủ nước, có thể dùng dung dịch bù điện giải nếu đi ngoài nhiều. Nếu có sốt, đau bụng nhiều, khát nhiều, mệt lả, phân có máu hoặc không giảm sau 24-48 giờ thì nên đi khám sớm.";
         }
-        if (normalized.contains("đau bụng") || normalized.contains("tiêu chảy") || normalized.contains("buồn nôn")) {
-            return "Triệu chứng tiêu hóa như đau bụng, tiêu chảy hoặc buồn nôn nên được đánh giá thêm về vị trí đau, thời gian kéo dài và dấu hiệu mất nước. Tôi gợi ý bạn khám Tiêu hóa để được tư vấn phù hợp.";
+        if (hasEntSymptoms(allPatientMessages)) {
+            return "Các triệu chứng sốt, ho hoặc đau họng thường cần được bác sĩ thăm khám để phân biệt nhiễm siêu vi, hô hấp hoặc tai mũi họng. Bạn nên uống đủ nước, theo dõi nhiệt độ và đặt lịch khám Nội khoa hoặc Tai Mũi Họng nếu kéo dài.";
         }
         return "Tôi đã ghi nhận triệu chứng của bạn. Bạn có thể nói rõ hơn triệu chứng bắt đầu từ khi nào, mức độ nặng nhẹ, có sốt/đau/khó thở không và bạn đã dùng thuốc gì chưa? Tôi sẽ dựa vào đó để gợi ý chuyên khoa phù hợp.";
     }
@@ -174,15 +193,64 @@ public class GeminiService {
                 .reduce("", (left, right) -> left + " " + right)
                 .toLowerCase();
 
-        if (combinedText.contains("đau ngực") || combinedText.contains("tim")) {
+        if (hasChestOrBreathingSymptoms(combinedText)) {
             return "{\"departmentName\":\"Tim mạch\",\"confidenceScore\":88,\"explanation\":\"Triệu chứng có dấu hiệu liên quan tim mạch nên cần kiểm tra chuyên khoa để loại trừ nguy cơ.\"}";
         }
-        if (combinedText.contains("đau họng") || combinedText.contains("tai") || combinedText.contains("mũi") || combinedText.contains("ho")) {
+        if (hasEntSymptoms(combinedText)) {
             return "{\"departmentName\":\"Tai Mũi Họng\",\"confidenceScore\":82,\"explanation\":\"Các triệu chứng tập trung ở đường hô hấp trên, phù hợp để khám Tai Mũi Họng.\"}";
         }
-        if (combinedText.contains("đau bụng") || combinedText.contains("tiêu chảy") || combinedText.contains("buồn nôn")) {
+        if (hasDigestiveSymptoms(combinedText)) {
             return "{\"departmentName\":\"Tiêu hóa\",\"confidenceScore\":84,\"explanation\":\"Triệu chứng chủ yếu thuộc hệ tiêu hóa, nên khám chuyên khoa Tiêu hóa để đánh giá thêm.\"}";
         }
         return "{\"departmentName\":\"Khám tổng quát\",\"confidenceScore\":75,\"explanation\":\"Thông tin triệu chứng còn chung chung, khám tổng quát sẽ giúp bác sĩ định hướng bước tiếp theo.\"}";
+    }
+
+    private boolean asksForSpecialty(String text) {
+        return text.contains("chuyen khoa")
+                || text.contains("chuyên khoa")
+                || text.contains("khoa nao")
+                || text.contains("khoa nào")
+                || text.contains("nen chon")
+                || text.contains("nên chọn")
+                || text.contains("kham khoa")
+                || text.contains("khám khoa");
+    }
+
+    private boolean hasChestOrBreathingSymptoms(String text) {
+        return text.contains("đau ngực")
+                || text.contains("dau nguc")
+                || text.contains("tim")
+                || text.contains("khó thở")
+                || text.contains("kho tho");
+    }
+
+    private boolean hasEntSymptoms(String text) {
+        return text.contains("sốt")
+                || text.contains("sot")
+                || text.contains("ho")
+                || text.contains("đau họng")
+                || text.contains("dau hong")
+                || text.contains("tai")
+                || text.contains("mũi")
+                || text.contains("mui");
+    }
+
+    private boolean hasDigestiveSymptoms(String text) {
+        return text.contains("đau bụng")
+                || text.contains("dau bung")
+                || text.contains("tiêu chảy")
+                || text.contains("tieu chay")
+                || text.contains("buồn nôn")
+                || text.contains("buon non")
+                || text.contains("ỉa")
+                || text.contains("ia ")
+                || text.contains("đi ngoài")
+                || text.contains("di ngoai")
+                || text.contains("phân lỏng")
+                || text.contains("phan long");
+    }
+
+    private String normalizeText(String value) {
+        return value == null ? "" : value.toLowerCase();
     }
 }
