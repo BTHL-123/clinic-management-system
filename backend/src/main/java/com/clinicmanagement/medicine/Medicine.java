@@ -1,18 +1,29 @@
 package com.clinicmanagement.medicine;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
-
-@Getter
-@Setter
 @Entity
 @Table(name = "medicines")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Medicine {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "medicine_id")
@@ -24,7 +35,7 @@ public class Medicine {
     @Column(name = "medicine_name", nullable = false, length = 150)
     private String medicineName;
 
-    @Column(name = "active_ingredient")
+    @Column(name = "active_ingredient", length = 255)
     private String activeIngredient;
 
     @Column(name = "dosage_form", length = 100)
@@ -43,6 +54,7 @@ public class Medicine {
     private String description;
 
     @Column(nullable = false, length = 20)
+    @Builder.Default
     private String status = "ACTIVE";
 
     @CreationTimestamp

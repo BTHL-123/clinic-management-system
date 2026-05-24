@@ -1,12 +1,11 @@
 package com.clinicmanagement.medicine;
 
 import com.clinicmanagement.common.dto.PageResponse;
+import com.clinicmanagement.common.exception.BusinessException;
 import com.clinicmanagement.common.exception.ResourceNotFoundException;
-import com.clinicmanagement.medicine.dto.CreateMedicineRequest;
+import com.clinicmanagement.medicine.dto.MedicineRequest;
 import com.clinicmanagement.medicine.dto.MedicineResponse;
-import com.clinicmanagement.medicine.dto.UpdateMedicineRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,74 +17,72 @@ public class MedicineService {
     private final MedicineRepository medicineRepository;
 
     @Transactional(readOnly = true)
-    public PageResponse<MedicineResponse> searchMedicines(String keyword, String status, Pageable pageable) {
-        Page<Medicine> page = medicineRepository.searchMedicines(keyword, status, pageable);
-        return PageResponse.from(page.map(this::mapToResponse));
+    public PageResponse<MedicineResponse> getAll(String status, String keyword, Pageable pageable) {
+        return PageResponse.from(
+                medicineRepository.findByFilters(status, keyword, pageable)
+                        .map(MedicineResponse::from)
+        );
     }
 
     @Transactional(readOnly = true)
-    public MedicineResponse getMedicineById(Long medicineId) {
-        Medicine medicine = findOrThrow(medicineId);
-        return mapToResponse(medicine);
+    public MedicineResponse getById(Long id) {
+        return MedicineResponse.from(findOrThrow(id));
     }
 
     @Transactional
-    public MedicineResponse createMedicine(CreateMedicineRequest request) {
-        if (medicineRepository.existsByMedicineCode(request.getMedicineCode())) {
-            throw new IllegalArgumentException("Medicine code already exists: " + request.getMedicineCode());
+    public MedicineResponse create(MedicineRequest request) {
+        if (medicineRepository.existsByMedicineCodeIgnoreCase(request.medicineCode())) {
+            throw new BusinessException("Mã thuốc '" + request.medicineCode() + "' đã tồn tại.");
         }
 
-        Medicine medicine = new Medicine();
-        medicine.setMedicineCode(request.getMedicineCode());
-        medicine.setMedicineName(request.getMedicineName());
-        medicine.setActiveIngredient(request.getActiveIngredient());
-        medicine.setDosageForm(request.getDosageForm());
-        medicine.setStrength(request.getStrength());
-        medicine.setUnit(request.getUnit());
-        medicine.setRxnormCode(request.getRxnormCode());
-        medicine.setDescription(request.getDescription());
-        medicine.setStatus("ACTIVE");
+        Medicine medicine = Medicine.builder()
+                .medicineCode(request.medicineCode().trim().toUpperCase())
+                .medicineName(request.medicineName().trim())
+                .activeIngredient(request.activeIngredient())
+                .dosageForm(request.dosageForm())
+                .strength(request.strength())
+                .unit(request.unit())
+                .rxnormCode(request.rxnormCode())
+                .description(request.description())
+                .status(request.status() != null ? request.status() : "ACTIVE")
+                .build();
 
-        Medicine saved = medicineRepository.save(medicine);
-        return mapToResponse(saved);
+        return MedicineResponse.from(medicineRepository.save(medicine));
     }
 
     @Transactional
-    public MedicineResponse updateMedicine(Long medicineId, UpdateMedicineRequest request) {
-        Medicine medicine = findOrThrow(medicineId);
+    public MedicineResponse update(Long id, MedicineRequest request) {
+        Medicine medicine = findOrThrow(id);
 
-        if (request.getMedicineName() != null) medicine.setMedicineName(request.getMedicineName());
-        if (request.getActiveIngredient() != null) medicine.setActiveIngredient(request.getActiveIngredient());
-        if (request.getDosageForm() != null) medicine.setDosageForm(request.getDosageForm());
-        if (request.getStrength() != null) medicine.setStrength(request.getStrength());
-        if (request.getUnit() != null) medicine.setUnit(request.getUnit());
-        if (request.getRxnormCode() != null) medicine.setRxnormCode(request.getRxnormCode());
-        if (request.getDescription() != null) medicine.setDescription(request.getDescription());
-        if (request.getStatus() != null) medicine.setStatus(request.getStatus());
+        if (medicineRepository.existsByMedicineCodeIgnoreCaseAndMedicineIdNot(request.medicineCode(), id)) {
+            throw new BusinessException("Mã thuốc '" + request.medicineCode() + "' đã tồn tại.");
+        }
 
-        Medicine updated = medicineRepository.save(medicine);
-        return mapToResponse(updated);
+        medicine.setMedicineCode(request.medicineCode().trim().toUpperCase());
+        medicine.setMedicineName(request.medicineName().trim());
+        medicine.setActiveIngredient(request.activeIngredient());
+        medicine.setDosageForm(request.dosageForm());
+        medicine.setStrength(request.strength());
+        medicine.setUnit(request.unit());
+        medicine.setRxnormCode(request.rxnormCode());
+        medicine.setDescription(request.description());
+        if (request.status() != null) {
+            medicine.setStatus(request.status());
+        }
+
+        return MedicineResponse.from(medicineRepository.save(medicine));
     }
 
-    private Medicine findOrThrow(Long id) {
+    @Transactional
+    public void delete(Long id) {
+        if (!medicineRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Không tìm thấy thuốc với ID: " + id);
+        }
+        medicineRepository.deleteById(id);
+    }
+
+    Medicine findOrThrow(Long id) {
         return medicineRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Medicine not found with id: " + id));
-    }
-
-    private MedicineResponse mapToResponse(Medicine entity) {
-        MedicineResponse dto = new MedicineResponse();
-        dto.setMedicineId(entity.getMedicineId());
-        dto.setMedicineCode(entity.getMedicineCode());
-        dto.setMedicineName(entity.getMedicineName());
-        dto.setActiveIngredient(entity.getActiveIngredient());
-        dto.setDosageForm(entity.getDosageForm());
-        dto.setStrength(entity.getStrength());
-        dto.setUnit(entity.getUnit());
-        dto.setRxnormCode(entity.getRxnormCode());
-        dto.setDescription(entity.getDescription());
-        dto.setStatus(entity.getStatus());
-        dto.setCreatedAt(entity.getCreatedAt());
-        dto.setUpdatedAt(entity.getUpdatedAt());
-        return dto;
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thuốc với ID: " + id));
     }
 }

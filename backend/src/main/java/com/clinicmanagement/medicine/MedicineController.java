@@ -2,9 +2,8 @@ package com.clinicmanagement.medicine;
 
 import com.clinicmanagement.common.dto.ApiResponse;
 import com.clinicmanagement.common.dto.PageResponse;
-import com.clinicmanagement.medicine.dto.CreateMedicineRequest;
+import com.clinicmanagement.medicine.dto.MedicineRequest;
 import com.clinicmanagement.medicine.dto.MedicineResponse;
-import com.clinicmanagement.medicine.dto.UpdateMedicineRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -13,7 +12,15 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/medicines")
@@ -23,8 +30,8 @@ public class MedicineController {
     private final MedicineService medicineService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PHARMACIST', 'DOCTOR')")
-    public ResponseEntity<ApiResponse<PageResponse<MedicineResponse>>> getMedicines(
+    @PreAuthorize("hasAnyRole('ADMIN','DOCTOR','PHARMACIST')")
+    public ResponseEntity<ApiResponse<PageResponse<MedicineResponse>>> getAll(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
@@ -32,31 +39,41 @@ public class MedicineController {
             @RequestParam(defaultValue = "medicineName") String sortBy,
             @RequestParam(defaultValue = "asc") String direction
     ) {
-        Sort sort = direction.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        Sort sort = direction.equalsIgnoreCase("asc")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        return ResponseEntity.ok(ApiResponse.success(medicineService.searchMedicines(keyword, status, pageable)));
+        return ResponseEntity.ok(ApiResponse.success(medicineService.getAll(status, keyword, pageable)));
     }
 
-    @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PHARMACIST', 'DOCTOR')")
-    public ResponseEntity<ApiResponse<MedicineResponse>> getMedicineById(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(medicineService.getMedicineById(id)));
+    @GetMapping("/{medicineId}")
+    @PreAuthorize("hasAnyRole('ADMIN','DOCTOR','PHARMACIST')")
+    public ResponseEntity<ApiResponse<MedicineResponse>> getById(@PathVariable Long medicineId) {
+        return ResponseEntity.ok(ApiResponse.success(medicineService.getById(medicineId)));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PHARMACIST')")
-    public ResponseEntity<ApiResponse<MedicineResponse>> createMedicine(@Valid @RequestBody CreateMedicineRequest request) {
-        MedicineResponse response = medicineService.createMedicine(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Thêm thuốc mới thành công", response));
+    @PreAuthorize("hasAnyRole('ADMIN','PHARMACIST')")
+    public ResponseEntity<ApiResponse<MedicineResponse>> create(@Valid @RequestBody MedicineRequest request) {
+        MedicineResponse created = medicineService.create(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Tạo thuốc thành công", created));
     }
 
-    @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PHARMACIST')")
-    public ResponseEntity<ApiResponse<MedicineResponse>> updateMedicine(
-            @PathVariable Long id,
-            @Valid @RequestBody UpdateMedicineRequest request
+    @PutMapping("/{medicineId}")
+    @PreAuthorize("hasAnyRole('ADMIN','PHARMACIST')")
+    public ResponseEntity<ApiResponse<MedicineResponse>> update(
+            @PathVariable Long medicineId,
+            @Valid @RequestBody MedicineRequest request
     ) {
-        MedicineResponse response = medicineService.updateMedicine(id, request);
-        return ResponseEntity.ok(ApiResponse.success("Cập nhật thông tin thuốc thành công", response));
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật thuốc thành công",
+                medicineService.update(medicineId, request)));
+    }
+
+    @DeleteMapping("/{medicineId}")
+    @PreAuthorize("hasAnyRole('ADMIN','PHARMACIST')")
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long medicineId) {
+        medicineService.delete(medicineId);
+        return ResponseEntity.ok(ApiResponse.success("Xóa thuốc thành công", null));
     }
 }
