@@ -36,9 +36,35 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(exception.getMessage()));
     }
 
-    @ExceptionHandler({BusinessException.class, DataIntegrityViolationException.class})
-    public ResponseEntity<ApiResponse<Void>> handleBusiness(RuntimeException exception) {
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBusiness(BusinessException exception) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(exception.getMessage()));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrity(DataIntegrityViolationException exception) {
+        String message = "Dữ liệu không hợp lệ hoặc vi phạm ràng buộc cơ sở dữ liệu.";
+        String rootCause = exception.getRootCause() != null ? exception.getRootCause().getMessage() : exception.getMessage();
+        if (rootCause != null) {
+            if (rootCause.contains("fk_doctor_schedules_doctor")) {
+                message = "Bác sĩ không tồn tại trong hệ thống. Vui lòng kiểm tra lại ID bác sĩ.";
+            } else if (rootCause.contains("uq_doctor_schedule")) {
+                message = "Bác sĩ đã có một lịch làm việc khác trùng khớp thời gian trên ngày này.";
+            } else if (rootCause.contains("doctor_schedules_pkey") || rootCause.contains("doctor_schedules_schedule_id")) {
+                message = "Mã tự tăng của bảng lịch làm việc đang lệch. Vui lòng khởi động lại backend để hệ thống đồng bộ sequence.";
+            } else if (rootCause.contains("appointment_slots_pkey") || rootCause.contains("appointment_slots_slot_id")) {
+                message = "Mã tự tăng của bảng ca khám đang lệch. Vui lòng khởi động lại backend để hệ thống đồng bộ sequence.";
+            } else if (rootCause.contains("fk_appointment_slots_schedule")) {
+                message = "Lịch làm việc không tồn tại nên không thể tạo ca khám.";
+            } else if (rootCause.contains("doctors_pkey") || rootCause.contains("doctors_doctor_id")) {
+                message = "Mã tự tăng của bảng bác sĩ đang lệch. Vui lòng khởi động lại backend để hệ thống đồng bộ sequence.";
+            } else if (rootCause.contains("doctors_doctor_code_key")) {
+                message = "Mã bác sĩ đã tồn tại.";
+            } else if (rootCause.contains("users_email_key")) {
+                message = "Email đã tồn tại.";
+            }
+        }
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(message));
     }
 
     @ExceptionHandler(BadCredentialsException.class)
@@ -53,7 +79,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGeneric(Exception exception) {
+        exception.printStackTrace();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("Internal server error"));
+                .body(ApiResponse.error("Internal server error: " + exception.getMessage()));
     }
 }

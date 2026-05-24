@@ -11,6 +11,7 @@ import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -21,6 +22,7 @@ public class DataSeeder implements CommandLineRunner {
     private final PermissionRepository permissionRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JdbcTemplate jdbcTemplate;
 
     @Value("${app.seed.admin-email}")
     private String adminEmail;
@@ -33,6 +35,9 @@ public class DataSeeder implements CommandLineRunner {
         seedRoles();
         seedPermissions();
         seedAdmin();
+        seedDoctor();
+        seedPatient();
+        syncPostgresSequences();
     }
 
     private void seedRoles() {
@@ -79,5 +84,97 @@ public class DataSeeder implements CommandLineRunner {
         admin.setPasswordHash(passwordEncoder.encode(adminPassword));
         admin.setRoles(Set.of(adminRole));
         userRepository.save(admin);
+    }
+
+    private void seedDoctor() {
+        Long departmentId;
+        List<Long> deptIds = jdbcTemplate.query("SELECT department_id FROM departments WHERE department_name = 'General Medicine'", (rs, rowNum) -> rs.getLong("department_id"));
+        if (deptIds.isEmpty()) {
+            jdbcTemplate.update("INSERT INTO departments (department_name, description, status, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)",
+                    "General Medicine", "General medicine department", "ACTIVE");
+            departmentId = jdbcTemplate.queryForObject("SELECT department_id FROM departments WHERE department_name = 'General Medicine'", Long.class);
+        } else {
+            departmentId = deptIds.get(0);
+        }
+
+        Role doctorRole = roleRepository.findByRoleName("DOCTOR")
+                .orElseThrow(() -> new IllegalStateException("DOCTOR role has not been seeded"));
+
+        String[] emails = {"doctor@example.com", "doctor2@example.com", "doctor3@example.com"};
+        String[] names = {"Dr. John Doe", "Dr. Jane Smith", "Dr. Robert Lee"};
+        String[] codes = {"DOC001", "DOC002", "DOC003"};
+        String[] phones = {"0912345678", "0987654321", "0909090909"};
+
+        for (int i = 0; i < emails.length; i++) {
+            List<Long> existingDoc = jdbcTemplate.query("SELECT doctor_id FROM doctors WHERE doctor_code = ?",
+                    (rs, rowNum) -> rs.getLong("doctor_id"), codes[i]);
+            if (existingDoc.isEmpty()) {
+                Long doctorUserId;
+                String email = emails[i];
+                List<Long> userIds = jdbcTemplate.query("SELECT user_id FROM users WHERE email = ?",
+                        (rs, rowNum) -> rs.getLong("user_id"), email);
+                if (userIds.isEmpty()) {
+                    jdbcTemplate.update("INSERT INTO users (email, password_hash, full_name, phone, auth_provider, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                            email, passwordEncoder.encode("123456"), names[i], phones[i], "LOCAL", "ACTIVE");
+                    doctorUserId = jdbcTemplate.queryForObject("SELECT user_id FROM users WHERE email = ?", Long.class, email);
+                    jdbcTemplate.update("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", doctorUserId, doctorRole.getRoleId());
+                } else {
+                    doctorUserId = userIds.get(0);
+                }
+
+                jdbcTemplate.update("INSERT INTO doctors (user_id, department_id, doctor_code, degree, specialization, years_of_experience, biography, consultation_fee, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                        doctorUserId, departmentId, codes[i], "MD", "General Practitioner", 10 + i, "A highly experienced practitioner", 150000.0, "ACTIVE");
+            }
+        }
+        List<Long> doctorIds = jdbcTemplate.query("SELECT doctor_id FROM doctors", (rs, rowNum) -> rs.getLong("doctor_id"));
+        System.out.println("\n=======================================================");
+        System.out.println("=== DỰ ÁN CLINIC: DANH SÁCH ID BÁC SĨ ĐANG CÓ: " + doctorIds + " ===");
+        System.out.println("=======================================================\n");
+    }
+
+    private void seedPatient() {
+        String email = "patient@example.com";
+        if (userRepository.existsByEmail(email)) {
+            return;
+        }
+        Role patientRole = roleRepository.findByRoleName("PATIENT")
+                .orElseThrow(() -> new IllegalStateException("PATIENT role has not been seeded"));
+        User patient = new User();
+        patient.setFullName("Nguyễn Văn Test");
+        patient.setEmail(email);
+        patient.setPhone("0911222333");
+        patient.setPasswordHash(passwordEncoder.encode("123456"));
+        patient.setRoles(Set.of(patientRole));
+        User savedUser = userRepository.save(patient);
+
+        jdbcTemplate.update("INSERT INTO patients (user_id, patient_code, full_name, gender, phone, email, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                savedUser.getUserId(), "PAT000001", "Nguyễn Văn Test", "MALE", "0911222333", email);
+    }
+
+    private void syncPostgresSequences() {
+        syncPostgresSequence("doctors", "doctor_id");
+        syncPostgresSequence("doctor_schedules", "schedule_id");
+        syncPostgresSequence("appointment_slots", "slot_id");
+    }
+
+    private void syncPostgresSequence(String tableName, String idColumn) {
+        jdbcTemplate.execute((org.springframework.jdbc.core.ConnectionCallback<Void>) connection -> {
+            if (!"PostgreSQL".equalsIgnoreCase(connection.getMetaData().getDatabaseProductName())) {
+                return null;
+            }
+
+            String sequenceName = tableName + "_" + idColumn + "_seq";
+            String sql = """
+                    SELECT setval(
+                        '%s',
+                        COALESCE((SELECT MAX(%s) FROM %s), 1),
+                        (SELECT MAX(%s) IS NOT NULL FROM %s)
+                    )
+                    """.formatted(sequenceName, idColumn, tableName, idColumn, tableName);
+            try (var statement = connection.createStatement()) {
+                statement.execute(sql);
+            }
+            return null;
+        });
     }
 }

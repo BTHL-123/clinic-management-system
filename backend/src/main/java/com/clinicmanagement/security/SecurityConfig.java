@@ -55,12 +55,17 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/auth/register",
                                 "/auth/login",
+                                "/auth/google",
                                 "/auth/refresh-token",
                                 "/auth/forgot-password",
                                 "/auth/reset-password",
                                 "/departments/**",
                                 "/departments",
-                                "/payments/online/callback"
+                                "/payments/online/callback",
+                                "/doctor-schedules/**",
+                                "/doctor-schedules",
+                                "/doctors/**",
+                                "/doctors"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

@@ -10,8 +10,16 @@ import com.clinicmanagement.security.JwtService;
 import com.clinicmanagement.user.User;
 import com.clinicmanagement.user.UserMapper;
 import com.clinicmanagement.user.UserRepository;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.util.Collections;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,6 +35,9 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+
+    @Value("${app.google.client-id:}")
+    private String googleClientId;
 
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
@@ -79,6 +90,39 @@ public class AuthService {
         );
     }
 
+    @Transactional
+    public LoginResponse loginWithGoogle(GoogleLoginRequest request) {
+        GoogleIdToken.Payload payload = verifyGoogleToken(request.idToken());
+        String email = payload.getEmail();
+        if (email == null || email.isBlank()) {
+            throw new BusinessException("Google account email is missing");
+        }
+        if (!Boolean.TRUE.equals(payload.getEmailVerified())) {
+            throw new BusinessException("Google account email has not been verified");
+        }
+
+        String providerId = payload.getSubject();
+        String fullName = firstNonBlank((String) payload.get("name"), email);
+        String avatarUrl = (String) payload.get("picture");
+
+        User user = userRepository.findByEmail(email)
+                .map(existingUser -> linkGoogleAccount(existingUser, providerId, avatarUrl))
+                .orElseGet(() -> createGooglePatientUser(email, fullName, providerId, avatarUrl));
+
+        if (!"ACTIVE".equals(user.getStatus())) {
+            throw new BusinessException("User account is not active");
+        }
+
+        CustomUserDetails userDetails = new CustomUserDetails(user);
+        return new LoginResponse(
+                jwtService.generateAccessToken(userDetails),
+                jwtService.generateRefreshToken(userDetails),
+                "Bearer",
+                jwtService.getAccessTokenExpirationSeconds(),
+                UserMapper.toSummary(user)
+        );
+    }
+
     public TokenResponse refreshToken(RefreshTokenRequest request) {
         String username = jwtService.extractUsername(request.refreshToken());
         User user = userRepository.findByEmail(username)
@@ -94,6 +138,73 @@ public class AuthService {
                 "Bearer",
                 jwtService.getAccessTokenExpirationSeconds()
         );
+    }
+
+    private GoogleIdToken.Payload verifyGoogleToken(String idToken) {
+        if (googleClientId == null || googleClientId.isBlank()) {
+            throw new BusinessException("Google login has not been configured");
+        }
+
+        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
+                new NetHttpTransport(),
+                GsonFactory.getDefaultInstance()
+        )
+                .setAudience(Collections.singletonList(googleClientId))
+                .build();
+
+        try {
+            GoogleIdToken googleIdToken = verifier.verify(idToken);
+            if (googleIdToken == null) {
+                throw new BusinessException("Invalid Google ID token");
+            }
+            return googleIdToken.getPayload();
+        } catch (GeneralSecurityException | IOException exception) {
+            throw new BusinessException("Unable to verify Google ID token");
+        }
+    }
+
+    private User linkGoogleAccount(User user, String providerId, String avatarUrl) {
+        if (user.getProviderId() != null && !user.getProviderId().isBlank() && !user.getProviderId().equals(providerId)) {
+            throw new BusinessException("This email is already linked to another Google account");
+        }
+
+        user.setAuthProvider("GOOGLE");
+        user.setProviderId(providerId);
+        if (avatarUrl != null && !avatarUrl.isBlank()) {
+            user.setAvatarUrl(avatarUrl);
+        }
+        return userRepository.save(user);
+    }
+
+    private User createGooglePatientUser(String email, String fullName, String providerId, String avatarUrl) {
+        Role patientRole = roleRepository.findByRoleName("PATIENT")
+                .orElseThrow(() -> new BusinessException("PATIENT role has not been seeded"));
+
+        User user = new User();
+        user.setFullName(fullName);
+        user.setEmail(email);
+        user.setAvatarUrl(avatarUrl);
+        user.setAuthProvider("GOOGLE");
+        user.setProviderId(providerId);
+        user.setRoles(Set.of(patientRole));
+        User savedUser = userRepository.save(user);
+
+        Patient patient = new Patient();
+        patient.setUser(savedUser);
+        patient.setPatientCode(nextPatientCode());
+        patient.setFullName(fullName);
+        patient.setGender("OTHER");
+        patient.setEmail(email);
+        patientRepository.save(patient);
+
+        return savedUser;
+    }
+
+    private String firstNonBlank(String primary, String fallback) {
+        if (primary != null && !primary.isBlank()) {
+            return primary;
+        }
+        return fallback;
     }
 
     private String nextPatientCode() {
