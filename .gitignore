@@ -17,6 +17,7 @@ env/
 
 # OS Files
 .DS_Store
+backend/uploads/
 Thumbs.db
 
 # IDE / local tool state

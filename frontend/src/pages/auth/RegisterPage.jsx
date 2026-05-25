@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { register } from "../../services/authService";
+import { register, sendRegisterOtp } from "../../services/authService";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -14,14 +14,41 @@ export default function RegisterPage() {
     address: "",
   });
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const handleSendOtp = async () => {
+    setError("");
+    setNotice("");
+    if (!form.email) {
+      setError("Vui lòng nhập email trước khi lấy mã OTP.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await sendRegisterOtp({ email: form.email });
+      setOtpSent(true);
+      setNotice("Mã OTP đã được gửi tới email của bạn.");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
+    setNotice("");
+    if (!otpSent) {
+      await handleSendOtp();
+      return;
+    }
     setSubmitting(true);
     try {
-      await register({ ...form, dateOfBirth: form.dateOfBirth || null });
+      await register({ ...form, dateOfBirth: form.dateOfBirth || null, otpCode });
       navigate("/login", { replace: true });
     } catch (err) {
       setError(err.message);
@@ -45,6 +72,7 @@ export default function RegisterPage() {
           <p className="muted">Tạo hồ sơ ban đầu để đặt lịch online.</p>
           <form className="form-stack" onSubmit={handleSubmit}>
             {error && <div className="error-box">{error}</div>}
+            {notice && <div className="success-box">{notice}</div>}
             <div className="field">
               <label htmlFor="fullName">Họ tên</label>
               <input
@@ -60,7 +88,11 @@ export default function RegisterPage() {
                 id="email"
                 type="email"
                 value={form.email}
-                onChange={(event) => setForm({ ...form, email: event.target.value })}
+                onChange={(event) => {
+                  setForm({ ...form, email: event.target.value });
+                  setOtpSent(false);
+                  setOtpCode("");
+                }}
                 required
               />
             </div>
@@ -104,8 +136,24 @@ export default function RegisterPage() {
                 onChange={(event) => setForm({ ...form, dateOfBirth: event.target.value })}
               />
             </div>
+            {otpSent && (
+              <div className="field">
+                <label htmlFor="otpCode">Mã OTP email</label>
+                <input
+                  id="otpCode"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={otpCode}
+                  onChange={(event) => setOtpCode(event.target.value)}
+                  required
+                />
+              </div>
+            )}
+            <button className="ghost-button" type="button" onClick={handleSendOtp} disabled={submitting}>
+              {otpSent ? "Gửi lại OTP" : "Gửi OTP"}
+            </button>
             <button className="primary-button" type="submit" disabled={submitting}>
-              {submitting ? "Đang tạo..." : "Đăng ký"}
+              {submitting ? "Đang xử lý..." : otpSent ? "Xác thực và đăng ký" : "Gửi OTP để đăng ký"}
             </button>
             <p className="muted">
               Đã có tài khoản?{" "}

@@ -145,6 +145,11 @@ export default function LoginPage() {
               </>
             )}
             <p className="muted">
+              <Link className="secondary-link" to="/forgot-password">
+                Quên mật khẩu?
+              </Link>
+            </p>
+            <p className="muted">
               Chưa có tài khoản bệnh nhân?{" "}
               <Link className="secondary-link" to="/register">
                 Đăng ký

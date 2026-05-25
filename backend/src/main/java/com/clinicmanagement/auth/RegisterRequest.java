@@ -12,6 +12,7 @@ public record RegisterRequest(
         @Size(max = 20) String phone,
         String gender,
         LocalDate dateOfBirth,
-        String address
+        String address,
+        @NotBlank String otpCode
 ) {
 }

@@ -6,6 +6,10 @@ import {
   loginWithGoogle as googleLoginRequest,
   logout as logoutRequest,
 } from "../services/authService";
+import {
+  updateCurrentUser as updateCurrentUserRequest,
+  uploadCurrentUserAvatar as uploadCurrentUserAvatarRequest,
+} from "../services/userService";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -56,9 +60,30 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
+  const updateCurrentUser = useCallback(async (payload) => {
+    const response = await updateCurrentUserRequest(payload);
+    setUser(response.data);
+    return response.data;
+  }, []);
+
+  const uploadCurrentUserAvatar = useCallback(async (file) => {
+    const response = await uploadCurrentUserAvatarRequest(file);
+    setUser(response.data);
+    return response.data;
+  }, []);
+
   const value = useMemo(
-    () => ({ user, loading, login, loginWithGoogle, logout, isAuthenticated: Boolean(user) }),
-    [user, loading, login, loginWithGoogle, logout],
+    () => ({
+      user,
+      loading,
+      login,
+      loginWithGoogle,
+      logout,
+      updateCurrentUser,
+      uploadCurrentUserAvatar,
+      isAuthenticated: Boolean(user),
+    }),
+    [user, loading, login, loginWithGoogle, logout, updateCurrentUser, uploadCurrentUserAvatar],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

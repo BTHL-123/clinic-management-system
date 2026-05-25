@@ -7,6 +7,7 @@ public record UserSummaryResponse(
         String fullName,
         String email,
         String phone,
+        String avatarUrl,
         String status,
         List<String> roles
 ) {

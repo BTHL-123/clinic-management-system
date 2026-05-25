@@ -14,14 +14,22 @@ import com.clinicmanagement.user.dto.UpdateUserRequest;
 import com.clinicmanagement.user.dto.UserSummaryResponse;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import jakarta.persistence.criteria.JoinType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +39,9 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final DoctorRepository doctorRepository;
     private final DepartmentRepository departmentRepository;
+
+    @Value("${app.upload.avatar-dir:uploads/avatars}")
+    private String avatarUploadDir;
 
     public Page<UserSummaryResponse> getUsers(String keyword, String status, String role, Pageable pageable) {
         return userRepository.findAll(buildSpecification(keyword, status, role), pageable)
@@ -73,10 +84,72 @@ public class UserService {
         if (request.phone() != null) {
             user.setPhone(request.phone());
         }
+        if (request.avatarUrl() != null) {
+            user.setAvatarUrl(blankToNull(request.avatarUrl()));
+        }
         if (request.status() != null) {
             user.setStatus(request.status());
         }
         return UserMapper.toSummary(user);
+    }
+
+    @Transactional
+    public UserSummaryResponse updateCurrentUser(User currentUser, UpdateUserRequest request) {
+        if (request.fullName() != null) {
+            currentUser.setFullName(request.fullName());
+        }
+        if (request.phone() != null) {
+            currentUser.setPhone(request.phone());
+        }
+        if (request.avatarUrl() != null) {
+            currentUser.setAvatarUrl(blankToNull(request.avatarUrl()));
+        }
+        userRepository.save(currentUser);
+        return UserMapper.toSummary(currentUser);
+    }
+
+    @Transactional
+    public UserSummaryResponse uploadCurrentUserAvatar(User currentUser, MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new BusinessException("Avatar file is required");
+        }
+
+        String contentType = file.getContentType();
+        Set<String> allowedTypes = Set.of("image/jpeg", "image/png", "image/webp", "image/gif");
+        if (contentType == null || !allowedTypes.contains(contentType)) {
+            throw new BusinessException("Avatar must be a JPG, PNG, WEBP or GIF image");
+        }
+        if (file.getSize() > 2 * 1024 * 1024) {
+            throw new BusinessException("Avatar file must be smaller than 2MB");
+        }
+
+        try {
+            Path uploadPath = Path.of(avatarUploadDir).toAbsolutePath().normalize();
+            Files.createDirectories(uploadPath);
+
+            String extension = switch (contentType) {
+                case "image/png" -> ".png";
+                case "image/webp" -> ".webp";
+                case "image/gif" -> ".gif";
+                default -> ".jpg";
+            };
+            String fileName = currentUser.getUserId() + "-" + UUID.randomUUID() + extension;
+            Path destination = uploadPath.resolve(fileName).normalize();
+            if (!destination.startsWith(uploadPath)) {
+                throw new BusinessException("Invalid avatar file path");
+            }
+            file.transferTo(destination);
+
+            String avatarUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .path("/files/avatars/")
+                    .path(fileName)
+                    .toUriString();
+            currentUser.setAvatarUrl(avatarUrl);
+            userRepository.save(currentUser);
+            return UserMapper.toSummary(currentUser);
+        } catch (IOException exception) {
+            throw new BusinessException("Unable to save avatar file");
+        }
     }
 
     @Transactional

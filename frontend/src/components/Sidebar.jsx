@@ -1,6 +1,7 @@
 import {
   Building2,
   CalendarDays,
+  KeyRound,
   MessageSquare,
   History,
   CreditCard,
@@ -24,6 +25,7 @@ import { useAuth } from "../context/useAuth";
 const adminItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/dashboard/profile", label: "Hồ sơ của tôi", icon: UserSquare, roles: ["PATIENT", "DOCTOR", "STAFF"] },
+  { to: "/dashboard/change-password", label: "Đổi mật khẩu", icon: KeyRound },
   { to: "/dashboard/departments", label: "Chuyên khoa", icon: Building2, roles: ["ADMIN", "STAFF"] },
   { to: "/dashboard/medical-services", label: "Dịch vụ y tế", icon: HeartPulse, roles: ["ADMIN", "STAFF"] },
   { to: "/dashboard/invoices", label: "Hóa đơn", icon: Receipt, roles: ["ADMIN", "STAFF"] },
@@ -42,6 +44,8 @@ const adminItems = [
 
 const patientItems = [
   { to: "/dashboard", label: "Trang chủ", icon: LayoutDashboard, end: true },
+  { to: "/dashboard/profile", label: "Hồ sơ của tôi", icon: UserSquare },
+  { to: "/dashboard/change-password", label: "Đổi mật khẩu", icon: KeyRound },
   { to: "/dashboard/available-slots", label: "Tìm ca khám trống", icon: Search },
   { to: "/dashboard/ai-chat", label: "Tư vấn AI", icon: MessageSquare },
   { to: "/dashboard/my-appointments", label: "Lịch hẹn của tôi", icon: CalendarDays },
