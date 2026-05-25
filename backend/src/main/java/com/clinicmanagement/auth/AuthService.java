@@ -35,13 +35,17 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final EmailOtpService emailOtpService;
 
     @Value("${app.google.client-id:}")
     private String googleClientId;
 
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.email())) {
+        String email = emailOtpService.normalizeEmail(request.email());
+        emailOtpService.verifyAndConsume(email, EmailOtpService.PURPOSE_REGISTER, request.otpCode());
+
+        if (userRepository.existsByEmail(email)) {
             throw new BusinessException("Email already exists");
         }
 
@@ -50,7 +54,7 @@ public class AuthService {
 
         User user = new User();
         user.setFullName(request.fullName());
-        user.setEmail(request.email());
+        user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setPhone(request.phone());
         user.setRoles(Set.of(patientRole));
@@ -63,11 +67,19 @@ public class AuthService {
         patient.setGender(normalizeGender(request.gender()));
         patient.setDateOfBirth(request.dateOfBirth());
         patient.setPhone(request.phone());
-        patient.setEmail(request.email());
+        patient.setEmail(email);
         patient.setAddress(request.address());
         Patient savedPatient = patientRepository.save(patient);
 
         return new RegisterResponse(savedUser.getUserId(), savedPatient.getPatientId(), savedUser.getEmail(), "PATIENT");
+    }
+
+    public void sendRegisterOtp(RegisterOtpRequest request) {
+        String email = emailOtpService.normalizeEmail(request.email());
+        if (userRepository.existsByEmail(email)) {
+            throw new BusinessException("Email already exists");
+        }
+        emailOtpService.createAndSend(email, EmailOtpService.PURPOSE_REGISTER);
     }
 
     public LoginResponse login(LoginRequest request) {
@@ -138,6 +150,39 @@ public class AuthService {
                 "Bearer",
                 jwtService.getAccessTokenExpirationSeconds()
         );
+    }
+
+    public void forgotPassword(ForgotPasswordRequest request) {
+        String email = emailOtpService.normalizeEmail(request.email());
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException("Email does not exist"));
+        if (!"LOCAL".equals(user.getAuthProvider()) || user.getPasswordHash() == null) {
+            throw new BusinessException("This account cannot reset password by email OTP");
+        }
+        emailOtpService.createAndSend(email, EmailOtpService.PURPOSE_RESET_PASSWORD);
+    }
+
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        String email = emailOtpService.normalizeEmail(request.email());
+        emailOtpService.verifyAndConsume(email, EmailOtpService.PURPOSE_RESET_PASSWORD, request.otpCode());
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException("Email does not exist"));
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void changePassword(User currentUser, ChangePasswordRequest request) {
+        if (!"LOCAL".equals(currentUser.getAuthProvider()) || currentUser.getPasswordHash() == null) {
+            throw new BusinessException("This account cannot change local password");
+        }
+        if (!passwordEncoder.matches(request.currentPassword(), currentUser.getPasswordHash())) {
+            throw new BusinessException("Current password is incorrect");
+        }
+        currentUser.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(currentUser);
     }
 
     private GoogleIdToken.Payload verifyGoogleToken(String idToken) {

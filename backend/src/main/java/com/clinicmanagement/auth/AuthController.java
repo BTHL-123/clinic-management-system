@@ -25,6 +25,12 @@ public class AuthController {
         return ApiResponse.success(authService.register(request));
     }
 
+    @PostMapping("/register/send-otp")
+    public ApiResponse<Map<String, String>> sendRegisterOtp(@Valid @RequestBody RegisterOtpRequest request) {
+        authService.sendRegisterOtp(request);
+        return ApiResponse.success(Map.of("message", "OTP has been sent to your email"));
+    }
+
     @PostMapping("/login")
     public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         return ApiResponse.success(authService.login(request));
@@ -47,12 +53,23 @@ public class AuthController {
 
     @PostMapping("/forgot-password")
     public ApiResponse<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request);
         return ApiResponse.success(Map.of("message", "Password reset email has been sent"));
     }
 
     @PostMapping("/reset-password")
     public ApiResponse<Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
         return ApiResponse.success(Map.of("message", "Password has been reset successfully"));
+    }
+
+    @PostMapping("/change-password")
+    public ApiResponse<Map<String, String>> changePassword(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody ChangePasswordRequest request
+    ) {
+        authService.changePassword(currentUser.getUser(), request);
+        return ApiResponse.success(Map.of("message", "Password has been changed successfully"));
     }
 
     @GetMapping("/me")

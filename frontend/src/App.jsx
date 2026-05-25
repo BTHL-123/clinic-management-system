@@ -2,6 +2,8 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import DashboardLayout from "./layouts/DashboardLayout.jsx";
 import LoginPage from "./pages/auth/LoginPage.jsx";
 import RegisterPage from "./pages/auth/RegisterPage.jsx";
+import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage.jsx";
+import ChangePasswordPage from "./pages/auth/ChangePasswordPage.jsx";
 import DashboardHome from "./pages/dashboard/DashboardHome.jsx";
 
 import PatientHome from "./pages/dashboard/PatientHome.jsx";
@@ -38,6 +40,7 @@ export default function App() {
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route
         path="/dashboard"
         element={
@@ -51,6 +54,7 @@ export default function App() {
 
         <Route index element={<DashboardHome />} />
         <Route path="profile" element={<ProfilePage />} />
+        <Route path="change-password" element={<ChangePasswordPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="security" element={<SecurityPage />} />
 
@@ -69,7 +73,6 @@ export default function App() {
     </Routes>
   );
 }
-
 
 
 

@@ -62,6 +62,16 @@ CREATE TABLE user_roles (
         ON DELETE CASCADE
 );
 
+CREATE TABLE email_otps (
+    otp_id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    purpose VARCHAR(30) NOT NULL,
+    otp_hash VARCHAR(255) NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    consumed BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE role_permissions (
     role_id BIGINT NOT NULL,
     permission_id BIGINT NOT NULL,
@@ -1193,6 +1203,7 @@ CREATE TABLE system_settings (
 -- 14. Indexes
 -- =========================================================
 CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_email_otps_lookup ON email_otps(email, purpose, consumed, created_at DESC);
 
 CREATE INDEX idx_patients_phone ON patients(phone);
 CREATE INDEX idx_patients_code ON patients(patient_code);

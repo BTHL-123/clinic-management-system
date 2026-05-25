@@ -14,6 +14,7 @@ public final class UserMapper {
                 user.getFullName(),
                 user.getEmail(),
                 user.getPhone(),
+                user.getAvatarUrl(),
                 user.getStatus(),
                 user.getRoles().stream()
                         .map(Role::getRoleName)

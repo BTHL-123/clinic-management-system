@@ -12,14 +12,27 @@ export default function DashboardLayout() {
     navigate("/login", { replace: true });
   };
 
+  const initials = (user?.fullName || "AI")
+    .split(" ")
+    .filter(Boolean)
+    .slice(-2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+
   return (
     <div className="app-shell">
       <Sidebar />
       <main className="main-area">
         <header className="topbar">
-          <div>
-            <strong>{user?.fullName || "Clinic Admin"}</strong>
-            <div className="muted">{user?.roles?.join(", ")}</div>
+          <div className="topbar-user">
+            <div className="user-avatar small">
+              {user?.avatarUrl ? <img src={user.avatarUrl} alt="" /> : <span>{initials}</span>}
+            </div>
+            <div>
+              <strong>{user?.fullName || "Clinic Admin"}</strong>
+              <div className="muted">{user?.roles?.join(", ")}</div>
+            </div>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             <button className="icon-button" aria-label="Notifications">

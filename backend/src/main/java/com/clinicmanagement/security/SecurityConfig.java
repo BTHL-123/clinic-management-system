@@ -54,11 +54,13 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/auth/register",
+                                "/auth/register/send-otp",
                                 "/auth/login",
                                 "/auth/google",
                                 "/auth/refresh-token",
                                 "/auth/forgot-password",
                                 "/auth/reset-password",
+                                "/files/avatars/**",
                                 "/departments/**",
                                 "/departments",
 
