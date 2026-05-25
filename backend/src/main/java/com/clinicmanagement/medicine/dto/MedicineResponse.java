@@ -17,20 +17,20 @@ public record MedicineResponse(
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
-    public static MedicineResponse from(Medicine m) {
+    public static MedicineResponse from(Medicine medicine) {
         return new MedicineResponse(
-                m.getMedicineId(),
-                m.getMedicineCode(),
-                m.getMedicineName(),
-                m.getActiveIngredient(),
-                m.getDosageForm(),
-                m.getStrength(),
-                m.getUnit(),
-                m.getRxnormCode(),
-                m.getDescription(),
-                m.getStatus(),
-                m.getCreatedAt(),
-                m.getUpdatedAt()
+                medicine.getMedicineId(),
+                medicine.getMedicineCode(),
+                medicine.getMedicineName(),
+                medicine.getActiveIngredient(),
+                medicine.getDosageForm(),
+                medicine.getStrength(),
+                medicine.getUnit(),
+                medicine.getRxnormCode(),
+                medicine.getDescription(),
+                medicine.getStatus(),
+                medicine.getCreatedAt(),
+                medicine.getUpdatedAt()
         );
     }
 }

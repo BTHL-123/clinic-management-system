@@ -45,6 +45,9 @@ app:
     enabled: ${APP_MAIL_ENABLED:false}
   upload:
     avatar-dir: ${AVATAR_UPLOAD_DIR:uploads/avatars}
+  gemini:
+    api-key: ${GEMINI_API_KEY:}
+    model: ${GEMINI_MODEL:gemini-1.5-flash}
   seed:
     admin-email: ${APP_ADMIN_EMAIL:admin@example.com}
     admin-password: ${APP_ADMIN_PASSWORD:123456}

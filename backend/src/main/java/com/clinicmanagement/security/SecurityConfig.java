@@ -63,13 +63,11 @@ public class SecurityConfig {
                                 "/files/avatars/**",
                                 "/departments/**",
                                 "/departments",
-
+                                "/payments/online/callback",
                                 "/doctor-schedules/**",
                                 "/doctor-schedules",
-
                                 "/doctors/**",
                                 "/doctors"
-
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

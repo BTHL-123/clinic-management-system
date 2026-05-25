@@ -12,7 +12,15 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/medicines")
@@ -21,51 +29,37 @@ public class MedicineController {
 
     private final MedicineService medicineService;
 
-    /**
-     * GET /api/medicines?keyword=para&status=ACTIVE&page=0&size=10
-     * ADMIN, DOCTOR, PHARMACIST
-     */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','DOCTOR','PHARMACIST')")
     public ResponseEntity<ApiResponse<PageResponse<MedicineResponse>>> getAll(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "medicineName") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction
     ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("medicineName").ascending());
-        return ResponseEntity.ok(ApiResponse.success(
-                medicineService.getAll(status, keyword, pageable)));
+        Sort sort = direction.equalsIgnoreCase("asc")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return ResponseEntity.ok(ApiResponse.success(medicineService.getAll(status, keyword, pageable)));
     }
 
-    /**
-     * GET /api/medicines/{medicineId}
-     * ADMIN, DOCTOR, PHARMACIST
-     */
     @GetMapping("/{medicineId}")
     @PreAuthorize("hasAnyRole('ADMIN','DOCTOR','PHARMACIST')")
     public ResponseEntity<ApiResponse<MedicineResponse>> getById(@PathVariable Long medicineId) {
         return ResponseEntity.ok(ApiResponse.success(medicineService.getById(medicineId)));
     }
 
-    /**
-     * POST /api/medicines
-     * ADMIN, PHARMACIST
-     */
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN','PHARMACIST')")
-    public ResponseEntity<ApiResponse<MedicineResponse>> create(
-            @Valid @RequestBody MedicineRequest request
-    ) {
+    public ResponseEntity<ApiResponse<MedicineResponse>> create(@Valid @RequestBody MedicineRequest request) {
         MedicineResponse created = medicineService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Tạo thuốc thành công", created));
     }
 
-    /**
-     * PUT /api/medicines/{medicineId}
-     * ADMIN, PHARMACIST
-     */
     @PutMapping("/{medicineId}")
     @PreAuthorize("hasAnyRole('ADMIN','PHARMACIST')")
     public ResponseEntity<ApiResponse<MedicineResponse>> update(
@@ -76,10 +70,6 @@ public class MedicineController {
                 medicineService.update(medicineId, request)));
     }
 
-    /**
-     * DELETE /api/medicines/{medicineId}
-     * ADMIN, PHARMACIST
-     */
     @DeleteMapping("/{medicineId}")
     @PreAuthorize("hasAnyRole('ADMIN','PHARMACIST')")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long medicineId) {

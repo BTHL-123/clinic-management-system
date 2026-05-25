@@ -5,8 +5,10 @@ import com.clinicmanagement.common.exception.BusinessException;
 import com.clinicmanagement.common.exception.ResourceNotFoundException;
 import com.clinicmanagement.medicine.dto.MedicineRequest;
 import com.clinicmanagement.medicine.dto.MedicineResponse;
+import java.util.ArrayList;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,22 +18,35 @@ public class MedicineService {
 
     private final MedicineRepository medicineRepository;
 
-    // ── GET LIST ──────────────────────────────────────────────────────────────
     @Transactional(readOnly = true)
     public PageResponse<MedicineResponse> getAll(String status, String keyword, Pageable pageable) {
+        Specification<Medicine> spec = (root, query, cb) -> {
+            var predicates = new ArrayList<jakarta.persistence.criteria.Predicate>();
+            if (status != null && !status.isBlank()) {
+                predicates.add(cb.equal(root.get("status"), status));
+            }
+            if (keyword != null && !keyword.isBlank()) {
+                String pattern = "%" + keyword.toLowerCase() + "%";
+                predicates.add(cb.or(
+                        cb.like(cb.lower(root.get("medicineName")), pattern),
+                        cb.like(cb.lower(root.get("medicineCode")), pattern),
+                        cb.like(cb.lower(root.get("activeIngredient")), pattern)
+                ));
+            }
+            return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
+
         return PageResponse.from(
-                medicineRepository.findByFilters(status, keyword, pageable)
+                medicineRepository.findAll(spec, pageable)
                         .map(MedicineResponse::from)
         );
     }
 
-    // ── GET BY ID ─────────────────────────────────────────────────────────────
     @Transactional(readOnly = true)
     public MedicineResponse getById(Long id) {
         return MedicineResponse.from(findOrThrow(id));
     }
 
-    // ── CREATE ────────────────────────────────────────────────────────────────
     @Transactional
     public MedicineResponse create(MedicineRequest request) {
         if (medicineRepository.existsByMedicineCodeIgnoreCase(request.medicineCode())) {
@@ -53,7 +68,6 @@ public class MedicineService {
         return MedicineResponse.from(medicineRepository.save(medicine));
     }
 
-    // ── UPDATE ────────────────────────────────────────────────────────────────
     @Transactional
     public MedicineResponse update(Long id, MedicineRequest request) {
         Medicine medicine = findOrThrow(id);
@@ -70,12 +84,13 @@ public class MedicineService {
         medicine.setUnit(request.unit());
         medicine.setRxnormCode(request.rxnormCode());
         medicine.setDescription(request.description());
-        if (request.status() != null) medicine.setStatus(request.status());
+        if (request.status() != null) {
+            medicine.setStatus(request.status());
+        }
 
         return MedicineResponse.from(medicineRepository.save(medicine));
     }
 
-    // ── DELETE ────────────────────────────────────────────────────────────────
     @Transactional
     public void delete(Long id) {
         if (!medicineRepository.existsById(id)) {
@@ -84,10 +99,8 @@ public class MedicineService {
         medicineRepository.deleteById(id);
     }
 
-    // ── HELPER ────────────────────────────────────────────────────────────────
     Medicine findOrThrow(Long id) {
         return medicineRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Không tìm thấy thuốc với ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thuốc với ID: " + id));
     }
 }
