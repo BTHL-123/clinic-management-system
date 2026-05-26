@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Edit, Plus, Search, Trash2, Users, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Edit, Eye, Plus, Search, Trash2, Users, X, ClipboardList } from "lucide-react";
 import {
   createPatient,
   deletePatient,
@@ -7,6 +8,7 @@ import {
   updatePatient,
 } from "../../services/patientService";
 import { getUsers } from "../../services/userService";
+import MedicalHistory from "../../components/MedicalHistory";
 
 const EMPTY_FORM = {
   userId: "",
@@ -27,6 +29,7 @@ const EMPTY_FORM = {
 };
 
 export default function PatientManagement() {
+  const navigate = useNavigate();
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -43,6 +46,9 @@ export default function PatientManagement() {
 
   // Delete confirm
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  // History modal
+  const [showHistoryFor, setShowHistoryFor] = useState(null);
 
   /* ── Load Options ──────────────────────────────────────── */
   const fetchOptions = async () => {
@@ -235,6 +241,12 @@ export default function PatientManagement() {
                   </td>
                   <td>
                     <div className="action-group">
+                      <button className="icon-button" onClick={() => navigate(`/dashboard/patients/${patient.patientId}`)} title="Xem chi tiết">
+                        <Eye size={15} />
+                      </button>
+                      <button className="icon-button" onClick={() => setShowHistoryFor(patient.patientId)} title="Lịch sử bệnh án">
+                        <ClipboardList size={15} />
+                      </button>
                       <button className="icon-button" onClick={() => openEdit(patient)} title="Chỉnh sửa">
                         <Edit size={15} />
                       </button>
@@ -384,6 +396,11 @@ export default function PatientManagement() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Modal Lịch sử bệnh án ───────────────────────────── */}
+      {showHistoryFor && (
+        <MedicalHistory patientId={showHistoryFor} onClose={() => setShowHistoryFor(null)} />
       )}
     </>
   );

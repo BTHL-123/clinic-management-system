@@ -37,6 +37,7 @@ public class DataSeeder implements CommandLineRunner {
         seedAdmin();
         seedDoctor();
         seedPatient();
+        seedMedicalRecords();
         syncPostgresSequences();
     }
 
@@ -149,6 +150,62 @@ public class DataSeeder implements CommandLineRunner {
 
         jdbcTemplate.update("INSERT INTO patients (user_id, patient_code, full_name, gender, phone, email, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
                 savedUser.getUserId(), "PAT000001", "Nguyễn Văn Test", "MALE", "0911222333", email);
+    }
+
+    private void seedMedicalRecords() {
+        // Kiểm tra xem đã có dữ liệu test chưa
+        List<Long> existingRecords = jdbcTemplate.query(
+                "SELECT medical_record_id FROM medical_records WHERE consultation_id = 1001",
+                (rs, rowNum) -> rs.getLong("medical_record_id"));
+        if (!existingRecords.isEmpty()) {
+            return; // Đã seed rồi
+        }
+
+        // Lấy patient_id và doctor_id đã có
+        List<Long> patientIds = jdbcTemplate.query(
+                "SELECT patient_id FROM patients ORDER BY patient_id LIMIT 1",
+                (rs, rowNum) -> rs.getLong("patient_id"));
+        List<Long> doctorIds = jdbcTemplate.query(
+                "SELECT doctor_id FROM doctors ORDER BY doctor_id LIMIT 2",
+                (rs, rowNum) -> rs.getLong("doctor_id"));
+
+        if (patientIds.isEmpty() || doctorIds.isEmpty()) {
+            return; // Chưa có patient/doctor nào
+        }
+
+        Long patientId = patientIds.get(0);
+        Long doctorId1 = doctorIds.get(0);
+        Long doctorId2 = doctorIds.size() > 1 ? doctorIds.get(1) : doctorId1;
+
+        // Bệnh án 1: Viêm loét dạ dày
+        jdbcTemplate.update("""
+                INSERT INTO medical_records (consultation_id, patient_id, doctor_id, symptoms, clinical_findings, diagnosis, treatment_plan, doctor_note, follow_up_date, follow_up_note, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP - INTERVAL '14 days', CURRENT_TIMESTAMP - INTERVAL '14 days')
+                """,
+                1001, patientId, doctorId1,
+                "Dau bung, buon non, sot nhe 37.8C",
+                "Bung an dau vung thuong vi",
+                "Viem loet da day cap",
+                "Dung thuoc khang acid + khang sinh 7 ngay",
+                "Benh nhan can kieng do cay nong. Tai kham sau 2 tuan.",
+                java.time.LocalDate.of(2026, 6, 10),
+                "Kiem tra lai noi soi da day");
+
+        // Bệnh án 2: Viêm phế quản
+        jdbcTemplate.update("""
+                INSERT INTO medical_records (consultation_id, patient_id, doctor_id, symptoms, clinical_findings, diagnosis, treatment_plan, doctor_note, follow_up_date, follow_up_note, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP - INTERVAL '7 days', CURRENT_TIMESTAMP - INTERVAL '7 days')
+                """,
+                1002, patientId, doctorId2,
+                "Ho khan keo dai, kho tho khi ngu",
+                "Phoi nghe ran am hai ben",
+                "Viem phe quan cap",
+                "Thuoc giam ho + khang sinh + xi-ro long dom",
+                "Uong nhieu nuoc am, nghi ngoi. Tai kham neu khong giam sau 5 ngay.",
+                java.time.LocalDate.of(2026, 6, 5),
+                "Chup X-quang phoi neu con ho");
+
+        System.out.println("\n=== SEED: Da tao 2 ban ghi medical_records cho patient_id=" + patientId + " ===");
     }
 
     private void syncPostgresSequences() {

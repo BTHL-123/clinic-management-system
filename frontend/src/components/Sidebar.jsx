@@ -49,7 +49,7 @@ const patientItems = [
   { to: "/dashboard/available-slots", label: "Tìm ca khám trống", icon: Search },
   { to: "/dashboard/ai-chat", label: "Tư vấn AI", icon: MessageSquare },
   { to: "/dashboard/my-appointments", label: "Lịch hẹn của tôi", icon: CalendarDays },
-  { to: "/dashboard/profile", label: "Hồ sơ của tôi", icon: UserSquare },
+  { to: "/dashboard/my-medical-history", label: "Lịch sử bệnh án", icon: History },
 ];
 
 export default function Sidebar() {

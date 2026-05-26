@@ -3,6 +3,8 @@ package com.clinicmanagement.medicalrecord;
 import com.clinicmanagement.common.dto.PageResponse;
 import com.clinicmanagement.common.exception.BusinessException;
 import com.clinicmanagement.common.exception.ResourceNotFoundException;
+import com.clinicmanagement.doctor.Doctor;
+import com.clinicmanagement.doctor.DoctorRepository;
 import com.clinicmanagement.medicalrecord.dto.CreateMedicalRecordRequest;
 import com.clinicmanagement.medicalrecord.dto.MedicalRecordResponse;
 import com.clinicmanagement.medicalrecord.dto.UpdateMedicalRecordRequest;
@@ -17,20 +19,21 @@ import org.springframework.transaction.annotation.Transactional;
 public class MedicalRecordService {
 
     private final MedicalRecordRepository medicalRecordRepository;
+    private final DoctorRepository doctorRepository;
 
     // ── GET LIST ──────────────────────────────────────────────────────────────
     @Transactional(readOnly = true)
     public PageResponse<MedicalRecordResponse> getAll(Long patientId, Long doctorId, Pageable pageable) {
         return PageResponse.from(
                 medicalRecordRepository.findByFilters(patientId, doctorId, pageable)
-                        .map(MedicalRecordResponse::from)
+                        .map(this::toEnrichedResponse)
         );
     }
 
     // ── GET BY ID ─────────────────────────────────────────────────────────────
     @Transactional(readOnly = true)
     public MedicalRecordResponse getById(Long id) {
-        return MedicalRecordResponse.from(findOrThrow(id));
+        return toEnrichedResponse(findOrThrow(id));
     }
 
     // ── GET PATIENT MEDICAL HISTORY ───────────────────────────────────────────
@@ -38,7 +41,7 @@ public class MedicalRecordService {
     public List<MedicalRecordResponse> getMedicalHistory(Long patientId) {
         return medicalRecordRepository.findByPatientIdOrderByCreatedAtDesc(patientId)
                 .stream()
-                .map(MedicalRecordResponse::from)
+                .map(this::toEnrichedResponse)
                 .toList();
     }
 
@@ -62,7 +65,7 @@ public class MedicalRecordService {
                 .followUpNote(request.followUpNote())
                 .build();
 
-        return MedicalRecordResponse.from(medicalRecordRepository.save(record));
+        return toEnrichedResponse(medicalRecordRepository.save(record));
     }
 
     // ── UPDATE ────────────────────────────────────────────────────────────────
@@ -78,13 +81,29 @@ public class MedicalRecordService {
         if (request.followUpDate()     != null) record.setFollowUpDate(request.followUpDate());
         if (request.followUpNote()     != null) record.setFollowUpNote(request.followUpNote());
 
-        return MedicalRecordResponse.from(medicalRecordRepository.save(record));
+        return toEnrichedResponse(medicalRecordRepository.save(record));
     }
 
-    // ── HELPER ────────────────────────────────────────────────────────────────
+    // ── HELPERS ───────────────────────────────────────────────────────────────
     private MedicalRecord findOrThrow(Long id) {
         return medicalRecordRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Không tìm thấy hồ sơ bệnh án với ID: " + id));
     }
+
+    private MedicalRecordResponse toEnrichedResponse(MedicalRecord record) {
+        String doctorName = null;
+        String departmentName = null;
+
+        if (record.getDoctorId() != null) {
+            Doctor doctor = doctorRepository.findById(record.getDoctorId()).orElse(null);
+            if (doctor != null) {
+                doctorName = doctor.getUser() != null ? doctor.getUser().getFullName() : null;
+                departmentName = doctor.getDepartment() != null ? doctor.getDepartment().getDepartmentName() : null;
+            }
+        }
+
+        return MedicalRecordResponse.from(record, doctorName, departmentName);
+    }
 }
+
