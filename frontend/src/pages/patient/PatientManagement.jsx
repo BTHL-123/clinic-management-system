@@ -241,7 +241,12 @@ export default function PatientManagement() {
                   </td>
                   <td>
                     <div className="action-group">
-                      <button className="icon-button" onClick={() => navigate(`/dashboard/patients/${patient.patientId}`)} title="Xem chi tiết">
+                      <button 
+                        className="icon-button" 
+                        onClick={() => navigate(`/dashboard/patients/${patient.patientId}`)} 
+                        title="Hồ sơ chi tiết (Mở trang mới)"
+                        style={{ color: "#2563eb", background: "#eff6ff", border: "1px solid #bfdbfe" }}
+                      >
                         <Eye size={15} />
                       </button>
                       <button className="icon-button" onClick={() => setShowHistoryFor(patient.patientId)} title="Lịch sử bệnh án">
