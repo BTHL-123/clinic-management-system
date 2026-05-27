@@ -26,4 +26,6 @@ public interface AppointmentService {
     );
 
     AppointmentResponse bookAppointment(BookAppointmentRequest request, Long userId);
+
+    AppointmentResponse cancelAppointment(Long appointmentId, String cancellationReason, Long currentUserId, boolean isReceptionist);
 }

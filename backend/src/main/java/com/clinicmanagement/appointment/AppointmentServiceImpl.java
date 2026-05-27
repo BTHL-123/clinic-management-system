@@ -28,19 +28,22 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final PatientRepository patientRepository;
     private final DoctorRepository doctorRepository;
     private final UserRepository userRepository;
+    private final QueueTicketRepository queueTicketRepository;
 
     public AppointmentServiceImpl(
             AppointmentRepository appointmentRepository,
             TimeSlotRepository timeSlotRepository,
             PatientRepository patientRepository,
             DoctorRepository doctorRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            QueueTicketRepository queueTicketRepository
     ) {
         this.appointmentRepository = appointmentRepository;
         this.timeSlotRepository = timeSlotRepository;
         this.patientRepository = patientRepository;
         this.doctorRepository = doctorRepository;
         this.userRepository = userRepository;
+        this.queueTicketRepository = queueTicketRepository;
     }
 
     @Override
@@ -109,7 +112,9 @@ public class AppointmentServiceImpl implements AppointmentService {
                 app.getReasonForVisit(),
                 app.getInitialSymptoms(),
                 app.getStatus(),
-                app.getDepositAmount()
+                app.getDepositAmount(),
+                app.getCancellationReason(),
+                app.getCancelledAt()
         );
     }
 
@@ -180,5 +185,71 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         Appointment savedApp = appointmentRepository.save(app);
         return mapToResponse(savedApp);
+    }
+
+    @Override
+    @Transactional
+    public AppointmentResponse cancelAppointment(
+            Long appointmentId,
+            String cancellationReason,
+            Long currentUserId,
+            boolean isReceptionist
+    ) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Lịch hẹn không tồn tại với id: " + appointmentId));
+
+        // 1. Kiểm tra quyền: PATIENT chỉ được hủy lịch của chính mình
+        if (!isReceptionist) {
+            Long ownerId = appointment.getPatient() != null
+                    && appointment.getPatient().getUser() != null
+                    ? appointment.getPatient().getUser().getUserId()
+                    : null;
+            if (!currentUserId.equals(ownerId)) {
+                throw new BusinessException("Bạn không có quyền hủy lịch hẹn này.");
+            }
+        }
+
+        // 2. Kiểm tra trạng thái appointment
+        String currentStatus = appointment.getStatus();
+        if ("CANCELLED".equals(currentStatus)) {
+            throw new BusinessException("Lịch hẹn này đã được hủy trước đó.");
+        }
+        if ("COMPLETED".equals(currentStatus)) {
+            throw new BusinessException("Không thể hủy lịch hẹn đã hoàn thành.");
+        }
+        if ("CHECKED_IN".equals(currentStatus)) {
+            throw new BusinessException("Không thể hủy lịch hẹn đang trong trạng thái đã check-in.");
+        }
+
+        // 3. Kiểm tra thời gian — không được hủy lịch đã qua
+        java.time.LocalDateTime appointmentDateTime = java.time.LocalDateTime.of(
+                appointment.getAppointmentDate(), appointment.getStartTime());
+        if (appointmentDateTime.isBefore(java.time.LocalDateTime.now())) {
+            throw new BusinessException("Không thể hủy lịch hẹn đã qua thời gian khám.");
+        }
+
+        // 4. Cập nhật appointment
+        appointment.setStatus("CANCELLED");
+        appointment.setCancellationReason(cancellationReason);
+        appointment.setCancelledAt(java.time.LocalDateTime.now());
+        appointment.setCancelledBy(currentUserId);
+        appointmentRepository.save(appointment);
+
+        // 5. Giải phóng slot — đặt lại thành AVAILABLE
+        if (appointment.getTimeSlot() != null) {
+            TimeSlot slot = appointment.getTimeSlot();
+            slot.setStatus("AVAILABLE");
+            slot.setLockedByPatientId(null);
+            slot.setLockedUntil(null);
+            timeSlotRepository.save(slot);
+        }
+
+        // 6. Cập nhật QueueTicket nếu có
+        queueTicketRepository.findByAppointment(appointment).ifPresent(ticket -> {
+            ticket.setStatus("CANCELLED");
+            queueTicketRepository.save(ticket);
+        });
+
+        return mapToResponse(appointment);
     }
 }
