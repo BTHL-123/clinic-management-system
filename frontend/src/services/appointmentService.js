@@ -24,6 +24,10 @@ const appointmentService = {
   cancelAppointment(id, cancellationReason) {
     return axiosClient.put(`/appointments/${id}/cancel`, { cancellationReason });
   },
+
+  rescheduleAppointment(id, newSlotId, rescheduleReason) {
+    return axiosClient.put(`/appointments/${id}/reschedule`, { newSlotId, rescheduleReason });
+  },
 };
 
 export default appointmentService;

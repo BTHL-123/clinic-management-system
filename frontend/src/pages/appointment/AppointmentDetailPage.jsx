@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { CalendarDays, Clock, ArrowLeft, XCircle } from "lucide-react";
+import { CalendarDays, Clock, ArrowLeft, XCircle, RefreshCw } from "lucide-react";
 import appointmentService from "../../services/appointmentService";
+import RescheduleModal from "./RescheduleModal";
 
 // Reuse CancelModal
 function CancelModal({ isOpen, onClose, onConfirm, busy }) {
@@ -73,6 +74,8 @@ export default function AppointmentDetailPage() {
 
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+
+  const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
 
   const loadData = () => {
     setLoading(true);
@@ -157,7 +160,17 @@ export default function AppointmentDetailPage() {
         </div>
 
         {(appt.status === "CONFIRMED" || appt.status === "PENDING_PAYMENT") && (
-          <div style={{ marginTop: "24px", paddingTop: "20px", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end" }}>
+          <div style={{ marginTop: "24px", paddingTop: "20px", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+            <button
+              onClick={() => setRescheduleModalOpen(true)}
+              style={{
+                display: "flex", alignItems: "center", gap: "8px", padding: "10px 20px",
+                borderRadius: "8px", border: "1px solid #cbd5e1", background: "#fff", color: "#0ea5e9",
+                fontWeight: 600, cursor: "pointer"
+              }}
+            >
+              <RefreshCw size={18} /> Dời lịch hẹn
+            </button>
             <button
               onClick={() => setCancelModalOpen(true)}
               style={{
@@ -177,6 +190,16 @@ export default function AppointmentDetailPage() {
         onClose={() => { if(!cancelling) setCancelModalOpen(false); }}
         onConfirm={handleCancel}
         busy={cancelling}
+      />
+
+      <RescheduleModal
+        isOpen={rescheduleModalOpen}
+        onClose={() => setRescheduleModalOpen(false)}
+        onRescheduleSuccess={() => {
+          alert("Dời lịch hẹn thành công!");
+          loadData();
+        }}
+        appointment={appt}
       />
     </div>
   );

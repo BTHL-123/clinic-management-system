@@ -2,6 +2,7 @@ package com.clinicmanagement.appointment;
 
 import com.clinicmanagement.appointment.dto.AppointmentResponse;
 import com.clinicmanagement.appointment.dto.BookAppointmentRequest;
+import com.clinicmanagement.appointment.dto.RescheduleAppointmentRequest;
 import com.clinicmanagement.common.dto.PageResponse;
 import com.clinicmanagement.common.exception.BusinessException;
 import com.clinicmanagement.common.exception.ResourceNotFoundException;
@@ -28,22 +29,19 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final PatientRepository patientRepository;
     private final DoctorRepository doctorRepository;
     private final UserRepository userRepository;
-    private final QueueTicketRepository queueTicketRepository;
 
     public AppointmentServiceImpl(
             AppointmentRepository appointmentRepository,
             TimeSlotRepository timeSlotRepository,
             PatientRepository patientRepository,
             DoctorRepository doctorRepository,
-            UserRepository userRepository,
-            QueueTicketRepository queueTicketRepository
+            UserRepository userRepository
     ) {
         this.appointmentRepository = appointmentRepository;
         this.timeSlotRepository = timeSlotRepository;
         this.patientRepository = patientRepository;
         this.doctorRepository = doctorRepository;
         this.userRepository = userRepository;
-        this.queueTicketRepository = queueTicketRepository;
     }
 
     @Override
@@ -244,11 +242,85 @@ public class AppointmentServiceImpl implements AppointmentService {
             timeSlotRepository.save(slot);
         }
 
-        // 6. Cập nhật QueueTicket nếu có
-        queueTicketRepository.findByAppointment(appointment).ifPresent(ticket -> {
-            ticket.setStatus("CANCELLED");
-            queueTicketRepository.save(ticket);
-        });
+
+
+        return mapToResponse(appointment);
+    }
+
+    @Override
+    @Transactional
+    public AppointmentResponse rescheduleAppointment(
+            Long appointmentId,
+            RescheduleAppointmentRequest request,
+            Long currentUserId,
+            boolean isPrivileged
+    ) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Lịch hẹn không tồn tại với id: " + appointmentId));
+
+        if (!isPrivileged) {
+            Long ownerId = appointment.getPatient() != null
+                    && appointment.getPatient().getUser() != null
+                    ? appointment.getPatient().getUser().getUserId()
+                    : null;
+            if (!currentUserId.equals(ownerId)) {
+                throw new BusinessException("Bạn không có quyền dời lịch hẹn này.");
+            }
+        }
+
+        String currentStatus = appointment.getStatus();
+        if ("CANCELLED".equals(currentStatus) || "COMPLETED".equals(currentStatus) || "CHECKED_IN".equals(currentStatus)) {
+            throw new BusinessException("Không thể dời lịch hẹn có trạng thái: " + currentStatus);
+        }
+
+        java.time.LocalDateTime appointmentDateTime = java.time.LocalDateTime.of(
+                appointment.getAppointmentDate(), appointment.getStartTime());
+        if (appointmentDateTime.isBefore(java.time.LocalDateTime.now())) {
+            throw new BusinessException("Không thể dời lịch hẹn đã qua thời gian khám.");
+        }
+
+        TimeSlot oldSlot = appointment.getTimeSlot();
+        if (oldSlot != null && oldSlot.getId().equals(request.newSlotId())) {
+            throw new BusinessException("Ca khám mới không được trùng với ca khám hiện tại.");
+        }
+
+        TimeSlot newSlot = timeSlotRepository.findByIdWithPessimisticLock(request.newSlotId())
+                .orElseThrow(() -> new ResourceNotFoundException("Ca khám mới không tồn tại với id: " + request.newSlotId()));
+
+        if (!"AVAILABLE".equals(newSlot.getStatus())) {
+            throw new BusinessException("Ca khám mới không còn khả dụng.");
+        }
+
+        // Release old slot
+        if (oldSlot != null) {
+            oldSlot.setStatus("AVAILABLE");
+            oldSlot.setLockedByPatientId(null);
+            oldSlot.setLockedUntil(null);
+            timeSlotRepository.save(oldSlot);
+        }
+
+        // Lock new slot
+        newSlot.setStatus("BOOKED");
+        newSlot.setLockedUntil(null);
+        newSlot.setLockedByPatientId(null);
+        timeSlotRepository.save(newSlot);
+
+        Doctor newDoctor = doctorRepository.findById(newSlot.getDoctorSchedule().getDoctorId())
+                .orElseThrow(() -> new ResourceNotFoundException("Bác sĩ không tồn tại với id: " + newSlot.getDoctorSchedule().getDoctorId()));
+
+        appointment.setTimeSlot(newSlot);
+        appointment.setDoctor(newDoctor);
+        appointment.setDepartment(newDoctor.getDepartment());
+        appointment.setAppointmentDate(newSlot.getDoctorSchedule().getWorkDate());
+        appointment.setStartTime(newSlot.getStartTime());
+        appointment.setEndTime(newSlot.getEndTime());
+        
+        if (request.rescheduleReason() != null && !request.rescheduleReason().trim().isEmpty()) {
+            String existingReason = appointment.getReasonForVisit() != null ? appointment.getReasonForVisit() : "";
+            appointment.setReasonForVisit(existingReason + "\n[Dời lịch: " + request.rescheduleReason() + "]");
+        }
+
+        appointmentRepository.save(appointment);
 
         return mapToResponse(appointment);
     }

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { CalendarDays, Clock, CheckCircle, XCircle, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, Clock, CheckCircle, XCircle, RefreshCw, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import appointmentService from "../../services/appointmentService.js";
+import RescheduleModal from "../appointment/RescheduleModal.jsx";
 
 // Modal Component for Cancelling Appointment
 function CancelModal({ isOpen, onClose, onConfirm, busy }) {
@@ -87,7 +88,7 @@ function StatusBadge({ status }) {
   );
 }
 
-function AppointmentCard({ appt, onCancelRequest }) {
+function AppointmentCard({ appt, onCancelRequest, onRescheduleRequest }) {
   const navigate = useNavigate();
   const date = appt.appointmentDate
     ? new Date(appt.appointmentDate).toLocaleDateString("vi-VN", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" })
@@ -159,20 +160,36 @@ function AppointmentCard({ appt, onCancelRequest }) {
         </button>
 
         {(appt.status === "CONFIRMED" || appt.status === "PENDING_PAYMENT") && (
-          <button
-            onClick={() => onCancelRequest(appt.appointmentId)}
-            style={{
-              display: "flex", alignItems: "center", gap: "6px",
-              padding: "6px 14px", borderRadius: "6px", border: "1px solid #fecaca",
-              background: "#fff", color: "#dc2626", cursor: "pointer",
-              fontSize: "13px", fontWeight: 600, transition: "all 0.15s"
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = "#fef2f2"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
-          >
-            <XCircle size={14} />
-            Hủy lịch
-          </button>
+          <>
+            <button
+              onClick={() => onRescheduleRequest(appt)}
+              style={{
+                display: "flex", alignItems: "center", gap: "6px",
+                padding: "6px 14px", borderRadius: "6px", border: "1px solid #cbd5e1",
+                background: "#fff", color: "#0ea5e9", cursor: "pointer",
+                fontSize: "13px", fontWeight: 600, transition: "all 0.15s"
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#f0f9ff"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
+            >
+              <RefreshCw size={14} />
+              Dời lịch
+            </button>
+            <button
+              onClick={() => onCancelRequest(appt.appointmentId)}
+              style={{
+                display: "flex", alignItems: "center", gap: "6px",
+                padding: "6px 14px", borderRadius: "6px", border: "1px solid #fecaca",
+                background: "#fff", color: "#dc2626", cursor: "pointer",
+                fontSize: "13px", fontWeight: 600, transition: "all 0.15s"
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#fef2f2"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
+            >
+              <XCircle size={14} />
+              Hủy lịch
+            </button>
+          </>
         )}
       </div>
     </div>
@@ -213,6 +230,15 @@ export default function MyAppointmentsPage() {
   const handleCancelRequest = (id) => {
     setCancelTargetId(id);
     setCancelModalOpen(true);
+  };
+
+  // Reschedule logic
+  const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
+  const [rescheduleTargetAppt, setRescheduleTargetAppt] = useState(null);
+
+  const handleRescheduleRequest = (appt) => {
+    setRescheduleTargetAppt(appt);
+    setRescheduleModalOpen(true);
   };
 
   const handleConfirmCancel = async (reason) => {
@@ -329,7 +355,7 @@ export default function MyAppointmentsPage() {
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               {data.content.map((appt) => (
-                <AppointmentCard key={appt.appointmentId} appt={appt} onCancelRequest={handleCancelRequest} />
+                <AppointmentCard key={appt.appointmentId} appt={appt} onCancelRequest={handleCancelRequest} onRescheduleRequest={handleRescheduleRequest} />
               ))}
             </div>
           )}
@@ -371,6 +397,16 @@ export default function MyAppointmentsPage() {
         onClose={() => { if (!cancelling) setCancelModalOpen(false); }}
         onConfirm={handleConfirmCancel}
         busy={cancelling}
+      />
+
+      <RescheduleModal
+        isOpen={rescheduleModalOpen}
+        onClose={() => setRescheduleModalOpen(false)}
+        onRescheduleSuccess={() => {
+          setSuccessMsg("Đã dời lịch khám thành công.");
+          loadData();
+        }}
+        appointment={rescheduleTargetAppt}
       />
     </div>
   );

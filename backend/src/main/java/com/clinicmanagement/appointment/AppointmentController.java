@@ -3,6 +3,7 @@ package com.clinicmanagement.appointment;
 import com.clinicmanagement.appointment.dto.AppointmentResponse;
 import com.clinicmanagement.appointment.dto.BookAppointmentRequest;
 import com.clinicmanagement.appointment.dto.CancelAppointmentRequest;
+import com.clinicmanagement.appointment.dto.RescheduleAppointmentRequest;
 import com.clinicmanagement.common.dto.ApiResponse;
 import com.clinicmanagement.common.dto.PageResponse;
 import com.clinicmanagement.security.CustomUserDetails;
@@ -114,5 +115,19 @@ public class AppointmentController {
                 isReceptionist
         );
         return ResponseEntity.ok(ApiResponse.success("Hủy lịch khám thành công", response));
+    }
+
+    @PutMapping("/{id}/reschedule")
+    @PreAuthorize("hasAnyRole('PATIENT', 'RECEPTIONIST', 'ADMIN')")
+    public ResponseEntity<ApiResponse<AppointmentResponse>> rescheduleAppointment(
+            @PathVariable Long id,
+            @Valid @RequestBody RescheduleAppointmentRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        boolean isPrivileged = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_RECEPTIONIST") || a.getAuthority().equals("ROLE_ADMIN"));
+
+        AppointmentResponse response = appointmentService.rescheduleAppointment(id, request, userDetails.getUser().getUserId(), isPrivileged);
+        return ResponseEntity.ok(ApiResponse.success("Dời lịch khám thành công", response));
     }
 }
