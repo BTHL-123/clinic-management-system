@@ -9,6 +9,8 @@ public record MedicalRecordResponse(
         Long consultationId,
         Long patientId,
         Long doctorId,
+        String doctorName,
+        String departmentName,
         String symptoms,
         String clinicalFindings,
         String diagnosis,
@@ -22,11 +24,17 @@ public record MedicalRecordResponse(
         LocalDateTime updatedAt
 ) {
     public static MedicalRecordResponse from(MedicalRecord record) {
+        return from(record, null, null);
+    }
+
+    public static MedicalRecordResponse from(MedicalRecord record, String doctorName, String departmentName) {
         return new MedicalRecordResponse(
                 record.getMedicalRecordId(),
                 record.getConsultationId(),
                 record.getPatientId(),
                 record.getDoctorId(),
+                doctorName,
+                departmentName,
                 record.getSymptoms(),
                 record.getClinicalFindings(),
                 record.getDiagnosis(),

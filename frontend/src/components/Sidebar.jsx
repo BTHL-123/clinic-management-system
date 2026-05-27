@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
+import Logo from "./Logo.jsx";
 
 const adminItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -49,7 +50,7 @@ const patientItems = [
   { to: "/dashboard/available-slots", label: "Tìm ca khám trống", icon: Search },
   { to: "/dashboard/ai-chat", label: "Tư vấn AI", icon: MessageSquare },
   { to: "/dashboard/my-appointments", label: "Lịch hẹn của tôi", icon: CalendarDays },
-  { to: "/dashboard/profile", label: "Hồ sơ của tôi", icon: UserSquare },
+  { to: "/dashboard/my-medical-history", label: "Lịch sử bệnh án", icon: History },
 ];
 
 export default function Sidebar() {
@@ -68,8 +69,7 @@ export default function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="brand-lockup">
-        <span className="brand-mark">AI</span>
-        <span>Clinic System</span>
+        <Logo size={36} />
       </div>
       <nav className="nav-list" aria-label="Main navigation">
         {filteredItems.map((item) => {

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { KeyRound } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../../context/useAuth.js";
 import { changePassword } from "../../services/authService";
 
 export default function ChangePasswordPage() {

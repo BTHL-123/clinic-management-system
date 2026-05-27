@@ -25,10 +25,14 @@ import MedicineManagement from "./pages/inventory/MedicineManagement.jsx";
 import StockTransactions from "./pages/inventory/StockTransactions.jsx";
 import SupplierManagement from "./pages/inventory/SupplierManagement.jsx";
 import PatientManagement from "./pages/patient/PatientManagement.jsx";
+import PatientDetailPage from "./pages/patient/PatientDetailPage.jsx";
 import ProfilePage from "./pages/profile/ProfilePage.jsx";
 import MyAppointmentsPage from "./pages/patient/MyAppointmentsPage.jsx";
+import PatientMedicalHistoryPage from "./pages/patient/PatientMedicalHistoryPage.jsx";
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import { useAuth } from "./context/useAuth.js";
+
+import LandingPage from "./pages/LandingPage.jsx";
 
 function DashboardIndex() {
   const { user } = useAuth();
@@ -41,7 +45,7 @@ function DashboardIndex() {
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -73,8 +77,10 @@ export default function App() {
         <Route path="available-slots" element={<AvailableSlots />} />
         <Route path="ai-chat" element={<AiChatPatient />} />
         <Route path="my-appointments" element={<MyAppointmentsPage />} />
+        <Route path="my-medical-history" element={<PatientMedicalHistoryPage />} />
         <Route path="doctors" element={<DoctorManagement />} />
         <Route path="patients" element={<PatientManagement />} />
+        <Route path="patients/:patientId" element={<PatientDetailPage />} />
       </Route>
     </Routes>
   );
