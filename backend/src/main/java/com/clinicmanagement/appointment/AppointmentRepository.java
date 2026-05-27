@@ -35,4 +35,33 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             @Param("currentTime") LocalTime currentTime,
             Pageable pageable
     );
+
+    /**
+     * Check if a CONFIRMED/CHECKED_IN appointment already exists for the same
+     * doctor, date, and exact time slot — prevents double-booking on walk-in.
+     */
+    @Query("SELECT COUNT(a) > 0 FROM Appointment a WHERE " +
+           "a.doctor.doctorId = :doctorId AND " +
+           "a.appointmentDate = :date AND " +
+           "a.startTime = :startTime AND " +
+           "a.endTime = :endTime AND " +
+           "a.status NOT IN ('CANCELLED', 'NO_SHOW', 'RESCHEDULED')")
+    boolean existsActiveAppointmentForSlot(
+            @Param("doctorId") Long doctorId,
+            @Param("date") LocalDate date,
+            @Param("startTime") LocalTime startTime,
+            @Param("endTime") LocalTime endTime
+    );
+
+    /**
+     * Count appointments for a doctor on a given date to help with queue management.
+     */
+    @Query("SELECT COUNT(a) FROM Appointment a WHERE " +
+           "a.doctor.doctorId = :doctorId AND " +
+           "a.appointmentDate = :date AND " +
+           "a.status NOT IN ('CANCELLED', 'NO_SHOW')")
+    long countByDoctorAndDate(
+            @Param("doctorId") Long doctorId,
+            @Param("date") LocalDate date
+    );
 }
