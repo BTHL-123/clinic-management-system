@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
+import Logo from "./Logo.jsx";
 
 const adminItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -68,8 +69,7 @@ export default function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="brand-lockup">
-        <span className="brand-mark">AI</span>
-        <span>Clinic System</span>
+        <Logo size={36} />
       </div>
       <nav className="nav-list" aria-label="Main navigation">
         {filteredItems.map((item) => {

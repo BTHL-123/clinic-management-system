@@ -177,6 +177,20 @@ public class DataSeeder implements CommandLineRunner {
         Long doctorId1 = doctorIds.get(0);
         Long doctorId2 = doctorIds.size() > 1 ? doctorIds.get(1) : doctorId1;
 
+        List<Long> existingSessions = jdbcTemplate.query(
+                "SELECT consultation_id FROM consultation_sessions WHERE consultation_id = 1001",
+                (rs, rowNum) -> rs.getLong("consultation_id"));
+        if (existingSessions.isEmpty()) {
+            Long deptId1 = jdbcTemplate.queryForObject("SELECT department_id FROM doctors WHERE doctor_id = ?", Long.class, doctorId1);
+            Long deptId2 = jdbcTemplate.queryForObject("SELECT department_id FROM doctors WHERE doctor_id = ?", Long.class, doctorId2);
+            
+            jdbcTemplate.update("INSERT INTO appointments (appointment_id, appointment_code, patient_id, doctor_id, department_id, appointment_date, start_time, end_time, booking_type, status) VALUES (?, ?, ?, ?, ?, CURRENT_DATE, '08:00', '08:30', 'ONLINE', 'COMPLETED')", 1001, "APP1001", patientId, doctorId1, deptId1);
+            jdbcTemplate.update("INSERT INTO consultation_sessions (consultation_id, appointment_id, patient_id, doctor_id, status) VALUES (?, ?, ?, ?, 'COMPLETED')", 1001, 1001, patientId, doctorId1);
+
+            jdbcTemplate.update("INSERT INTO appointments (appointment_id, appointment_code, patient_id, doctor_id, department_id, appointment_date, start_time, end_time, booking_type, status) VALUES (?, ?, ?, ?, ?, CURRENT_DATE, '09:00', '09:30', 'ONLINE', 'COMPLETED')", 1002, "APP1002", patientId, doctorId2, deptId2);
+            jdbcTemplate.update("INSERT INTO consultation_sessions (consultation_id, appointment_id, patient_id, doctor_id, status) VALUES (?, ?, ?, ?, 'COMPLETED')", 1002, 1002, patientId, doctorId2);
+        }
+
         // Bệnh án 1: Viêm loét dạ dày
         jdbcTemplate.update("""
                 INSERT INTO medical_records (consultation_id, patient_id, doctor_id, symptoms, clinical_findings, diagnosis, treatment_plan, doctor_note, follow_up_date, follow_up_note, created_at, updated_at)
@@ -212,6 +226,9 @@ public class DataSeeder implements CommandLineRunner {
         syncPostgresSequence("doctors", "doctor_id");
         syncPostgresSequence("doctor_schedules", "schedule_id");
         syncPostgresSequence("appointment_slots", "slot_id");
+        syncPostgresSequence("appointments", "appointment_id");
+        syncPostgresSequence("consultation_sessions", "consultation_id");
+        syncPostgresSequence("medical_records", "medical_record_id");
     }
 
     private void syncPostgresSequence(String tableName, String idColumn) {

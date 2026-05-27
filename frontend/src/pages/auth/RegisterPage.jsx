@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { register, sendRegisterOtp } from "../../services/authService";
+import Logo from "../../components/Logo.jsx";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -61,8 +62,7 @@ export default function RegisterPage() {
     <div className="auth-shell">
       <section className="auth-visual">
         <div className="brand-lockup">
-          <span className="brand-mark">AI</span>
-          <span>Clinic Management System</span>
+          <Logo size={52} textColor="#0f4a8a" />
         </div>
         <h1>Đặt nền cho hành trình khám bệnh gọn hơn.</h1>
       </section>

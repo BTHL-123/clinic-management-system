@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/useAuth.js";
+import Logo from "../../components/Logo.jsx";
 
 export default function LoginPage() {
   const { login, loginWithGoogle } = useAuth();
@@ -102,8 +103,7 @@ export default function LoginPage() {
     <div className="auth-shell">
       <section className="auth-visual">
         <div className="brand-lockup">
-          <span className="brand-mark">AI</span>
-          <span>Clinic Management System</span>
+          <Logo size={52} textColor="#0f4a8a" />
         </div>
         <h1>Điều phối vận hành phòng khám từ một màn hình rõ ràng.</h1>
       </section>

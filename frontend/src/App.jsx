@@ -32,6 +32,8 @@ import PatientMedicalHistoryPage from "./pages/patient/PatientMedicalHistoryPage
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import { useAuth } from "./context/useAuth.js";
 
+import LandingPage from "./pages/LandingPage.jsx";
+
 function DashboardIndex() {
   const { user } = useAuth();
   if (user?.roles?.includes("PATIENT")) {
@@ -43,7 +45,7 @@ function DashboardIndex() {
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
