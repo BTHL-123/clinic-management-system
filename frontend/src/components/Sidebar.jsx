@@ -14,6 +14,7 @@ import {
   Shield,
   Siren,
   Truck,
+  UserPlus,
   UserRound,
   Users,
   UsersRound,
@@ -41,6 +42,7 @@ const adminItems = [
   { to: "/dashboard/users", label: "Tài khoản", icon: UsersRound, roles: ["ADMIN"] },
   { to: "/dashboard/security", label: "Bảo mật", icon: Shield, roles: ["ADMIN"] },
   { to: "/dashboard/appointments", label: "Lịch khám", icon: CalendarDays },
+  { to: "/dashboard/walk-in", label: "Walk-in Appointment", icon: UserPlus, roles: ["ADMIN", "RECEPTIONIST"] },
 ];
 
 const patientItems = [

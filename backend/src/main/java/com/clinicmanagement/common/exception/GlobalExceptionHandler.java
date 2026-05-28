@@ -64,7 +64,7 @@ public class GlobalExceptionHandler {
                 message = "Email đã tồn tại.";
             }
         }
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(message));
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(message + " (Chi tiết: " + rootCause + ")"));
     }
 
     @ExceptionHandler(BadCredentialsException.class)

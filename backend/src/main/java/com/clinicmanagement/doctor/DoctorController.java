@@ -2,6 +2,8 @@ package com.clinicmanagement.doctor;
 
 import com.clinicmanagement.common.dto.ApiResponse;
 import com.clinicmanagement.common.dto.PageResponse;
+import com.clinicmanagement.doctor.dto.DoctorRequest;
+import com.clinicmanagement.doctor.dto.DoctorResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
