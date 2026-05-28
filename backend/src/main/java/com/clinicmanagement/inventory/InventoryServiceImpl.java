@@ -37,6 +37,29 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Transactional
     @Override
+    public MedicineBatchResponse updateBatch(Long batchId, UpdateBatchRequest request) {
+        MedicineBatch batch = batchRepository.findById(batchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Batch not found"));
+        
+        if (request.getExpiryDate() != null) batch.setExpiryDate(request.getExpiryDate());
+        if (request.getImportPrice() != null) batch.setImportPrice(request.getImportPrice());
+        if (request.getSellingPrice() != null) batch.setSellingPrice(request.getSellingPrice());
+        if (request.getStatus() != null) batch.setStatus(request.getStatus());
+        
+        return mapToBatchResponse(batchRepository.save(batch));
+    }
+
+    @Transactional
+    @Override
+    public void deleteBatch(Long batchId) {
+        MedicineBatch batch = batchRepository.findById(batchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Batch not found"));
+        batch.setStatus("CANCELLED");
+        batchRepository.save(batch);
+    }
+
+    @Transactional
+    @Override
     public MedicineBatchResponse importBatch(ImportBatchRequest request, User currentUser) {
         Medicine medicine = medicineRepository.findById(request.getMedicineId())
                 .orElseThrow(() -> new ResourceNotFoundException("Medicine not found"));
@@ -265,6 +288,7 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     private String computeEffectiveStatus(MedicineBatch batch) {
+        if ("CANCELLED".equals(batch.getStatus())) return "CANCELLED";
         LocalDate today = LocalDate.now();
         if (batch.getCurrentQuantity() == 0) return "OUT_OF_STOCK";
         if (batch.getExpiryDate() != null && batch.getExpiryDate().isBefore(today)) return "EXPIRED";
