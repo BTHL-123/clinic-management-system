@@ -7,3 +7,7 @@ export const getLabRequestsByConsultationId = async (consultationId) => {
 export const getLabRequestById = async (labRequestId) => {
   return await api.get(`/lab-requests/${labRequestId}`);
 };
+
+export const createLabRequest = async (data) => {
+  return await api.post("/lab-requests", data);
+};

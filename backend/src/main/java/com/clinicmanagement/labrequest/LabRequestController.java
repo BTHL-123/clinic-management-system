@@ -1,8 +1,11 @@
 package com.clinicmanagement.labrequest;
 
 import com.clinicmanagement.common.dto.ApiResponse;
+import com.clinicmanagement.labrequest.dto.CreateLabRequestRequest;
 import com.clinicmanagement.labrequest.dto.LabRequestResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +18,19 @@ import java.util.List;
 public class LabRequestController {
 
     private final LabRequestService labRequestService;
+
+    /**
+     * POST /api/lab-requests
+     * DOCTOR
+     */
+    @PostMapping
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<ApiResponse<LabRequestResponse>> create(
+            @Valid @RequestBody CreateLabRequestRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Tạo phiếu xét nghiệm thành công",
+                        labRequestService.create(request)));
+    }
 
     /**
      * GET /api/lab-requests/{labRequestId}
