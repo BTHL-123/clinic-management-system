@@ -26,4 +26,13 @@ public interface AppointmentService {
     );
 
     AppointmentResponse bookAppointment(BookAppointmentRequest request, Long userId);
+
+    AppointmentResponse checkInAppointment(Long appointmentId, Long receptionistId);
+
+    PageResponse<AppointmentResponse> searchAppointmentsForReceptionist(
+            String keyword,
+            LocalDate date,
+            String status,
+            Pageable pageable
+    );
 }

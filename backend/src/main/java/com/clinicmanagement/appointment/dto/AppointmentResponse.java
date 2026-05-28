@@ -22,5 +22,9 @@ public record AppointmentResponse(
         String reasonForVisit,
         String initialSymptoms,
         String status,
-        BigDecimal depositAmount
+        BigDecimal depositAmount,
+        String patientPhone,
+        java.time.LocalDateTime checkedInAt,
+        Integer queueNumber,
+        String queueStatus
 ) {}

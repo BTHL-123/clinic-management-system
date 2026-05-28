@@ -20,6 +20,14 @@ const appointmentService = {
   bookAppointment(payload) {
     return axiosClient.post("/appointments", payload);
   },
+
+  getReceptionistAppointments(filters = {}, page = 0, size = 10) {
+    return axiosClient.get("/receptionist/appointments", { params: { ...filters, page, size } });
+  },
+
+  checkInAppointment(appointmentId) {
+    return axiosClient.put(`/receptionist/appointments/${appointmentId}/check-in`);
+  },
 };
 
 export default appointmentService;

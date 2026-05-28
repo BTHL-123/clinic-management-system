@@ -19,6 +19,7 @@ import AppointmentManagement from "./pages/appointment/Appointments.tsx";
 import AvailableSlots from "./pages/appointment/AvailableSlots.tsx";
 import AiChatPatient from "./pages/ai-chat/AiChatPatient.jsx";
 import WalkInAppointmentPage from "./pages/appointment/WalkInAppointmentPage.jsx";
+import ReceptionistAppointmentsPage from "./pages/appointment/ReceptionistAppointmentsPage.jsx";
 import DoctorManagement from "./pages/doctor/DoctorManagement.jsx";
 import AlertsDashboard from "./pages/inventory/AlertsDashboard.jsx";
 import InventoryBatches from "./pages/inventory/InventoryBatches.jsx";
@@ -78,6 +79,7 @@ export default function App() {
         <Route path="available-slots" element={<AvailableSlots />} />
         <Route path="ai-chat" element={<AiChatPatient />} />
         <Route path="walk-in" element={<WalkInAppointmentPage />} />
+        <Route path="receptionist-appointments" element={<ReceptionistAppointmentsPage />} />
         <Route path="my-appointments" element={<MyAppointmentsPage />} />
         <Route path="my-medical-history" element={<PatientMedicalHistoryPage />} />
         <Route path="doctors" element={<DoctorManagement />} />
