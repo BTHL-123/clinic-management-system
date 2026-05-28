@@ -16,7 +16,7 @@ import {
   getInvoices,
   updateInvoice,
 } from "../../services/invoiceService";
-import { createPayment, confirmCashPayment } from "../../services/paymentService";
+import { createPayment, confirmCashPayment, createOnlinePaymentUrl } from "../../services/paymentService";
 import { getMedicines } from "../../services/medicineService";
 
 const STATUS_OPTIONS = [
@@ -290,6 +290,18 @@ export default function InvoiceManagement() {
     if (!payTarget) return;
     try {
       setPaySubmitting(true);
+      if (payMethod === "ONLINE") {
+        const res = await createOnlinePaymentUrl({
+          invoiceId: payTarget.invoiceId,
+          appointmentId: null,
+          amount: payTarget.finalAmount,
+        });
+        if (res.data && res.data.paymentUrl) {
+          window.location.href = res.data.paymentUrl;
+        }
+        return; // Dừng lại ở đây vì trình duyệt sẽ redirect
+      }
+
       const res = await createPayment({
         invoiceId: payTarget.invoiceId,
         appointmentId: null,

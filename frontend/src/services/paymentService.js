@@ -11,3 +11,6 @@ export const createPayment = (payload) =>
 
 export const confirmCashPayment = (id) =>
   axiosClient.put(`/payments/${id}/confirm-cash`);
+
+export const createOnlinePaymentUrl = (payload) =>
+  axiosClient.post("/payments/online/create-url", payload);
