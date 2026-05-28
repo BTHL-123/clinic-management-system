@@ -1,4 +1,5 @@
 import {
+  Bell,
   Building2,
   CalendarDays,
   KeyRound,
@@ -28,6 +29,7 @@ import Logo from "./Logo.jsx";
 const adminItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/dashboard/profile", label: "Hồ sơ của tôi", icon: UserSquare, roles: ["PATIENT", "DOCTOR", "STAFF"] },
+  { to: "/dashboard/notifications", label: "Thông báo", icon: Bell },
   { to: "/dashboard/doctor-appointments", label: "Lịch khám hôm nay", icon: CalendarDays, roles: ["DOCTOR"] },
   { to: "/dashboard/change-password", label: "Đổi mật khẩu", icon: KeyRound },
   { to: "/dashboard/departments", label: "Chuyên khoa", icon: Building2, roles: ["ADMIN", "STAFF"] },
@@ -52,6 +54,7 @@ const adminItems = [
 const patientItems = [
   { to: "/dashboard", label: "Trang chủ", icon: LayoutDashboard, end: true },
   { to: "/dashboard/profile", label: "Hồ sơ của tôi", icon: UserSquare },
+  { to: "/dashboard/notifications", label: "Thông báo", icon: Bell },
   { to: "/dashboard/change-password", label: "Đổi mật khẩu", icon: KeyRound },
   { to: "/dashboard/available-slots", label: "Tìm ca khám trống", icon: Search },
   { to: "/dashboard/ai-chat", label: "Tư vấn AI", icon: MessageSquare },

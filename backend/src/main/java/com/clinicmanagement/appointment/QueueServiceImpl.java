@@ -13,12 +13,15 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.clinicmanagement.notification.NotificationService;
+
 @Service
 @RequiredArgsConstructor
 public class QueueServiceImpl implements QueueService {
 
     private final QueueTicketRepository queueTicketRepository;
     private final AppointmentRepository appointmentRepository;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -46,6 +49,20 @@ public class QueueServiceImpl implements QueueService {
         ticket.setStatus("CALLED");
         ticket.setCalledAt(LocalDateTime.now());
         QueueTicket saved = queueTicketRepository.save(ticket);
+
+        try {
+            if (saved.getPatient() != null && saved.getPatient().getUser() != null) {
+                notificationService.createNotification(
+                        saved.getPatient().getUser().getUserId(),
+                        "Lượt khám của bạn",
+                        "Bạn đã được gọi vào phòng khám của bác sĩ " + (saved.getDoctor() != null && saved.getDoctor().getUser() != null ? saved.getDoctor().getUser().getFullName() : "Bác sĩ") + ". Số thứ tự khám của bạn là #" + saved.getQueueNumber() + ".",
+                        "APPOINTMENT"
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("Không thể tạo thông báo gọi khám: " + e.getMessage());
+        }
+
         return mapToResponse(saved);
     }
 
@@ -95,6 +112,19 @@ public class QueueServiceImpl implements QueueService {
         if (appointment != null) {
             appointment.setStatus("COMPLETED");
             appointmentRepository.save(appointment);
+        }
+
+        try {
+            if (saved.getPatient() != null && saved.getPatient().getUser() != null) {
+                notificationService.createNotification(
+                        saved.getPatient().getUser().getUserId(),
+                        "Hoàn thành khám bệnh",
+                        "Ca khám của bạn với bác sĩ " + (saved.getDoctor() != null && saved.getDoctor().getUser() != null ? saved.getDoctor().getUser().getFullName() : "Bác sĩ") + " đã hoàn tất. Chúc bạn luôn mạnh khỏe!",
+                        "APPOINTMENT"
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("Không thể tạo thông báo hoàn thành khám: " + e.getMessage());
         }
 
         return mapToResponse(saved);

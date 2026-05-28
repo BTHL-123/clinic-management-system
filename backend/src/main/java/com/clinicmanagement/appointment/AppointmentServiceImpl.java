@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import com.clinicmanagement.notification.NotificationService;
 
 @Service
 @Transactional(readOnly = true)
@@ -30,6 +31,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final DoctorRepository doctorRepository;
     private final UserRepository userRepository;
     private final QueueTicketRepository queueTicketRepository;
+    private final NotificationService notificationService;
 
     public AppointmentServiceImpl(
             AppointmentRepository appointmentRepository,
@@ -37,7 +39,8 @@ public class AppointmentServiceImpl implements AppointmentService {
             PatientRepository patientRepository,
             DoctorRepository doctorRepository,
             UserRepository userRepository,
-            QueueTicketRepository queueTicketRepository
+            QueueTicketRepository queueTicketRepository,
+            NotificationService notificationService
     ) {
         this.appointmentRepository = appointmentRepository;
         this.timeSlotRepository = timeSlotRepository;
@@ -45,6 +48,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         this.doctorRepository = doctorRepository;
         this.userRepository = userRepository;
         this.queueTicketRepository = queueTicketRepository;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -198,6 +202,28 @@ public class AppointmentServiceImpl implements AppointmentService {
         app.setAppointmentCode("APT" + System.currentTimeMillis());
 
         Appointment savedApp = appointmentRepository.save(app);
+
+        try {
+            notificationService.createNotification(
+                    patient.getUser().getUserId(),
+                    "Đặt lịch khám thành công",
+                    "Lịch hẹn của bạn mã " + savedApp.getAppointmentCode() + " với bác sĩ " + doctor.getUser().getFullName() + " vào ngày " + savedApp.getAppointmentDate() + " lúc " + savedApp.getStartTime() + " đã được xác nhận thành công.",
+                    "APPOINTMENT"
+            );
+
+            if (doctor.getUser() != null) {
+                notificationService.createNotification(
+                        doctor.getUser().getUserId(),
+                        "Lịch hẹn mới",
+                        "Bệnh nhân " + patient.getUser().getFullName() + " đã đặt một lịch hẹn (Mã: " + savedApp.getAppointmentCode() + ") với bạn vào ngày " + savedApp.getAppointmentDate() + " lúc " + savedApp.getStartTime() + ".",
+                        "APPOINTMENT"
+                );
+            }
+        } catch (Exception e) {
+            // Log or ignore to prevent breaking main transaction
+            System.err.println("Không thể tạo thông báo đặt lịch: " + e.getMessage());
+        }
+
         return mapToResponse(savedApp);
     }
 
@@ -256,6 +282,27 @@ public class AppointmentServiceImpl implements AppointmentService {
             slot.setLockedByPatientId(null);
             slot.setLockedUntil(null);
             timeSlotRepository.save(slot);
+        }
+
+        try {
+            if (appointment.getPatient() != null && appointment.getPatient().getUser() != null) {
+                notificationService.createNotification(
+                        appointment.getPatient().getUser().getUserId(),
+                        "Lịch hẹn đã bị hủy",
+                        "Lịch hẹn mã " + appointment.getAppointmentCode() + " với bác sĩ " + (appointment.getDoctor() != null && appointment.getDoctor().getUser() != null ? appointment.getDoctor().getUser().getFullName() : "Bác sĩ") + " vào ngày " + appointment.getAppointmentDate() + " đã bị hủy. Lý do: " + cancellationReason,
+                        "APPOINTMENT"
+                );
+            }
+            if (appointment.getDoctor() != null && appointment.getDoctor().getUser() != null) {
+                notificationService.createNotification(
+                        appointment.getDoctor().getUser().getUserId(),
+                        "Lịch hẹn đã bị hủy",
+                        "Lịch hẹn mã " + appointment.getAppointmentCode() + " của bệnh nhân " + (appointment.getPatient() != null ? appointment.getPatient().getFullName() : "") + " vào ngày " + appointment.getAppointmentDate() + " đã bị hủy. Lý do: " + cancellationReason,
+                        "APPOINTMENT"
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("Không thể tạo thông báo hủy lịch: " + e.getMessage());
         }
 
         return mapToResponse(appointment);
@@ -336,9 +383,30 @@ public class AppointmentServiceImpl implements AppointmentService {
             appointment.setReasonForVisit(existingReason + "\n[Dời lịch: " + request.rescheduleReason() + "]");
         }
 
-        appointmentRepository.save(appointment);
+        Appointment savedApp = appointmentRepository.save(appointment);
 
-        return mapToResponse(appointment);
+        try {
+            if (savedApp.getPatient() != null && savedApp.getPatient().getUser() != null) {
+                notificationService.createNotification(
+                        savedApp.getPatient().getUser().getUserId(),
+                        "Lịch hẹn đã được dời lịch",
+                        "Lịch hẹn mã " + savedApp.getAppointmentCode() + " với bác sĩ " + (savedApp.getDoctor() != null && savedApp.getDoctor().getUser() != null ? savedApp.getDoctor().getUser().getFullName() : "Bác sĩ") + " đã được dời lịch thành công sang ngày " + savedApp.getAppointmentDate() + " lúc " + savedApp.getStartTime() + ".",
+                        "APPOINTMENT"
+                );
+            }
+            if (savedApp.getDoctor() != null && savedApp.getDoctor().getUser() != null) {
+                notificationService.createNotification(
+                        savedApp.getDoctor().getUser().getUserId(),
+                        "Lịch hẹn đã được dời lịch",
+                        "Lịch hẹn mã " + savedApp.getAppointmentCode() + " của bệnh nhân " + (savedApp.getPatient() != null ? savedApp.getPatient().getFullName() : "") + " đã được dời lịch sang ngày " + savedApp.getAppointmentDate() + " lúc " + savedApp.getStartTime() + ".",
+                        "APPOINTMENT"
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("Không thể tạo thông báo dời lịch: " + e.getMessage());
+        }
+
+        return mapToResponse(savedApp);
     }
 
     @Override
@@ -395,6 +463,31 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
 
         Appointment saved = appointmentRepository.save(appointment);
+
+        try {
+            QueueTicket finalTicket = saved.getQueueTicket();
+            int qNum = finalTicket != null ? finalTicket.getQueueNumber() : 0;
+            
+            if (saved.getPatient() != null && saved.getPatient().getUser() != null) {
+                notificationService.createNotification(
+                        saved.getPatient().getUser().getUserId(),
+                        "Check-in thành công",
+                        "Bạn đã check-in thành công lịch hẹn mã " + saved.getAppointmentCode() + ". Số thứ tự khám của bạn là #" + qNum + ". Vui lòng đợi đến lượt khám tại khoa " + saved.getDepartment().getDepartmentName() + ".",
+                        "APPOINTMENT"
+                );
+            }
+            if (saved.getDoctor() != null && saved.getDoctor().getUser() != null) {
+                notificationService.createNotification(
+                        saved.getDoctor().getUser().getUserId(),
+                        "Bệnh nhân mới check-in",
+                        "Bệnh nhân " + saved.getPatient().getFullName() + " đã check-in cho lịch hẹn mã " + saved.getAppointmentCode() + " và đang đợi khám (STT #" + qNum + ").",
+                        "APPOINTMENT"
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("Không thể tạo thông báo check-in: " + e.getMessage());
+        }
+
         return mapToResponse(saved);
     }
 

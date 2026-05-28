@@ -1195,13 +1195,26 @@ CREATE TABLE system_settings (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_system_settings_updated_by
-        FOREIGN KEY (updated_by) REFERENCES users(user_id)
-        ON DELETE SET NULL
+);
+
+CREATE TABLE notifications (
+    notification_id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    type VARCHAR(50) NOT NULL DEFAULT 'SYSTEM',
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_notifications_user
+        FOREIGN KEY (user_id) REFERENCES users(user_id)
+        ON DELETE CASCADE
 );
 
 -- =========================================================
 -- 14. Indexes
 -- =========================================================
+CREATE INDEX idx_notifications_user_unread ON notifications(user_id, is_read);
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_email_otps_lookup ON email_otps(email, purpose, consumed, created_at DESC);
 
