@@ -19,6 +19,7 @@ import {
   Users,
   UsersRound,
   UserSquare,
+  UserCheck,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
@@ -43,6 +44,7 @@ const adminItems = [
   { to: "/dashboard/security", label: "Bảo mật", icon: Shield, roles: ["ADMIN"] },
   { to: "/dashboard/appointments", label: "Lịch khám", icon: CalendarDays },
   { to: "/dashboard/walk-in", label: "Walk-in Appointment", icon: UserPlus, roles: ["ADMIN", "RECEPTIONIST"] },
+  { to: "/dashboard/receptionist-appointments", label: "Check-in Bệnh nhân", icon: UserCheck, roles: ["ADMIN", "RECEPTIONIST"] },
 ];
 
 const patientItems = [
