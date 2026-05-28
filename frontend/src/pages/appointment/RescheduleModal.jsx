@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { X, CalendarDays, Clock, UserRound } from "lucide-react";
-import { getSchedules, getSlotsByScheduleId } from "../../services/scheduleService";
+import { getSchedules, getAvailableSlots } from "../../services/scheduleService";
 import { getDoctors } from "../../services/doctorService";
 import appointmentService from "../../services/appointmentService";
 
 export default function RescheduleModal({ isOpen, onClose, onRescheduleSuccess, appointment }) {
-  const [doctors, setDoctors] = useState([]);
   const [schedules, setSchedules] = useState([]);
   const [slots, setSlots] = useState([]);
 
@@ -20,14 +19,7 @@ export default function RescheduleModal({ isOpen, onClose, onRescheduleSuccess, 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  const loadDoctors = useCallback(async () => {
-    try {
-      const res = await getDoctors({ size: 100 });
-      setDoctors(res?.data?.content || res?.data || []);
-    } catch (e) {
-      console.error(e);
-    }
-  }, []);
+  // removed loadDoctors
 
   const fetchSchedules = useCallback(async (docId) => {
     try {
@@ -38,9 +30,9 @@ export default function RescheduleModal({ isOpen, onClose, onRescheduleSuccess, 
     }
   }, []);
 
-  const fetchSlots = useCallback(async (scheduleId) => {
+  const fetchSlots = useCallback(async (docId, workDate) => {
     try {
-      const res = await getSlotsByScheduleId(scheduleId);
+      const res = await getAvailableSlots(docId, workDate);
       const allSlots = Array.isArray(res) ? res : (res?.data || []);
       setSlots(allSlots.filter(s => s.status === "AVAILABLE"));
     } catch (e) {
@@ -50,7 +42,6 @@ export default function RescheduleModal({ isOpen, onClose, onRescheduleSuccess, 
 
   useEffect(() => {
     if (isOpen) {
-      loadDoctors();
       setForm({
         doctorId: appointment?.doctorId || "",
         appointmentDate: "",
@@ -59,7 +50,7 @@ export default function RescheduleModal({ isOpen, onClose, onRescheduleSuccess, 
       });
       setError("");
     }
-  }, [isOpen, appointment, loadDoctors]);
+  }, [isOpen, appointment]);
 
   useEffect(() => {
     if (form.doctorId) {
@@ -73,17 +64,12 @@ export default function RescheduleModal({ isOpen, onClose, onRescheduleSuccess, 
 
   useEffect(() => {
     if (form.appointmentDate && form.doctorId) {
-      const schedule = schedules.find(s => String(s.doctorId) === String(form.doctorId) && s.workDate === form.appointmentDate);
-      if (schedule) {
-        fetchSlots(schedule.scheduleId);
-      } else {
-        setSlots([]);
-      }
+      fetchSlots(form.doctorId, form.appointmentDate);
     } else {
       setSlots([]);
     }
     setForm(p => ({ ...p, slotId: "" }));
-  }, [form.appointmentDate, form.doctorId, schedules, fetchSlots]);
+  }, [form.appointmentDate, form.doctorId, fetchSlots]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -138,19 +124,16 @@ export default function RescheduleModal({ isOpen, onClose, onRescheduleSuccess, 
           
           <div>
             <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#475569", marginBottom: "6px" }}>Bác sĩ *</label>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", border: "1px solid #cbd5e1", borderRadius: "8px", background: "#f8fafc" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", border: "1px solid #cbd5e1", borderRadius: "8px", background: "#f1f5f9", opacity: 0.8 }}>
               <UserRound size={16} color="#64748b" />
-              <select 
-                value={form.doctorId} 
-                onChange={e => setForm(p => ({ ...p, doctorId: e.target.value }))}
-                style={{ border: "none", outline: "none", background: "transparent", width: "100%", fontSize: "14px", color: "#0f172a" }}
-              >
-                <option value="">Chọn bác sĩ</option>
-                {doctors.map(d => (
-                  <option key={d.doctorId} value={d.doctorId}>{d.fullName} - {d.departmentName}</option>
-                ))}
-              </select>
+              <input 
+                type="text"
+                readOnly
+                value={appointment?.doctorName ? `${appointment.doctorName} - ${appointment.departmentName}` : "Đang tải..."}
+                style={{ border: "none", outline: "none", background: "transparent", width: "100%", fontSize: "14px", color: "#475569", cursor: "not-allowed" }}
+              />
             </div>
+            <span style={{ fontSize: "12px", color: "#64748b", marginTop: "4px", display: "block" }}>Chỉ có thể dời lịch khám với cùng một bác sĩ.</span>
           </div>
 
           <div>

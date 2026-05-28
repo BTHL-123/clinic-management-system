@@ -52,17 +52,17 @@ public class AppointmentController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'PATIENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'PATIENT', 'DOCTOR')")
     public ResponseEntity<ApiResponse<AppointmentResponse>> getAppointmentById(
             @PathVariable Long id,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        boolean isPatient = userDetails.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_PATIENT"));
+        boolean isPatientOrDoctor = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_PATIENT") || a.getAuthority().equals("ROLE_DOCTOR"));
         AppointmentResponse response = appointmentService.getAppointmentById(
                 id,
                 userDetails.getUser().getUserId(),
-                isPatient
+                isPatientOrDoctor
         );
         return ResponseEntity.ok(ApiResponse.success(response));
     }

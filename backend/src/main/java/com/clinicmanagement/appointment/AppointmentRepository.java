@@ -25,7 +25,12 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             Pageable pageable
     );
 
-    @Query("SELECT a FROM Appointment a WHERE a.patient.user.userId = :userId AND " +
+    @Query("SELECT a FROM Appointment a " +
+           "LEFT JOIN a.patient p " +
+           "LEFT JOIN p.user pu " +
+           "LEFT JOIN a.doctor d " +
+           "LEFT JOIN d.user du " +
+           "WHERE (pu.userId = :userId OR du.userId = :userId) AND " +
            "((:upcoming = true AND (a.appointmentDate > :currentDate OR (a.appointmentDate = :currentDate AND a.endTime >= :currentTime))) OR " +
            " (:upcoming = false AND (a.appointmentDate < :currentDate OR (a.appointmentDate = :currentDate AND a.endTime < :currentTime))))")
     Page<Appointment> findMyAppointments(

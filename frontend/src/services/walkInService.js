@@ -6,7 +6,7 @@ const walkInService = {
    * POST /api/receptionist/appointments/walk-in
    */
   createWalkIn(payload) {
-    return axiosClient.post("/receptionist/appointments/walk-in", payload);
+    return axiosClient.post("/appointments/walk-in", payload);
   },
 };
 

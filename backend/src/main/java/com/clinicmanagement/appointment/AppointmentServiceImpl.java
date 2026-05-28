@@ -59,17 +59,23 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public AppointmentResponse getAppointmentById(Long id, Long currentUserId, boolean isPatient) {
+    public AppointmentResponse getAppointmentById(Long id, Long currentUserId, boolean isPatientOrDoctor) {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + id));
 
-        // Issue #1: Nếu caller là PATIENT, chỉ được xem appointment của chính mình
-        if (isPatient) {
-            Long appointmentOwnerId = appointment.getPatient() != null
+        // Issue #1: Nếu caller là PATIENT hoặc DOCTOR, chỉ được xem appointment của chính mình
+        if (isPatientOrDoctor) {
+            Long patientUserId = appointment.getPatient() != null
                     && appointment.getPatient().getUser() != null
                     ? appointment.getPatient().getUser().getUserId()
                     : null;
-            if (!currentUserId.equals(appointmentOwnerId)) {
+                    
+            Long doctorUserId = appointment.getDoctor() != null
+                    && appointment.getDoctor().getUser() != null
+                    ? appointment.getDoctor().getUser().getUserId()
+                    : null;
+                    
+            if (!currentUserId.equals(patientUserId) && !currentUserId.equals(doctorUserId)) {
                 throw new BusinessException("Bạn không có quyền xem lịch hẹn này.");
             }
         }
@@ -308,9 +314,11 @@ public class AppointmentServiceImpl implements AppointmentService {
         Doctor newDoctor = doctorRepository.findById(newSlot.getDoctorSchedule().getDoctorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Bác sĩ không tồn tại với id: " + newSlot.getDoctorSchedule().getDoctorId()));
 
+        if (!appointment.getDoctor().getDoctorId().equals(newDoctor.getDoctorId())) {
+            throw new BusinessException("Chỉ có thể dời lịch khám với cùng một bác sĩ. Vui lòng hủy và đặt lại nếu bạn muốn đổi bác sĩ.");
+        }
+
         appointment.setTimeSlot(newSlot);
-        appointment.setDoctor(newDoctor);
-        appointment.setDepartment(newDoctor.getDepartment());
         appointment.setAppointmentDate(newSlot.getDoctorSchedule().getWorkDate());
         appointment.setStartTime(newSlot.getStartTime());
         appointment.setEndTime(newSlot.getEndTime());

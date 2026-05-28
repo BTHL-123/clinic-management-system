@@ -95,6 +95,11 @@ function AppointmentCard({ appt, onCancelRequest, onRescheduleRequest }) {
     : "—";
   const time = appt.startTime ? appt.startTime.substring(0, 5) : "—";
   const endTime = appt.endTime ? appt.endTime.substring(0, 5) : "—";
+  
+  const now = new Date();
+  const isPastStartTime = appt.appointmentDate && appt.startTime 
+    ? now >= new Date(`${appt.appointmentDate}T${appt.startTime}`) 
+    : false;
 
   return (
     <div style={{
@@ -136,6 +141,16 @@ function AppointmentCard({ appt, onCancelRequest, onRescheduleRequest }) {
           <div style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 600, marginBottom: "2px" }}>HÌNH THỨC</div>
           <div style={{ fontSize: "13px", color: "#475569" }}>{appt.bookingType === "ONLINE" ? "Trực tuyến" : "Trực tiếp"}</div>
         </div>
+        <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginTop: "4px" }}>
+          <div>
+            <div style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 600, marginBottom: "2px" }}>BỆNH NHÂN</div>
+            <div style={{ fontSize: "13px", fontWeight: 600, color: "#334155" }}>{appt.patientName || "—"}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 600, marginBottom: "2px" }}>BÁC SĨ</div>
+            <div style={{ fontSize: "13px", fontWeight: 600, color: "#334155" }}>{appt.doctorName || "—"}</div>
+          </div>
+        </div>
         {appt.status === "CANCELLED" && appt.cancellationReason && (
           <div style={{ gridColumn: "1 / -1", marginTop: "4px" }}>
             <div style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 600, marginBottom: "2px" }}>LÝ DO HỦY</div>
@@ -161,34 +176,42 @@ function AppointmentCard({ appt, onCancelRequest, onRescheduleRequest }) {
 
         {(appt.status === "CONFIRMED" || appt.status === "PENDING_PAYMENT") && (
           <>
-            <button
-              onClick={() => onRescheduleRequest(appt)}
-              style={{
-                display: "flex", alignItems: "center", gap: "6px",
-                padding: "6px 14px", borderRadius: "6px", border: "1px solid #cbd5e1",
-                background: "#fff", color: "#0ea5e9", cursor: "pointer",
-                fontSize: "13px", fontWeight: 600, transition: "all 0.15s"
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#f0f9ff"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
-            >
-              <RefreshCw size={14} />
-              Dời lịch
-            </button>
-            <button
-              onClick={() => onCancelRequest(appt.appointmentId)}
-              style={{
-                display: "flex", alignItems: "center", gap: "6px",
-                padding: "6px 14px", borderRadius: "6px", border: "1px solid #fecaca",
-                background: "#fff", color: "#dc2626", cursor: "pointer",
-                fontSize: "13px", fontWeight: 600, transition: "all 0.15s"
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#fef2f2"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
-            >
-              <XCircle size={14} />
-              Hủy lịch
-            </button>
+            {!isPastStartTime ? (
+              <>
+                <button
+                  onClick={() => onRescheduleRequest(appt)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "6px",
+                    padding: "6px 14px", borderRadius: "6px", border: "1px solid #cbd5e1",
+                    background: "#fff", color: "#0ea5e9", cursor: "pointer",
+                    fontSize: "13px", fontWeight: 600, transition: "all 0.15s"
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "#f0f9ff"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
+                >
+                  <RefreshCw size={14} />
+                  Dời lịch
+                </button>
+                <button
+                  onClick={() => onCancelRequest(appt.appointmentId)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "6px",
+                    padding: "6px 14px", borderRadius: "6px", border: "1px solid #fecaca",
+                    background: "#fff", color: "#dc2626", cursor: "pointer",
+                    fontSize: "13px", fontWeight: 600, transition: "all 0.15s"
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "#fef2f2"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
+                >
+                  <XCircle size={14} />
+                  Hủy lịch
+                </button>
+              </>
+            ) : (
+              <span style={{ fontSize: "12px", color: "#b45309", fontStyle: "italic", display: "flex", alignItems: "center", padding: "6px 0" }}>
+                Đã qua giờ khám
+              </span>
+            )}
           </>
         )}
       </div>

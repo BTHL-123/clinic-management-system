@@ -106,6 +106,11 @@ export default function AppointmentDetailPage() {
   if (error) return <div style={{ padding: "40px", color: "red" }}>{error}</div>;
   if (!appt) return <div style={{ padding: "40px" }}>Không tìm thấy lịch hẹn</div>;
 
+  const now = new Date();
+  const isPastStartTime = appt.appointmentDate && appt.startTime 
+    ? now >= new Date(`${appt.appointmentDate}T${appt.startTime}`) 
+    : false;
+
   return (
     <div style={{ maxWidth: "600px" }}>
       <button 
@@ -160,27 +165,35 @@ export default function AppointmentDetailPage() {
         </div>
 
         {(appt.status === "CONFIRMED" || appt.status === "PENDING_PAYMENT") && (
-          <div style={{ marginTop: "24px", paddingTop: "20px", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end", gap: "12px" }}>
-            <button
-              onClick={() => setRescheduleModalOpen(true)}
-              style={{
-                display: "flex", alignItems: "center", gap: "8px", padding: "10px 20px",
-                borderRadius: "8px", border: "1px solid #cbd5e1", background: "#fff", color: "#0ea5e9",
-                fontWeight: 600, cursor: "pointer"
-              }}
-            >
-              <RefreshCw size={18} /> Dời lịch hẹn
-            </button>
-            <button
-              onClick={() => setCancelModalOpen(true)}
-              style={{
-                display: "flex", alignItems: "center", gap: "8px", padding: "10px 20px",
-                borderRadius: "8px", border: "none", background: "#ef4444", color: "#fff",
-                fontWeight: 600, cursor: "pointer"
-              }}
-            >
-              <XCircle size={18} /> Hủy lịch hẹn
-            </button>
+          <div style={{ marginTop: "24px", paddingTop: "20px", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end", gap: "12px", alignItems: "center" }}>
+            {!isPastStartTime ? (
+              <>
+                <button
+                  onClick={() => setRescheduleModalOpen(true)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "8px", padding: "10px 20px",
+                    borderRadius: "8px", border: "1px solid #cbd5e1", background: "#fff", color: "#0ea5e9",
+                    fontWeight: 600, cursor: "pointer"
+                  }}
+                >
+                  <RefreshCw size={18} /> Dời lịch hẹn
+                </button>
+                <button
+                  onClick={() => setCancelModalOpen(true)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "8px", padding: "10px 20px",
+                    borderRadius: "8px", border: "none", background: "#ef4444", color: "#fff",
+                    fontWeight: 600, cursor: "pointer"
+                  }}
+                >
+                  <XCircle size={18} /> Hủy lịch hẹn
+                </button>
+              </>
+            ) : (
+              <span style={{ fontSize: "14px", color: "#b45309", fontStyle: "italic", display: "flex", alignItems: "center", gap: "6px" }}>
+                <Clock size={16} /> Đã qua giờ khám, không thể thao tác
+              </span>
+            )}
           </div>
         )}
       </div>

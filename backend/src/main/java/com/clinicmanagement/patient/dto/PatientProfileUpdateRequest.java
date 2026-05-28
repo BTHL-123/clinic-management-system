@@ -1,14 +1,15 @@
-package com.clinicmanagement.patient;
+package com.clinicmanagement.patient.dto;
+
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import java.time.LocalDate;
 
 public record PatientProfileUpdateRequest(
-        @NotBlank(message = "Họ và tên không được để trống")
+        @NotBlank(message = "Há» vÃ  tÃªn khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng")
         String fullName,
 
-        @Pattern(regexp = "MALE|FEMALE|OTHER", message = "Giới tính phải là MALE, FEMALE hoặc OTHER")
+        @Pattern(regexp = "MALE|FEMALE|OTHER", message = "Giá»›i tÃ­nh pháº£i lÃ  MALE, FEMALE hoáº·c OTHER")
         String gender,
 
         LocalDate dateOfBirth,
@@ -34,3 +35,5 @@ public record PatientProfileUpdateRequest(
         String medicalHistory
 ) {
 }
+
+

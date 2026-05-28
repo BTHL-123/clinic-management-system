@@ -1,4 +1,6 @@
-package com.clinicmanagement.patient;
+package com.clinicmanagement.patient.dto;
+
+import com.clinicmanagement.patient.Patient;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -46,3 +48,4 @@ public record PatientResponse(
         );
     }
 }
+
