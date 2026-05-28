@@ -7,7 +7,6 @@ import com.clinicmanagement.common.exception.BusinessException;
 import com.clinicmanagement.common.exception.ResourceNotFoundException;
 import com.clinicmanagement.consultation.ConsultationSession;
 import com.clinicmanagement.consultation.ConsultationSessionRepository;
-import com.clinicmanagement.patient.PatientRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,8 +20,6 @@ import java.util.List;
 public class QueueTicketService {
 
     private final QueueTicketRepository queueTicketRepository;
-    private final AppointmentRepository appointmentRepository;
-    private final PatientRepository patientRepository;
     private final ConsultationSessionRepository consultationRepository;
 
     // ── GET QUEUE BY DOCTOR + DATE ────────────────────────────────────────────
@@ -31,13 +28,8 @@ public class QueueTicketService {
         return queueTicketRepository.findByDoctorAndDate(doctorId, date, status)
                 .stream()
                 .map(q -> {
-                    String patientName = patientRepository.findById(q.getPatientId())
-                            .map(p -> p.getFullName())
-                            .orElse(null);
-                    Long consultationId = consultationRepository.findByAppointmentId(q.getAppointmentId())
-                            .map(ConsultationSession::getConsultationId)
-                            .orElse(null);
-                    return QueueTicketResponse.from(q, patientName, consultationId);
+                    Long consultationId = getConsultationId(q);
+                    return QueueTicketResponse.from(q, consultationId);
                 })
                 .toList();
     }
@@ -46,11 +38,7 @@ public class QueueTicketService {
     @Transactional(readOnly = true)
     public QueueTicketResponse getById(Long id) {
         QueueTicket ticket = findOrThrow(id);
-        String patientName = patientRepository.findById(ticket.getPatientId())
-                .map(p -> p.getFullName()).orElse(null);
-        Long consultationId = consultationRepository.findByAppointmentId(ticket.getAppointmentId())
-                .map(ConsultationSession::getConsultationId).orElse(null);
-        return QueueTicketResponse.from(ticket, patientName, consultationId);
+        return QueueTicketResponse.from(ticket, getConsultationId(ticket));
     }
 
     // ── CALL PATIENT ──────────────────────────────────────────────────────────
@@ -63,9 +51,7 @@ public class QueueTicketService {
         ticket.setStatus("CALLED");
         ticket.setCalledAt(LocalDateTime.now());
         queueTicketRepository.save(ticket);
-        return QueueTicketResponse.from(ticket,
-                patientRepository.findById(ticket.getPatientId()).map(p -> p.getFullName()).orElse(null),
-                null);
+        return QueueTicketResponse.from(ticket, null);
     }
 
     // ── START EXAMINATION (Task 40 core) ──────────────────────────────────────
@@ -77,14 +63,18 @@ public class QueueTicketService {
             throw new BusinessException("Chỉ có thể bắt đầu khám khi bệnh nhân đang WAITING hoặc CALLED.");
         }
 
+        Long appointmentId = ticket.getAppointment().getAppointmentId();
+        Long patientId = ticket.getPatient().getPatientId();
+        Long doctorId = ticket.getDoctor().getDoctorId();
+
         // Tạo hoặc lấy consultation session
         ConsultationSession session = consultationRepository
-                .findByAppointmentId(ticket.getAppointmentId())
+                .findByAppointmentId(appointmentId)
                 .orElseGet(() -> {
                     ConsultationSession newSession = ConsultationSession.builder()
-                            .appointmentId(ticket.getAppointmentId())
-                            .patientId(ticket.getPatientId())
-                            .doctorId(ticket.getDoctorId())
+                            .appointmentId(appointmentId)
+                            .patientId(patientId)
+                            .doctorId(doctorId)
                             .status("WAITING")
                             .build();
                     return consultationRepository.save(newSession);
@@ -118,10 +108,7 @@ public class QueueTicketService {
         ticket.setStatus("DONE");
         ticket.setCompletedAt(LocalDateTime.now());
         queueTicketRepository.save(ticket);
-        return QueueTicketResponse.from(ticket,
-                patientRepository.findById(ticket.getPatientId()).map(p -> p.getFullName()).orElse(null),
-                consultationRepository.findByAppointmentId(ticket.getAppointmentId())
-                        .map(ConsultationSession::getConsultationId).orElse(null));
+        return QueueTicketResponse.from(ticket, getConsultationId(ticket));
     }
 
     // ── SKIP ──────────────────────────────────────────────────────────────────
@@ -133,14 +120,20 @@ public class QueueTicketService {
         }
         ticket.setStatus("SKIPPED");
         queueTicketRepository.save(ticket);
-        return QueueTicketResponse.from(ticket,
-                patientRepository.findById(ticket.getPatientId()).map(p -> p.getFullName()).orElse(null),
-                null);
+        return QueueTicketResponse.from(ticket, null);
     }
 
-    // ── HELPER ────────────────────────────────────────────────────────────────
+    // ── HELPERS ───────────────────────────────────────────────────────────────
     private QueueTicket findOrThrow(Long id) {
         return queueTicketRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy vé hàng đợi #" + id));
+    }
+
+    private Long getConsultationId(QueueTicket ticket) {
+        if (ticket.getAppointment() == null) return null;
+        return consultationRepository
+                .findByAppointmentId(ticket.getAppointment().getAppointmentId())
+                .map(ConsultationSession::getConsultationId)
+                .orElse(null);
     }
 }

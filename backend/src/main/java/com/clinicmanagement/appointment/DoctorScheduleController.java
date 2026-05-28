@@ -35,7 +35,7 @@ public class DoctorScheduleController {
 
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
     public ResponseEntity<ApiResponse<DoctorScheduleResponse>> createSchedule(
             @Valid @RequestBody DoctorScheduleRequest request
     ) {
@@ -45,7 +45,7 @@ public class DoctorScheduleController {
     }
 
     @PutMapping("/{scheduleId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
     public ResponseEntity<ApiResponse<DoctorScheduleResponse>> updateSchedule(
             @PathVariable Long scheduleId,
             @Valid @RequestBody DoctorScheduleRequest request
@@ -89,7 +89,7 @@ public class DoctorScheduleController {
     }
 
     @PutMapping("/{scheduleId}/cancel")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
     public ResponseEntity<ApiResponse<DoctorScheduleResponse>> cancelScheduleByPut(
             @PathVariable Long scheduleId,
             @Valid @RequestBody CancelScheduleRequest request
@@ -99,7 +99,7 @@ public class DoctorScheduleController {
     }
 
     @DeleteMapping("/{scheduleId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
     public ResponseEntity<ApiResponse<DoctorScheduleResponse>> cancelSchedule(
             @PathVariable Long scheduleId
     ) {
@@ -108,7 +108,7 @@ public class DoctorScheduleController {
     }
 
     @PostMapping("/{scheduleId}/generate-slots")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
     public ResponseEntity<ApiResponse<GenerateSlotsResponse>> generateSlots(
             @PathVariable Long scheduleId,
             @Valid @RequestBody GenerateSlotsRequest request

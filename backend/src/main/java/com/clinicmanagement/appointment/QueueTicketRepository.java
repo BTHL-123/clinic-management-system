@@ -12,12 +12,12 @@ import java.util.Optional;
 @Repository
 public interface QueueTicketRepository extends JpaRepository<QueueTicket, Long> {
 
-    Optional<QueueTicket> findByAppointmentId(Long appointmentId);
+    Optional<QueueTicket> findByAppointment(Appointment appointment);
 
     // Lấy hàng đợi theo bác sĩ + ngày + status (optional)
     @Query("""
             SELECT q FROM QueueTicket q
-            WHERE q.doctorId = :doctorId
+            WHERE q.doctor.doctorId = :doctorId
               AND q.queueDate = :date
               AND (:status IS NULL OR q.status = :status)
             ORDER BY q.queueNumber ASC
@@ -28,11 +28,13 @@ public interface QueueTicketRepository extends JpaRepository<QueueTicket, Long> 
             @Param("status") String status
     );
 
-    // Số thứ tự lớn nhất trong ngày của bác sĩ (để tạo số mới)
     @Query("""
             SELECT COALESCE(MAX(q.queueNumber), 0)
             FROM QueueTicket q
-            WHERE q.doctorId = :doctorId AND q.queueDate = :date
+            WHERE q.doctor.doctorId = :doctorId AND q.queueDate = :queueDate
             """)
-    int findMaxQueueNumber(@Param("doctorId") Long doctorId, @Param("date") LocalDate date);
+    int findMaxQueueNumberByDoctorAndDate(
+            @Param("doctorId") Long doctorId,
+            @Param("queueDate") LocalDate queueDate
+    );
 }

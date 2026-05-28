@@ -1,19 +1,20 @@
 package com.clinicmanagement.appointment;
 
+import com.clinicmanagement.department.Department;
+import com.clinicmanagement.doctor.Doctor;
+import com.clinicmanagement.patient.Patient;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "queue_tickets")
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Entity
+@Table(name = "queue_tickets")
 public class QueueTicket {
 
     @Id
@@ -21,17 +22,21 @@ public class QueueTicket {
     @Column(name = "queue_ticket_id")
     private Long queueTicketId;
 
-    @Column(name = "appointment_id", nullable = false, unique = true)
-    private Long appointmentId;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "appointment_id", nullable = false, unique = true)
+    private Appointment appointment;
 
-    @Column(name = "patient_id", nullable = false)
-    private Long patientId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "patient_id", nullable = false)
+    private Patient patient;
 
-    @Column(name = "doctor_id", nullable = false)
-    private Long doctorId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "doctor_id", nullable = false)
+    private Doctor doctor;
 
-    @Column(name = "department_id", nullable = false)
-    private Long departmentId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id", nullable = false)
+    private Department department;
 
     @Column(name = "queue_date", nullable = false)
     private LocalDate queueDate;
@@ -40,14 +45,12 @@ public class QueueTicket {
     private Integer queueNumber;
 
     @Column(name = "priority_level", nullable = false, length = 20)
-    @Builder.Default
     private String priorityLevel = "NORMAL";
 
     /**
      * WAITING | CALLED | IN_EXAMINATION | WAITING_LAB | DONE | CANCELLED | SKIPPED
      */
     @Column(nullable = false, length = 20)
-    @Builder.Default
     private String status = "WAITING";
 
     @Column(name = "estimated_wait_minutes")

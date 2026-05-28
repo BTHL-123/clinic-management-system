@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface PatientRepository extends JpaRepository<Patient, Long> {
+
+    Optional<Patient> findTopByPhone(String phone);
     Optional<Patient> findTopByOrderByPatientIdDesc();
 
     Optional<Patient> findByUserUserId(Long userId);

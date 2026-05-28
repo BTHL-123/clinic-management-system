@@ -23,17 +23,17 @@ public record QueueTicketResponse(
         Long consultationId
 ) {
     public static QueueTicketResponse from(QueueTicket q) {
-        return from(q, null, null);
+        return from(q, null);
     }
 
-    public static QueueTicketResponse from(QueueTicket q, String patientName, Long consultationId) {
+    public static QueueTicketResponse from(QueueTicket q, Long consultationId) {
         return new QueueTicketResponse(
                 q.getQueueTicketId(),
-                q.getAppointmentId(),
-                q.getPatientId(),
-                patientName,
-                q.getDoctorId(),
-                q.getDepartmentId(),
+                q.getAppointment() != null ? q.getAppointment().getAppointmentId() : null,
+                q.getPatient() != null ? q.getPatient().getPatientId() : null,
+                q.getPatient() != null ? q.getPatient().getFullName() : null,
+                q.getDoctor() != null ? q.getDoctor().getDoctorId() : null,
+                q.getDepartment() != null ? q.getDepartment().getDepartmentId() : null,
                 q.getQueueDate(),
                 q.getQueueNumber(),
                 q.getPriorityLevel(),

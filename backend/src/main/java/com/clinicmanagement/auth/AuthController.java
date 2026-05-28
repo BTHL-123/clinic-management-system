@@ -1,5 +1,7 @@
 package com.clinicmanagement.auth;
 
+import com.clinicmanagement.auth.dto.*;
+
 import com.clinicmanagement.common.dto.ApiResponse;
 import com.clinicmanagement.security.CustomUserDetails;
 import com.clinicmanagement.user.UserMapper;
@@ -77,3 +79,4 @@ public class AuthController {
         return ApiResponse.success(UserMapper.toSummary(currentUser.getUser()));
     }
 }
+

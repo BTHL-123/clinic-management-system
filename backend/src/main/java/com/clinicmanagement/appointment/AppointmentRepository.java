@@ -25,7 +25,12 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             Pageable pageable
     );
 
-    @Query("SELECT a FROM Appointment a WHERE a.patient.user.userId = :userId AND " +
+    @Query("SELECT a FROM Appointment a " +
+           "LEFT JOIN a.patient p " +
+           "LEFT JOIN p.user pu " +
+           "LEFT JOIN a.doctor d " +
+           "LEFT JOIN d.user du " +
+           "WHERE (pu.userId = :userId OR du.userId = :userId) AND " +
            "((:upcoming = true AND (a.appointmentDate > :currentDate OR (a.appointmentDate = :currentDate AND a.endTime >= :currentTime))) OR " +
            " (:upcoming = false AND (a.appointmentDate < :currentDate OR (a.appointmentDate = :currentDate AND a.endTime < :currentTime))))")
     Page<Appointment> findMyAppointments(
@@ -34,5 +39,34 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             @Param("currentDate") LocalDate currentDate,
             @Param("currentTime") LocalTime currentTime,
             Pageable pageable
+    );
+
+    /**
+     * Check if a CONFIRMED/CHECKED_IN appointment already exists for the same
+     * doctor, date, and exact time slot — prevents double-booking on walk-in.
+     */
+    @Query("SELECT COUNT(a) > 0 FROM Appointment a WHERE " +
+           "a.doctor.doctorId = :doctorId AND " +
+           "a.appointmentDate = :date AND " +
+           "a.startTime = :startTime AND " +
+           "a.endTime = :endTime AND " +
+           "a.status NOT IN ('CANCELLED', 'NO_SHOW', 'RESCHEDULED')")
+    boolean existsActiveAppointmentForSlot(
+            @Param("doctorId") Long doctorId,
+            @Param("date") LocalDate date,
+            @Param("startTime") LocalTime startTime,
+            @Param("endTime") LocalTime endTime
+    );
+
+    /**
+     * Count appointments for a doctor on a given date to help with queue management.
+     */
+    @Query("SELECT COUNT(a) FROM Appointment a WHERE " +
+           "a.doctor.doctorId = :doctorId AND " +
+           "a.appointmentDate = :date AND " +
+           "a.status NOT IN ('CANCELLED', 'NO_SHOW')")
+    long countByDoctorAndDate(
+            @Param("doctorId") Long doctorId,
+            @Param("date") LocalDate date
     );
 }
