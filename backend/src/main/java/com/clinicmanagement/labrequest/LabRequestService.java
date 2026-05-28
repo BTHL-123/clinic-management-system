@@ -1,15 +1,19 @@
 package com.clinicmanagement.labrequest;
 
+import com.clinicmanagement.common.dto.PageResponse;
+import com.clinicmanagement.common.exception.BusinessException;
 import com.clinicmanagement.common.exception.ResourceNotFoundException;
 import com.clinicmanagement.lab.LabTest;
 import com.clinicmanagement.lab.LabTestRepository;
 import com.clinicmanagement.labrequest.dto.CreateLabRequestRequest;
 import com.clinicmanagement.labrequest.dto.LabRequestResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -19,6 +23,15 @@ public class LabRequestService {
 
     private final LabRequestRepository labRequestRepository;
     private final LabTestRepository labTestRepository;
+
+    // ── GET ALL (for lab technician) ──────────────────────────────────────────
+    @Transactional(readOnly = true)
+    public PageResponse<LabRequestResponse> getAll(String status, Pageable pageable) {
+        return PageResponse.from(
+                labRequestRepository.findByStatus(status, pageable)
+                        .map(LabRequestResponse::from)
+        );
+    }
 
     // ── GET BY CONSULTATION ───────────────────────────────────────────────────
     @Transactional(readOnly = true)
@@ -43,7 +56,6 @@ public class LabRequestService {
     // ── CREATE ────────────────────────────────────────────────────────────────
     @Transactional
     public LabRequestResponse create(CreateLabRequestRequest request) {
-        // Sinh mã phiếu: LR-YYYYMMDD-{count+1}
         String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         long count = labRequestRepository.count();
         String requestCode = "LR-" + date + "-" + String.format("%04d", count + 1);
@@ -57,22 +69,39 @@ public class LabRequestService {
                 .status("REQUESTED")
                 .build();
 
-        // Thêm từng loại xét nghiệm vào items
         for (Long labTestId : request.labTestIds()) {
             LabTest labTest = labTestRepository.findById(labTestId)
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Không tìm thấy loại xét nghiệm #" + labTestId));
-
-            LabRequestItem item = LabRequestItem.builder()
+            labRequest.getItems().add(LabRequestItem.builder()
                     .labRequest(labRequest)
                     .labTest(labTest)
                     .status("REQUESTED")
-                    .build();
-
-            labRequest.getItems().add(item);
+                    .build());
         }
 
         return LabRequestResponse.from(labRequestRepository.save(labRequest));
+    }
+
+    // ── ACCEPT (Task 45 core) ─────────────────────────────────────────────────
+    @Transactional
+    public LabRequestResponse accept(Long labRequestId, Long acceptedByUserId) {
+        LabRequest request = labRequestRepository.findById(labRequestId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Không tìm thấy phiếu xét nghiệm #" + labRequestId));
+
+        if (!"REQUESTED".equals(request.getStatus())) {
+            throw new BusinessException("Chỉ có thể tiếp nhận phiếu ở trạng thái REQUESTED.");
+        }
+
+        request.setStatus("IN_PROGRESS");
+        request.setAcceptedBy(acceptedByUserId);
+        request.setAcceptedAt(LocalDateTime.now());
+
+        // Cập nhật tất cả items sang IN_PROGRESS
+        request.getItems().forEach(item -> item.setStatus("IN_PROGRESS"));
+
+        return LabRequestResponse.from(labRequestRepository.save(request));
     }
 
     // ── CHECK HAS LAB RESULT ──────────────────────────────────────────────────

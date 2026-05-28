@@ -1,6 +1,7 @@
 import {
   Building2,
   CalendarDays,
+  FlaskConical,
   KeyRound,
   MessageSquare,
   History,
@@ -44,6 +45,7 @@ const adminItems = [
   { to: "/dashboard/security", label: "Bảo mật", icon: Shield, roles: ["ADMIN"] },
   { to: "/dashboard/appointments", label: "Lịch khám", icon: CalendarDays },
   { to: "/dashboard/consultation", label: "Phòng khám", icon: Stethoscope, roles: ["DOCTOR"] },
+  { to: "/dashboard/lab-requests", label: "Phòng xét nghiệm", icon: FlaskConical, roles: ["LAB_TECHNICIAN", "ADMIN"] },
   { to: "/dashboard/walk-in", label: "Walk-in Appointment", icon: UserPlus, roles: ["ADMIN", "RECEPTIONIST"] },
 ];
 
