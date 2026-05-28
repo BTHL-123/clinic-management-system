@@ -29,6 +29,7 @@ import PatientManagement from "./pages/patient/PatientManagement.jsx";
 import PatientDetailPage from "./pages/patient/PatientDetailPage.jsx";
 import ProfilePage from "./pages/profile/ProfilePage.jsx";
 import MyAppointmentsPage from "./pages/patient/MyAppointmentsPage.jsx";
+import AppointmentDetailPage from "./pages/appointment/AppointmentDetailPage.jsx";
 import PatientMedicalHistoryPage from "./pages/patient/PatientMedicalHistoryPage.jsx";
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import { useAuth } from "./context/useAuth.js";
@@ -79,6 +80,7 @@ export default function App() {
         <Route path="ai-chat" element={<AiChatPatient />} />
         <Route path="walk-in" element={<WalkInAppointmentPage />} />
         <Route path="my-appointments" element={<MyAppointmentsPage />} />
+        <Route path="appointments/:id" element={<AppointmentDetailPage />} />
         <Route path="my-medical-history" element={<PatientMedicalHistoryPage />} />
         <Route path="doctors" element={<DoctorManagement />} />
         <Route path="patients" element={<PatientManagement />} />

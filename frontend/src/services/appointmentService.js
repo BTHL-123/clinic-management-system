@@ -20,6 +20,10 @@ const appointmentService = {
   bookAppointment(payload) {
     return axiosClient.post("/appointments", payload);
   },
+
+  cancelAppointment(id, cancellationReason) {
+    return axiosClient.put(`/appointments/${id}/cancel`, { cancellationReason });
+  },
 };
 
 export default appointmentService;

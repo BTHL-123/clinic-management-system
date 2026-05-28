@@ -1,7 +1,68 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { CalendarDays, Clock, CheckCircle, XCircle, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import appointmentService from "../../services/appointmentService.js";
+
+// Modal Component for Cancelling Appointment
+function CancelModal({ isOpen, onClose, onConfirm, busy }) {
+  const [reason, setReason] = useState("");
+
+  if (!isOpen) return null;
+
+  return (
+    <div style={{
+      position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: "rgba(0,0,0,0.5)", display: "flex",
+      alignItems: "center", justifyContent: "center", zIndex: 1000
+    }}>
+      <div style={{
+        background: "#fff", padding: "24px", borderRadius: "12px",
+        width: "90%", maxWidth: "400px", boxShadow: "0 4px 20px rgba(0,0,0,0.15)"
+      }}>
+        <h3 style={{ margin: "0 0 16px", color: "#0f172a", fontSize: "1.2rem" }}>Xác nhận hủy lịch</h3>
+        <p style={{ margin: "0 0 16px", color: "#64748b", fontSize: "14px" }}>
+          Vui lòng nhập lý do hủy lịch hẹn này. Thao tác này không thể hoàn tác.
+        </p>
+        <textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="Lý do hủy..."
+          rows={3}
+          style={{
+            width: "100%", padding: "10px", borderRadius: "8px",
+            border: "1px solid #cbd5e1", outline: "none", resize: "none",
+            marginBottom: "16px", fontFamily: "inherit", fontSize: "14px",
+            boxSizing: "border-box"
+          }}
+        />
+        <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+          <button
+            onClick={onClose}
+            disabled={busy}
+            style={{
+              padding: "8px 16px", borderRadius: "8px", border: "1px solid #cbd5e1",
+              background: "#fff", cursor: "pointer", fontWeight: 600, color: "#475569"
+            }}
+          >
+            Đóng
+          </button>
+          <button
+            onClick={() => onConfirm(reason)}
+            disabled={busy || !reason.trim()}
+            style={{
+              padding: "8px 16px", borderRadius: "8px", border: "none",
+              background: (busy || !reason.trim()) ? "#fca5a5" : "#dc2626",
+              color: "#fff", cursor: (busy || !reason.trim()) ? "not-allowed" : "pointer",
+              fontWeight: 600
+            }}
+          >
+            {busy ? "Đang xử lý..." : "Hủy lịch"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const STATUS_CONFIG = {
   CONFIRMED:       { label: "Đã xác nhận",  color: "#0f766e", bg: "#f0fdf9" },
@@ -26,7 +87,8 @@ function StatusBadge({ status }) {
   );
 }
 
-function AppointmentCard({ appt }) {
+function AppointmentCard({ appt, onCancelRequest }) {
+  const navigate = useNavigate();
   const date = appt.appointmentDate
     ? new Date(appt.appointmentDate).toLocaleDateString("vi-VN", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" })
     : "—";
@@ -73,6 +135,45 @@ function AppointmentCard({ appt }) {
           <div style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 600, marginBottom: "2px" }}>HÌNH THỨC</div>
           <div style={{ fontSize: "13px", color: "#475569" }}>{appt.bookingType === "ONLINE" ? "Trực tuyến" : "Trực tiếp"}</div>
         </div>
+        {appt.status === "CANCELLED" && appt.cancellationReason && (
+          <div style={{ gridColumn: "1 / -1", marginTop: "4px" }}>
+            <div style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 600, marginBottom: "2px" }}>LÝ DO HỦY</div>
+            <div style={{ fontSize: "13px", color: "#dc2626" }}>{appt.cancellationReason}</div>
+          </div>
+        )}
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "12px", gap: "8px" }}>
+        <button
+          onClick={() => navigate(`/dashboard/appointments/${appt.appointmentId}`)}
+          style={{
+            display: "flex", alignItems: "center", gap: "6px",
+            padding: "6px 14px", borderRadius: "6px", border: "1px solid #cbd5e1",
+            background: "#fff", color: "#475569", cursor: "pointer",
+            fontSize: "13px", fontWeight: 600, transition: "all 0.15s"
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = "#f8fafc"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
+        >
+          Xem chi tiết
+        </button>
+
+        {(appt.status === "CONFIRMED" || appt.status === "PENDING_PAYMENT") && (
+          <button
+            onClick={() => onCancelRequest(appt.appointmentId)}
+            style={{
+              display: "flex", alignItems: "center", gap: "6px",
+              padding: "6px 14px", borderRadius: "6px", border: "1px solid #fecaca",
+              background: "#fff", color: "#dc2626", cursor: "pointer",
+              fontSize: "13px", fontWeight: 600, transition: "all 0.15s"
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#fef2f2"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
+          >
+            <XCircle size={14} />
+            Hủy lịch
+          </button>
+        )}
       </div>
     </div>
   );
@@ -100,8 +201,49 @@ export default function MyAppointmentsPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [successMsg, setSuccessMsg] = useState("");
   const [page, setPage] = useState(0);
   const pageSize = 5;
+
+  // Cancel logic
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [cancelTargetId, setCancelTargetId] = useState(null);
+  const [cancelling, setCancelling] = useState(false);
+
+  const handleCancelRequest = (id) => {
+    setCancelTargetId(id);
+    setCancelModalOpen(true);
+  };
+
+  const handleConfirmCancel = async (reason) => {
+    if (!cancelTargetId) return;
+    setCancelling(true);
+    setError(null);
+    setSuccessMsg("");
+    try {
+      await appointmentService.cancelAppointment(cancelTargetId, reason);
+      setSuccessMsg("Đã hủy lịch khám thành công.");
+      setCancelModalOpen(false);
+      setCancelTargetId(null);
+      // Reload current page
+      loadData();
+    } catch (err) {
+      setError(err.message || "Không thể hủy lịch.");
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const loadData = () => {
+    setLoading(true);
+    setError(null);
+    const upcoming = tab === "upcoming" ? true : false;
+    appointmentService
+      .getMyAppointments(upcoming, page, pageSize)
+      .then((res) => setData(res.data ?? res))
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  };
 
   const setTab = (newTab) => {
     setSearchParams({ tab: newTab });
@@ -112,14 +254,7 @@ export default function MyAppointmentsPage() {
   }, [tab]);
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
-    const upcoming = tab === "upcoming" ? true : false;
-    appointmentService
-      .getMyAppointments(upcoming, page, pageSize)
-      .then((res) => setData(res.data ?? res))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+    loadData();
   }, [tab, page]);
 
   const tabs = [
@@ -167,12 +302,23 @@ export default function MyAppointmentsPage() {
 
       {error && (
         <div style={{
-          display: "flex", alignItems: "center", gap: "8px",
+          display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px",
           background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "10px",
           padding: "14px 18px", color: "#dc2626", fontSize: "14px",
         }}>
           <AlertCircle size={16} />
           {error}
+        </div>
+      )}
+
+      {successMsg && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px",
+          background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "10px",
+          padding: "14px 18px", color: "#16a34a", fontSize: "14px",
+        }}>
+          <CheckCircle size={16} />
+          {successMsg}
         </div>
       )}
 
@@ -183,7 +329,7 @@ export default function MyAppointmentsPage() {
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               {data.content.map((appt) => (
-                <AppointmentCard key={appt.appointmentId} appt={appt} />
+                <AppointmentCard key={appt.appointmentId} appt={appt} onCancelRequest={handleCancelRequest} />
               ))}
             </div>
           )}
@@ -219,6 +365,13 @@ export default function MyAppointmentsPage() {
           )}
         </>
       )}
+
+      <CancelModal
+        isOpen={cancelModalOpen}
+        onClose={() => { if (!cancelling) setCancelModalOpen(false); }}
+        onConfirm={handleConfirmCancel}
+        busy={cancelling}
+      />
     </div>
   );
 }

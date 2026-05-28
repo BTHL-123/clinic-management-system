@@ -2,6 +2,7 @@ package com.clinicmanagement.appointment;
 
 import com.clinicmanagement.appointment.dto.AppointmentResponse;
 import com.clinicmanagement.appointment.dto.BookAppointmentRequest;
+import com.clinicmanagement.appointment.dto.CancelAppointmentRequest;
 import com.clinicmanagement.common.dto.ApiResponse;
 import com.clinicmanagement.common.dto.PageResponse;
 import com.clinicmanagement.security.CustomUserDetails;
@@ -94,5 +95,24 @@ public class AppointmentController {
     ) {
         AppointmentResponse response = appointmentService.bookAppointment(request, userDetails.getUser().getUserId());
         return ResponseEntity.ok(ApiResponse.success("Đặt lịch khám thành công", response));
+    }
+
+    @PutMapping("/{id}/cancel")
+    @PreAuthorize("hasAnyRole('PATIENT', 'RECEPTIONIST', 'ADMIN')")
+    public ResponseEntity<ApiResponse<AppointmentResponse>> cancelAppointment(
+            @PathVariable Long id,
+            @Valid @RequestBody CancelAppointmentRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        boolean isReceptionist = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_RECEPTIONIST") || a.getAuthority().equals("ROLE_ADMIN"));
+        
+        AppointmentResponse response = appointmentService.cancelAppointment(
+                id,
+                request.cancellationReason(),
+                userDetails.getUser().getUserId(),
+                isReceptionist
+        );
+        return ResponseEntity.ok(ApiResponse.success("Hủy lịch khám thành công", response));
     }
 }
