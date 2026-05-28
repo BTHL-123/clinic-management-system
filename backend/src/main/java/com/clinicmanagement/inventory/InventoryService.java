@@ -28,4 +28,6 @@ public interface InventoryService {
     void checkStockAlerts();
 
     void generateAlertsOnDemand();
+
+    void checkStockAvailability(Long medicineId, Integer requiredQuantity);
 }

@@ -309,5 +309,24 @@ public class InventoryServiceImpl implements InventoryService {
         dto.setCreatedAt(entity.getCreatedAt());
         return dto;
     }
+
+    @Transactional(readOnly = true)
+    @Override
+    public void checkStockAvailability(Long medicineId, Integer requiredQuantity) {
+        Medicine medicine = medicineRepository.findById(medicineId)
+                .orElseThrow(() -> new ResourceNotFoundException("Medicine not found"));
+        
+        Integer availableStock = batchRepository.findBatches(medicineId, "AVAILABLE", Pageable.unpaged())
+                .stream()
+                .mapToInt(MedicineBatch::getCurrentQuantity)
+                .sum();
+        
+        if (availableStock < requiredQuantity) {
+            throw new BusinessException(
+                    String.format("Không đủ tồn kho cho thuốc [%s]. Yêu cầu: %d, Tồn kho: %d",
+                            medicine.getMedicineName(), requiredQuantity, availableStock)
+            );
+        }
+    }
 }
 
