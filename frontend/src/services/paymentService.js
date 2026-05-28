@@ -14,3 +14,6 @@ export const confirmCashPayment = (id) =>
 
 export const createOnlinePaymentUrl = (payload) =>
   axiosClient.post("/payments/online/create-url", payload);
+
+export const processPaymentCallback = (payload) =>
+  axiosClient.post("/payments/online/callback", payload);
