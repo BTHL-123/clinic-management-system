@@ -47,7 +47,8 @@ public class ConsultationService {
 
         ConsultationSession session = ConsultationSession.builder()
                 .appointmentId(request.appointmentId())
-                // patientId và doctorId sẽ được set khi tích hợp với Appointment module
+                .patientId(request.patientId())
+                .doctorId(request.doctorId())
                 .status("WAITING")
                 .build();
 

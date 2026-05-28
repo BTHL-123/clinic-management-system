@@ -13,6 +13,7 @@ import {
   Search,
   Shield,
   Siren,
+  Stethoscope,
   Truck,
   UserRound,
   Users,
@@ -41,6 +42,7 @@ const adminItems = [
   { to: "/dashboard/users", label: "Tài khoản", icon: UsersRound, roles: ["ADMIN"] },
   { to: "/dashboard/security", label: "Bảo mật", icon: Shield, roles: ["ADMIN"] },
   { to: "/dashboard/appointments", label: "Lịch khám", icon: CalendarDays },
+  { to: "/dashboard/consultation", label: "Phòng khám", icon: Stethoscope, roles: ["DOCTOR"] },
 ];
 
 const patientItems = [

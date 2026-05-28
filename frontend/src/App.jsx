@@ -26,6 +26,7 @@ import StockTransactions from "./pages/inventory/StockTransactions.jsx";
 import SupplierManagement from "./pages/inventory/SupplierManagement.jsx";
 import PatientManagement from "./pages/patient/PatientManagement.jsx";
 import PatientDetailPage from "./pages/patient/PatientDetailPage.jsx";
+import ConsultationPage from "./pages/consultation/ConsultationPage.jsx";
 import ProfilePage from "./pages/profile/ProfilePage.jsx";
 import MyAppointmentsPage from "./pages/patient/MyAppointmentsPage.jsx";
 import PatientMedicalHistoryPage from "./pages/patient/PatientMedicalHistoryPage.jsx";
@@ -81,6 +82,7 @@ export default function App() {
         <Route path="doctors" element={<DoctorManagement />} />
         <Route path="patients" element={<PatientManagement />} />
         <Route path="patients/:patientId" element={<PatientDetailPage />} />
+        <Route path="consultation" element={<ConsultationPage />} />
       </Route>
     </Routes>
   );
