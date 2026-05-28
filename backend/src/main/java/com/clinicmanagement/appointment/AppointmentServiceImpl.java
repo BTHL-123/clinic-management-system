@@ -419,4 +419,16 @@ public class AppointmentServiceImpl implements AppointmentService {
         Page<Appointment> page = appointmentRepository.findAll(spec, pageable);
         return PageResponse.from(page.map(this::mapToResponse));
     }
+
+    @Override
+    public java.util.List<AppointmentResponse> getDoctorTodayAppointments(Long userId) {
+        Doctor doctor = doctorRepository.findByUser_UserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Bác sĩ không tồn tại cho người dùng này."));
+        
+        LocalDate today = LocalDate.now();
+        java.util.List<Appointment> appointments = appointmentRepository.findDoctorTodayAppointments(doctor.getDoctorId(), today);
+        return appointments.stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
 }

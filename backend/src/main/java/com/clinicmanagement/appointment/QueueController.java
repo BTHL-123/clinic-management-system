@@ -19,7 +19,7 @@ public class QueueController {
     private final QueueService queueService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'DOCTOR')")
     public ResponseEntity<ApiResponse<List<QueueTicketResponse>>> getQueue(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam(required = false) Long doctorId,
@@ -30,21 +30,21 @@ public class QueueController {
     }
 
     @PutMapping("/{queueTicketId}/call")
-    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'DOCTOR')")
     public ResponseEntity<ApiResponse<QueueTicketResponse>> callPatient(@PathVariable Long queueTicketId) {
         QueueTicketResponse response = queueService.callPatient(queueTicketId);
         return ResponseEntity.ok(ApiResponse.success("Gọi khám bệnh nhân thành công", response));
     }
 
     @PutMapping("/{queueTicketId}/skip")
-    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'DOCTOR')")
     public ResponseEntity<ApiResponse<QueueTicketResponse>> skipPatient(@PathVariable Long queueTicketId) {
         QueueTicketResponse response = queueService.skipPatient(queueTicketId);
         return ResponseEntity.ok(ApiResponse.success("Bỏ qua bệnh nhân thành công", response));
     }
 
     @PutMapping("/{queueTicketId}/complete")
-    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'DOCTOR')")
     public ResponseEntity<ApiResponse<QueueTicketResponse>> completePatient(@PathVariable Long queueTicketId) {
         QueueTicketResponse response = queueService.completePatient(queueTicketId);
         return ResponseEntity.ok(ApiResponse.success("Hoàn tất ca khám thành công", response));

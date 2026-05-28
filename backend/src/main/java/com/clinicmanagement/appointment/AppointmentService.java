@@ -45,4 +45,6 @@ public interface AppointmentService {
             String status,
             Pageable pageable
     );
+
+    java.util.List<AppointmentResponse> getDoctorTodayAppointments(Long userId);
 }

@@ -36,6 +36,10 @@ const appointmentService = {
   checkInAppointment(appointmentId) {
     return axiosClient.put(`/receptionist/appointments/${appointmentId}/check-in`);
   },
+
+  getDoctorTodayAppointments() {
+    return axiosClient.get("/appointments/doctor/today");
+  },
 };
 
 export default appointmentService;
