@@ -230,6 +230,7 @@ export default function AvailableSlots() {
         reasonForVisit: visitReason
       });
       setBookingSuccess(true);
+      window.dispatchEvent(new CustomEvent("notification-updated"));
       setTimeout(() => {
         setBookingStep(false);
         setSelectedSlot(null);

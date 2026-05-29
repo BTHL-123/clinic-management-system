@@ -1,61 +1,100 @@
-import { Bell } from "lucide-react";
+import { Bell, Calendar, Info, AlertTriangle, Loader2, Check } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getActiveAlerts } from "../services/inventoryService";
+import notificationService from "../services/notificationService";
 
 export default function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
-  const [alerts, setAlerts] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const fetchUnreadAlerts = useCallback(async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await getActiveAlerts({ page: 0, size: 5 });
-      const unresolvedAlerts = response.data.content || [];
-      setAlerts(unresolvedAlerts);
-      setUnreadCount(unresolvedAlerts.length);
+      const countRes = await notificationService.getUnreadCount();
+      setUnreadCount(countRes.data || 0);
+
+      const listRes = await notificationService.getNotifications(0, 5);
+      setNotifications(listRes.data?.content || []);
     } catch (error) {
-      console.error("Error fetching alerts:", error);
+      console.error("Error fetching notifications:", error);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    const timeout = setTimeout(fetchUnreadAlerts, 0);
-    const interval = setInterval(fetchUnreadAlerts, 5 * 60 * 1000);
+    const timeout = setTimeout(fetchNotifications, 0);
+    const interval = setInterval(fetchNotifications, 60 * 1000); // refresh every minute
+
+    window.addEventListener("notification-updated", fetchNotifications);
+
     return () => {
       clearTimeout(timeout);
       clearInterval(interval);
+      window.removeEventListener("notification-updated", fetchNotifications);
     };
-  }, [fetchUnreadAlerts]);
+  }, [fetchNotifications]);
 
   const handleBellClick = () => {
     setShowDropdown(!showDropdown);
+    if (!showDropdown) {
+      fetchNotifications();
+    }
   };
 
   const handleViewAll = () => {
     setShowDropdown(false);
-    navigate("/dashboard/inventory-alerts");
+    navigate("/dashboard/notifications");
   };
 
-  const getAlertIcon = (type) => {
+  const handleMarkAsRead = async (e, id) => {
+    e.stopPropagation();
+    try {
+      await notificationService.markAsRead(id);
+      fetchNotifications();
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await notificationService.markAllAsRead();
+      fetchNotifications();
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+    }
+  };
+
+  const getNotificationIcon = (type) => {
     switch (type) {
-      case "EXPIRED":
-        return "❌";
-      case "NEAR_EXPIRY":
-        return "⚠️";
-      case "LOW_STOCK":
-        return "📦";
+      case "APPOINTMENT":
+        return (
+          <div className="item-icon type-appointment">
+            <Calendar size={16} />
+          </div>
+        );
+      case "ALERT":
+        return (
+          <div className="item-icon type-alert">
+            <AlertTriangle size={16} />
+          </div>
+        );
+      case "SYSTEM":
       default:
-        return "ℹ️";
+        return (
+          <div className="item-icon type-system">
+            <Info size={16} />
+          </div>
+        );
     }
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return "";
     const date = new Date(dateString);
     const now = new Date();
     const diffMs = now - date;
@@ -63,8 +102,10 @@ export default function NotificationBell() {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
+    if (diffMins < 1) return "Vừa xong";
     if (diffMins < 60) return `${diffMins} phút trước`;
     if (diffHours < 24) return `${diffHours} giờ trước`;
+    if (diffDays === 1) return "Hôm qua";
     return `${diffDays} ngày trước`;
   };
 
@@ -89,49 +130,62 @@ export default function NotificationBell() {
           />
           <div className="notification-dropdown">
             <div className="notification-header">
-              <h3>Cảnh báo tồn kho</h3>
-              <span className="muted">{unreadCount} chưa xử lý</span>
+              <h3>Thông báo</h3>
+              {unreadCount > 0 && (
+                <button className="mark-all-read" onClick={handleMarkAllRead}>
+                  Đọc tất cả
+                </button>
+              )}
             </div>
 
             <div className="notification-list">
-              {loading ? (
-                <div className="notification-loading">Đang tải...</div>
-              ) : alerts.length === 0 ? (
+              {loading && notifications.length === 0 ? (
+                <div className="notification-loading" style={{ display: "flex", justifyContent: "center", padding: "20px" }}>
+                  <Loader2 className="animate-spin" size={18} />
+                </div>
+              ) : notifications.length === 0 ? (
                 <div className="notification-empty">
-                  <span>✅</span>
-                  <p>Mọi thứ đều ổn!</p>
-                  <small className="muted">Không có cảnh báo nào</small>
+                  <div className="icon">🔔</div>
+                  <p>Bạn không có thông báo nào</p>
+                  <small className="muted">Các thông báo mới của bạn sẽ xuất hiện ở đây</small>
                 </div>
               ) : (
-                alerts.map((alert) => (
+                notifications.map((item) => (
                   <div
-                    key={alert.alertId}
-                    className={`notification-item alert-${alert.alertType.toLowerCase()}`}
+                    key={item.notificationId}
+                    className={`notification-item ${!item.isRead ? "unread" : ""}`}
+                    onClick={(e) => !item.isRead && handleMarkAsRead(e, item.notificationId)}
                   >
-                    <div className="alert-icon">
-                      {getAlertIcon(alert.alertType)}
-                    </div>
-                    <div className="alert-content">
-                      <p className="alert-message">{alert.message}</p>
-                      <span className="alert-time muted">
-                        {formatDate(alert.createdAt)}
-                      </span>
+                    {getNotificationIcon(item.type)}
+                    <div className="item-details">
+                      <div style={{ display: "flex", justifyContent: "between", alignItems: "start" }}>
+                        <h4 className="item-title" style={{ flex: 1, margin: 0 }}>{item.title}</h4>
+                        {!item.isRead && (
+                          <button
+                            onClick={(e) => handleMarkAsRead(e, item.notificationId)}
+                            style={{ background: "none", border: "none", padding: 2, cursor: "pointer", color: "#64748b" }}
+                            title="Đánh dấu đã đọc"
+                          >
+                            <Check size={14} />
+                          </button>
+                        )}
+                      </div>
+                      <p className="item-message">{item.message}</p>
+                      <span className="item-time">{formatDate(item.createdAt)}</span>
                     </div>
                   </div>
                 ))
               )}
             </div>
 
-            {alerts.length > 0 && (
-              <div className="notification-footer">
-                <button
-                  className="notification-view-all"
-                  onClick={handleViewAll}
-                >
-                  Xem tất cả cảnh báo →
-                </button>
-              </div>
-            )}
+            <div className="notification-footer">
+              <button
+                className="notification-view-all"
+                onClick={handleViewAll}
+              >
+                Xem tất cả thông báo →
+              </button>
+            </div>
           </div>
         </>
       )}

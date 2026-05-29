@@ -23,6 +23,7 @@ import WalkInAppointmentPage from "./pages/appointment/WalkInAppointmentPage.jsx
 import ReceptionistAppointmentsPage from "./pages/appointment/ReceptionistAppointmentsPage.jsx";
 import QueueManagementPage from "./pages/appointment/QueueManagementPage.jsx";
 import DoctorTodayAppointments from "./pages/doctor/DoctorTodayAppointments.jsx";
+import NotificationsPage from "./pages/notification/NotificationsPage.jsx";
 import DoctorManagement from "./pages/doctor/DoctorManagement.jsx";
 import AlertsDashboard from "./pages/inventory/AlertsDashboard.jsx";
 import InventoryBatches from "./pages/inventory/InventoryBatches.jsx";
@@ -90,6 +91,7 @@ export default function App() {
         <Route path="my-appointments" element={<MyAppointmentsPage />} />
         <Route path="appointments/:id" element={<AppointmentDetailPage />} />
         <Route path="my-medical-history" element={<PatientMedicalHistoryPage />} />
+        <Route path="notifications" element={<NotificationsPage />} />
         <Route path="doctors" element={<DoctorManagement />} />
         <Route path="patients" element={<PatientManagement />} />
         <Route path="patients/:patientId" element={<PatientDetailPage />} />
