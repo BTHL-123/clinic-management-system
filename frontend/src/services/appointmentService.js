@@ -21,20 +21,20 @@ const appointmentService = {
     return axiosClient.post("/appointments", payload);
   },
 
-  cancelAppointment(id, cancellationReason) {
-    return axiosClient.put(`/appointments/${id}/cancel`, { cancellationReason });
-  },
-
-  rescheduleAppointment(id, newSlotId, rescheduleReason) {
-    return axiosClient.put(`/appointments/${id}/reschedule`, { newSlotId, rescheduleReason });
-  },
-
   getReceptionistAppointments(filters = {}, page = 0, size = 10) {
     return axiosClient.get("/receptionist/appointments", { params: { ...filters, page, size } });
   },
 
   checkInAppointment(appointmentId) {
     return axiosClient.put(`/receptionist/appointments/${appointmentId}/check-in`);
+  },
+
+  cancelAppointment(id, cancellationReason) {
+    return axiosClient.put(`/appointments/${id}/cancel`, { cancellationReason });
+  },
+
+  rescheduleAppointment(id, newSlotId, rescheduleReason) {
+    return axiosClient.put(`/appointments/${id}/reschedule`, { newSlotId, rescheduleReason });
   },
 
   getDoctorTodayAppointments() {
