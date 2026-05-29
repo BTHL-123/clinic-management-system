@@ -2,6 +2,8 @@ package com.clinicmanagement.appointment;
 
 import com.clinicmanagement.appointment.dto.AppointmentResponse;
 import com.clinicmanagement.appointment.dto.BookAppointmentRequest;
+import com.clinicmanagement.appointment.dto.CancelAppointmentRequest;
+import com.clinicmanagement.appointment.dto.RescheduleAppointmentRequest;
 import com.clinicmanagement.common.dto.ApiResponse;
 import com.clinicmanagement.common.dto.PageResponse;
 import com.clinicmanagement.security.CustomUserDetails;
@@ -50,17 +52,17 @@ public class AppointmentController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'PATIENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'PATIENT', 'DOCTOR')")
     public ResponseEntity<ApiResponse<AppointmentResponse>> getAppointmentById(
             @PathVariable Long id,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        boolean isPatient = userDetails.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_PATIENT"));
+        boolean isPatientOrDoctor = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_PATIENT") || a.getAuthority().equals("ROLE_DOCTOR"));
         AppointmentResponse response = appointmentService.getAppointmentById(
                 id,
                 userDetails.getUser().getUserId(),
-                isPatient
+                isPatientOrDoctor
         );
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -94,5 +96,38 @@ public class AppointmentController {
     ) {
         AppointmentResponse response = appointmentService.bookAppointment(request, userDetails.getUser().getUserId());
         return ResponseEntity.ok(ApiResponse.success("Đặt lịch khám thành công", response));
+    }
+
+    @PutMapping("/{id}/cancel")
+    @PreAuthorize("hasAnyRole('PATIENT', 'RECEPTIONIST', 'ADMIN')")
+    public ResponseEntity<ApiResponse<AppointmentResponse>> cancelAppointment(
+            @PathVariable Long id,
+            @Valid @RequestBody CancelAppointmentRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        boolean isReceptionist = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_RECEPTIONIST") || a.getAuthority().equals("ROLE_ADMIN"));
+        
+        AppointmentResponse response = appointmentService.cancelAppointment(
+                id,
+                request.cancellationReason(),
+                userDetails.getUser().getUserId(),
+                isReceptionist
+        );
+        return ResponseEntity.ok(ApiResponse.success("Hủy lịch khám thành công", response));
+    }
+
+    @PutMapping("/{id}/reschedule")
+    @PreAuthorize("hasAnyRole('PATIENT', 'RECEPTIONIST', 'ADMIN')")
+    public ResponseEntity<ApiResponse<AppointmentResponse>> rescheduleAppointment(
+            @PathVariable Long id,
+            @Valid @RequestBody RescheduleAppointmentRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        boolean isPrivileged = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_RECEPTIONIST") || a.getAuthority().equals("ROLE_ADMIN"));
+
+        AppointmentResponse response = appointmentService.rescheduleAppointment(id, request, userDetails.getUser().getUserId(), isPrivileged);
+        return ResponseEntity.ok(ApiResponse.success("Dời lịch khám thành công", response));
     }
 }

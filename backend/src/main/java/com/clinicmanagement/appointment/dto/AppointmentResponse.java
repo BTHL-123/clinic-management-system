@@ -2,6 +2,7 @@ package com.clinicmanagement.appointment.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 public record AppointmentResponse(
@@ -26,5 +27,7 @@ public record AppointmentResponse(
         String patientPhone,
         java.time.LocalDateTime checkedInAt,
         Integer queueNumber,
-        String queueStatus
+        String queueStatus,
+        String cancellationReason,
+        LocalDateTime cancelledAt
 ) {}

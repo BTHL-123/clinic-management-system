@@ -2,6 +2,7 @@ package com.clinicmanagement.appointment;
 
 import com.clinicmanagement.appointment.dto.AppointmentResponse;
 import com.clinicmanagement.appointment.dto.BookAppointmentRequest;
+import com.clinicmanagement.appointment.dto.RescheduleAppointmentRequest;
 import com.clinicmanagement.common.dto.PageResponse;
 import com.clinicmanagement.common.exception.BusinessException;
 import com.clinicmanagement.common.exception.ResourceNotFoundException;
@@ -61,17 +62,23 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
-    public AppointmentResponse getAppointmentById(Long id, Long currentUserId, boolean isPatient) {
+    public AppointmentResponse getAppointmentById(Long id, Long currentUserId, boolean isPatientOrDoctor) {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + id));
 
-        // Issue #1: Nếu caller là PATIENT, chỉ được xem appointment của chính mình
-        if (isPatient) {
-            Long appointmentOwnerId = appointment.getPatient() != null
+        // Issue #1: Nếu caller là PATIENT hoặc DOCTOR, chỉ được xem appointment của chính mình
+        if (isPatientOrDoctor) {
+            Long patientUserId = appointment.getPatient() != null
                     && appointment.getPatient().getUser() != null
                     ? appointment.getPatient().getUser().getUserId()
                     : null;
-            if (!currentUserId.equals(appointmentOwnerId)) {
+                    
+            Long doctorUserId = appointment.getDoctor() != null
+                    && appointment.getDoctor().getUser() != null
+                    ? appointment.getDoctor().getUser().getUserId()
+                    : null;
+                    
+            if (!currentUserId.equals(patientUserId) && !currentUserId.equals(doctorUserId)) {
                 throw new BusinessException("Bạn không có quyền xem lịch hẹn này.");
             }
         }
@@ -119,7 +126,9 @@ public class AppointmentServiceImpl implements AppointmentService {
                 patientPhone,
                 app.getCheckedInAt(),
                 queueNumber,
-                queueStatus
+                queueStatus,
+                app.getCancellationReason(),
+                app.getCancelledAt()
         );
     }
 
@@ -269,5 +278,145 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         Page<Appointment> page = appointmentRepository.findAll(spec, pageable);
         return PageResponse.from(page.map(this::mapToResponse));
+    }
+
+    @Override
+    @Transactional
+    public AppointmentResponse cancelAppointment(
+            Long appointmentId,
+            String cancellationReason,
+            Long currentUserId,
+            boolean isReceptionist
+    ) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Lịch hẹn không tồn tại với id: " + appointmentId));
+
+        // 1. Kiểm tra quyền: PATIENT chỉ được hủy lịch của chính mình
+        if (!isReceptionist) {
+            Long ownerId = appointment.getPatient() != null
+                    && appointment.getPatient().getUser() != null
+                    ? appointment.getPatient().getUser().getUserId()
+                    : null;
+            if (!currentUserId.equals(ownerId)) {
+                throw new BusinessException("Bạn không có quyền hủy lịch hẹn này.");
+            }
+        }
+
+        // 2. Kiểm tra trạng thái appointment
+        String currentStatus = appointment.getStatus();
+        if ("CANCELLED".equals(currentStatus)) {
+            throw new BusinessException("Lịch hẹn này đã được hủy trước đó.");
+        }
+        if ("COMPLETED".equals(currentStatus)) {
+            throw new BusinessException("Không thể hủy lịch hẹn đã hoàn thành.");
+        }
+        if ("CHECKED_IN".equals(currentStatus)) {
+            throw new BusinessException("Không thể hủy lịch hẹn đang trong trạng thái đã check-in.");
+        }
+
+        // 3. Kiểm tra thời gian — không được hủy lịch đã qua
+        java.time.LocalDateTime appointmentDateTime = java.time.LocalDateTime.of(
+                appointment.getAppointmentDate(), appointment.getStartTime());
+        if (appointmentDateTime.isBefore(java.time.LocalDateTime.now())) {
+            throw new BusinessException("Không thể hủy lịch hẹn đã qua thời gian khám.");
+        }
+
+        // 4. Cập nhật appointment
+        appointment.setStatus("CANCELLED");
+        appointment.setCancellationReason(cancellationReason);
+        appointment.setCancelledAt(java.time.LocalDateTime.now());
+        appointment.setCancelledBy(currentUserId);
+        appointmentRepository.save(appointment);
+
+        // 5. Giải phóng slot — đặt lại thành AVAILABLE
+        if (appointment.getTimeSlot() != null) {
+            TimeSlot slot = appointment.getTimeSlot();
+            slot.setStatus("AVAILABLE");
+            slot.setLockedByPatientId(null);
+            slot.setLockedUntil(null);
+            timeSlotRepository.save(slot);
+        }
+
+        return mapToResponse(appointment);
+    }
+
+    @Override
+    @Transactional
+    public AppointmentResponse rescheduleAppointment(
+            Long appointmentId,
+            RescheduleAppointmentRequest request,
+            Long currentUserId,
+            boolean isPrivileged
+    ) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Lịch hẹn không tồn tại với id: " + appointmentId));
+
+        if (!isPrivileged) {
+            Long ownerId = appointment.getPatient() != null
+                    && appointment.getPatient().getUser() != null
+                    ? appointment.getPatient().getUser().getUserId()
+                    : null;
+            if (!currentUserId.equals(ownerId)) {
+                throw new BusinessException("Bạn không có quyền dời lịch hẹn này.");
+            }
+        }
+
+        String currentStatus = appointment.getStatus();
+        if ("CANCELLED".equals(currentStatus) || "COMPLETED".equals(currentStatus) || "CHECKED_IN".equals(currentStatus)) {
+            throw new BusinessException("Không thể dời lịch hẹn có trạng thái: " + currentStatus);
+        }
+
+        java.time.LocalDateTime appointmentDateTime = java.time.LocalDateTime.of(
+                appointment.getAppointmentDate(), appointment.getStartTime());
+        if (appointmentDateTime.isBefore(java.time.LocalDateTime.now())) {
+            throw new BusinessException("Không thể dời lịch hẹn đã qua thời gian khám.");
+        }
+
+        TimeSlot oldSlot = appointment.getTimeSlot();
+        if (oldSlot != null && oldSlot.getId().equals(request.newSlotId())) {
+            throw new BusinessException("Ca khám mới không được trùng với ca khám hiện tại.");
+        }
+
+        TimeSlot newSlot = timeSlotRepository.findByIdWithPessimisticLock(request.newSlotId())
+                .orElseThrow(() -> new ResourceNotFoundException("Ca khám mới không tồn tại với id: " + request.newSlotId()));
+
+        if (!"AVAILABLE".equals(newSlot.getStatus())) {
+            throw new BusinessException("Ca khám mới không còn khả dụng.");
+        }
+
+        // Release old slot
+        if (oldSlot != null) {
+            oldSlot.setStatus("AVAILABLE");
+            oldSlot.setLockedByPatientId(null);
+            oldSlot.setLockedUntil(null);
+            timeSlotRepository.save(oldSlot);
+        }
+
+        // Lock new slot
+        newSlot.setStatus("BOOKED");
+        newSlot.setLockedUntil(null);
+        newSlot.setLockedByPatientId(null);
+        timeSlotRepository.save(newSlot);
+
+        Doctor newDoctor = doctorRepository.findById(newSlot.getDoctorSchedule().getDoctorId())
+                .orElseThrow(() -> new ResourceNotFoundException("Bác sĩ không tồn tại với id: " + newSlot.getDoctorSchedule().getDoctorId()));
+
+        if (!appointment.getDoctor().getDoctorId().equals(newDoctor.getDoctorId())) {
+            throw new BusinessException("Chỉ có thể dời lịch khám với cùng một bác sĩ. Vui lòng hủy và đặt lại nếu bạn muốn đổi bác sĩ.");
+        }
+
+        appointment.setTimeSlot(newSlot);
+        appointment.setAppointmentDate(newSlot.getDoctorSchedule().getWorkDate());
+        appointment.setStartTime(newSlot.getStartTime());
+        appointment.setEndTime(newSlot.getEndTime());
+        
+        if (request.rescheduleReason() != null && !request.rescheduleReason().trim().isEmpty()) {
+            String existingReason = appointment.getReasonForVisit() != null ? appointment.getReasonForVisit() : "";
+            appointment.setReasonForVisit(existingReason + "\n[Dời lịch: " + request.rescheduleReason() + "]");
+        }
+
+        appointmentRepository.save(appointment);
+
+        return mapToResponse(appointment);
     }
 }

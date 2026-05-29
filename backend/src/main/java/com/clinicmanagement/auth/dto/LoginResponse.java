@@ -1,4 +1,4 @@
-package com.clinicmanagement.auth;
+package com.clinicmanagement.auth.dto;
 
 import com.clinicmanagement.user.dto.UserSummaryResponse;
 
@@ -10,3 +10,4 @@ public record LoginResponse(
         UserSummaryResponse user
 ) {
 }
+

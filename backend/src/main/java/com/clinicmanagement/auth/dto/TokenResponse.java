@@ -1,4 +1,4 @@
-package com.clinicmanagement.auth;
+package com.clinicmanagement.auth.dto;
 
 public record TokenResponse(
         String accessToken,
@@ -7,3 +7,4 @@ public record TokenResponse(
         long expiresIn
 ) {
 }
+

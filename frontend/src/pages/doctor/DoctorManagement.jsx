@@ -266,8 +266,8 @@ export default function DoctorManagement() {
               
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                 <div className="field">
-                  <label>Mã bác sĩ *</label>
-                  <input name="doctorCode" value={formData.doctorCode} onChange={handleChange} required />
+                  <label>Mã bác sĩ (Tự động tạo)</label>
+                  <input name="doctorCode" value={formData.doctorCode || "Tự động tạo sau khi lưu"} disabled style={{ backgroundColor: "#f1f5f9", color: "#64748b", fontStyle: "italic" }} />
                 </div>
                 
                 <div className="field">

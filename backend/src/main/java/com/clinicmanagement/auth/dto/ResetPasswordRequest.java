@@ -1,4 +1,4 @@
-package com.clinicmanagement.auth;
+package com.clinicmanagement.auth.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -10,3 +10,4 @@ public record ResetPasswordRequest(
         @NotBlank @Size(min = 6, max = 100) String newPassword
 ) {
 }
+

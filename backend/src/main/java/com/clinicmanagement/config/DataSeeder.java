@@ -107,22 +107,23 @@ public class DataSeeder implements CommandLineRunner {
         String[] phones = {"0912345678", "0987654321", "0909090909"};
 
         for (int i = 0; i < emails.length; i++) {
-            List<Long> existingDoc = jdbcTemplate.query("SELECT doctor_id FROM doctors WHERE doctor_code = ?",
-                    (rs, rowNum) -> rs.getLong("doctor_id"), codes[i]);
-            if (existingDoc.isEmpty()) {
-                Long doctorUserId;
-                String email = emails[i];
-                List<Long> userIds = jdbcTemplate.query("SELECT user_id FROM users WHERE email = ?",
-                        (rs, rowNum) -> rs.getLong("user_id"), email);
-                if (userIds.isEmpty()) {
-                    jdbcTemplate.update("INSERT INTO users (email, password_hash, full_name, phone, auth_provider, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
-                            email, passwordEncoder.encode("123456"), names[i], phones[i], "LOCAL", "ACTIVE");
-                    doctorUserId = jdbcTemplate.queryForObject("SELECT user_id FROM users WHERE email = ?", Long.class, email);
-                    jdbcTemplate.update("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", doctorUserId, doctorRole.getRoleId());
-                } else {
-                    doctorUserId = userIds.get(0);
-                }
+            String email = emails[i];
+            Long doctorUserId;
+            List<Long> userIds = jdbcTemplate.query("SELECT user_id FROM users WHERE email = ?",
+                    (rs, rowNum) -> rs.getLong("user_id"), email);
+            if (userIds.isEmpty()) {
+                jdbcTemplate.update("INSERT INTO users (email, password_hash, full_name, phone, auth_provider, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                        email, passwordEncoder.encode("123456"), names[i], phones[i], "LOCAL", "ACTIVE");
+                doctorUserId = jdbcTemplate.queryForObject("SELECT user_id FROM users WHERE email = ?", Long.class, email);
+                jdbcTemplate.update("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", doctorUserId, doctorRole.getRoleId());
+            } else {
+                doctorUserId = userIds.get(0);
+            }
 
+            List<Long> existingDoc = jdbcTemplate.query("SELECT doctor_id FROM doctors WHERE user_id = ?",
+                    (rs, rowNum) -> rs.getLong("doctor_id"), doctorUserId);
+            
+            if (existingDoc.isEmpty()) {
                 jdbcTemplate.update("INSERT INTO doctors (user_id, department_id, doctor_code, degree, specialization, years_of_experience, biography, consultation_fee, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
                         doctorUserId, departmentId, codes[i], "MD", "General Practitioner", 10 + i, "A highly experienced practitioner", 150000.0, "ACTIVE");
             }
@@ -184,17 +185,17 @@ public class DataSeeder implements CommandLineRunner {
             Long deptId1 = jdbcTemplate.queryForObject("SELECT department_id FROM doctors WHERE doctor_id = ?", Long.class, doctorId1);
             Long deptId2 = jdbcTemplate.queryForObject("SELECT department_id FROM doctors WHERE doctor_id = ?", Long.class, doctorId2);
             
-            jdbcTemplate.update("INSERT INTO appointments (appointment_id, appointment_code, patient_id, doctor_id, department_id, appointment_date, start_time, end_time, booking_type, status) VALUES (?, ?, ?, ?, ?, CURRENT_DATE, '08:00', '08:30', 'ONLINE', 'COMPLETED')", 1001, "APP1001", patientId, doctorId1, deptId1);
-            jdbcTemplate.update("INSERT INTO consultation_sessions (consultation_id, appointment_id, patient_id, doctor_id, status) VALUES (?, ?, ?, ?, 'COMPLETED')", 1001, 1001, patientId, doctorId1);
+            jdbcTemplate.update("INSERT INTO appointments (appointment_id, appointment_code, patient_id, doctor_id, department_id, appointment_date, start_time, end_time, booking_type, status, deposit_amount, created_at, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_DATE, '08:00', '08:30', 'ONLINE', 'COMPLETED', 0.0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", 1001, "APP1001", patientId, doctorId1, deptId1);
+            jdbcTemplate.update("INSERT INTO consultation_sessions (consultation_id, appointment_id, patient_id, doctor_id, status, created_at, updated_at) VALUES (?, ?, ?, ?, 'COMPLETED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", 1001, 1001, patientId, doctorId1);
 
-            jdbcTemplate.update("INSERT INTO appointments (appointment_id, appointment_code, patient_id, doctor_id, department_id, appointment_date, start_time, end_time, booking_type, status) VALUES (?, ?, ?, ?, ?, CURRENT_DATE, '09:00', '09:30', 'ONLINE', 'COMPLETED')", 1002, "APP1002", patientId, doctorId2, deptId2);
-            jdbcTemplate.update("INSERT INTO consultation_sessions (consultation_id, appointment_id, patient_id, doctor_id, status) VALUES (?, ?, ?, ?, 'COMPLETED')", 1002, 1002, patientId, doctorId2);
+            jdbcTemplate.update("INSERT INTO appointments (appointment_id, appointment_code, patient_id, doctor_id, department_id, appointment_date, start_time, end_time, booking_type, status, deposit_amount, created_at, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_DATE, '09:00', '09:30', 'ONLINE', 'COMPLETED', 0.0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", 1002, "APP1002", patientId, doctorId2, deptId2);
+            jdbcTemplate.update("INSERT INTO consultation_sessions (consultation_id, appointment_id, patient_id, doctor_id, status, created_at, updated_at) VALUES (?, ?, ?, ?, 'COMPLETED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", 1002, 1002, patientId, doctorId2);
         }
 
         // Bệnh án 1: Viêm loét dạ dày
         jdbcTemplate.update("""
                 INSERT INTO medical_records (consultation_id, patient_id, doctor_id, symptoms, clinical_findings, diagnosis, treatment_plan, doctor_note, follow_up_date, follow_up_note, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP - INTERVAL '14 days', CURRENT_TIMESTAMP - INTERVAL '14 days')
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 1001, patientId, doctorId1,
                 "Dau bung, buon non, sot nhe 37.8C",
@@ -203,12 +204,14 @@ public class DataSeeder implements CommandLineRunner {
                 "Dung thuoc khang acid + khang sinh 7 ngay",
                 "Benh nhan can kieng do cay nong. Tai kham sau 2 tuan.",
                 java.time.LocalDate.of(2026, 6, 10),
-                "Kiem tra lai noi soi da day");
+                "Kiem tra lai noi soi da day",
+                java.sql.Timestamp.valueOf(java.time.LocalDateTime.now().minusDays(14)),
+                java.sql.Timestamp.valueOf(java.time.LocalDateTime.now().minusDays(14)));
 
         // Bệnh án 2: Viêm phế quản
         jdbcTemplate.update("""
                 INSERT INTO medical_records (consultation_id, patient_id, doctor_id, symptoms, clinical_findings, diagnosis, treatment_plan, doctor_note, follow_up_date, follow_up_note, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP - INTERVAL '7 days', CURRENT_TIMESTAMP - INTERVAL '7 days')
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 1002, patientId, doctorId2,
                 "Ho khan keo dai, kho tho khi ngu",
@@ -217,7 +220,9 @@ public class DataSeeder implements CommandLineRunner {
                 "Thuoc giam ho + khang sinh + xi-ro long dom",
                 "Uong nhieu nuoc am, nghi ngoi. Tai kham neu khong giam sau 5 ngay.",
                 java.time.LocalDate.of(2026, 6, 5),
-                "Chup X-quang phoi neu con ho");
+                "Chup X-quang phoi neu con ho",
+                java.sql.Timestamp.valueOf(java.time.LocalDateTime.now().minusDays(7)),
+                java.sql.Timestamp.valueOf(java.time.LocalDateTime.now().minusDays(7)));
 
         System.out.println("\n=== SEED: Da tao 2 ban ghi medical_records cho patient_id=" + patientId + " ===");
     }

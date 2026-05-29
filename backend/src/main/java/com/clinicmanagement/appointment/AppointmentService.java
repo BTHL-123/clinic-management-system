@@ -1,6 +1,7 @@
 package com.clinicmanagement.appointment;
 
 import com.clinicmanagement.appointment.dto.AppointmentResponse;
+import com.clinicmanagement.appointment.dto.RescheduleAppointmentRequest;
 import com.clinicmanagement.common.dto.PageResponse;
 import org.springframework.data.domain.Pageable;
 import java.time.LocalDate;
@@ -17,7 +18,7 @@ public interface AppointmentService {
             Pageable pageable
     );
 
-    AppointmentResponse getAppointmentById(Long id, Long currentUserId, boolean isPatient);
+    AppointmentResponse getAppointmentById(Long id, Long currentUserId, boolean isPatientOrDoctor);
 
     PageResponse<AppointmentResponse> getMyAppointments(
             Long userId,
@@ -34,5 +35,14 @@ public interface AppointmentService {
             LocalDate date,
             String status,
             Pageable pageable
+    );
+
+    AppointmentResponse cancelAppointment(Long appointmentId, String cancellationReason, Long currentUserId, boolean isReceptionist);
+
+    AppointmentResponse rescheduleAppointment(
+            Long appointmentId,
+            RescheduleAppointmentRequest request,
+            Long currentUserId,
+            boolean isPrivileged
     );
 }

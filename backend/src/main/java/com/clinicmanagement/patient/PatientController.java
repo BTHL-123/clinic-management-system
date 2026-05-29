@@ -2,6 +2,9 @@ package com.clinicmanagement.patient;
 
 import com.clinicmanagement.common.dto.ApiResponse;
 import com.clinicmanagement.common.dto.PageResponse;
+import com.clinicmanagement.patient.dto.PatientProfileUpdateRequest;
+import com.clinicmanagement.patient.dto.PatientRequest;
+import com.clinicmanagement.patient.dto.PatientResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;

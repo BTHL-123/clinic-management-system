@@ -28,6 +28,14 @@ const appointmentService = {
   checkInAppointment(appointmentId) {
     return axiosClient.put(`/receptionist/appointments/${appointmentId}/check-in`);
   },
+
+  cancelAppointment(id, cancellationReason) {
+    return axiosClient.put(`/appointments/${id}/cancel`, { cancellationReason });
+  },
+
+  rescheduleAppointment(id, newSlotId, rescheduleReason) {
+    return axiosClient.put(`/appointments/${id}/reschedule`, { newSlotId, rescheduleReason });
+  },
 };
 
 export default appointmentService;

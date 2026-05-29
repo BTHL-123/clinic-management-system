@@ -1,4 +1,6 @@
-package com.clinicmanagement.doctor;
+package com.clinicmanagement.doctor.dto;
+
+import com.clinicmanagement.doctor.Doctor;
 
 public record DoctorResponse(
         Long doctorId,

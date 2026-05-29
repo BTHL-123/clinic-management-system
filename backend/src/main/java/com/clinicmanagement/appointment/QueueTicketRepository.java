@@ -20,4 +20,5 @@ public interface QueueTicketRepository extends JpaRepository<QueueTicket, Long> 
             @Param("doctorId") Long doctorId,
             @Param("queueDate") LocalDate queueDate
     );
+    java.util.Optional<QueueTicket> findByAppointment(Appointment appointment);
 }
