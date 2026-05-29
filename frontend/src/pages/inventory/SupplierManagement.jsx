@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Truck, Edit, Plus, Search, X } from "lucide-react";
+import { Truck, Edit, Trash2, Plus, Search, X } from "lucide-react";
 import {
   createSupplier,
   getSuppliers,
   updateSupplier,
+  deleteSupplier,
 } from "../../services/supplierService";
 
 const EMPTY_FORM = {
@@ -100,6 +101,17 @@ export default function SupplierManagement() {
     }
   };
 
+  const handleDelete = async (id, name) => {
+    if (window.confirm(`Bạn có chắc chắn muốn ngừng hoạt động nhà cung cấp "${name}" không?`)) {
+      try {
+        await deleteSupplier(id);
+        await fetchSuppliers();
+      } catch (err) {
+        setError(err.message || "Xóa thất bại");
+      }
+    }
+  };
+
   return (
     <>
       <div className="page-header">
@@ -167,6 +179,14 @@ export default function SupplierManagement() {
                     <div className="action-group">
                       <button className="icon-button" title="Chỉnh sửa" onClick={() => openEdit(sup)}>
                         <Edit size={15} />
+                      </button>
+                      <button 
+                        className="icon-button" 
+                        title="Ngừng hoạt động" 
+                        onClick={() => handleDelete(sup.supplierId, sup.supplierName)}
+                        style={{ color: "#ef4444" }}
+                      >
+                        <Trash2 size={15} />
                       </button>
                     </div>
                   </td>

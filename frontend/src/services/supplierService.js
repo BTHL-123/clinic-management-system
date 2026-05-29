@@ -11,3 +11,6 @@ export const createSupplier = (payload) =>
 
 export const updateSupplier = (id, payload) =>
   axiosClient.put(`/suppliers/${id}`, payload);
+
+export const deleteSupplier = (id) =>
+  axiosClient.delete(`/suppliers/${id}`);
