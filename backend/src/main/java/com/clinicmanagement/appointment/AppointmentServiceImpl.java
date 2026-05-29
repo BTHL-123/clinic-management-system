@@ -376,16 +376,16 @@ public class AppointmentServiceImpl implements AppointmentService {
             ticket.setDoctor(appointment.getDoctor());
             ticket.setDepartment(appointment.getDepartment());
             ticket.setQueueDate(LocalDate.now());
-            
+
             int nextQueueNumber = queueTicketRepository.findMaxQueueNumberByDoctorAndDate(
                     appointment.getDoctor().getDoctorId(), LocalDate.now()
             ) + 1;
-            
+
             ticket.setQueueNumber(nextQueueNumber);
             ticket.setPriorityLevel("NORMAL");
             ticket.setStatus("WAITING");
             ticket.setCheckedInAt(LocalDateTime.now());
-            
+
             queueTicketRepository.save(ticket);
             appointment.setQueueTicket(ticket);
         } else {
@@ -424,7 +424,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     public java.util.List<AppointmentResponse> getDoctorTodayAppointments(Long userId) {
         Doctor doctor = doctorRepository.findByUser_UserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Bác sĩ không tồn tại cho người dùng này."));
-        
+
         LocalDate today = LocalDate.now();
         java.util.List<Appointment> appointments = appointmentRepository.findDoctorTodayAppointments(doctor.getDoctorId(), today);
         return appointments.stream()
