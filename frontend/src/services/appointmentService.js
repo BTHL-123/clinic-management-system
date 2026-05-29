@@ -36,6 +36,10 @@ const appointmentService = {
   rescheduleAppointment(id, newSlotId, rescheduleReason) {
     return axiosClient.put(`/appointments/${id}/reschedule`, { newSlotId, rescheduleReason });
   },
+
+  getDoctorTodayAppointments() {
+    return axiosClient.get("/appointments/doctor/today");
+  },
 };
 
 export default appointmentService;

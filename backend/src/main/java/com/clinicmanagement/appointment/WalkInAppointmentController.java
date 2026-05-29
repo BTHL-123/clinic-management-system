@@ -18,7 +18,7 @@ import org.springframework.data.domain.Sort;
 import java.time.LocalDate;
 
 @RestController
-@RequestMapping("/appointments")
+@RequestMapping("/receptionist/appointments")
 @RequiredArgsConstructor
 public class WalkInAppointmentController {
 

@@ -24,10 +24,10 @@ public record AppointmentResponse(
         String initialSymptoms,
         String status,
         BigDecimal depositAmount,
+        String cancellationReason,
+        LocalDateTime cancelledAt,
         String patientPhone,
         java.time.LocalDateTime checkedInAt,
         Integer queueNumber,
-        String queueStatus,
-        String cancellationReason,
-        LocalDateTime cancelledAt
+        String queueStatus
 ) {}

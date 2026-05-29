@@ -28,6 +28,15 @@ public interface AppointmentService {
 
     AppointmentResponse bookAppointment(BookAppointmentRequest request, Long userId);
 
+    AppointmentResponse cancelAppointment(Long appointmentId, String cancellationReason, Long currentUserId, boolean isReceptionist);
+
+    AppointmentResponse rescheduleAppointment(
+            Long appointmentId,
+            RescheduleAppointmentRequest request,
+            Long currentUserId,
+            boolean isPrivileged
+    );
+
     AppointmentResponse checkInAppointment(Long appointmentId, Long receptionistId);
 
     PageResponse<AppointmentResponse> searchAppointmentsForReceptionist(
@@ -37,12 +46,5 @@ public interface AppointmentService {
             Pageable pageable
     );
 
-    AppointmentResponse cancelAppointment(Long appointmentId, String cancellationReason, Long currentUserId, boolean isReceptionist);
-
-    AppointmentResponse rescheduleAppointment(
-            Long appointmentId,
-            RescheduleAppointmentRequest request,
-            Long currentUserId,
-            boolean isPrivileged
-    );
+    java.util.List<AppointmentResponse> getDoctorTodayAppointments(Long userId);
 }

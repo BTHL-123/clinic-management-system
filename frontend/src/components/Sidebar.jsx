@@ -28,6 +28,7 @@ import Logo from "./Logo.jsx";
 const adminItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/dashboard/profile", label: "Hồ sơ của tôi", icon: UserSquare, roles: ["PATIENT", "DOCTOR", "STAFF"] },
+  { to: "/dashboard/doctor-appointments", label: "Lịch khám hôm nay", icon: CalendarDays, roles: ["DOCTOR"] },
   { to: "/dashboard/change-password", label: "Đổi mật khẩu", icon: KeyRound },
   { to: "/dashboard/departments", label: "Chuyên khoa", icon: Building2, roles: ["ADMIN", "STAFF"] },
   { to: "/dashboard/medical-services", label: "Dịch vụ y tế", icon: HeartPulse, roles: ["ADMIN", "STAFF"] },
@@ -45,6 +46,7 @@ const adminItems = [
   { to: "/dashboard/appointments", label: "Lịch khám", icon: CalendarDays },
   { to: "/dashboard/walk-in", label: "Walk-in Appointment", icon: UserPlus, roles: ["ADMIN", "RECEPTIONIST"] },
   { to: "/dashboard/receptionist-appointments", label: "Check-in Bệnh nhân", icon: UserCheck, roles: ["ADMIN", "RECEPTIONIST"] },
+  { to: "/dashboard/queue-management", label: "Quản lý hàng đợi", icon: Users, roles: ["ADMIN", "RECEPTIONIST"] },
 ];
 
 const patientItems = [

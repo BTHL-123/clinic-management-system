@@ -70,4 +70,10 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long>,
             @Param("doctorId") Long doctorId,
             @Param("date") LocalDate date
     );
+
+    @Query("SELECT a FROM Appointment a WHERE a.doctor.doctorId = :doctorId AND a.appointmentDate = :date ORDER BY a.startTime ASC")
+    java.util.List<Appointment> findDoctorTodayAppointments(
+            @Param("doctorId") Long doctorId,
+            @Param("date") LocalDate date
+    );
 }
