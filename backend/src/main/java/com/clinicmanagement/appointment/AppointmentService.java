@@ -36,4 +36,15 @@ public interface AppointmentService {
             Long currentUserId,
             boolean isPrivileged
     );
+
+    AppointmentResponse checkInAppointment(Long appointmentId, Long receptionistId);
+
+    PageResponse<AppointmentResponse> searchAppointmentsForReceptionist(
+            String keyword,
+            LocalDate date,
+            String status,
+            Pageable pageable
+    );
+
+    java.util.List<AppointmentResponse> getDoctorTodayAppointments(Long userId);
 }

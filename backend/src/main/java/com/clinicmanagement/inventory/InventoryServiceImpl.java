@@ -37,6 +37,29 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Transactional
     @Override
+    public MedicineBatchResponse updateBatch(Long batchId, UpdateBatchRequest request) {
+        MedicineBatch batch = batchRepository.findById(batchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Batch not found"));
+        
+        if (request.getExpiryDate() != null) batch.setExpiryDate(request.getExpiryDate());
+        if (request.getImportPrice() != null) batch.setImportPrice(request.getImportPrice());
+        if (request.getSellingPrice() != null) batch.setSellingPrice(request.getSellingPrice());
+        if (request.getStatus() != null) batch.setStatus(request.getStatus());
+        
+        return mapToBatchResponse(batchRepository.save(batch));
+    }
+
+    @Transactional
+    @Override
+    public void deleteBatch(Long batchId) {
+        MedicineBatch batch = batchRepository.findById(batchId)
+                .orElseThrow(() -> new ResourceNotFoundException("Batch not found"));
+        batch.setStatus("CANCELLED");
+        batchRepository.save(batch);
+    }
+
+    @Transactional
+    @Override
     public MedicineBatchResponse importBatch(ImportBatchRequest request, User currentUser) {
         Medicine medicine = medicineRepository.findById(request.getMedicineId())
                 .orElseThrow(() -> new ResourceNotFoundException("Medicine not found"));
@@ -265,6 +288,7 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     private String computeEffectiveStatus(MedicineBatch batch) {
+        if ("CANCELLED".equals(batch.getStatus())) return "CANCELLED";
         LocalDate today = LocalDate.now();
         if (batch.getCurrentQuantity() == 0) return "OUT_OF_STOCK";
         if (batch.getExpiryDate() != null && batch.getExpiryDate().isBefore(today)) return "EXPIRED";
@@ -308,6 +332,25 @@ public class InventoryServiceImpl implements InventoryService {
         dto.setResolvedAt(entity.getResolvedAt());
         dto.setCreatedAt(entity.getCreatedAt());
         return dto;
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public void checkStockAvailability(Long medicineId, Integer requiredQuantity) {
+        Medicine medicine = medicineRepository.findById(medicineId)
+                .orElseThrow(() -> new ResourceNotFoundException("Medicine not found"));
+        
+        Integer availableStock = batchRepository.findBatches(medicineId, "AVAILABLE", Pageable.unpaged())
+                .stream()
+                .mapToInt(MedicineBatch::getCurrentQuantity)
+                .sum();
+        
+        if (availableStock < requiredQuantity) {
+            throw new BusinessException(
+                    String.format("Không đủ tồn kho cho thuốc [%s]. Yêu cầu: %d, Tồn kho: %d",
+                            medicine.getMedicineName(), requiredQuantity, availableStock)
+            );
+        }
     }
 }
 
