@@ -47,6 +47,23 @@ public class InventoryController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Nhập kho thành công", response));
     }
 
+    @PutMapping("/batches/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PHARMACIST')")
+    public ResponseEntity<ApiResponse<MedicineBatchResponse>> updateBatch(
+            @PathVariable Long id,
+            @RequestBody UpdateBatchRequest request
+    ) {
+        MedicineBatchResponse response = inventoryService.updateBatch(id, request);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật lô thuốc thành công", response));
+    }
+
+    @DeleteMapping("/batches/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PHARMACIST')")
+    public ResponseEntity<ApiResponse<Void>> deleteBatch(@PathVariable Long id) {
+        inventoryService.deleteBatch(id);
+        return ResponseEntity.ok(ApiResponse.success("Hủy lô thuốc thành công", null));
+    }
+
     @GetMapping("/transactions")
     @PreAuthorize("hasAnyRole('ADMIN', 'PHARMACIST')")
     public ResponseEntity<ApiResponse<PageResponse<StockTransactionResponse>>> getTransactions(

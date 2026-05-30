@@ -6,6 +6,12 @@ export const getBatches = (params) =>
 export const importBatch = (payload) =>
   axiosClient.post("/inventory/batches/import", payload);
 
+export const updateBatch = (id, payload) =>
+  axiosClient.put(`/inventory/batches/${id}`, payload);
+
+export const deleteBatch = (id) =>
+  axiosClient.delete(`/inventory/batches/${id}`);
+
 export const getTransactions = (params) =>
   axiosClient.get("/inventory/transactions", { params });
 
