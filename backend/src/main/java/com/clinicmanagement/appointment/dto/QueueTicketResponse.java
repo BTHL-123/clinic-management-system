@@ -1,26 +1,28 @@
 package com.clinicmanagement.appointment.dto;
 
 import com.clinicmanagement.appointment.QueueTicket;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 public record QueueTicketResponse(
         Long queueTicketId,
+        Integer queueNumber,
+        String queueStatus,
         Long appointmentId,
+        String appointmentCode,
         Long patientId,
         String patientName,
+        String patientPhone,
         Long doctorId,
-        Long departmentId,
-        LocalDate queueDate,
-        Integer queueNumber,
-        String priorityLevel,
-        String status,
-        Integer estimatedWaitMinutes,
+        String doctorName,
+        LocalDate appointmentDate,
+        LocalTime startTime,
+        LocalTime endTime,
         LocalDateTime checkedInAt,
         LocalDateTime calledAt,
         LocalDateTime completedAt,
-        Long consultationId
+        Long consultationId // Giữ lại trường này cho các module của ông
 ) {
     public static QueueTicketResponse from(QueueTicket q) {
         return from(q, null);
@@ -29,16 +31,18 @@ public record QueueTicketResponse(
     public static QueueTicketResponse from(QueueTicket q, Long consultationId) {
         return new QueueTicketResponse(
                 q.getQueueTicketId(),
+                q.getQueueNumber(),
+                q.getStatus(), 
                 q.getAppointment() != null ? q.getAppointment().getAppointmentId() : null,
+                null, 
                 q.getPatient() != null ? q.getPatient().getPatientId() : null,
                 q.getPatient() != null ? q.getPatient().getFullName() : null,
+                null, 
                 q.getDoctor() != null ? q.getDoctor().getDoctorId() : null,
-                q.getDepartment() != null ? q.getDepartment().getDepartmentId() : null,
-                q.getQueueDate(),
-                q.getQueueNumber(),
-                q.getPriorityLevel(),
-                q.getStatus(),
-                q.getEstimatedWaitMinutes(),
+                q.getDoctor() != null && q.getDoctor().getUser() != null ? q.getDoctor().getUser().getFullName() : null, 
+                q.getQueueDate(), 
+                null, 
+                null, 
                 q.getCheckedInAt(),
                 q.getCalledAt(),
                 q.getCompletedAt(),

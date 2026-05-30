@@ -15,4 +15,6 @@ public interface SupplierService {
     SupplierResponse createSupplier(CreateSupplierRequest request);
 
     SupplierResponse updateSupplier(Long supplierId, UpdateSupplierRequest request);
+
+    void deleteSupplier(Long supplierId);
 }

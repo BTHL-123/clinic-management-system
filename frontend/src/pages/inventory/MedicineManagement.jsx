@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Pill, Edit, Plus, Search, X } from "lucide-react";
+import { Pill, Edit, Plus, Search, X, Trash2 } from "lucide-react";
 import {
   createMedicine,
   getMedicines,
   updateMedicine,
+  deleteMedicine,
 } from "../../services/medicineService";
 
 const EMPTY_FORM = {
@@ -110,6 +111,19 @@ export default function MedicineManagement() {
     }
   };
 
+  const handleDelete = async (id, name) => {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa thuốc "${name}" không?`)) {
+      try {
+        setLoading(true);
+        await deleteMedicine(id);
+        await fetchMedicines();
+      } catch (err) {
+        setError(err.message || "Xóa thất bại");
+        setLoading(false);
+      }
+    }
+  };
+
   return (
     <>
       <div className="page-header">
@@ -177,6 +191,9 @@ export default function MedicineManagement() {
                     <div className="action-group">
                       <button className="icon-button" title="Chỉnh sửa" onClick={() => openEdit(med)}>
                         <Edit size={15} />
+                      </button>
+                      <button className="icon-button delete-button" title="Xóa" onClick={() => handleDelete(med.medicineId, med.medicineName)} style={{ color: '#ef4444' }}>
+                        <Trash2 size={15} />
                       </button>
                     </div>
                   </td>
