@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Stethoscope, Save, ArrowLeft, CheckCircle, Activity } from "lucide-react";
+import { Stethoscope, Save, ArrowLeft, CheckCircle, Activity, FlaskConical } from "lucide-react";
 import consultationService from "../../services/consultationService";
 import {
   createMedicalRecord,
@@ -8,6 +8,8 @@ import {
   updateMedicalRecord,
 } from "../../services/medicalRecordService";
 import vitalSignService from "../../services/vitalSignService";
+import { createLabRequest, getLabRequestsByConsultationId } from "../../services/labRequestService";
+import { getLabTests } from "../../services/labTestService";
 
 const EMPTY_FORM = {
   symptoms: "",
@@ -38,8 +40,13 @@ export default function ExaminationPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [existingRecordId, setExistingRecordId] = useState(null);
   const [vitals, setVitals] = useState(EMPTY_VITALS);
-  const [savedVitals, setSavedVitals] = useState([]); // lịch sử đo
+  const [savedVitals, setSavedVitals] = useState([]);
   const [savingVitals, setSavingVitals] = useState(false);
+  const [labTests, setLabTests] = useState([]);
+  const [selectedLabTests, setSelectedLabTests] = useState([]);
+  const [labNote, setLabNote] = useState("");
+  const [savedLabRequests, setSavedLabRequests] = useState([]);
+  const [savingLab, setSavingLab] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -53,11 +60,15 @@ export default function ExaminationPage() {
     Promise.all([
       consultationService.getById(consultationId),
       vitalSignService.getByConsultation(consultationId).catch(() => ({ data: [] })),
+      getLabTests({ status: "ACTIVE", size: 100 }).catch(() => ({ data: { content: [] } })),
+      getLabRequestsByConsultationId(consultationId).catch(() => ({ data: [] })),
     ])
-      .then(async ([consultRes, vitalsRes]) => {
+      .then(async ([consultRes, vitalsRes, labTestsRes, labReqRes]) => {
         const c = consultRes.data;
         setConsultation(c);
         setSavedVitals(vitalsRes.data || []);
+        setLabTests(labTestsRes.data?.content || []);
+        setSavedLabRequests(labReqRes.data || []);
 
         // Tìm bệnh án đã tồn tại cho consultation này
         try {
@@ -102,8 +113,7 @@ export default function ExaminationPage() {
     setVitals((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSaveVitals = async () => {
-    const hasAnyValue = Object.values(vitals).some((v) => v !== "");
+  const handleSaveVitals = async () => {    const hasAnyValue = Object.values(vitals).some((v) => v !== "");
     if (!hasAnyValue) {
       showToast("Vui lòng nhập ít nhất một chỉ số.", "error");
       return;
@@ -130,6 +140,37 @@ export default function ExaminationPage() {
       showToast(err.message || "Không thể lưu chỉ số sinh tồn.", "error");
     } finally {
       setSavingVitals(false);
+    }
+  };
+
+  const toggleLabTest = (id) => {
+    setSelectedLabTests((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleCreateLabRequest = async () => {
+    if (selectedLabTests.length === 0) {
+      showToast("Vui lòng chọn ít nhất một loại xét nghiệm.", "error");
+      return;
+    }
+    setSavingLab(true);
+    try {
+      const res = await createLabRequest({
+        consultationId: Number(consultationId),
+        patientId: consultation.patientId,
+        doctorId: consultation.doctorId,
+        labTestIds: selectedLabTests,
+        note: labNote || null,
+      });
+      setSavedLabRequests((prev) => [...prev, res.data]);
+      setSelectedLabTests([]);
+      setLabNote("");
+      showToast("Đã tạo phiếu xét nghiệm thành công.");
+    } catch (err) {
+      showToast(err.message || "Không thể tạo phiếu xét nghiệm.", "error");
+    } finally {
+      setSavingLab(false);
     }
   };
 
@@ -329,6 +370,93 @@ export default function ExaminationPage() {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* Lab Request Section */}
+      <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: 16, marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+          <FlaskConical size={16} color="#2563eb" />
+          <strong style={{ fontSize: 14, color: "#1d4ed8" }}>Yêu cầu xét nghiệm</strong>
+        </div>
+
+        {/* Danh sách loại xét nghiệm */}
+        {labTests.length > 0 ? (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, marginBottom: 10 }}>
+            {labTests.map((t) => (
+              <label key={t.labTestId} style={{
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "6px 10px", borderRadius: 6, cursor: "pointer",
+                background: selectedLabTests.includes(t.labTestId) ? "#dbeafe" : "#fff",
+                border: `1px solid ${selectedLabTests.includes(t.labTestId) ? "#93c5fd" : "#e5e7eb"}`,
+                fontSize: 13,
+              }}>
+                <input
+                  type="checkbox"
+                  checked={selectedLabTests.includes(t.labTestId)}
+                  onChange={() => toggleLabTest(t.labTestId)}
+                  style={{ accentColor: "#2563eb" }}
+                />
+                <span>
+                  <div style={{ fontWeight: 600 }}>{t.testName}</div>
+                  <div style={{ fontSize: 11, color: "#6b7280" }}>{t.testCode}</div>
+                </span>
+              </label>
+            ))}
+          </div>
+        ) : (
+          <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 10 }}>Không có loại xét nghiệm nào.</p>
+        )}
+
+        <div style={{ marginBottom: 10 }}>
+          <label style={{ ...labelStyle, fontSize: 12 }}>Ghi chú</label>
+          <input
+            type="text"
+            value={labNote}
+            onChange={(e) => setLabNote(e.target.value)}
+            placeholder="Ghi chú cho phiếu xét nghiệm..."
+            style={{ ...inputStyle, fontSize: 13 }}
+          />
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontSize: 12, color: "#2563eb" }}>
+            Đã chọn: {selectedLabTests.length} xét nghiệm
+          </span>
+          <button
+            className="secondary-button"
+            onClick={handleCreateLabRequest}
+            disabled={savingLab || selectedLabTests.length === 0}
+            style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}
+          >
+            <FlaskConical size={13} />
+            {savingLab ? "Đang tạo..." : "Tạo phiếu xét nghiệm"}
+          </button>
+        </div>
+
+        {/* Phiếu đã tạo */}
+        {savedLabRequests.length > 0 && (
+          <div style={{ marginTop: 12, borderTop: "1px solid #bfdbfe", paddingTop: 10 }}>
+            <p style={{ fontSize: 12, color: "#1d4ed8", fontWeight: 600, marginBottom: 6 }}>
+              Phiếu đã tạo ({savedLabRequests.length})
+            </p>
+            {savedLabRequests.map((req) => (
+              <div key={req.labRequestId} style={{
+                background: "#fff", border: "1px solid #bfdbfe",
+                borderRadius: 6, padding: "8px 12px", marginBottom: 6, fontSize: 12,
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <strong>{req.requestCode}</strong>
+                  <span style={{ color: "#6b7280" }}>
+                    {new Date(req.requestedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                </div>
+                <div style={{ marginTop: 4, color: "#374151" }}>
+                  {req.items?.map((item) => item.testName).join(", ")}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
