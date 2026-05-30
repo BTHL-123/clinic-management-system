@@ -1,6 +1,7 @@
-import { Bell, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { Outlet, useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar.jsx";
+import NotificationBell from "../components/NotificationBell.jsx";
 import { useAuth } from "../context/useAuth.js";
 
 export default function DashboardLayout() {
@@ -35,9 +36,7 @@ export default function DashboardLayout() {
             </div>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            <button className="icon-button" aria-label="Notifications">
-              <Bell size={18} />
-            </button>
+            <NotificationBell />
             <button className="icon-button" aria-label="Logout" onClick={handleLogout}>
               <LogOut size={18} />
             </button>

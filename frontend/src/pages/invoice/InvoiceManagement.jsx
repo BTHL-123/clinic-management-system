@@ -16,7 +16,8 @@ import {
   getInvoices,
   updateInvoice,
 } from "../../services/invoiceService";
-import { createPayment, confirmCashPayment } from "../../services/paymentService";
+import { createPayment, confirmCashPayment, createOnlinePaymentUrl } from "../../services/paymentService";
+import { getMedicines } from "../../services/medicineService";
 
 const STATUS_OPTIONS = [
   { value: "", label: "Tất cả" },
@@ -73,6 +74,9 @@ export default function InvoiceManagement() {
   const [paySubmitting, setPaySubmitting] = useState(false);
   const [payError, setPayError] = useState("");
 
+  // medicines list
+  const [medicinesList, setMedicinesList] = useState([]);
+
   /* ── Fetch ─────────────────────────────────────────────── */
   const fetchInvoices = async () => {
     try {
@@ -92,6 +96,18 @@ export default function InvoiceManagement() {
   useEffect(() => {
     fetchInvoices();
   }, [statusFilter]);
+
+  useEffect(() => {
+    const fetchMeds = async () => {
+      try {
+        const res = await getMedicines({ page: 0, size: 1000, status: "ACTIVE" });
+        setMedicinesList(res.data?.content ?? []);
+      } catch (err) {
+        console.error("Lỗi khi tải danh sách thuốc", err);
+      }
+    };
+    fetchMeds();
+  }, []);
 
   /* ── Filter ────────────────────────────────────────────── */
   const filtered = invoices.filter(
@@ -156,7 +172,31 @@ export default function InvoiceManagement() {
   const handleItemChange = (index, field, value) => {
     setFormData((prev) => {
       const items = [...prev.items];
-      items[index] = { ...items[index], [field]: value };
+      const item = { ...items[index], [field]: value };
+      
+      if (field === "itemType") {
+        if (value === "MEDICINE") {
+          item.referenceId = "";
+          item.itemName = "";
+          item.unitPrice = "";
+        } else {
+          item.referenceId = null;
+        }
+      } else if (field === "referenceId" && items[index].itemType === "MEDICINE") {
+        const medId = Number(value);
+        const selectedMed = medicinesList.find((m) => m.medicineId === medId);
+        if (selectedMed) {
+          item.referenceId = medId;
+          item.itemName = selectedMed.medicineName;
+          item.unitPrice = selectedMed.sellingPrice || 0;
+        } else {
+          item.referenceId = "";
+          item.itemName = "";
+          item.unitPrice = "";
+        }
+      }
+      
+      items[index] = item;
       return { ...prev, items };
     });
   };
@@ -250,6 +290,18 @@ export default function InvoiceManagement() {
     if (!payTarget) return;
     try {
       setPaySubmitting(true);
+      if (payMethod === "ONLINE") {
+        const res = await createOnlinePaymentUrl({
+          invoiceId: payTarget.invoiceId,
+          appointmentId: null,
+          amount: payTarget.finalAmount,
+        });
+        if (res.data && res.data.paymentUrl) {
+          window.location.href = res.data.paymentUrl;
+        }
+        return; // Dừng lại ở đây vì trình duyệt sẽ redirect
+      }
+
       const res = await createPayment({
         invoiceId: payTarget.invoiceId,
         appointmentId: null,
@@ -498,12 +550,27 @@ export default function InvoiceManagement() {
                         <option key={t.value} value={t.value}>{t.label}</option>
                       ))}
                     </select>
-                    <input
-                      placeholder="Tên dịch vụ"
-                      value={item.itemName}
-                      onChange={(e) => handleItemChange(i, "itemName", e.target.value)}
-                      style={{ minHeight: 38, border: "1px solid #d7dee8", borderRadius: 6, padding: "6px 8px" }}
-                    />
+                    {item.itemType === "MEDICINE" ? (
+                      <select
+                        value={item.referenceId || ""}
+                        onChange={(e) => handleItemChange(i, "referenceId", e.target.value)}
+                        style={{ minHeight: 38, border: "1px solid #d7dee8", borderRadius: 6, padding: "6px 8px" }}
+                      >
+                        <option value="">-- Chọn thuốc --</option>
+                        {medicinesList.map((m) => (
+                          <option key={m.medicineId} value={m.medicineId}>
+                            {m.medicineName} ({m.medicineCode})
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        placeholder="Tên dịch vụ"
+                        value={item.itemName}
+                        onChange={(e) => handleItemChange(i, "itemName", e.target.value)}
+                        style={{ minHeight: 38, border: "1px solid #d7dee8", borderRadius: 6, padding: "6px 8px" }}
+                      />
+                    )}
                     <input
                       type="number"
                       min="1"

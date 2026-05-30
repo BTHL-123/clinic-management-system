@@ -11,3 +11,6 @@ export const createMedicine = (payload) =>
 
 export const updateMedicine = (id, payload) =>
   axiosClient.put(`/medicines/${id}`, payload);
+
+export const deleteMedicine = (id) =>
+  axiosClient.delete(`/medicines/${id}`);
