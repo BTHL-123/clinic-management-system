@@ -1,4 +1,4 @@
-﻿package com.clinicmanagement.appointment;
+package com.clinicmanagement.appointment;
 
 import com.clinicmanagement.appointment.dto.QueueTicketResponse;
 import com.clinicmanagement.common.exception.BusinessException;
