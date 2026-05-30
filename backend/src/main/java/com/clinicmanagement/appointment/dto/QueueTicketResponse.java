@@ -1,4 +1,4 @@
-﻿package com.clinicmanagement.appointment.dto;
+package com.clinicmanagement.appointment.dto;
 
 import com.clinicmanagement.appointment.QueueTicket;
 

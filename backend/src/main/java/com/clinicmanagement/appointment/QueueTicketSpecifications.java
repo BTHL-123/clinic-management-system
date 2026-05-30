@@ -1,4 +1,4 @@
-﻿package com.clinicmanagement.appointment;
+package com.clinicmanagement.appointment;
 
 import org.springframework.data.jpa.domain.Specification;
 import jakarta.persistence.criteria.Predicate;
