@@ -22,6 +22,7 @@ Thumbs.db
 
 # IDE / local tool state
 .idea/
+.vscode/
 
 # Vite cache
 .vite/
