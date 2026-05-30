@@ -60,6 +60,14 @@ public class SupplierServiceImpl implements SupplierService {
         return mapToResponse(updated);
     }
 
+    @Transactional
+    @Override
+    public void deleteSupplier(Long supplierId) {
+        Supplier supplier = findOrThrow(supplierId);
+        supplier.setStatus("INACTIVE");
+        supplierRepository.save(supplier);
+    }
+
     private Supplier findOrThrow(Long id) {
         return supplierRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Supplier not found with id: " + id));

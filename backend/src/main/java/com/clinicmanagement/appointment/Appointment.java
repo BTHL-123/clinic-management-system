@@ -85,6 +85,15 @@ public class Appointment {
     @Column(name = "rescheduled_from_id")
     private Long rescheduledFromId;
 
+    @Column(name = "checked_in_at")
+    private LocalDateTime checkedInAt;
+
+    @Column(name = "checked_in_by")
+    private Long checkedInBy;
+
+    @OneToOne(mappedBy = "appointment", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private QueueTicket queueTicket;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

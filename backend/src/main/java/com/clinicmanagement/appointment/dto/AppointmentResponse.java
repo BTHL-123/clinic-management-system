@@ -25,5 +25,9 @@ public record AppointmentResponse(
         String status,
         BigDecimal depositAmount,
         String cancellationReason,
-        LocalDateTime cancelledAt
+        LocalDateTime cancelledAt,
+        String patientPhone,
+        java.time.LocalDateTime checkedInAt,
+        Integer queueNumber,
+        String queueStatus
 ) {}

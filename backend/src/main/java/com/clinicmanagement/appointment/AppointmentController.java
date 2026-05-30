@@ -88,6 +88,17 @@ public class AppointmentController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    @GetMapping("/doctor/today")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<ApiResponse<java.util.List<AppointmentResponse>>> getDoctorTodayAppointments(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        java.util.List<AppointmentResponse> response = appointmentService.getDoctorTodayAppointments(
+                userDetails.getUser().getUserId()
+        );
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
     @PostMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<AppointmentResponse>> bookAppointment(
