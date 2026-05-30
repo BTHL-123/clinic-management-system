@@ -59,4 +59,11 @@ public class SupplierController {
         SupplierResponse response = supplierService.updateSupplier(id, request);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật nhà cung cấp thành công", response));
     }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PHARMACIST')")
+    public ResponseEntity<ApiResponse<Void>> deleteSupplier(@PathVariable Long id) {
+        supplierService.deleteSupplier(id);
+        return ResponseEntity.ok(ApiResponse.success("Đã ngừng hoạt động nhà cung cấp thành công", null));
+    }
 }

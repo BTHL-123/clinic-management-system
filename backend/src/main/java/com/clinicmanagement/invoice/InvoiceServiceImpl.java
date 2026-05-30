@@ -20,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.clinicmanagement.inventory.InventoryService;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +29,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final InvoiceRepository invoiceRepository;
     private final InvoiceItemRepository invoiceItemRepository;
     private final PatientRepository patientRepository;
+    private final InventoryService inventoryService;
 
     @Transactional(readOnly = true)
     @Override
@@ -75,6 +77,10 @@ public class InvoiceServiceImpl implements InvoiceService {
         List<InvoiceItem> items = new ArrayList<>();
 
         for (var itemReq : request.items()) {
+            if ("MEDICINE".equalsIgnoreCase(itemReq.itemType()) && itemReq.referenceId() != null) {
+                inventoryService.checkStockAvailability(itemReq.referenceId(), itemReq.quantity());
+            }
+
             InvoiceItem item = new InvoiceItem();
             item.setInvoice(invoice);
             item.setItemType(itemReq.itemType());
@@ -122,6 +128,10 @@ public class InvoiceServiceImpl implements InvoiceService {
         List<InvoiceItem> items = new ArrayList<>();
 
         for (var itemReq : request.items()) {
+            if ("MEDICINE".equalsIgnoreCase(itemReq.itemType()) && itemReq.referenceId() != null) {
+                inventoryService.checkStockAvailability(itemReq.referenceId(), itemReq.quantity());
+            }
+
             InvoiceItem item = new InvoiceItem();
             item.setInvoice(invoice);
             item.setItemType(itemReq.itemType());
