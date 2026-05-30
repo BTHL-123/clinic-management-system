@@ -42,19 +42,19 @@ public class QueueServiceImpl implements QueueService {
 
         String status = ticket.getStatus();
         if ("COMPLETED".equals(status) || "DONE".equals(status)) {
-            throw new BusinessException("Kh├┤ng thß╗â gß╗ìi bß╗çnh nh├ón ─æ├ú ho├án th├ánh kh├ím.");
+            throw new BusinessException("Không thể gọi bệnh nhân đã hoàn thành khám.");
         }
         if ("CANCELLED".equals(status)) {
-            throw new BusinessException("Kh├┤ng thß╗â gß╗ìi bß╗çnh nh├ón ─æ├ú hß╗ºy kh├ím.");
+            throw new BusinessException("Không thể gọi bệnh nhân đã hủy khám.");
         }
 
         ticket.setStatus("CALLED");
         ticket.setCalledAt(LocalDateTime.now());
         QueueTicket saved = queueTicketRepository.save(ticket);
 
-        sendNotificationSafely(saved, "L╞░ß╗út kh├ím cß╗ºa bß║ín",
-                "Bß║ín ─æ├ú ─æ╞░ß╗úc gß╗ìi v├áo ph├▓ng kh├ím cß╗ºa b├íc s─⌐ "
-                        + getDoctorName(saved) + ". Sß╗æ thß╗⌐ tß╗▒: #" + saved.getQueueNumber() + ".");
+        sendNotificationSafely(saved, "Lượt khám của bạn",
+                "Bạn đã được gọi vào phòng khám của bác sĩ "
+                        + getDoctorName(saved) + ". Số thứ tự: #" + saved.getQueueNumber() + ".");
 
         return mapToResponse(saved);
     }
@@ -66,13 +66,13 @@ public class QueueServiceImpl implements QueueService {
 
         String status = ticket.getStatus();
         if ("COMPLETED".equals(status) || "DONE".equals(status)) {
-            throw new BusinessException("Kh├┤ng thß╗â bß╗Å qua bß╗çnh nh├ón ─æ├ú ho├án th├ánh kh├ím.");
+            throw new BusinessException("Không thể bỏ qua bệnh nhân đã hoàn thành khám.");
         }
         if ("CANCELLED".equals(status)) {
-            throw new BusinessException("Kh├┤ng thß╗â bß╗Å qua bß╗çnh nh├ón ─æ├ú hß╗ºy kh├ím.");
+            throw new BusinessException("Không thể bỏ qua bệnh nhân đã hủy khám.");
         }
         if ("SKIPPED".equals(status)) {
-            throw new BusinessException("Bß╗çnh nh├ón n├áy ─æ├ú ─æ╞░ß╗úc bß╗Å qua tr╞░ß╗¢c ─æ├│.");
+            throw new BusinessException("Bệnh nhân này đã được bỏ qua trước đó.");
         }
 
         ticket.setStatus("SKIPPED");
@@ -86,10 +86,10 @@ public class QueueServiceImpl implements QueueService {
 
         String status = ticket.getStatus();
         if ("COMPLETED".equals(status) || "DONE".equals(status)) {
-            throw new BusinessException("Bß╗çnh nh├ón n├áy ─æ├ú ho├án th├ánh kh├ím.");
+            throw new BusinessException("Bệnh nhân này đã hoàn thành khám.");
         }
         if ("CANCELLED".equals(status)) {
-            throw new BusinessException("Kh├┤ng thß╗â ho├án tß║Ñt cho bß╗çnh nh├ón ─æ├ú hß╗ºy kh├ím.");
+            throw new BusinessException("Không thể hoàn tất cho bệnh nhân đã hủy khám.");
         }
 
         ticket.setStatus("DONE");
@@ -101,13 +101,13 @@ public class QueueServiceImpl implements QueueService {
             appointmentRepository.save(ticket.getAppointment());
         }
 
-        sendNotificationSafely(saved, "Ho├án th├ánh kh├ím bß╗çnh",
-                "Ca kh├ím cß╗ºa bß║ín vß╗¢i b├íc s─⌐ " + getDoctorName(saved) + " ─æ├ú ho├án tß║Ñt. Ch├║c bß║ín lu├┤n mß║ính khß╗Åe!");
+        sendNotificationSafely(saved, "Hoàn thành khám bệnh",
+                "Ca khám của bạn với bác sĩ " + getDoctorName(saved) + " đã hoàn tất. Chúc bạn luôn mạnh khỏe!");
 
         return mapToResponse(saved);
     }
 
-    // ΓöÇΓöÇ FIX: d├╣ng from() thay v├¼ constructor trß╗▒c tiß║┐p ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    // ── FIX: dùng from() thay vì constructor trực tiếp ────────────────────────────────
     private QueueTicketResponse mapToResponse(QueueTicket qt) {
         Long consultationId = null;
         if (qt.getAppointment() != null) {
@@ -121,20 +121,20 @@ public class QueueServiceImpl implements QueueService {
 
     private QueueTicket findOrThrow(Long id) {
         return queueTicketRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("V├⌐ xß║┐p h├áng kh├┤ng tß╗ôn tß║íi vß╗¢i ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Vé xếp hàng không tồn tại với ID: " + id));
     }
 
     private String getDoctorName(QueueTicket ticket) {
         if (ticket.getDoctor() != null && ticket.getDoctor().getUser() != null) {
             return ticket.getDoctor().getUser().getFullName();
         }
-        return "B├íc s─⌐";
+        return "Bác sĩ";
     }
 
     private void sendNotificationSafely(QueueTicket ticket, String title, String message) {
         try {
             if (ticket.getPatient() == null || ticket.getPatient().getUser() == null) return;
-            // D├╣ng ApplicationContext ─æß╗â tr├ính hard dependency khi NotificationService ch╞░a c├│
+            // Dùng ApplicationContext để tránh hard dependency khi NotificationService chưa có
             var notificationService = applicationContext.getBean("notificationServiceImpl");
             notificationService.getClass()
                     .getMethod("createNotification", Long.class, String.class, String.class, String.class)
