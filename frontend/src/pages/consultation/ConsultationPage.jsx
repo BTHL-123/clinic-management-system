@@ -113,9 +113,9 @@ export default function ConsultationPage() {
     }
   };
 
-  const waitingCount = queue.filter((q) => q.status === "WAITING" || q.status === "CALLED").length;
-  const inExamCount = queue.filter((q) => q.status === "IN_EXAMINATION").length;
-  const doneCount = queue.filter((q) => q.status === "DONE").length;
+  const waitingCount = queue.filter((q) => q.queueStatus === "WAITING" || q.queueStatus === "CALLED").length;
+  const inExamCount = queue.filter((q) => q.queueStatus === "IN_EXAMINATION").length;
+  const doneCount = queue.filter((q) => q.queueStatus === "DONE").length;
 
   return (
     <div style={{ padding: "0 4px" }}>
