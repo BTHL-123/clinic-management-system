@@ -33,6 +33,7 @@ import SupplierManagement from "./pages/inventory/SupplierManagement.jsx";
 import PatientManagement from "./pages/patient/PatientManagement.jsx";
 import PatientDetailPage from "./pages/patient/PatientDetailPage.jsx";
 import ConsultationPage from "./pages/consultation/ConsultationPage.jsx";
+import ExaminationPage from "./pages/consultation/ExaminationPage.jsx";
 import ProfilePage from "./pages/profile/ProfilePage.jsx";
 import MyAppointmentsPage from "./pages/patient/MyAppointmentsPage.jsx";
 import AppointmentDetailPage from "./pages/appointment/AppointmentDetailPage.jsx";
@@ -97,6 +98,7 @@ export default function App() {
         <Route path="patients" element={<PatientManagement />} />
         <Route path="patients/:patientId" element={<PatientDetailPage />} />
         <Route path="consultation" element={<ConsultationPage />} />
+        <Route path="examination/:consultationId" element={<ExaminationPage />} />
       </Route>
     </Routes>
   );
