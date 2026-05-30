@@ -1,13 +1,14 @@
 import api from "./axiosClient";
 
-export const getLabRequestsByConsultationId = async (consultationId) => {
-  return await api.get(`/lab-requests/by-consultation/${consultationId}`);
-};
+export const getAllLabRequests = (params) => api.get("/lab-requests", { params });
 
-export const getLabRequestById = async (labRequestId) => {
-  return await api.get(`/lab-requests/${labRequestId}`);
-};
+export const getLabRequestsByConsultationId = (consultationId) =>
+  api.get(`/lab-requests/by-consultation/${consultationId}`);
 
-export const createLabRequest = async (data) => {
-  return await api.post("/lab-requests", data);
-};
+export const getLabRequestById = (labRequestId) =>
+  api.get(`/lab-requests/${labRequestId}`);
+
+export const createLabRequest = (data) => api.post("/lab-requests", data);
+
+export const acceptLabRequest = (labRequestId) =>
+  api.put(`/lab-requests/${labRequestId}/accept`);
