@@ -1,9 +1,9 @@
 import api from "./axiosClient";
 
-export const getPrescriptionByConsultationId = async (consultationId) => {
-  return await api.get(`/prescriptions/by-consultation/${consultationId}`);
-};
+export const getPrescriptionByConsultationId = (consultationId) =>
+  api.get(`/prescriptions/by-consultation/${consultationId}`);
 
-export const getPrescriptionById = async (prescriptionId) => {
-  return await api.get(`/prescriptions/${prescriptionId}`);
-};
+export const getPrescriptionById = (prescriptionId) =>
+  api.get(`/prescriptions/${prescriptionId}`);
+
+export const createPrescription = (data) => api.post("/prescriptions", data);

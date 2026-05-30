@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Stethoscope, Save, ArrowLeft, CheckCircle, Activity, FlaskConical } from "lucide-react";
+import { Stethoscope, Save, ArrowLeft, CheckCircle, Activity, FlaskConical, Pill, Plus, Trash2 } from "lucide-react";
 import consultationService from "../../services/consultationService";
 import {
   createMedicalRecord,
@@ -10,6 +10,7 @@ import {
 import vitalSignService from "../../services/vitalSignService";
 import { createLabRequest, getLabRequestsByConsultationId } from "../../services/labRequestService";
 import { getLabTests } from "../../services/labTestService";
+import { createPrescription, getPrescriptionByConsultationId } from "../../services/prescriptionService";
 
 const EMPTY_FORM = {
   symptoms: "",
@@ -47,6 +48,11 @@ export default function ExaminationPage() {
   const [labNote, setLabNote] = useState("");
   const [savedLabRequests, setSavedLabRequests] = useState([]);
   const [savingLab, setSavingLab] = useState(false);
+  const [medicines, setMedicines] = useState([]);
+  const [prescriptionItems, setPrescriptionItems] = useState([]);
+  const [prescriptionNote, setPrescriptionNote] = useState("");
+  const [savedPrescription, setSavedPrescription] = useState(null);
+  const [savingPrescription, setSavingPrescription] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -62,13 +68,17 @@ export default function ExaminationPage() {
       vitalSignService.getByConsultation(consultationId).catch(() => ({ data: [] })),
       getLabTests({ status: "ACTIVE", size: 100 }).catch(() => ({ data: { content: [] } })),
       getLabRequestsByConsultationId(consultationId).catch(() => ({ data: [] })),
+      import("../../services/medicineService").then(m => m.getMedicines({ size: 200 })).catch(() => ({ data: { content: [] } })),
+      getPrescriptionByConsultationId(consultationId).catch(() => null),
     ])
-      .then(async ([consultRes, vitalsRes, labTestsRes, labReqRes]) => {
+      .then(async ([consultRes, vitalsRes, labTestsRes, labReqRes, medRes, prescRes]) => {
         const c = consultRes.data;
         setConsultation(c);
         setSavedVitals(vitalsRes.data || []);
         setLabTests(labTestsRes.data?.content || []);
         setSavedLabRequests(labReqRes.data || []);
+        setMedicines(medRes?.data?.content || []);
+        if (prescRes?.data) setSavedPrescription(prescRes.data);
 
         // Tìm bệnh án đã tồn tại cho consultation này
         try {
@@ -174,8 +184,62 @@ export default function ExaminationPage() {
     }
   };
 
-  const handleSave = async () => {
-    if (!form.diagnosis.trim()) {
+  const addPrescriptionItem = () => {
+    setPrescriptionItems((prev) => [...prev, {
+      medicineId: "", quantity: 1, dosage: "", frequency: "",
+      duration: "", instructions: "", morningDose: "", noonDose: "",
+      eveningDose: "", nightDose: "",
+    }]);
+  };
+
+  const updatePrescriptionItem = (index, field, value) => {
+    setPrescriptionItems((prev) => prev.map((item, i) =>
+      i === index ? { ...item, [field]: value } : item
+    ));
+  };
+
+  const removePrescriptionItem = (index) => {
+    setPrescriptionItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleCreatePrescription = async () => {
+    const validItems = prescriptionItems.filter((i) => i.medicineId && i.quantity > 0);
+    if (validItems.length === 0) {
+      showToast("Vui lòng thêm ít nhất một loại thuốc.", "error");
+      return;
+    }
+    setSavingPrescription(true);
+    try {
+      const res = await createPrescription({
+        consultationId: Number(consultationId),
+        patientId: consultation.patientId,
+        doctorId: consultation.doctorId,
+        doctorNote: prescriptionNote || null,
+        items: validItems.map((i) => ({
+          medicineId: Number(i.medicineId),
+          quantity: Number(i.quantity),
+          dosage: i.dosage || null,
+          frequency: i.frequency || null,
+          duration: i.duration || null,
+          instructions: i.instructions || null,
+          morningDose: i.morningDose || null,
+          noonDose: i.noonDose || null,
+          eveningDose: i.eveningDose || null,
+          nightDose: i.nightDose || null,
+        })),
+      });
+      setSavedPrescription(res.data);
+      setPrescriptionItems([]);
+      setPrescriptionNote("");
+      showToast("Đã tạo đơn thuốc thành công.");
+    } catch (err) {
+      showToast(err.message || "Không thể tạo đơn thuốc.", "error");
+    } finally {
+      setSavingPrescription(false);
+    }
+  };
+
+  const handleSave = async () => {    if (!form.diagnosis.trim()) {
       setError("Chẩn đoán không được để trống.");
       return;
     }
@@ -458,6 +522,127 @@ export default function ExaminationPage() {
               </div>
             ))}
           </div>
+        )}
+      </div>
+
+      {/* Prescription Section */}
+      <div style={{ background: "#fdf4ff", border: "1px solid #e9d5ff", borderRadius: 8, padding: 16, marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+          <Pill size={16} color="#7c3aed" />
+          <strong style={{ fontSize: 14, color: "#6d28d9" }}>Kê đơn thuốc</strong>
+        </div>
+
+        {savedPrescription ? (
+          <div style={{ background: "#f5f3ff", border: "1px solid #c4b5fd", borderRadius: 6, padding: 12 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+              <strong style={{ fontSize: 13, color: "#6d28d9" }}>
+                Đơn thuốc: {savedPrescription.prescriptionCode}
+              </strong>
+              <span style={{ fontSize: 12, color: "#6b7280" }}>
+                {new Date(savedPrescription.createdAt).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })}
+              </span>
+            </div>
+            {savedPrescription.items?.map((item) => (
+              <div key={item.prescriptionItemId} style={{ fontSize: 13, marginBottom: 4, paddingLeft: 8 }}>
+                <strong>{item.medicineName}</strong> — {item.quantity} {item.unit || "viên"}
+                {item.dosage && <span style={{ color: "#6b7280" }}> | {item.dosage}</span>}
+                {item.frequency && <span style={{ color: "#6b7280" }}> | {item.frequency}</span>}
+                {item.duration && <span style={{ color: "#6b7280" }}> | {item.duration}</span>}
+              </div>
+            ))}
+            {savedPrescription.doctorNote && (
+              <div style={{ marginTop: 8, fontSize: 13 }}>
+                <strong>Lời dặn:</strong> {savedPrescription.doctorNote}
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            {prescriptionItems.length === 0 ? (
+              <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 10 }}>Chưa có thuốc nào. Bấm "Thêm thuốc" để bắt đầu.</p>
+            ) : (
+              <div style={{ marginBottom: 10 }}>
+                {prescriptionItems.map((item, index) => (
+                  <div key={index} style={{ background: "#fff", border: "1px solid #e9d5ff", borderRadius: 6, padding: 10, marginBottom: 8 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr auto", gap: 8, marginBottom: 6 }}>
+                      <div>
+                        <label style={{ ...labelStyle, fontSize: 11 }}>Thuốc *</label>
+                        <select value={item.medicineId}
+                          onChange={(e) => updatePrescriptionItem(index, "medicineId", e.target.value)}
+                          style={{ ...inputStyle, fontSize: 13 }}>
+                          <option value="">-- Chọn thuốc --</option>
+                          {medicines.map((m) => (
+                            <option key={m.medicineId} value={m.medicineId}>
+                              {m.medicineName} ({m.medicineCode})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={{ ...labelStyle, fontSize: 11 }}>Số lượng *</label>
+                        <input type="number" min="1" value={item.quantity}
+                          onChange={(e) => updatePrescriptionItem(index, "quantity", e.target.value)}
+                          style={{ ...inputStyle, fontSize: 13 }} />
+                      </div>
+                      <div>
+                        <label style={{ ...labelStyle, fontSize: 11 }}>Liều dùng</label>
+                        <input type="text" value={item.dosage} placeholder="VD: 1 viên"
+                          onChange={(e) => updatePrescriptionItem(index, "dosage", e.target.value)}
+                          style={{ ...inputStyle, fontSize: 13 }} />
+                      </div>
+                      <div>
+                        <label style={{ ...labelStyle, fontSize: 11 }}>Tần suất</label>
+                        <input type="text" value={item.frequency} placeholder="VD: 2 lần/ngày"
+                          onChange={(e) => updatePrescriptionItem(index, "frequency", e.target.value)}
+                          style={{ ...inputStyle, fontSize: 13 }} />
+                      </div>
+                      <div style={{ display: "flex", alignItems: "flex-end" }}>
+                        <button onClick={() => removePrescriptionItem(index)}
+                          style={{ background: "#fee2e2", border: "none", borderRadius: 4, padding: "6px 8px", cursor: "pointer" }}>
+                          <Trash2 size={13} color="#dc2626" />
+                        </button>
+                      </div>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 8 }}>
+                      {[
+                        { key: "morningDose", label: "Sáng" },
+                        { key: "noonDose", label: "Trưa" },
+                        { key: "eveningDose", label: "Chiều" },
+                        { key: "nightDose", label: "Tối" },
+                        { key: "duration", label: "Thời gian" },
+                      ].map((f) => (
+                        <div key={f.key}>
+                          <label style={{ ...labelStyle, fontSize: 11 }}>{f.label}</label>
+                          <input type="text" value={item[f.key]} placeholder={f.key === "duration" ? "7 ngày" : "0"}
+                            onChange={(e) => updatePrescriptionItem(index, f.key, e.target.value)}
+                            style={{ ...inputStyle, fontSize: 13 }} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ ...labelStyle, fontSize: 12 }}>Lời dặn bệnh nhân</label>
+              <input type="text" value={prescriptionNote}
+                onChange={(e) => setPrescriptionNote(e.target.value)}
+                placeholder="Uống sau ăn, không dùng rượu bia..."
+                style={{ ...inputStyle, fontSize: 13 }} />
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <button onClick={addPrescriptionItem}
+                style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "5px 12px", borderRadius: 6, border: "1px dashed #c4b5fd", background: "transparent", color: "#7c3aed", cursor: "pointer", fontSize: 13 }}>
+                <Plus size={13} /> Thêm thuốc
+              </button>
+              <button className="secondary-button" onClick={handleCreatePrescription}
+                disabled={savingPrescription || prescriptionItems.length === 0}
+                style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+                <Pill size={13} />
+                {savingPrescription ? "Đang lưu..." : "Lưu đơn thuốc"}
+              </button>
+            </div>
+          </>
         )}
       </div>
 
