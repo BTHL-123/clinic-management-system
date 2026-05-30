@@ -216,7 +216,7 @@ export default function ConsultationPage() {
                 const priority = PRIORITY_LABEL[ticket.priorityLevel] || PRIORITY_LABEL.NORMAL;
                 return (
                   <tr key={ticket.queueTicketId} style={{
-                    background: ticket.status === "IN_EXAMINATION" ? "#faf5ff" : undefined,
+                    background: ticket.queueStatus === "IN_EXAMINATION" ? "#faf5ff" : undefined,
                   }}>
                     <td style={{ textAlign: "center", fontWeight: 700, fontSize: 18, color: "#1d4ed8" }}>
                       {ticket.queueNumber}
@@ -231,7 +231,7 @@ export default function ConsultationPage() {
                       </span>
                     </td>
                     <td>
-                      <StatusBadge status={ticket.status} />
+                      <StatusBadge status={ticket.queueStatus} />
                     </td>
                     <td style={{ textAlign: "center", color: "#6b7280", fontSize: 13 }}>
                       {ticket.estimatedWaitMinutes ?? "—"}
@@ -239,7 +239,7 @@ export default function ConsultationPage() {
                     <td>
                       <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap" }}>
                         {/* Gọi bệnh nhân */}
-                        {ticket.status === "WAITING" && (
+                        {ticket.queueStatus === "WAITING" && (
                           <ActionBtn
                             icon={<PhoneCall size={13} />}
                             label="Gọi vào"
@@ -249,7 +249,7 @@ export default function ConsultationPage() {
                           />
                         )}
                         {/* Bắt đầu khám */}
-                        {(ticket.status === "WAITING" || ticket.status === "CALLED") && (
+                        {(ticket.queueStatus === "WAITING" || ticket.queueStatus === "CALLED") && (
                           <ActionBtn
                             icon={<Play size={13} />}
                             label="Bắt đầu khám"
@@ -259,7 +259,7 @@ export default function ConsultationPage() {
                           />
                         )}
                         {/* Tiếp tục khám (đã có consultation) */}
-                        {ticket.status === "IN_EXAMINATION" && ticket.consultationId && (
+                        {ticket.queueStatus === "IN_EXAMINATION" && ticket.consultationId && (
                           <ActionBtn
                             icon={<Stethoscope size={13} />}
                             label="Vào phòng khám"
@@ -269,7 +269,7 @@ export default function ConsultationPage() {
                           />
                         )}
                         {/* Hoàn thành */}
-                        {ticket.status === "IN_EXAMINATION" && (
+                        {ticket.queueStatus === "IN_EXAMINATION" && (
                           <ActionBtn
                             icon={<CheckCircle size={13} />}
                             label="Hoàn thành"
@@ -279,7 +279,7 @@ export default function ConsultationPage() {
                           />
                         )}
                         {/* Bỏ qua */}
-                        {(ticket.status === "WAITING" || ticket.status === "CALLED") && (
+                        {(ticket.queueStatus === "WAITING" || ticket.queueStatus === "CALLED") && (
                           <ActionBtn
                             icon={<SkipForward size={13} />}
                             label="Bỏ qua"
