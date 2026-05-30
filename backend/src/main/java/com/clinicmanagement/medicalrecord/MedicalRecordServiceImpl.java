@@ -10,9 +10,9 @@ import com.clinicmanagement.medicalrecord.dto.CreateMedicalRecordRequest;
 import com.clinicmanagement.medicalrecord.dto.MedicalRecordResponse;
 import com.clinicmanagement.medicalrecord.dto.UpdateMedicalRecordRequest;
 import com.clinicmanagement.prescription.PrescriptionRepository;
-// Bổ sung import Consultation và ConsultationRepository
-import com.clinicmanagement.consultation.Consultation;
-import com.clinicmanagement.consultation.ConsultationRepository;
+// Dùng đúng Entity ConsultationSession của anh Bình dặn
+import com.clinicmanagement.consultation.ConsultationSession;
+import com.clinicmanagement.consultation.ConsultationSessionRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -27,10 +27,8 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
     private final DoctorRepository doctorRepository;
     private final PrescriptionRepository prescriptionRepository;
     private final LabRequestRepository labRequestRepository;
-    // Bơm thằng gác cổng ConsultationRepository vào đây
-    private final ConsultationRepository consultationRepository;
+    private final ConsultationSessionRepository consultationSessionRepository;
 
-    // ── GET LIST ──────────────────────────────────────────────────────────────
     @Transactional(readOnly = true)
     @Override
     public PageResponse<MedicalRecordResponse> getAll(Long patientId, Long doctorId, Pageable pageable) {
@@ -40,49 +38,39 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
         );
     }
 
-    // ── GET BY ID ─────────────────────────────────────────────────────────────
     @Transactional(readOnly = true)
     @Override
     public MedicalRecordResponse getById(Long id) {
         return toEnrichedResponse(findOrThrow(id));
     }
 
-    // ── GET PATIENT MEDICAL HISTORY ───────────────────────────────────────────
     @Transactional(readOnly = true)
     @Override
     public List<MedicalRecordResponse> getMedicalHistory(Long patientId) {
         return medicalRecordRepository.findByPatientIdOrderByCreatedAtDesc(patientId)
-                .stream()
-                .map(this::toEnrichedResponse)
-                .toList();
+                .stream().map(this::toEnrichedResponse).toList();
     }
 
-    // ── CREATE ────────────────────────────────────────────────────────────────
     @Transactional
     @Override
     public MedicalRecordResponse create(CreateMedicalRecordRequest request) {
-        // Kiểm tra xem đã có bệnh án cho phiên khám này chưa
         if (medicalRecordRepository.existsByConsultationId(request.consultationId())) {
             throw new BusinessException("Hồ sơ bệnh án cho phiên khám này đã tồn tại.");
         }
 
-        // BƯỚC 1: Kiểm tra Consultation có tồn tại không
-        Consultation consultation = consultationRepository.findById(request.consultationId())
+        // Gọi đúng Entity và check chéo ID
+        ConsultationSession consultation = consultationSessionRepository.findById(request.consultationId())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy cuộc khám bệnh với ID: " + request.consultationId()));
 
-        // BƯỚC 2: Kiểm tra chéo PatientId
         if (!consultation.getPatientId().equals(request.patientId())) {
-            throw new IllegalArgumentException("Dữ liệu không hợp lệ: Patient ID không khớp với thông tin khám bệnh!");
+            throw new IllegalArgumentException("Dữ liệu không hợp lệ: Patient ID không khớp!");
         }
-
-        // BƯỚC 3: Kiểm tra chéo DoctorId
         if (!consultation.getDoctorId().equals(request.doctorId())) {
-            throw new IllegalArgumentException("Dữ liệu không hợp lệ: Doctor ID không khớp với bác sĩ phụ trách khám!");
+            throw new IllegalArgumentException("Dữ liệu không hợp lệ: Doctor ID không khớp!");
         }
 
-        // BƯỚC 4: Tạo MedicalRecord bằng dữ liệu an toàn lấy thẳng từ DB ra
         MedicalRecord record = MedicalRecord.builder()
-                .consultationId(consultation.getId()) // Lưu ý: Đổi thành getConsultationId() nếu Entity của nhóm ông viết vậy
+                .consultationId(consultation.getConsultationId()) // Dùng getConsultationId()
                 .patientId(consultation.getPatientId())
                 .doctorId(consultation.getDoctorId())
                 .symptoms(request.symptoms())
@@ -97,7 +85,6 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
         return toEnrichedResponse(medicalRecordRepository.save(record));
     }
 
-    // ── UPDATE ────────────────────────────────────────────────────────────────
     @Transactional
     @Override
     public MedicalRecordResponse update(Long id, UpdateMedicalRecordRequest request) {
@@ -114,11 +101,9 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
         return toEnrichedResponse(medicalRecordRepository.save(record));
     }
 
-    // ── HELPERS ───────────────────────────────────────────────────────────────
     private MedicalRecord findOrThrow(Long id) {
         return medicalRecordRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Không tìm thấy hồ sơ bệnh án với ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hồ sơ bệnh án với ID: " + id));
     }
 
     private MedicalRecordResponse toEnrichedResponse(MedicalRecord record) {
