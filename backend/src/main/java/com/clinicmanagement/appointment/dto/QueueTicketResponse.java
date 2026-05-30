@@ -40,7 +40,7 @@ public record QueueTicketResponse(
         return new QueueTicketResponse(
                 q.getQueueTicketId(),
                 q.getQueueNumber(),
-                q.getStatus(),
+                q.getStatus(),                          // maps to queueStatus
                 appt != null ? appt.getAppointmentId() : null,
                 appt != null ? appt.getAppointmentCode() : null,
                 patient != null ? patient.getPatientId() : null,
