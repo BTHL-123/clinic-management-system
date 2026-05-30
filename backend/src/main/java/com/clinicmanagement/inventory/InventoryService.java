@@ -16,6 +16,10 @@ public interface InventoryService {
     PageResponse<MedicineBatchResponse> getBatches(Long medicineId, String status, Pageable pageable);
 
     MedicineBatchResponse importBatch(ImportBatchRequest request, User currentUser);
+    
+    MedicineBatchResponse updateBatch(Long batchId, UpdateBatchRequest request);
+    
+    void deleteBatch(Long batchId);
 
     PageResponse<StockTransactionResponse> getTransactions(Long medicineId, String transactionType, Pageable pageable);
 
@@ -28,4 +32,6 @@ public interface InventoryService {
     void checkStockAlerts();
 
     void generateAlertsOnDemand();
+
+    void checkStockAvailability(Long medicineId, Integer requiredQuantity);
 }
