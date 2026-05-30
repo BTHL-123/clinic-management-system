@@ -107,7 +107,7 @@ public class QueueServiceImpl implements QueueService {
         return mapToResponse(saved);
     }
 
-    // ── FIX: dùng from() thay vì constructor trực tiếp ────────────────────────────────
+    // ── FIX: dùng from() thay vì constructor trực tiếp ───────────────────────
     private QueueTicketResponse mapToResponse(QueueTicket qt) {
         Long consultationId = null;
         if (qt.getAppointment() != null) {
