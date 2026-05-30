@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Stethoscope, Save, ArrowLeft, CheckCircle } from "lucide-react";
+import { Stethoscope, Save, ArrowLeft, CheckCircle, Activity } from "lucide-react";
 import consultationService from "../../services/consultationService";
 import {
   createMedicalRecord,
   getMedicalRecords,
   updateMedicalRecord,
 } from "../../services/medicalRecordService";
+import vitalSignService from "../../services/vitalSignService";
 
 const EMPTY_FORM = {
   symptoms: "",
@@ -18,13 +19,27 @@ const EMPTY_FORM = {
   followUpNote: "",
 };
 
+const EMPTY_VITALS = {
+  heightCm: "",
+  weightKg: "",
+  temperatureC: "",
+  bloodPressureSystolic: "",
+  bloodPressureDiastolic: "",
+  heartRate: "",
+  respiratoryRate: "",
+  spo2: "",
+};
+
 export default function ExaminationPage() {
   const { consultationId } = useParams();
   const navigate = useNavigate();
 
   const [consultation, setConsultation] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
-  const [existingRecordId, setExistingRecordId] = useState(null); // nếu đã có bệnh án thì update
+  const [existingRecordId, setExistingRecordId] = useState(null);
+  const [vitals, setVitals] = useState(EMPTY_VITALS);
+  const [savedVitals, setSavedVitals] = useState([]); // lịch sử đo
+  const [savingVitals, setSavingVitals] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -37,11 +52,12 @@ export default function ExaminationPage() {
 
     Promise.all([
       consultationService.getById(consultationId),
-      getMedicalRecords({ patientId: undefined, page: 0, size: 1 }), // sẽ query theo consultationId bên dưới
+      vitalSignService.getByConsultation(consultationId).catch(() => ({ data: [] })),
     ])
-      .then(async ([consultRes]) => {
+      .then(async ([consultRes, vitalsRes]) => {
         const c = consultRes.data;
         setConsultation(c);
+        setSavedVitals(vitalsRes.data || []);
 
         // Tìm bệnh án đã tồn tại cho consultation này
         try {
@@ -80,6 +96,41 @@ export default function ExaminationPage() {
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleVitalsChange = (e) => {
+    setVitals((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSaveVitals = async () => {
+    const hasAnyValue = Object.values(vitals).some((v) => v !== "");
+    if (!hasAnyValue) {
+      showToast("Vui lòng nhập ít nhất một chỉ số.", "error");
+      return;
+    }
+    setSavingVitals(true);
+    try {
+      const payload = {
+        consultationId: Number(consultationId),
+        patientId: consultation.patientId,
+        heightCm: vitals.heightCm ? parseFloat(vitals.heightCm) : null,
+        weightKg: vitals.weightKg ? parseFloat(vitals.weightKg) : null,
+        temperatureC: vitals.temperatureC ? parseFloat(vitals.temperatureC) : null,
+        bloodPressureSystolic: vitals.bloodPressureSystolic ? parseInt(vitals.bloodPressureSystolic) : null,
+        bloodPressureDiastolic: vitals.bloodPressureDiastolic ? parseInt(vitals.bloodPressureDiastolic) : null,
+        heartRate: vitals.heartRate ? parseInt(vitals.heartRate) : null,
+        respiratoryRate: vitals.respiratoryRate ? parseInt(vitals.respiratoryRate) : null,
+        spo2: vitals.spo2 ? parseInt(vitals.spo2) : null,
+      };
+      const res = await vitalSignService.create(payload);
+      setSavedVitals((prev) => [res.data, ...prev]);
+      setVitals(EMPTY_VITALS);
+      showToast("Đã lưu chỉ số sinh tồn.");
+    } catch (err) {
+      showToast(err.message || "Không thể lưu chỉ số sinh tồn.", "error");
+    } finally {
+      setSavingVitals(false);
+    }
   };
 
   const handleSave = async () => {
@@ -197,6 +248,90 @@ export default function ExaminationPage() {
             : "—"}</span>
         </div>
       )}
+
+      {/* Vital Signs Section */}
+      <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: 16, marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+          <Activity size={16} color="#16a34a" />
+          <strong style={{ fontSize: 14, color: "#15803d" }}>Chỉ số sinh tồn</strong>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 10 }}>
+          {[
+            { name: "heightCm", label: "Chiều cao (cm)", placeholder: "170" },
+            { name: "weightKg", label: "Cân nặng (kg)", placeholder: "65" },
+            { name: "temperatureC", label: "Nhiệt độ (°C)", placeholder: "37.0" },
+            { name: "heartRate", label: "Nhịp tim (lần/phút)", placeholder: "80" },
+            { name: "bloodPressureSystolic", label: "HA tâm thu (mmHg)", placeholder: "120" },
+            { name: "bloodPressureDiastolic", label: "HA tâm trương (mmHg)", placeholder: "80" },
+            { name: "respiratoryRate", label: "Nhịp thở (lần/phút)", placeholder: "18" },
+            { name: "spo2", label: "SpO2 (%)", placeholder: "98" },
+          ].map((field) => (
+            <div key={field.name}>
+              <label style={{ ...labelStyle, fontSize: 12 }}>{field.label}</label>
+              <input
+                type="number"
+                name={field.name}
+                value={vitals[field.name]}
+                onChange={handleVitalsChange}
+                placeholder={field.placeholder}
+                style={{ ...inputStyle, fontSize: 13 }}
+              />
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <button
+            className="secondary-button"
+            onClick={handleSaveVitals}
+            disabled={savingVitals}
+            style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}
+          >
+            <Save size={13} />
+            {savingVitals ? "Đang lưu..." : "Lưu chỉ số"}
+          </button>
+        </div>
+
+        {/* Lịch sử đo */}
+        {savedVitals.length > 0 && (
+          <div style={{ marginTop: 12, borderTop: "1px solid #bbf7d0", paddingTop: 10 }}>
+            <p style={{ fontSize: 12, color: "#15803d", fontWeight: 600, marginBottom: 6 }}>
+              Lịch sử đo ({savedVitals.length} lần)
+            </p>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                <thead>
+                  <tr style={{ background: "#dcfce7" }}>
+                    {["Thời gian", "Cao (cm)", "Nặng (kg)", "Nhiệt độ", "HA", "Nhịp tim", "SpO2"].map((h) => (
+                      <th key={h} style={{ padding: "4px 8px", textAlign: "left", fontWeight: 600 }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {savedVitals.map((v) => (
+                    <tr key={v.vitalSignId} style={{ borderBottom: "1px solid #bbf7d0" }}>
+                      <td style={{ padding: "4px 8px" }}>
+                        {new Date(v.measuredAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+                      </td>
+                      <td style={{ padding: "4px 8px" }}>{v.heightCm ?? "—"}</td>
+                      <td style={{ padding: "4px 8px" }}>{v.weightKg ?? "—"}</td>
+                      <td style={{ padding: "4px 8px" }}>{v.temperatureC ?? "—"}</td>
+                      <td style={{ padding: "4px 8px" }}>
+                        {v.bloodPressureSystolic && v.bloodPressureDiastolic
+                          ? `${v.bloodPressureSystolic}/${v.bloodPressureDiastolic}`
+                          : "—"}
+                      </td>
+                      <td style={{ padding: "4px 8px" }}>{v.heartRate ?? "—"}</td>
+                      <td style={{ padding: "4px 8px" }}>{v.spo2 != null ? `${v.spo2}%` : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Form bệnh án */}
       <div style={{ display: "grid", gap: 16 }}>
