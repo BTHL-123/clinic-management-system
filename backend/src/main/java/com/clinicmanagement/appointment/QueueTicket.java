@@ -47,6 +47,9 @@ public class QueueTicket {
     @Column(name = "priority_level", nullable = false, length = 20)
     private String priorityLevel = "NORMAL";
 
+    /**
+     * WAITING | CALLED | IN_EXAMINATION | WAITING_LAB | DONE | CANCELLED | SKIPPED
+     */
     @Column(nullable = false, length = 20)
     private String status = "WAITING";
 

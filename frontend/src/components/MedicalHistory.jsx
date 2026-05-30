@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { ClipboardList, X, FileText } from "lucide-react";
 import { getPatientMedicalHistory } from "../services/medicalRecordService";
+import PrescriptionDetailView from "./PrescriptionDetailView";
+import LabResultView from "./LabResultView";
 
 export default function MedicalHistory({ patientId, onClose, inline = false }) {
   const [records, setRecords] = useState([]);
@@ -131,29 +133,19 @@ export default function MedicalHistory({ patientId, onClose, inline = false }) {
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════════════
-       * PLACEHOLDER: Khu vực dành cho Component của Người 4.
-       * Sau khi Người 4 hoàn thành Task 47 (Đơn thuốc) và Task 44 (Xét nghiệm),
-       * import và nhúng Component vào đây:
-       *
-       *   import PrescriptionDetailView from './PrescriptionDetailView';
-       *   import LabResultView from './LabResultView';
-       *
-       *   {selectedRecord.hasPrescription && (
-       *     <PrescriptionDetailView consultationId={selectedRecord.consultationId} />
-       *   )}
-       *   {selectedRecord.hasLabResult && (
-       *     <LabResultView consultationId={selectedRecord.consultationId} />
-       *   )}
+       * Đơn thuốc và Kết quả xét nghiệm - Task 47 & Task 80
        * ═══════════════════════════════════════════════════════════════════════ */}
-      <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        <div style={{ background: "#fefce8", padding: 16, borderRadius: 8, border: "1px dashed #ca8a04", textAlign: "center" }}>
-          <p style={{ color: "#92400e", fontSize: 13 }}>💊 Đơn thuốc</p>
-          <p style={{ color: "#a16207", fontSize: 12, marginTop: 4 }}>Chờ tích hợp từ Người 4 (Task 47)</p>
-        </div>
-        <div style={{ background: "#fefce8", padding: 16, borderRadius: 8, border: "1px dashed #ca8a04", textAlign: "center" }}>
-          <p style={{ color: "#92400e", fontSize: 13 }}>🔬 Kết quả xét nghiệm</p>
-          <p style={{ color: "#a16207", fontSize: 12, marginTop: 4 }}>Chờ tích hợp từ Người 4 (Task 80)</p>
-        </div>
+      <div style={{ marginTop: 16 }}>
+        {selectedRecord.hasLabResult && (
+          <div style={{ background: "#f9fafb", padding: 16, borderRadius: 8, marginBottom: 12 }}>
+            <LabResultView consultationId={selectedRecord.consultationId} />
+          </div>
+        )}
+        {selectedRecord.hasPrescription && (
+          <div style={{ background: "#f9fafb", padding: 16, borderRadius: 8 }}>
+            <PrescriptionDetailView consultationId={selectedRecord.consultationId} />
+          </div>
+        )}
       </div>
     </div>
   );

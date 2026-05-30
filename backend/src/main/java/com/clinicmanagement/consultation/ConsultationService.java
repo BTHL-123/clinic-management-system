@@ -4,8 +4,6 @@ import com.clinicmanagement.common.dto.PageResponse;
 import com.clinicmanagement.consultation.dto.ChangeConsultationStatusRequest;
 import com.clinicmanagement.consultation.dto.ConsultationResponse;
 import com.clinicmanagement.consultation.dto.CreateConsultationRequest;
-import java.time.LocalDateTime;
-import java.util.List;
 import org.springframework.data.domain.Pageable;
 
 public interface ConsultationService {

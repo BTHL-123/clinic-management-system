@@ -21,13 +21,25 @@ public record MedicalRecordResponse(
         String voiceInputTranscript,
         String aiSummary,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        boolean hasPrescription,
+        boolean hasLabResult
 ) {
     public static MedicalRecordResponse from(MedicalRecord record) {
-        return from(record, null, null);
+        return from(record, null, null, false, false);
     }
 
     public static MedicalRecordResponse from(MedicalRecord record, String doctorName, String departmentName) {
+        return from(record, doctorName, departmentName, false, false);
+    }
+
+    public static MedicalRecordResponse from(
+            MedicalRecord record,
+            String doctorName,
+            String departmentName,
+            boolean hasPrescription,
+            boolean hasLabResult
+    ) {
         return new MedicalRecordResponse(
                 record.getMedicalRecordId(),
                 record.getConsultationId(),
@@ -45,7 +57,9 @@ public record MedicalRecordResponse(
                 record.getVoiceInputTranscript(),
                 record.getAiSummary(),
                 record.getCreatedAt(),
-                record.getUpdatedAt()
+                record.getUpdatedAt(),
+                hasPrescription,
+                hasLabResult
         );
     }
 }

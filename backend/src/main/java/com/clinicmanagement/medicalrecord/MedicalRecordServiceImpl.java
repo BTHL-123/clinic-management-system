@@ -5,9 +5,11 @@ import com.clinicmanagement.common.exception.BusinessException;
 import com.clinicmanagement.common.exception.ResourceNotFoundException;
 import com.clinicmanagement.doctor.Doctor;
 import com.clinicmanagement.doctor.DoctorRepository;
+import com.clinicmanagement.labrequest.LabRequestRepository;
 import com.clinicmanagement.medicalrecord.dto.CreateMedicalRecordRequest;
 import com.clinicmanagement.medicalrecord.dto.MedicalRecordResponse;
 import com.clinicmanagement.medicalrecord.dto.UpdateMedicalRecordRequest;
+import com.clinicmanagement.prescription.PrescriptionRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +22,8 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
 
     private final MedicalRecordRepository medicalRecordRepository;
     private final DoctorRepository doctorRepository;
+    private final PrescriptionRepository prescriptionRepository;
+    private final LabRequestRepository labRequestRepository;
 
     // ── GET LIST ──────────────────────────────────────────────────────────────
     @Transactional(readOnly = true)
@@ -108,7 +112,12 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
             }
         }
 
-        return MedicalRecordResponse.from(record, doctorName, departmentName);
+        boolean hasPrescription = record.getConsultationId() != null
+                && prescriptionRepository.existsByConsultationId(record.getConsultationId());
+        boolean hasLabResult = record.getConsultationId() != null
+                && labRequestRepository.existsCompletedResultByConsultationId(record.getConsultationId());
+
+        return MedicalRecordResponse.from(record, doctorName, departmentName, hasPrescription, hasLabResult);
     }
 }
 
