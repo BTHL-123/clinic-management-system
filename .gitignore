@@ -17,4 +17,12 @@ env/
 
 # OS Files
 .DS_Store
+backend/uploads/
 Thumbs.db
+
+# IDE / local tool state
+.idea/
+
+# Vite cache
+.vite/
+frontend/.vite/
