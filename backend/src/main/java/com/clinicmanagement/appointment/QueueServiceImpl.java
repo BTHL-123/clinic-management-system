@@ -3,7 +3,10 @@ package com.clinicmanagement.appointment;
 import com.clinicmanagement.appointment.dto.QueueTicketResponse;
 import com.clinicmanagement.common.exception.BusinessException;
 import com.clinicmanagement.common.exception.ResourceNotFoundException;
+import com.clinicmanagement.consultation.ConsultationSession;
+import com.clinicmanagement.consultation.ConsultationSessionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationContext;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,55 +16,45 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.clinicmanagement.notification.NotificationService;
-
 @Service
 @RequiredArgsConstructor
 public class QueueServiceImpl implements QueueService {
 
     private final QueueTicketRepository queueTicketRepository;
     private final AppointmentRepository appointmentRepository;
-    private final NotificationService notificationService;
+    private final ConsultationSessionRepository consultationSessionRepository;
+    private final ApplicationContext applicationContext;
 
     @Override
     @Transactional(readOnly = true)
     public List<QueueTicketResponse> getQueue(LocalDate date, Long doctorId, String status) {
         LocalDate searchDate = date != null ? date : LocalDate.now();
         Specification<QueueTicket> spec = QueueTicketSpecifications.searchQueueTickets(searchDate, doctorId, status);
-        List<QueueTicket> tickets = queueTicketRepository.findAll(spec);
-        return tickets.stream().map(this::mapToResponse).collect(Collectors.toList());
+        return queueTicketRepository.findAll(spec).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
     public QueueTicketResponse callPatient(Long queueTicketId) {
-        QueueTicket ticket = queueTicketRepository.findById(queueTicketId)
-                .orElseThrow(() -> new ResourceNotFoundException("Vé xếp hàng không tồn tại với ID: " + queueTicketId));
+        QueueTicket ticket = findOrThrow(queueTicketId);
 
         String status = ticket.getStatus();
         if ("COMPLETED".equals(status) || "DONE".equals(status)) {
-            throw new BusinessException("Không thể gọi bệnh nhân đã hoàn thành khám.");
+            throw new BusinessException("KhΓö£Γöñng th├ƒΓòù├ó g├ƒΓòù├¼i b├ƒΓòù├ºnh nhΓö£├│n ΓöÇ├ªΓö£├║ hoΓö£├ín thΓö£├ính khΓö£├¡m.");
         }
         if ("CANCELLED".equals(status)) {
-            throw new BusinessException("Không thể gọi bệnh nhân đã hủy khám.");
+            throw new BusinessException("KhΓö£Γöñng th├ƒΓòù├ó g├ƒΓòù├¼i b├ƒΓòù├ºnh nhΓö£├│n ΓöÇ├ªΓö£├║ h├ƒΓòù┬║y khΓö£├¡m.");
         }
 
         ticket.setStatus("CALLED");
         ticket.setCalledAt(LocalDateTime.now());
         QueueTicket saved = queueTicketRepository.save(ticket);
 
-        try {
-            if (saved.getPatient() != null && saved.getPatient().getUser() != null) {
-                notificationService.createNotification(
-                        saved.getPatient().getUser().getUserId(),
-                        "Lượt khám của bạn",
-                        "Bạn đã được gọi vào phòng khám của bác sĩ " + (saved.getDoctor() != null && saved.getDoctor().getUser() != null ? saved.getDoctor().getUser().getFullName() : "Bác sĩ") + ". Số thứ tự khám của bạn là #" + saved.getQueueNumber() + ".",
-                        "APPOINTMENT"
-                );
-            }
-        } catch (Exception e) {
-            System.err.println("Không thể tạo thông báo gọi khám: " + e.getMessage());
-        }
+        sendNotificationSafely(saved, "LΓò₧Γûæ├ƒΓòù├║t khΓö£├¡m c├ƒΓòù┬║a b├ƒΓòæ├¡n",
+                "B├ƒΓòæ├¡n ΓöÇ├ªΓö£├║ ΓöÇ├ªΓò₧Γûæ├ƒΓòù├║c g├ƒΓòù├¼i vΓö£├ío phΓö£Γûông khΓö£├¡m c├ƒΓòù┬║a bΓö£├¡c sΓöÇΓîÉ "
+                        + getDoctorName(saved) + ". S├ƒΓòù├ª th├ƒΓòùΓîÉ t├ƒΓòùΓûÆ: #" + saved.getQueueNumber() + ".");
 
         return mapToResponse(saved);
     }
@@ -69,85 +62,85 @@ public class QueueServiceImpl implements QueueService {
     @Override
     @Transactional
     public QueueTicketResponse skipPatient(Long queueTicketId) {
-        QueueTicket ticket = queueTicketRepository.findById(queueTicketId)
-                .orElseThrow(() -> new ResourceNotFoundException("Vé xếp hàng không tồn tại với ID: " + queueTicketId));
+        QueueTicket ticket = findOrThrow(queueTicketId);
 
         String status = ticket.getStatus();
         if ("COMPLETED".equals(status) || "DONE".equals(status)) {
-            throw new BusinessException("Không thể bỏ qua bệnh nhân đã hoàn thành khám.");
+            throw new BusinessException("KhΓö£Γöñng th├ƒΓòù├ó b├ƒΓòù├à qua b├ƒΓòù├ºnh nhΓö£├│n ΓöÇ├ªΓö£├║ hoΓö£├ín thΓö£├ính khΓö£├¡m.");
         }
         if ("CANCELLED".equals(status)) {
-            throw new BusinessException("Không thể bỏ qua bệnh nhân đã hủy khám.");
+            throw new BusinessException("KhΓö£Γöñng th├ƒΓòù├ó b├ƒΓòù├à qua b├ƒΓòù├ºnh nhΓö£├│n ΓöÇ├ªΓö£├║ h├ƒΓòù┬║y khΓö£├¡m.");
         }
         if ("SKIPPED".equals(status)) {
-            throw new BusinessException("Bệnh nhân này đã được bỏ qua trước đó.");
+            throw new BusinessException("B├ƒΓòù├ºnh nhΓö£├│n nΓö£├íy ΓöÇ├ªΓö£├║ ΓöÇ├ªΓò₧Γûæ├ƒΓòù├║c b├ƒΓòù├à qua trΓò₧Γûæ├ƒΓòù┬óc ΓöÇ├ªΓö£Γöé.");
         }
 
         ticket.setStatus("SKIPPED");
-        QueueTicket saved = queueTicketRepository.save(ticket);
-        return mapToResponse(saved);
+        return mapToResponse(queueTicketRepository.save(ticket));
     }
 
     @Override
     @Transactional
     public QueueTicketResponse completePatient(Long queueTicketId) {
-        QueueTicket ticket = queueTicketRepository.findById(queueTicketId)
-                .orElseThrow(() -> new ResourceNotFoundException("Vé xếp hàng không tồn tại với ID: " + queueTicketId));
+        QueueTicket ticket = findOrThrow(queueTicketId);
 
         String status = ticket.getStatus();
         if ("COMPLETED".equals(status) || "DONE".equals(status)) {
-            throw new BusinessException("Bệnh nhân này đã hoàn thành khám.");
+            throw new BusinessException("B├ƒΓòù├ºnh nhΓö£├│n nΓö£├íy ΓöÇ├ªΓö£├║ hoΓö£├ín thΓö£├ính khΓö£├¡m.");
         }
         if ("CANCELLED".equals(status)) {
-            throw new BusinessException("Không thể hoàn tất cho bệnh nhân đã hủy khám.");
+            throw new BusinessException("KhΓö£Γöñng th├ƒΓòù├ó hoΓö£├ín t├ƒΓòæ├æt cho b├ƒΓòù├ºnh nhΓö£├│n ΓöÇ├ªΓö£├║ h├ƒΓòù┬║y khΓö£├¡m.");
         }
 
-        // Update QueueTicket status to DONE to match database constraint
         ticket.setStatus("DONE");
         ticket.setCompletedAt(LocalDateTime.now());
         QueueTicket saved = queueTicketRepository.save(ticket);
 
-        // Update related Appointment status to COMPLETED
-        Appointment appointment = ticket.getAppointment();
-        if (appointment != null) {
-            appointment.setStatus("COMPLETED");
-            appointmentRepository.save(appointment);
+        if (ticket.getAppointment() != null) {
+            ticket.getAppointment().setStatus("COMPLETED");
+            appointmentRepository.save(ticket.getAppointment());
         }
 
-        try {
-            if (saved.getPatient() != null && saved.getPatient().getUser() != null) {
-                notificationService.createNotification(
-                        saved.getPatient().getUser().getUserId(),
-                        "Hoàn thành khám bệnh",
-                        "Ca khám của bạn với bác sĩ " + (saved.getDoctor() != null && saved.getDoctor().getUser() != null ? saved.getDoctor().getUser().getFullName() : "Bác sĩ") + " đã hoàn tất. Chúc bạn luôn mạnh khỏe!",
-                        "APPOINTMENT"
-                );
-            }
-        } catch (Exception e) {
-            System.err.println("Không thể tạo thông báo hoàn thành khám: " + e.getMessage());
-        }
+        sendNotificationSafely(saved, "HoΓö£├ín thΓö£├ính khΓö£├¡m b├ƒΓòù├ºnh",
+                "Ca khΓö£├¡m c├ƒΓòù┬║a b├ƒΓòæ├¡n v├ƒΓòù┬ói bΓö£├¡c sΓöÇΓîÉ " + getDoctorName(saved) + " ΓöÇ├ªΓö£├║ hoΓö£├ín t├ƒΓòæ├æt. ChΓö£Γòæc b├ƒΓòæ├¡n luΓö£Γöñn m├ƒΓòæ├¡nh kh├ƒΓòù├àe!");
 
         return mapToResponse(saved);
     }
 
+    // ╬ô├╢├ç╬ô├╢├ç FIX: dΓö£Γòúng from() thay vΓö£┬╝ constructor tr├ƒΓòùΓûÆc ti├ƒΓòæΓöÉp ╬ô├╢├ç╬ô├╢├ç╬ô├╢├ç╬ô├╢├ç╬ô├╢├ç╬ô├╢├ç╬ô├╢├ç╬ô├╢├ç╬ô├╢├ç╬ô├╢├ç╬ô├╢├ç╬ô├╢├ç╬ô├╢├ç╬ô├╢├ç╬ô├╢├ç╬ô├╢├ç╬ô├╢├ç╬ô├╢├ç╬ô├╢├ç╬ô├╢├ç╬ô├╢├ç╬ô├╢├ç╬ô├╢├ç
     private QueueTicketResponse mapToResponse(QueueTicket qt) {
-        return new QueueTicketResponse(
-                qt.getQueueTicketId(),
-                qt.getQueueNumber(),
-                "DONE".equals(qt.getStatus()) ? "COMPLETED" : qt.getStatus(),
-                qt.getAppointment() != null ? qt.getAppointment().getAppointmentId() : null,
-                qt.getAppointment() != null ? qt.getAppointment().getAppointmentCode() : null,
-                qt.getPatient() != null ? qt.getPatient().getPatientId() : null,
-                qt.getPatient() != null ? qt.getPatient().getFullName() : null,
-                qt.getPatient() != null ? qt.getPatient().getPhone() : null,
-                qt.getDoctor() != null ? qt.getDoctor().getDoctorId() : null,
-                (qt.getDoctor() != null && qt.getDoctor().getUser() != null) ? qt.getDoctor().getUser().getFullName() : null,
-                qt.getQueueDate(),
-                qt.getAppointment() != null ? qt.getAppointment().getStartTime() : null,
-                qt.getAppointment() != null ? qt.getAppointment().getEndTime() : null,
-                qt.getCheckedInAt(),
-                qt.getCalledAt(),
-                qt.getCompletedAt()
-        );
+        Long consultationId = null;
+        if (qt.getAppointment() != null) {
+            consultationId = consultationSessionRepository
+                    .findByAppointmentId(qt.getAppointment().getAppointmentId())
+                    .map(ConsultationSession::getConsultationId)
+                    .orElse(null);
+        }
+        return QueueTicketResponse.from(qt, consultationId);
+    }
+
+    private QueueTicket findOrThrow(Long id) {
+        return queueTicketRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("VΓö£ΓîÉ x├ƒΓòæΓöÉp hΓö£├íng khΓö£Γöñng t├ƒΓòù├┤n t├ƒΓòæ├¡i v├ƒΓòù┬ói ID: " + id));
+    }
+
+    private String getDoctorName(QueueTicket ticket) {
+        if (ticket.getDoctor() != null && ticket.getDoctor().getUser() != null) {
+            return ticket.getDoctor().getUser().getFullName();
+        }
+        return "BΓö£├¡c sΓöÇΓîÉ";
+    }
+
+    private void sendNotificationSafely(QueueTicket ticket, String title, String message) {
+        try {
+            if (ticket.getPatient() == null || ticket.getPatient().getUser() == null) return;
+            // DΓö£Γòúng ApplicationContext ΓöÇ├ª├ƒΓòù├ó trΓö£├¡nh hard dependency khi NotificationService chΓò₧Γûæa cΓö£Γöé
+            var notificationService = applicationContext.getBean("notificationServiceImpl");
+            notificationService.getClass()
+                    .getMethod("createNotification", Long.class, String.class, String.class, String.class)
+                    .invoke(notificationService, ticket.getPatient().getUser().getUserId(), title, message, "APPOINTMENT");
+        } catch (Exception e) {
+            System.err.println("Notification skipped: " + e.getMessage());
+        }
     }
 }
