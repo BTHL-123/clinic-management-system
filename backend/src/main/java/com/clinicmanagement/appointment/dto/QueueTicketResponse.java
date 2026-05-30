@@ -1,7 +1,10 @@
 package com.clinicmanagement.appointment.dto;
 
+<<<<<<< HEAD
 import com.clinicmanagement.appointment.QueueTicket;
 
+=======
+>>>>>>> 4e059831324d7ec8f1ceb44e091985802da833bf
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -20,6 +23,7 @@ public record QueueTicketResponse(
         LocalDate appointmentDate,
         LocalTime startTime,
         LocalTime endTime,
+<<<<<<< HEAD
         LocalDate queueDate,
         String priorityLevel,
         Integer estimatedWaitMinutes,
@@ -61,3 +65,9 @@ public record QueueTicketResponse(
         );
     }
 }
+=======
+        LocalDateTime checkedInAt,
+        LocalDateTime calledAt,
+        LocalDateTime completedAt
+) {}
+>>>>>>> 4e059831324d7ec8f1ceb44e091985802da833bf

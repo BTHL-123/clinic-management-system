@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Stethoscope, Save, ArrowLeft, CheckCircle, Activity, FlaskConical, Pill, Plus, Trash2 } from "lucide-react";
+import { Stethoscope, Save, ArrowLeft, CheckCircle, Activity, FlaskConical, Pill, Plus, Trash2, AlertTriangle, ShieldCheck } from "lucide-react";
 import consultationService from "../../services/consultationService";
 import {
   createMedicalRecord,
@@ -10,7 +10,7 @@ import {
 import vitalSignService from "../../services/vitalSignService";
 import { createLabRequest, getLabRequestsByConsultationId } from "../../services/labRequestService";
 import { getLabTests } from "../../services/labTestService";
-import { createPrescription, getPrescriptionByConsultationId } from "../../services/prescriptionService";
+import { createPrescription, getPrescriptionByConsultationId, checkDrugInteractions } from "../../services/prescriptionService";
 
 const EMPTY_FORM = {
   symptoms: "",
@@ -53,6 +53,8 @@ export default function ExaminationPage() {
   const [prescriptionNote, setPrescriptionNote] = useState("");
   const [savedPrescription, setSavedPrescription] = useState(null);
   const [savingPrescription, setSavingPrescription] = useState(false);
+  const [interactionResult, setInteractionResult] = useState(null);
+  const [checkingInteraction, setCheckingInteraction] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -236,6 +238,20 @@ export default function ExaminationPage() {
       showToast(err.message || "Không thể tạo đơn thuốc.", "error");
     } finally {
       setSavingPrescription(false);
+    }
+  };
+
+  const handleCheckInteraction = async () => {
+    if (!savedPrescription) return;
+    setCheckingInteraction(true);
+    try {
+      const res = await checkDrugInteractions(savedPrescription.prescriptionId);
+      setInteractionResult(res.data);
+      showToast("Kiểm tra tương tác thuốc hoàn tất.");
+    } catch (err) {
+      showToast(err.message || "Không thể kiểm tra tương tác thuốc.", "error");
+    } finally {
+      setCheckingInteraction(false);
     }
   };
 
@@ -553,6 +569,47 @@ export default function ExaminationPage() {
             {savedPrescription.doctorNote && (
               <div style={{ marginTop: 8, fontSize: 13 }}>
                 <strong>Lời dặn:</strong> {savedPrescription.doctorNote}
+              </div>
+            )}
+            <div style={{ marginTop: 10, display: "flex", justifyContent: "flex-end" }}>
+              <button
+                onClick={handleCheckInteraction}
+                disabled={checkingInteraction}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 5,
+                  padding: "5px 14px", borderRadius: 6, border: "none",
+                  background: "#fef3c7", color: "#d97706",
+                  cursor: checkingInteraction ? "not-allowed" : "pointer",
+                  fontSize: 12, fontWeight: 600,
+                  opacity: checkingInteraction ? 0.6 : 1,
+                }}
+              >
+                <AlertTriangle size={13} />
+                {checkingInteraction ? "Đang kiểm tra..." : "Kiểm tra tương tác thuốc"}
+              </button>
+            </div>
+            {interactionResult && (
+              <div style={{
+                marginTop: 10, borderRadius: 6, padding: 10, fontSize: 13,
+                background: interactionResult.warningLevel === "NONE" ? "#f0fdf4" : "#fef3c7",
+                border: `1px solid ${interactionResult.warningLevel === "NONE" ? "#86efac" : "#fcd34d"}`,
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                  {interactionResult.warningLevel === "NONE"
+                    ? <ShieldCheck size={14} color="#16a34a" />
+                    : <AlertTriangle size={14} color="#d97706" />}
+                  <strong style={{ color: interactionResult.warningLevel === "NONE" ? "#15803d" : "#92400e" }}>
+                    {interactionResult.warningLevel === "NONE" ? "Không phát hiện tương tác nguy hiểm" : `Cảnh báo: ${interactionResult.warningLevel}`}
+                  </strong>
+                </div>
+                {interactionResult.interactions?.map((i, idx) => (
+                  <div key={idx} style={{ marginBottom: 4, paddingLeft: 8 }}>
+                    <span style={{ fontWeight: 600, color: i.severity === "SEVERE" || i.severity === "HIGH" ? "#dc2626" : "#d97706" }}>
+                      [{i.severity}]
+                    </span>{" "}
+                    <strong>{i.drug1}</strong> + <strong>{i.drug2}</strong>: {i.description}
+                  </div>
+                ))}
               </div>
             )}
           </div>

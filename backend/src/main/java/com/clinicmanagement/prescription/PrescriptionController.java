@@ -2,6 +2,7 @@ package com.clinicmanagement.prescription;
 
 import com.clinicmanagement.common.dto.ApiResponse;
 import com.clinicmanagement.prescription.dto.CreatePrescriptionRequest;
+import com.clinicmanagement.prescription.dto.DrugInteractionResponse;
 import com.clinicmanagement.prescription.dto.PrescriptionResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 public class PrescriptionController {
 
     private final PrescriptionService prescriptionService;
+    private final DrugInteractionService drugInteractionService;
 
     /**
      * POST /api/prescriptions
@@ -49,5 +51,17 @@ public class PrescriptionController {
             @PathVariable Long consultationId) {
         return ResponseEntity.ok(ApiResponse.success(
                 prescriptionService.getByConsultationId(consultationId)));
+    }
+
+    /**
+     * POST /api/prescriptions/{prescriptionId}/check-interactions
+     * DOCTOR — kiểm tra tương tác thuốc (Task 48)
+     */
+    @PostMapping("/{prescriptionId}/check-interactions")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<ApiResponse<DrugInteractionResponse>> checkInteractions(
+            @PathVariable Long prescriptionId) {
+        return ResponseEntity.ok(ApiResponse.success("Kiểm tra tương tác thuốc hoàn tất",
+                drugInteractionService.checkInteraction(prescriptionId)));
     }
 }

@@ -7,3 +7,6 @@ export const getPrescriptionById = (prescriptionId) =>
   api.get(`/prescriptions/${prescriptionId}`);
 
 export const createPrescription = (data) => api.post("/prescriptions", data);
+
+export const checkDrugInteractions = (prescriptionId) =>
+  api.post(`/prescriptions/${prescriptionId}/check-interactions`);
