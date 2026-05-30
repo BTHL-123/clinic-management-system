@@ -1,4 +1,4 @@
-﻿package com.clinicmanagement.prescription;
+package com.clinicmanagement.prescription;
 
 import com.clinicmanagement.common.exception.ResourceNotFoundException;
 import com.clinicmanagement.prescription.dto.DrugInteractionResponse;
@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,23 +21,29 @@ public class DrugInteractionService {
 
     private final PrescriptionRepository prescriptionRepository;
 
-    // Mock interaction table: active ingredient -> list of [interactsWith, severity, description]
-    private static final Map<String, List<String[]>> MOCK_INTERACTIONS = Map.of(
-        "warfarin", List.of(
-            new String[]{"aspirin", "HIGH", "Increased bleeding risk when Warfarin and Aspirin are used together."},
-            new String[]{"ibuprofen", "HIGH", "NSAIDs increase the anticoagulant effect of Warfarin."}
-        ),
-        "metformin", List.of(
-            new String[]{"alcohol", "MEDIUM", "Alcohol increases the risk of lactic acidosis with Metformin."}
-        ),
-        "simvastatin", List.of(
-            new String[]{"clarithromycin", "SEVERE", "Clarithromycin inhibits CYP3A4, increasing Simvastatin levels and risk of rhabdomyolysis."},
-            new String[]{"amlodipine", "LOW", "Amlodipine may slightly increase Simvastatin levels."}
-        ),
-        "ciprofloxacin", List.of(
-            new String[]{"antacid", "MEDIUM", "Antacids reduce Ciprofloxacin absorption; take 2 hours apart."}
-        )
-    );
+    private static final Map<String, List<String[]>> MOCK_INTERACTIONS;
+
+    static {
+        MOCK_INTERACTIONS = new HashMap<>();
+
+        List<String[]> warfarinList = new ArrayList<>();
+        warfarinList.add(new String[]{"aspirin", "HIGH", "Increased bleeding risk when Warfarin and Aspirin are used together."});
+        warfarinList.add(new String[]{"ibuprofen", "HIGH", "NSAIDs increase the anticoagulant effect of Warfarin."});
+        MOCK_INTERACTIONS.put("warfarin", warfarinList);
+
+        List<String[]> metforminList = new ArrayList<>();
+        metforminList.add(new String[]{"alcohol", "MEDIUM", "Alcohol increases the risk of lactic acidosis with Metformin."});
+        MOCK_INTERACTIONS.put("metformin", metforminList);
+
+        List<String[]> simvastatinList = new ArrayList<>();
+        simvastatinList.add(new String[]{"clarithromycin", "SEVERE", "Clarithromycin inhibits CYP3A4, increasing Simvastatin levels and risk of rhabdomyolysis."});
+        simvastatinList.add(new String[]{"amlodipine", "LOW", "Amlodipine may slightly increase Simvastatin levels."});
+        MOCK_INTERACTIONS.put("simvastatin", simvastatinList);
+
+        List<String[]> ciproList = new ArrayList<>();
+        ciproList.add(new String[]{"antacid", "MEDIUM", "Antacids reduce Ciprofloxacin absorption; take 2 hours apart."});
+        MOCK_INTERACTIONS.put("ciprofloxacin", ciproList);
+    }
 
     // Task 48: Check drug interactions
     @Transactional
