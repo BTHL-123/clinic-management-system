@@ -19,6 +19,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.context.ApplicationEventPublisher;
+import com.clinicmanagement.common.event.PaymentCompletedEvent;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -27,6 +29,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final InvoiceRepository invoiceRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     @Override
@@ -107,6 +110,12 @@ public class PaymentServiceImpl implements PaymentService {
             if (totalPaid.compareTo(invoice.getFinalAmount()) >= 0) {
                 invoice.setStatus("PAID");
                 invoice.setPaidAt(LocalDateTime.now());
+                
+                eventPublisher.publishEvent(new PaymentCompletedEvent(
+                        payment.getPaymentId(), 
+                        invoice.getInvoiceId(), 
+                        payment.getPaymentCode()
+                ));
             } else {
                 invoice.setStatus("PARTIALLY_PAID");
             }
@@ -173,6 +182,12 @@ public class PaymentServiceImpl implements PaymentService {
                 if (totalPaid.compareTo(invoice.getFinalAmount()) >= 0) {
                     invoice.setStatus("PAID");
                     invoice.setPaidAt(LocalDateTime.now());
+                    
+                    eventPublisher.publishEvent(new PaymentCompletedEvent(
+                            payment.getPaymentId(), 
+                            invoice.getInvoiceId(), 
+                            payment.getPaymentCode()
+                    ));
                 } else {
                     invoice.setStatus("PARTIALLY_PAID");
                 }
