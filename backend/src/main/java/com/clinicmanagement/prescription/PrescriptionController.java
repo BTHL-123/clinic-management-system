@@ -2,6 +2,7 @@ package com.clinicmanagement.prescription;
 
 import com.clinicmanagement.common.dto.ApiResponse;
 import com.clinicmanagement.prescription.dto.CreatePrescriptionRequest;
+import com.clinicmanagement.prescription.dto.DrugInteractionResponse;
 import com.clinicmanagement.prescription.dto.PrescriptionResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 public class PrescriptionController {
 
     private final PrescriptionService prescriptionService;
+    private final DrugInteractionService drugInteractionService;
 
     /**
      * POST /api/prescriptions
@@ -26,7 +28,7 @@ public class PrescriptionController {
     public ResponseEntity<ApiResponse<PrescriptionResponse>> create(
             @Valid @RequestBody CreatePrescriptionRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Tạo đơn thuốc thành công",
+                .body(ApiResponse.success("Tao don thuoc thanh cong",
                         prescriptionService.create(request)));
     }
 
@@ -37,7 +39,8 @@ public class PrescriptionController {
     @PreAuthorize("hasAnyRole('ADMIN','DOCTOR','PATIENT','RECEPTIONIST')")
     public ResponseEntity<ApiResponse<PrescriptionResponse>> getById(
             @PathVariable Long prescriptionId) {
-        return ResponseEntity.ok(ApiResponse.success(prescriptionService.getById(prescriptionId)));
+        return ResponseEntity.ok(ApiResponse.success(
+                prescriptionService.getById(prescriptionId)));
     }
 
     /**
@@ -49,5 +52,17 @@ public class PrescriptionController {
             @PathVariable Long consultationId) {
         return ResponseEntity.ok(ApiResponse.success(
                 prescriptionService.getByConsultationId(consultationId)));
+    }
+
+    /**
+     * POST /api/prescriptions/{prescriptionId}/check-interactions
+     * DOCTOR - Task 48: Check drug interaction
+     */
+    @PostMapping("/{prescriptionId}/check-interactions")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<ApiResponse<DrugInteractionResponse>> checkInteractions(
+            @PathVariable Long prescriptionId) {
+        return ResponseEntity.ok(ApiResponse.success("Kiem tra tuong tac thuoc hoan tat",
+                drugInteractionService.checkInteraction(prescriptionId)));
     }
 }
