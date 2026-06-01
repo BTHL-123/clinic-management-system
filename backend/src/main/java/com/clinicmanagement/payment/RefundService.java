@@ -5,6 +5,7 @@ import com.clinicmanagement.invoice.Invoice;
 import com.clinicmanagement.invoice.InvoiceRepository;
 import com.clinicmanagement.payment.dto.CreateRefundRequest;
 import com.clinicmanagement.payment.dto.RefundResponse;
+import com.clinicmanagement.payment.dto.RejectRefundRequest;
 import com.clinicmanagement.user.User;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -21,7 +22,7 @@ public interface RefundService {
 
     RefundResponse approve(Long refundId, User currentUser);
 
-    RefundResponse reject(Long refundId, User currentUser);
+    RefundResponse reject(Long refundId, RejectRefundRequest request, User currentUser);
 
     RefundResponse requestRefund(CreateRefundRequest request, User currentUser);
 }

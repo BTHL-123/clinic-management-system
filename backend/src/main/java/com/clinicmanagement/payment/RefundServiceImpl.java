@@ -7,6 +7,7 @@ import com.clinicmanagement.invoice.Invoice;
 import com.clinicmanagement.invoice.InvoiceRepository;
 import com.clinicmanagement.payment.dto.CreateRefundRequest;
 import com.clinicmanagement.payment.dto.RefundResponse;
+import com.clinicmanagement.payment.dto.RejectRefundRequest;
 import com.clinicmanagement.user.User;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -159,13 +160,14 @@ public class RefundServiceImpl implements RefundService {
 
     @Transactional
     @Override
-    public RefundResponse reject(Long refundId, User currentUser) {
+    public RefundResponse reject(Long refundId, RejectRefundRequest request, User currentUser) {
         Refund refund = findOrThrow(refundId);
         if (!"PENDING".equalsIgnoreCase(refund.getStatus())) {
             throw new BusinessException("Yêu cầu hoàn tiền không ở trạng thái PENDING");
         }
 
         refund.setStatus("REJECTED");
+        refund.setRejectReason(request.rejectReason());
         refund.setApprovedBy(currentUser);
         refund.setApprovedAt(LocalDateTime.now());
 

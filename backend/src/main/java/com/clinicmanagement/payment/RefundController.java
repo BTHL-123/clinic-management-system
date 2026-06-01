@@ -4,6 +4,7 @@ import com.clinicmanagement.common.dto.ApiResponse;
 import com.clinicmanagement.common.dto.PageResponse;
 import com.clinicmanagement.payment.dto.CreateRefundRequest;
 import com.clinicmanagement.payment.dto.RefundResponse;
+import com.clinicmanagement.payment.dto.RejectRefundRequest;
 import com.clinicmanagement.security.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -78,9 +79,10 @@ public class RefundController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<RefundResponse>> reject(
             @PathVariable Long id,
+            @Valid @RequestBody RejectRefundRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        RefundResponse response = refundService.reject(id, userDetails.getUser());
+        RefundResponse response = refundService.reject(id, request, userDetails.getUser());
         return ResponseEntity.ok(ApiResponse.success("Từ chối hoàn tiền thành công", response));
     }
 
