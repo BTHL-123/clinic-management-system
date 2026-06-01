@@ -2,6 +2,7 @@ package com.clinicmanagement.aichat;
 
 import com.clinicmanagement.aichat.dto.AiChatMessageRequest;
 import com.clinicmanagement.aichat.dto.AiChatSessionResponse;
+import com.clinicmanagement.aichat.dto.AiSpecialtySuggestionResponse;
 import com.clinicmanagement.aichat.dto.CreateAiChatSessionRequest;
 import com.clinicmanagement.aichat.dto.SendChatMessageResponse;
 import com.clinicmanagement.department.Department;
@@ -22,4 +23,6 @@ public interface AiChatService {
     List<SendChatMessageResponse.MessageDetail> getMessages(Long sessionId, User currentUser);
 
     AiSpecialtySuggestion generateSuggestion(Long sessionId, User currentUser);
+
+    AiSpecialtySuggestionResponse acceptSuggestion(Long suggestionId, User currentUser);
 }

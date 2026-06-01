@@ -2,6 +2,7 @@ package com.clinicmanagement.aichat;
 
 import com.clinicmanagement.aichat.dto.AiChatMessageRequest;
 import com.clinicmanagement.aichat.dto.AiChatSessionResponse;
+import com.clinicmanagement.aichat.dto.AiSpecialtySuggestionResponse;
 import com.clinicmanagement.aichat.dto.CreateAiChatSessionRequest;
 import com.clinicmanagement.aichat.dto.SendChatMessageResponse;
 import com.clinicmanagement.common.exception.BusinessException;
@@ -155,6 +156,29 @@ public class AiChatServiceImpl implements AiChatService {
         suggestion.setExplanation(explanation);
 
         return suggestionRepository.save(suggestion);
+    }
+
+    @Transactional
+    @Override
+    public AiSpecialtySuggestionResponse acceptSuggestion(Long suggestionId, User currentUser) {
+        AiSpecialtySuggestion suggestion = suggestionRepository.findById(suggestionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy kết quả gợi ý chuyên khoa"));
+
+        if (suggestion.getPatient() == null || suggestion.getPatient().getUser() == null ||
+                !suggestion.getPatient().getUser().getUserId().equals(currentUser.getUserId())) {
+            throw new AccessDeniedException("Bạn không có quyền thao tác trên gợi ý này");
+        }
+
+        suggestion.setAcceptedByPatient(true);
+        AiSpecialtySuggestion saved = suggestionRepository.save(suggestion);
+
+        return new AiSpecialtySuggestionResponse(
+                saved.getSuggestionId(),
+                saved.getDepartment().getDepartmentId(),
+                saved.getDepartment().getDepartmentName(),
+                saved.getConfidenceScore().doubleValue(),
+                saved.getExplanation()
+        );
     }
 
     private void validateSessionOwner(AiChatSession session, User currentUser) {

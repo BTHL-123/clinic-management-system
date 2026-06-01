@@ -15,6 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -75,5 +76,15 @@ public class AiChatController {
                 suggestion.getExplanation()
         );
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PutMapping("/suggestions/{suggestionId}/accept")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<AiSpecialtySuggestionResponse>> acceptSuggestion(
+            @PathVariable Long suggestionId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        AiSpecialtySuggestionResponse response = aiChatService.acceptSuggestion(suggestionId, userDetails.getUser());
+        return ResponseEntity.ok(ApiResponse.success("Đã xác nhận chọn chuyên khoa", response));
     }
 }
