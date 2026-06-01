@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   Bell,
   Building2,
@@ -27,6 +28,7 @@ import {
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import Logo from "./Logo.jsx";
+import { getActiveAlerts } from "../services/inventoryService";
 
 const adminItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -68,11 +70,30 @@ const patientItems = [
 
 export default function Sidebar() {
   const { user } = useAuth();
+  const [alertCount, setAlertCount] = useState(0);
 
   const isPatient = user?.roles?.includes("PATIENT");
   const items = isPatient ? patientItems : adminItems;
 
   const userRoles = user?.roles || [];
+  const hasInventoryRoles = userRoles.includes("ADMIN") || userRoles.includes("PHARMACIST");
+
+  useEffect(() => {
+    if (hasInventoryRoles) {
+      const fetchAlerts = async () => {
+        try {
+          const res = await getActiveAlerts({ page: 0, size: 1 });
+          setAlertCount(res.data?.totalElements || 0);
+        } catch (error) {
+          console.error("Error fetching inventory alerts:", error);
+        }
+      };
+      
+      fetchAlerts();
+      const interval = setInterval(fetchAlerts, 5 * 60 * 1000); // refresh every 5 mins
+      return () => clearInterval(interval);
+    }
+  }, [hasInventoryRoles]);
 
   const filteredItems = items.filter(item => {
     if (!item.roles) return true; // No roles defined = accessible to everyone
@@ -96,6 +117,20 @@ export default function Sidebar() {
             >
               <Icon size={18} />
               <span>{item.label}</span>
+              {item.to === "/dashboard/inventory/alerts" && alertCount > 0 && (
+                <span style={{
+                  background: "#ef4444",
+                  color: "white",
+                  fontSize: "11px",
+                  fontWeight: "600",
+                  padding: "2px 6px",
+                  borderRadius: "10px",
+                  lineHeight: 1,
+                  marginLeft: "auto"
+                }}>
+                  {alertCount > 99 ? "99+" : alertCount}
+                </span>
+              )}
             </NavLink>
           );
         })}
