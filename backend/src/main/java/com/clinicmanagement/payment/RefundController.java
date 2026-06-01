@@ -83,4 +83,15 @@ public class RefundController {
         RefundResponse response = refundService.reject(id, userDetails.getUser());
         return ResponseEntity.ok(ApiResponse.success("Từ chối hoàn tiền thành công", response));
     }
+
+    @PostMapping("/request")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<RefundResponse>> requestRefund(
+            @Valid @RequestBody CreateRefundRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        RefundResponse response = refundService.requestRefund(request, userDetails.getUser());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Gửi yêu cầu hoàn tiền thành công", response));
+    }
 }

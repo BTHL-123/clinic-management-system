@@ -3,6 +3,9 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { CalendarDays, Clock, CheckCircle, XCircle, RefreshCw, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import appointmentService from "../../services/appointmentService.js";
 import RescheduleModal from "../appointment/RescheduleModal.jsx";
+import { getPayments } from "../../services/paymentService.js";
+import { getRefunds } from "../../services/refundService.js";
+import RefundRequestModal from "./RefundRequestModal.jsx";
 
 // Modal Component for Cancelling Appointment
 function CancelModal({ isOpen, onClose, onConfirm, busy }) {
@@ -88,7 +91,7 @@ function StatusBadge({ status }) {
   );
 }
 
-function AppointmentCard({ appt, onCancelRequest, onRescheduleRequest }) {
+function AppointmentCard({ appt, onCancelRequest, onRescheduleRequest, onRefundRequest }) {
   const navigate = useNavigate();
   const date = appt.appointmentDate
     ? new Date(appt.appointmentDate).toLocaleDateString("vi-VN", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" })
@@ -160,6 +163,21 @@ function AppointmentCard({ appt, onCancelRequest, onRescheduleRequest }) {
       </div>
 
       <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "12px", gap: "8px" }}>
+        {appt.status === "CANCELLED" && appt.depositAmount > 0 && (
+          <button
+            onClick={() => onRefundRequest(appt)}
+            style={{
+              display: "flex", alignItems: "center", gap: "6px",
+              padding: "6px 14px", borderRadius: "6px", border: "1px solid #fecaca",
+              background: "#fff", color: "#ef4444", cursor: "pointer",
+              fontSize: "13px", fontWeight: 600, transition: "all 0.15s"
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#fef2f2"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
+          >
+            Yêu cầu hoàn tiền
+          </button>
+        )}
         <button
           onClick={() => navigate(`/dashboard/appointments/${appt.appointmentId}`)}
           style={{
@@ -253,6 +271,39 @@ export default function MyAppointmentsPage() {
   const handleCancelRequest = (id) => {
     setCancelTargetId(id);
     setCancelModalOpen(true);
+  };
+
+  // Refund logic
+  const [refundModalOpen, setRefundModalOpen] = useState(false);
+  const [refundTargetPayment, setRefundTargetPayment] = useState(null);
+
+  const handleRefundRequest = async (appt) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const payRes = await getPayments({ appointmentId: appt.appointmentId });
+      const payments = payRes.data?.content || payRes.data || [];
+      const paidPayment = payments.find(p => p.status === "PAID");
+      
+      if (!paidPayment) {
+        setError("Không tìm thấy giao dịch đã thanh toán cho lịch hẹn này.");
+        return;
+      }
+      
+      const refundRes = await getRefunds({ paymentId: paidPayment.paymentId });
+      const refunds = refundRes.data?.content || refundRes.data || [];
+      if (refunds.length > 0) {
+        setError(`Đã có yêu cầu hoàn tiền cho lịch này (Trạng thái: ${refunds[0].status}).`);
+        return;
+      }
+      
+      setRefundTargetPayment(paidPayment);
+      setRefundModalOpen(true);
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || "Lỗi kiểm tra thông tin thanh toán");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Reschedule logic
@@ -378,7 +429,13 @@ export default function MyAppointmentsPage() {
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               {data.content.map((appt) => (
-                <AppointmentCard key={appt.appointmentId} appt={appt} onCancelRequest={handleCancelRequest} onRescheduleRequest={handleRescheduleRequest} />
+                <AppointmentCard 
+                  key={appt.appointmentId} 
+                  appt={appt} 
+                  onCancelRequest={handleCancelRequest} 
+                  onRescheduleRequest={handleRescheduleRequest} 
+                  onRefundRequest={handleRefundRequest}
+                />
               ))}
             </div>
           )}
@@ -430,6 +487,17 @@ export default function MyAppointmentsPage() {
           loadData();
         }}
         appointment={rescheduleTargetAppt}
+      />
+
+      <RefundRequestModal
+        isOpen={refundModalOpen}
+        onClose={() => setRefundModalOpen(false)}
+        payment={refundTargetPayment}
+        onSuccess={() => {
+          setSuccessMsg("Đã gửi yêu cầu hoàn tiền thành công. Trạng thái: Đang chờ xử lý.");
+          setRefundModalOpen(false);
+          loadData();
+        }}
       />
     </div>
   );

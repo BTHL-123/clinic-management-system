@@ -22,4 +22,6 @@ public interface RefundService {
     RefundResponse approve(Long refundId, User currentUser);
 
     RefundResponse reject(Long refundId, User currentUser);
+
+    RefundResponse requestRefund(CreateRefundRequest request, User currentUser);
 }

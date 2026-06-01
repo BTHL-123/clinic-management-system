@@ -96,6 +96,38 @@ public class RefundServiceImpl implements RefundService {
 
     @Transactional
     @Override
+    public RefundResponse requestRefund(CreateRefundRequest request, User currentUser) {
+        Payment payment = paymentRepository.findById(request.paymentId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Không tìm thấy giao dịch thanh toán với ID: " + request.paymentId()));
+
+        if (!"PAID".equalsIgnoreCase(payment.getStatus())) {
+            throw new BusinessException("Chỉ có thể hoàn tiền cho giao dịch đã thanh toán (PAID)");
+        }
+
+        if (request.refundAmount().compareTo(payment.getAmount()) > 0) {
+            throw new BusinessException("Số tiền hoàn không được lớn hơn số tiền thanh toán");
+        }
+
+        if (payment.getPaidBy() != null && !payment.getPaidBy().getUserId().equals(currentUser.getUserId())) {
+            throw new BusinessException("Bạn không có quyền yêu cầu hoàn tiền cho giao dịch này");
+        }
+
+        Refund refund = new Refund();
+        refund.setRefundCode(nextRefundCode());
+        refund.setPayment(payment);
+        refund.setRefundAmount(request.refundAmount());
+        refund.setReason(request.reason());
+        
+        refund.setStatus("PENDING");
+        refund.setRequestedBy(currentUser);
+
+        Refund saved = refundRepository.save(refund);
+        return RefundResponse.from(saved);
+    }
+
+    @Transactional
+    @Override
     public RefundResponse approve(Long refundId, User currentUser) {
         Refund refund = findOrThrow(refundId);
         if (!"PENDING".equalsIgnoreCase(refund.getStatus())) {
