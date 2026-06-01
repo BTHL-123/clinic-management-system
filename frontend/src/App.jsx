@@ -23,6 +23,8 @@ import WalkInAppointmentPage from "./pages/appointment/WalkInAppointmentPage.jsx
 import ReceptionistAppointmentsPage from "./pages/appointment/ReceptionistAppointmentsPage.jsx";
 import QueueManagementPage from "./pages/appointment/QueueManagementPage.jsx";
 import DoctorTodayAppointments from "./pages/doctor/DoctorTodayAppointments.jsx";
+import DoctorLeaveRequestPage from "./pages/doctor/DoctorLeaveRequestPage.jsx";
+import AdminDoctorLeaveRequestPage from "./pages/doctor/AdminDoctorLeaveRequestPage.jsx";
 import NotificationsPage from "./pages/notification/NotificationsPage.jsx";
 import DoctorManagement from "./pages/doctor/DoctorManagement.jsx";
 import AlertsDashboard from "./pages/inventory/AlertsDashboard.jsx";
@@ -101,6 +103,8 @@ export default function App() {
         <Route path="consultation" element={<ConsultationPage />} />
         <Route path="examination/:consultationId" element={<ExaminationPage />} />
         <Route path="lab-requests" element={<LabRequestPage />} />
+        <Route path="doctor-leave-requests" element={<DoctorLeaveRequestPage />} />
+        <Route path="admin/doctor-leave-requests" element={<AdminDoctorLeaveRequestPage />} />
       </Route>
     </Routes>
   );
