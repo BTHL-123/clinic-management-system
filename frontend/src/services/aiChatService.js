@@ -19,3 +19,7 @@ export const generateSuggestion = (sessionId) => {
 export const acceptSuggestion = (suggestionId) => {
   return axiosClient.put(`/ai/chat-sessions/suggestions/${suggestionId}/accept`);
 };
+
+export const standardizeClinicalNote = (rawNote) => {
+  return axiosClient.post(`/ai/clinical-notes/standardize`, { rawNote });
+};

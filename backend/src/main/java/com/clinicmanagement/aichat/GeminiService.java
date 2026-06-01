@@ -153,6 +153,56 @@ public class GeminiService {
         }
     }
 
+    public String standardizeClinicalNote(String rawNote) {
+        if (apiKey == null || apiKey.isBlank()) {
+            return mockStandardizeClinicalNote(rawNote);
+        }
+
+        try {
+            String url = String.format(GEMINI_API_URL, model, apiKey);
+
+            Map<String, Object> requestBody = new HashMap<>();
+            
+            // System instruction for JSON
+            Map<String, Object> systemInstruction = new HashMap<>();
+            Map<String, Object> systemParts = new HashMap<>();
+            systemParts.put("text", "Bạn là một bác sĩ hỗ trợ chuẩn hóa bệnh án. Đọc ghi chú thô của bác sĩ và điền vào 5 trường: 'symptoms' (triệu chứng), 'clinicalFindings' (khám lâm sàng), 'diagnosis' (chẩn đoán), 'treatmentPlan' (kế hoạch điều trị), 'doctorNote' (lời dặn). Trả về ĐÚNG MỘT JSON OBJECT với 5 trường này. Nếu thông tin nào không có, hãy để trống chuỗi (\"\"). Chỉ trả về JSON thuần hợp lệ, không bọc bằng ```json hay markdown, không chứa text nào khác.");
+            systemInstruction.put("parts", List.of(systemParts));
+            requestBody.put("system_instruction", systemInstruction);
+
+            // Build contents
+            Map<String, Object> part = new HashMap<>();
+            part.put("text", "Ghi chú thô:\n" + rawNote + "\nPhân tích và trả về JSON.");
+            Map<String, Object> content = new HashMap<>();
+            content.put("role", "user");
+            content.put("parts", List.of(part));
+
+            requestBody.put("contents", List.of(content));
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
+
+            ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+            JsonNode root = objectMapper.readTree(response.getBody());
+
+            if (root.has("candidates") && root.get("candidates").isArray() && root.get("candidates").size() > 0) {
+                JsonNode candidate = root.get("candidates").get(0);
+                if (candidate.has("content") && candidate.get("content").has("parts")) {
+                    JsonNode parts = candidate.get("content").get("parts");
+                    if (parts.isArray() && parts.size() > 0) {
+                        return parts.get(0).get("text").asText().trim();
+                    }
+                }
+            }
+            return "{}";
+        } catch (Exception e) {
+            log.error("Error calling Gemini API for standardizing clinical notes", e);
+            return "{}";
+        }
+    }
+
     private String mockChatReply(List<AiChatMessage> history, String newMessage) {
         String currentMessage = normalizeText(newMessage);
         String allPatientMessages = normalizeText(history.stream()
@@ -203,6 +253,16 @@ public class GeminiService {
             return "{\"departmentName\":\"Tiêu hóa\",\"confidenceScore\":84,\"explanation\":\"Triệu chứng chủ yếu thuộc hệ tiêu hóa, nên khám chuyên khoa Tiêu hóa để đánh giá thêm.\"}";
         }
         return "{\"departmentName\":\"Khám tổng quát\",\"confidenceScore\":75,\"explanation\":\"Thông tin triệu chứng còn chung chung, khám tổng quát sẽ giúp bác sĩ định hướng bước tiếp theo.\"}";
+    }
+
+    private String mockStandardizeClinicalNote(String rawNote) {
+        return "{\n" +
+               "  \"symptoms\": \"Bệnh nhân khai ho khan, sốt nhẹ.\",\n" +
+               "  \"clinicalFindings\": \"Họng đỏ, không có hạt. Phổi trong, không rales.\",\n" +
+               "  \"diagnosis\": \"Viêm họng cấp\",\n" +
+               "  \"treatmentPlan\": \"Dùng thuốc hạ sốt, kháng viêm đường họng.\",\n" +
+               "  \"doctorNote\": \"Uống nhiều nước ấm, súc họng bằng nước muối sinh lý.\"\n" +
+               "}";
     }
 
     private boolean asksForSpecialty(String text) {

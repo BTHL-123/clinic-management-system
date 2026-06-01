@@ -10,6 +10,8 @@ import {
 import vitalSignService from "../../services/vitalSignService";
 import { createLabRequest, getLabRequestsByConsultationId } from "../../services/labRequestService";
 import { getLabTests } from "../../services/labTestService";
+import { standardizeClinicalNote } from "../../services/aiChatService";
+import { Bot } from "lucide-react";
 
 const EMPTY_FORM = {
   symptoms: "",
@@ -51,6 +53,9 @@ export default function ExaminationPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [toast, setToast] = useState(null);
+
+  const [rawNote, setRawNote] = useState("");
+  const [aiProcessing, setAiProcessing] = useState(false);
 
   // Load consultation + bệnh án hiện có (nếu có)
   useEffect(() => {
@@ -216,6 +221,32 @@ export default function ExaminationPage() {
     }
   };
 
+  const handleStandardizeNote = async () => {
+    if (!rawNote.trim()) {
+      showToast("Vui lòng nhập ghi chú thô cần chuẩn hóa.", "error");
+      return;
+    }
+    setAiProcessing(true);
+    try {
+      const res = await standardizeClinicalNote(rawNote);
+      const data = res.data;
+      setForm((prev) => ({
+        ...prev,
+        symptoms: data.symptoms || prev.symptoms,
+        clinicalFindings: data.clinicalFindings || prev.clinicalFindings,
+        diagnosis: data.diagnosis || prev.diagnosis,
+        treatmentPlan: data.treatmentPlan || prev.treatmentPlan,
+        doctorNote: data.doctorNote || prev.doctorNote,
+      }));
+      setRawNote("");
+      showToast("Đã chuẩn hóa và điền tự động thành công!");
+    } catch (err) {
+      showToast(err.response?.data?.message || err.message || "Không thể chuẩn hóa bệnh án.", "error");
+    } finally {
+      setAiProcessing(false);
+    }
+  };
+
   const handleComplete = async () => {
     // Lưu bệnh án trước rồi hoàn thành phiên khám
     await handleSave();
@@ -372,6 +403,43 @@ export default function ExaminationPage() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* AI Smart Notes Section */}
+      <div style={{ background: "#fdf4ff", border: "1px solid #f0abfc", borderRadius: 12, padding: 24, marginBottom: 24 }}>
+        <h3 style={{ margin: "0 0 12px", display: "flex", alignItems: "center", gap: 8, color: "#86198f" }}>
+          <Bot size={20} /> Ghi chú nhanh AI
+        </h3>
+        <p style={{ margin: "0 0 12px", fontSize: 13, color: "#a21caf" }}>
+          Nhập ghi chú thô của bạn (tốc ký, không cần đúng cấu trúc). AI sẽ tự động phân tích và điền vào các ô tương ứng bên dưới.
+        </p>
+        <textarea
+          rows={3}
+          placeholder="Ví dụ: bn nam 45t sốt 39đ ho khan 3 ngày khám họng đỏ phổi bt chẩn đoán viêm họng cấp kê para 500mg"
+          value={rawNote}
+          onChange={(e) => setRawNote(e.target.value)}
+          disabled={aiProcessing}
+          style={{
+            width: "100%", padding: 12, borderRadius: 8, border: "1px solid #e879f9",
+            background: "#fff", fontSize: 14, outline: "none", marginBottom: 12
+          }}
+        />
+        <button
+          type="button"
+          className="btn"
+          disabled={aiProcessing}
+          onClick={handleStandardizeNote}
+          style={{
+            background: "#c026d3", color: "#fff", border: "none",
+            display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 600, padding: "8px 16px"
+          }}
+        >
+          {aiProcessing ? (
+            <>Đang xử lý...</>
+          ) : (
+            <><Bot size={16} /> AI Chuẩn hóa & Điền tự động</>
+          )}
+        </button>
       </div>
 
       {/* Lab Request Section */}

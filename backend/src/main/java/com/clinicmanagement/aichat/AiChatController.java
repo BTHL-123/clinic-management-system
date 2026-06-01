@@ -5,6 +5,8 @@ import com.clinicmanagement.aichat.dto.AiChatSessionResponse;
 import com.clinicmanagement.aichat.dto.AiSpecialtySuggestionResponse;
 import com.clinicmanagement.aichat.dto.CreateAiChatSessionRequest;
 import com.clinicmanagement.aichat.dto.SendChatMessageResponse;
+import com.clinicmanagement.aichat.dto.StandardizeNoteRequest;
+import com.clinicmanagement.aichat.dto.StandardizeNoteResponse;
 import com.clinicmanagement.common.dto.ApiResponse;
 import com.clinicmanagement.security.CustomUserDetails;
 import jakarta.validation.Valid;
@@ -86,5 +88,15 @@ public class AiChatController {
     ) {
         AiSpecialtySuggestionResponse response = aiChatService.acceptSuggestion(suggestionId, userDetails.getUser());
         return ResponseEntity.ok(ApiResponse.success("Đã xác nhận chọn chuyên khoa", response));
+    }
+
+    @PostMapping("/clinical-notes/standardize")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<ApiResponse<StandardizeNoteResponse>> standardizeClinicalNote(
+            @RequestBody StandardizeNoteRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        StandardizeNoteResponse response = aiChatService.standardizeClinicalNote(request, userDetails.getUser());
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
