@@ -53,6 +53,11 @@ export default function ReceptionistAppointmentsPage() {
   // Toast
   const [toast, setToast] = useState({ message: "", type: "" });
 
+  // No Show Modal State
+  const [showNoShowModal, setShowNoShowModal] = useState(false);
+  const [selectedAppId, setSelectedAppId] = useState(null);
+  const [noShowNote, setNoShowNote] = useState("");
+
   const showToast = (message, type = "success") => {
     setToast({ message, type });
     setTimeout(() => {
@@ -102,14 +107,38 @@ export default function ReceptionistAppointmentsPage() {
     }
   };
 
+  const openNoShowModal = (appointmentId) => {
+    setSelectedAppId(appointmentId);
+    setNoShowNote("");
+    setShowNoShowModal(true);
+  };
+
+  const confirmNoShow = async () => {
+    if (!selectedAppId) return;
+    try {
+      await appointmentService.markNoShow(selectedAppId, noShowNote);
+      showToast("Đã đánh dấu bệnh nhân không đến khám (No Show)");
+      fetchAppointments(currentPage);
+    } catch (err) {
+      showToast(err.message || "Đánh dấu No Show thất bại", "error");
+    } finally {
+      setShowNoShowModal(false);
+      setSelectedAppId(null);
+    }
+  };
+
   const getStatusBadge = (appStatus) => {
     switch (appStatus) {
       case "CONFIRMED":
         return <span style={{ background: "#e0f2fe", color: "#0369a1", padding: "4px 8px", borderRadius: "9999px", fontSize: "12px", fontWeight: 650 }}>Confirmed</span>;
+      case "SCHEDULED":
+        return <span style={{ background: "#e0f2fe", color: "#0369a1", padding: "4px 8px", borderRadius: "9999px", fontSize: "12px", fontWeight: 650 }}>Scheduled</span>;
       case "CHECKED_IN":
         return <span style={{ background: "#dcfce7", color: "#166534", padding: "4px 8px", borderRadius: "9999px", fontSize: "12px", fontWeight: 650 }}>Checked In</span>;
       case "CANCELLED":
         return <span style={{ background: "#fee2e2", color: "#991b1b", padding: "4px 8px", borderRadius: "9999px", fontSize: "12px", fontWeight: 650 }}>Cancelled</span>;
+      case "NO_SHOW":
+        return <span style={{ background: "#fee2e2", color: "#dc2626", padding: "4px 8px", borderRadius: "9999px", fontSize: "12px", fontWeight: 650 }}>No Show</span>;
       case "COMPLETED":
         return <span style={{ background: "#f1f5f9", color: "#475569", padding: "4px 8px", borderRadius: "9999px", fontSize: "12px", fontWeight: 650 }}>Completed</span>;
       case "PENDING_PAYMENT":
@@ -168,6 +197,7 @@ export default function ReceptionistAppointmentsPage() {
               <option value="CHECKED_IN">Checked In (Đã check-in)</option>
               <option value="COMPLETED">Completed (Hoàn thành)</option>
               <option value="CANCELLED">Cancelled (Đã hủy)</option>
+              <option value="NO_SHOW">No Show (Không đến)</option>
             </select>
           </div>
 
@@ -243,25 +273,48 @@ export default function ReceptionistAppointmentsPage() {
                       )}
                     </td>
                     <td style={{ textAlign: "center" }}>
-                      {canCheckIn ? (
-                        <button
-                          className="primary-button compact"
-                          onClick={() => handleCheckIn(app.appointmentId)}
-                          style={{
-                            background: "linear-gradient(135deg, #0f766e, #0d9488)",
-                            boxShadow: "0 2px 4px rgba(15,118,110,0.2)",
-                            fontWeight: 700,
-                          }}
-                        >
-                          Check-in
-                        </button>
-                      ) : app.status === "CHECKED_IN" ? (
-                        <span style={{ color: "#16a34a", fontWeight: 700, fontSize: "13.5px", display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                          ✓ Đã check-in
-                        </span>
-                      ) : (
-                        <span style={{ color: "#94a3b8", fontSize: "13px" }}>Không khả dụng</span>
-                      )}
+                      <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+                        {canCheckIn ? (
+                          <button
+                            className="primary-button compact"
+                            onClick={() => handleCheckIn(app.appointmentId)}
+                            style={{
+                              background: "linear-gradient(135deg, #0f766e, #0d9488)",
+                              boxShadow: "0 2px 4px rgba(15,118,110,0.2)",
+                              fontWeight: 700,
+                            }}
+                          >
+                            Check-in
+                          </button>
+                        ) : app.status === "CHECKED_IN" ? (
+                          <span style={{ color: "#16a34a", fontWeight: 700, fontSize: "13.5px", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                            ✓ Đã check-in
+                          </span>
+                        ) : (
+                          <span style={{ color: "#94a3b8", fontSize: "13px", display: !["SCHEDULED", "CONFIRMED"].includes(app.status) ? "inline-block" : "none" }}>
+                            Không khả dụng
+                          </span>
+                        )}
+
+                        {["SCHEDULED", "CONFIRMED"].includes(app.status) && (
+                          <button
+                            className="danger-button compact"
+                            onClick={() => openNoShowModal(app.appointmentId)}
+                            style={{
+                              padding: "4px 12px",
+                              borderRadius: "6px",
+                              fontSize: "13px",
+                              fontWeight: 600,
+                              background: "#fef2f2",
+                              color: "#dc2626",
+                              border: "1px solid #fee2e2",
+                              cursor: "pointer"
+                            }}
+                          >
+                            Mark No Show
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -295,6 +348,45 @@ export default function ReceptionistAppointmentsPage() {
             >
               Sau
             </button>
+          </div>
+        </div>
+      )}
+      {/* No Show Modal */}
+      {showNoShowModal && (
+        <div className="modal-overlay" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}>
+          <div className="modal-content" style={{ background: "white", padding: "24px", borderRadius: "12px", width: "400px", maxWidth: "90%" }}>
+            <h3 style={{ margin: "0 0 16px", color: "#dc2626", display: "flex", alignItems: "center", gap: "8px" }}>
+              <AlertCircle size={20} />
+              Confirm No Show
+            </h3>
+            <p style={{ marginBottom: "16px", color: "#475569", fontSize: "14px" }}>
+              Are you sure the patient did not arrive? This action will mark the appointment as No Show and cancel it.
+            </p>
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{ display: "block", marginBottom: "8px", fontSize: "14px", fontWeight: 600, color: "#334155" }}>
+                Receptionist Note (Optional)
+              </label>
+              <textarea
+                style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid #cbd5e1", resize: "vertical", minHeight: "80px" }}
+                placeholder="Example: No response after multiple calls."
+                value={noShowNote}
+                onChange={(e) => setNoShowNote(e.target.value)}
+              />
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+              <button 
+                onClick={() => setShowNoShowModal(false)}
+                style={{ padding: "8px 16px", borderRadius: "6px", border: "1px solid #cbd5e1", background: "white", cursor: "pointer", fontWeight: 500 }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmNoShow}
+                style={{ padding: "8px 16px", borderRadius: "6px", border: "none", background: "#dc2626", color: "white", cursor: "pointer", fontWeight: 600 }}
+              >
+                Confirm No Show
+              </button>
+            </div>
           </div>
         </div>
       )}

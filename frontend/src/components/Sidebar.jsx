@@ -3,6 +3,7 @@ import {
   Building2,
   CalendarDays,
   CalendarOff,
+  ClipboardList,
   FlaskConical,
   KeyRound,
   MessageSquare,
@@ -66,6 +67,7 @@ const patientItems = [
   { to: "/dashboard/available-slots", label: "Tìm ca khám trống", icon: Search },
   { to: "/dashboard/ai-chat", label: "Tư vấn AI", icon: MessageSquare },
   { to: "/dashboard/my-appointments", label: "Lịch hẹn của tôi", icon: CalendarDays },
+  { to: "/dashboard/queue-status", label: "Trạng thái hàng đợi", icon: ClipboardList },
   { to: "/dashboard/my-medical-history", label: "Lịch sử bệnh án", icon: History },
 ];
 
