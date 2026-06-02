@@ -233,7 +233,7 @@ public class InventoryServiceImpl implements InventoryService {
             
             // Check OUT_OF_STOCK (quantity = 0)
             if (batch.getCurrentQuantity() == 0) {
-                createAlertIfNotExists(batch, "LOW_STOCK",
+                createAlertIfNotExists(batch, "OUT_OF_STOCK",
                     "Lô thuốc " + batch.getBatchNumber() + " đã hết hàng");
             }
         }

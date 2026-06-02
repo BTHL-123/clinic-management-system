@@ -98,10 +98,9 @@ public class MedicineServiceImpl implements MedicineService {
     @Transactional
     @Override
     public void delete(Long id) {
-        if (!medicineRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Không tìm thấy thuốc với ID: " + id);
-        }
-        medicineRepository.deleteById(id);
+        Medicine medicine = findOrThrow(id);
+        medicine.setStatus("INACTIVE");
+        medicineRepository.save(medicine);
     }
 
     Medicine findOrThrow(Long id) {
