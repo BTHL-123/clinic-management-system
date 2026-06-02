@@ -147,6 +147,44 @@ public class InventoryServiceImpl implements InventoryService {
         return mapToTransactionResponse(saved);
     }
 
+    @Transactional
+    @Override
+    public void exportStockAutomated(Long medicineId, Integer requiredQuantity, String referenceType, Long referenceId, String note) {
+        Medicine medicine = medicineRepository.findById(medicineId)
+                .orElseThrow(() -> new ResourceNotFoundException("Medicine not found"));
+
+        java.util.List<MedicineBatch> availableBatches = batchRepository.findFefoBatches(medicineId, java.time.LocalDate.now());
+        int remainingQuantity = requiredQuantity;
+
+        for (MedicineBatch batch : availableBatches) {
+            if (remainingQuantity <= 0) break;
+            
+            int deduct = Math.min(batch.getCurrentQuantity(), remainingQuantity);
+            batch.setCurrentQuantity(batch.getCurrentQuantity() - deduct);
+            
+            if (batch.getCurrentQuantity() == 0) {
+                batch.setStatus("OUT_OF_STOCK");
+            }
+            batchRepository.save(batch);
+            
+            StockTransaction transaction = new StockTransaction();
+            transaction.setMedicine(medicine);
+            transaction.setBatch(batch);
+            transaction.setTransactionType("EXPORT");
+            transaction.setQuantity(deduct);
+            transaction.setReferenceType(referenceType);
+            transaction.setReferenceId(referenceId);
+            transaction.setNote(note);
+            transactionRepository.save(transaction);
+            
+            remainingQuantity -= deduct;
+        }
+
+        if (remainingQuantity > 0) {
+            throw new BusinessException("Không đủ tồn kho cho thuốc: " + medicine.getMedicineName());
+        }
+    }
+
     @Transactional(readOnly = true)
     @Override
     public PageResponse<MedicineStockAlertResponse> getActiveAlerts(Pageable pageable) {

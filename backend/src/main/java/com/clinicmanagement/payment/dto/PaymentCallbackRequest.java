@@ -14,6 +14,5 @@ public record PaymentCallbackRequest(
         @NotBlank(message = "Trạng thái không được để trống")
         String status,
 
-        @NotNull(message = "Số tiền không được để trống")
         BigDecimal amount
 ) {}

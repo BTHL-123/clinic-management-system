@@ -16,4 +16,9 @@ public interface MedicineBatchRepository extends JpaRepository<MedicineBatch, Lo
     Page<MedicineBatch> findBatches(@Param("medicineId") Long medicineId, @Param("status") String status, Pageable pageable);
 
     List<MedicineBatch> findByMedicineMedicineIdAndStatus(Long medicineId, String status);
+
+    @Query("SELECT b FROM MedicineBatch b WHERE b.medicine.medicineId = :medicineId " +
+           "AND b.status = 'AVAILABLE' AND b.currentQuantity > 0 AND b.expiryDate >= :currentDate " +
+           "ORDER BY b.expiryDate ASC, b.batchId ASC")
+    List<MedicineBatch> findFefoBatches(@Param("medicineId") Long medicineId, @Param("currentDate") java.time.LocalDate currentDate);
 }
