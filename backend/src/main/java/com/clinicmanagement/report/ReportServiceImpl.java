@@ -151,7 +151,7 @@ public class ReportServiceImpl implements ReportService {
         LocalDate thresholdDate = LocalDate.now().plusDays(days);
         
         String sql = "SELECT b.batch_id, m.medicine_name, b.batch_number, b.current_quantity, b.expiry_date, " +
-                     "EXTRACT(DAY FROM (b.expiry_date - CURRENT_DATE)) as days_left " +
+                     "CAST(b.expiry_date - CURRENT_DATE AS integer) as days_left " +
                      "FROM medicine_batches b " +
                      "JOIN medicines m ON b.medicine_id = m.medicine_id " +
                      "WHERE b.expiry_date <= :thresholdDate AND b.current_quantity > 0 AND b.status != 'EXPIRED' " +
