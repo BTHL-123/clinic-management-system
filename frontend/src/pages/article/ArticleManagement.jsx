@@ -108,12 +108,16 @@ function ArticleModal({ isOpen, onClose, onSave, article, busy }) {
               Nội dung <span style={{ color: "#dc2626" }}>*</span>
             </label>
             <div style={{ background: "#fff" }}>
-              <ReactQuill 
-                theme="snow" 
+              <textarea 
                 value={content} 
-                onChange={setContent} 
-                modules={modules}
-                style={{ height: "300px", marginBottom: "40px" }}
+                onChange={(e) => setContent(e.target.value)} 
+                placeholder="Nhập nội dung bài viết..."
+                style={{ 
+                  width: "100%", height: "300px", padding: "12px", 
+                  borderRadius: "8px", border: "1px solid #cbd5e1", 
+                  fontSize: "14px", resize: "vertical", fontFamily: "inherit",
+                  boxSizing: "border-box" 
+                }}
               />
             </div>
           </div>
