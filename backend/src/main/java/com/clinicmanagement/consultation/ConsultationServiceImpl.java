@@ -22,6 +22,8 @@ public class ConsultationServiceImpl implements ConsultationService {
     );
 
     private final ConsultationSessionRepository consultationRepository;
+    private final com.clinicmanagement.appointment.AppointmentRepository appointmentRepository;
+    private final com.clinicmanagement.appointment.QueueTicketRepository queueTicketRepository;
 
     // ── GET LIST ──────────────────────────────────────────────────────────────
     @Transactional(readOnly = true)
@@ -71,7 +73,6 @@ public class ConsultationServiceImpl implements ConsultationService {
         return ConsultationResponse.from(consultationRepository.save(session));
     }
 
-    // ── COMPLETE ──────────────────────────────────────────────────────────────
     @Transactional
     @Override
     public ConsultationResponse complete(Long id) {
@@ -81,6 +82,20 @@ public class ConsultationServiceImpl implements ConsultationService {
         }
         session.setStatus("COMPLETED");
         session.setCompletedAt(LocalDateTime.now());
+        
+        appointmentRepository.findById(session.getAppointmentId()).ifPresent(app -> {
+            app.setStatus("COMPLETED");
+            appointmentRepository.save(app);
+            
+            queueTicketRepository.findByAppointment(app).ifPresent(ticket -> {
+                if ("IN_EXAMINATION".equals(ticket.getStatus())) {
+                    ticket.setStatus("DONE");
+                    ticket.setCompletedAt(LocalDateTime.now());
+                    queueTicketRepository.save(ticket);
+                }
+            });
+        });
+
         return ConsultationResponse.from(consultationRepository.save(session));
     }
 
