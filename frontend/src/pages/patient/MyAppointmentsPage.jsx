@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { CalendarDays, Clock, CheckCircle, XCircle, RefreshCw, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, Clock, CheckCircle, XCircle, RefreshCw, AlertCircle, ChevronLeft, ChevronRight, Star, MessageSquarePlus } from "lucide-react";
 import appointmentService from "../../services/appointmentService.js";
+import { createReview } from "../../services/reviewService.js";
+import { useAuth } from "../../context/useAuth.js";
 import RescheduleModal from "../appointment/RescheduleModal.jsx";
 
 // Modal Component for Cancelling Appointment
@@ -65,6 +67,84 @@ function CancelModal({ isOpen, onClose, onConfirm, busy }) {
   );
 }
 
+// Modal Component for Writing Review
+function ReviewModal({ isOpen, onClose, onConfirm, busy }) {
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+
+  if (!isOpen) return null;
+
+  return (
+    <div style={{
+      position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: "rgba(0,0,0,0.5)", display: "flex",
+      alignItems: "center", justifyContent: "center", zIndex: 1000
+    }}>
+      <div style={{
+        background: "#fff", padding: "24px", borderRadius: "12px",
+        width: "90%", maxWidth: "400px", boxShadow: "0 4px 20px rgba(0,0,0,0.15)"
+      }}>
+        <h3 style={{ margin: "0 0 16px", color: "#0f172a", fontSize: "1.2rem" }}>Đánh giá dịch vụ</h3>
+        <p style={{ margin: "0 0 16px", color: "#64748b", fontSize: "14px" }}>
+          Đánh giá trải nghiệm khám bệnh của bạn. Phản hồi này giúp chúng tôi cải thiện dịch vụ tốt hơn.
+        </p>
+        
+        <div style={{ display: "flex", gap: "8px", justifyContent: "center", marginBottom: "16px" }}>
+          {[1, 2, 3, 4, 5].map((star) => (
+            <Star
+              key={star}
+              size={32}
+              fill={star <= rating ? "#eab308" : "transparent"}
+              color={star <= rating ? "#eab308" : "#cbd5e1"}
+              style={{ cursor: "pointer", transition: "transform 0.1s" }}
+              onClick={() => setRating(star)}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.1)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
+            />
+          ))}
+        </div>
+
+        <textarea
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          placeholder="Nhập nhận xét của bạn (không bắt buộc)..."
+          rows={3}
+          style={{
+            width: "100%", padding: "10px", borderRadius: "8px",
+            border: "1px solid #cbd5e1", outline: "none", resize: "none",
+            marginBottom: "16px", fontFamily: "inherit", fontSize: "14px",
+            boxSizing: "border-box"
+          }}
+        />
+        <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+          <button
+            onClick={onClose}
+            disabled={busy}
+            style={{
+              padding: "8px 16px", borderRadius: "8px", border: "1px solid #cbd5e1",
+              background: "#fff", cursor: "pointer", fontWeight: 600, color: "#475569"
+            }}
+          >
+            Đóng
+          </button>
+          <button
+            onClick={() => onConfirm(rating, comment)}
+            disabled={busy}
+            style={{
+              padding: "8px 16px", borderRadius: "8px", border: "none",
+              background: busy ? "#94a3b8" : "#0f766e",
+              color: "#fff", cursor: busy ? "not-allowed" : "pointer",
+              fontWeight: 600
+            }}
+          >
+            {busy ? "Đang gửi..." : "Gửi đánh giá"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const STATUS_CONFIG = {
   CONFIRMED:       { label: "Đã xác nhận",  color: "#0f766e", bg: "#f0fdf9" },
   PENDING_PAYMENT: { label: "Chờ thanh toán", color: "#b45309", bg: "#fffbeb" },
@@ -88,7 +168,7 @@ function StatusBadge({ status }) {
   );
 }
 
-function AppointmentCard({ appt, onCancelRequest, onRescheduleRequest }) {
+function AppointmentCard({ appt, onCancelRequest, onRescheduleRequest, onReviewRequest, currentUserFullName }) {
   const navigate = useNavigate();
   const date = appt.appointmentDate
     ? new Date(appt.appointmentDate).toLocaleDateString("vi-VN", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" })
@@ -214,6 +294,23 @@ function AppointmentCard({ appt, onCancelRequest, onRescheduleRequest }) {
             )}
           </>
         )}
+
+        {appt.status === "COMPLETED" && appt.patientName === currentUserFullName && (
+          <button
+            onClick={() => onReviewRequest(appt.appointmentId)}
+            style={{
+              display: "flex", alignItems: "center", gap: "6px",
+              padding: "6px 14px", borderRadius: "6px", border: "1px solid #eab308",
+              background: "#fff", color: "#ca8a04", cursor: "pointer",
+              fontSize: "13px", fontWeight: 600, transition: "all 0.15s"
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#fefce8"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
+          >
+            <MessageSquarePlus size={14} />
+            Viết đánh giá
+          </button>
+        )}
       </div>
     </div>
   );
@@ -236,6 +333,7 @@ function EmptyState({ tab }) {
 }
 
 export default function MyAppointmentsPage() {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get("tab") === "history" ? "history" : "upcoming";
   const [data, setData] = useState(null);
@@ -262,6 +360,33 @@ export default function MyAppointmentsPage() {
   const handleRescheduleRequest = (appt) => {
     setRescheduleTargetAppt(appt);
     setRescheduleModalOpen(true);
+  };
+
+  // Review logic
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewTargetId, setReviewTargetId] = useState(null);
+  const [submittingReview, setSubmittingReview] = useState(false);
+
+  const handleReviewRequest = (id) => {
+    setReviewTargetId(id);
+    setReviewModalOpen(true);
+  };
+
+  const handleConfirmReview = async (rating, comment) => {
+    if (!reviewTargetId) return;
+    setSubmittingReview(true);
+    setError(null);
+    setSuccessMsg("");
+    try {
+      await createReview({ appointmentId: reviewTargetId, rating, comment });
+      setSuccessMsg("Cảm ơn bạn đã đánh giá!");
+      setReviewModalOpen(false);
+      setReviewTargetId(null);
+    } catch (err) {
+      setError(err.message || "Không thể gửi đánh giá.");
+    } finally {
+      setSubmittingReview(false);
+    }
   };
 
   const handleConfirmCancel = async (reason) => {
@@ -378,7 +503,7 @@ export default function MyAppointmentsPage() {
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               {data.content.map((appt) => (
-                <AppointmentCard key={appt.appointmentId} appt={appt} onCancelRequest={handleCancelRequest} onRescheduleRequest={handleRescheduleRequest} />
+                <AppointmentCard key={appt.appointmentId} appt={appt} onCancelRequest={handleCancelRequest} onRescheduleRequest={handleRescheduleRequest} onReviewRequest={handleReviewRequest} currentUserFullName={user?.fullName} />
               ))}
             </div>
           )}
@@ -430,6 +555,13 @@ export default function MyAppointmentsPage() {
           loadData();
         }}
         appointment={rescheduleTargetAppt}
+      />
+
+      <ReviewModal
+        isOpen={reviewModalOpen}
+        onClose={() => { if (!submittingReview) setReviewModalOpen(false); }}
+        onConfirm={handleConfirmReview}
+        busy={submittingReview}
       />
     </div>
   );

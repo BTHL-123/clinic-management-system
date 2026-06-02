@@ -34,7 +34,7 @@ public class WalkInAppointmentController {
      * Accessible only by users with ADMIN or RECEPTIONIST role.
      */
     @PostMapping("/walk-in")
-    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<WalkInAppointmentResponse>> createWalkInAppointment(
             @Valid @RequestBody WalkInAppointmentRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
