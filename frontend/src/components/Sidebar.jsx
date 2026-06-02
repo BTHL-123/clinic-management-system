@@ -49,7 +49,7 @@ const adminItems = [
   { to: "/dashboard/patients", label: "Bệnh nhân", icon: Users, roles: ["ADMIN", "STAFF", "DOCTOR"] },
   { to: "/dashboard/users", label: "Tài khoản", icon: UsersRound, roles: ["ADMIN"] },
   { to: "/dashboard/security", label: "Bảo mật", icon: Shield, roles: ["ADMIN"] },
-  { to: "/dashboard/appointments", label: "Lịch khám", icon: CalendarDays },
+  { to: "/dashboard/appointments", label: "Lịch khám", icon: CalendarDays, roles: ["ADMIN", "RECEPTIONIST"] },
   { to: "/dashboard/consultation", label: "Phòng khám", icon: Stethoscope, roles: ["DOCTOR"] },
   { to: "/dashboard/lab-requests", label: "Phòng xét nghiệm", icon: FlaskConical, roles: ["LAB_TECHNICIAN", "ADMIN"] },
   { to: "/dashboard/walk-in", label: "Walk-in Appointment", icon: UserPlus, roles: ["ADMIN", "RECEPTIONIST"] },
@@ -73,10 +73,13 @@ const patientItems = [
 export default function Sidebar() {
   const { user } = useAuth();
 
-  const isPatient = user?.roles?.includes("PATIENT");
-  const items = isPatient ? patientItems : adminItems;
-
-  const userRoles = user?.roles || [];
+  const userRoles = user?.roles?.map(r => r.roleName ? r.roleName : r) || [];
+  
+  const isStaffOrAdmin = userRoles.some(role => 
+    ["ADMIN", "DOCTOR", "RECEPTIONIST", "STAFF", "PHARMACIST", "LAB_TECHNICIAN"].includes(role)
+  );
+  
+  const items = isStaffOrAdmin ? adminItems : patientItems;
 
   const filteredItems = items.filter(item => {
     if (!item.roles) return true; // No roles defined = accessible to everyone
