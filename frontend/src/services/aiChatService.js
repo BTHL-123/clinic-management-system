@@ -21,5 +21,5 @@ export const acceptSuggestion = (suggestionId) => {
 };
 
 export const standardizeClinicalNote = (rawNote) => {
-  return axiosClient.post(`/ai/clinical-notes/standardize`, { rawNote });
+  return axiosClient.post(`/ai/chat-sessions/clinical-notes/standardize`, { rawNote });
 };
