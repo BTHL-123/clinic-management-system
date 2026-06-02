@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import com.clinicmanagement.notification.NotificationService;
 
 @Service
@@ -97,9 +96,8 @@ public class AppointmentServiceImpl implements AppointmentService {
             Pageable pageable
     ) {
         LocalDate currentDate = LocalDate.now();
-        LocalTime currentTime = LocalTime.now();
         Page<Appointment> appointments = appointmentRepository.findMyAppointments(
-                userId, upcoming, currentDate, currentTime, pageable
+                userId, upcoming, currentDate, pageable
         );
         return PageResponse.from(appointments.map(this::mapToResponse));
     }
@@ -558,6 +556,12 @@ public class AppointmentServiceImpl implements AppointmentService {
             slot.setLockedUntil(null);
             timeSlotRepository.save(slot);
         }
+
+        // Fix orphan data: cancel queue ticket if it exists (e.g. walk-in appointments)
+        queueTicketRepository.findByAppointment(appointment).ifPresent(ticket -> {
+            ticket.setStatus("CANCELLED");
+            queueTicketRepository.save(ticket);
+        });
 
         Appointment saved = appointmentRepository.save(appointment);
 

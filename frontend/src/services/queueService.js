@@ -16,6 +16,10 @@ const queueService = {
   completePatient(queueTicketId) {
     return axiosClient.put(`/receptionist/queue/${queueTicketId}/complete`);
   },
+
+  getMyQueueStatus() {
+    return axiosClient.get("/patient/queue-status");
+  },
 };
 
 export default queueService;
