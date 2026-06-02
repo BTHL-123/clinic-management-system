@@ -62,13 +62,13 @@ public class ReviewController {
     }
 
     @PatchMapping("/{id}/toggle-visibility")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
     public ResponseEntity<ApiResponse<ReviewResponse>> toggleVisibility(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success("Đã thay đổi trạng thái hiển thị", reviewService.toggleVisibility(id)));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
     public ResponseEntity<ApiResponse<Void>> deleteReview(@PathVariable Long id) {
         reviewService.deleteReview(id);
         return ResponseEntity.ok(ApiResponse.success("Xóa đánh giá thành công", null));

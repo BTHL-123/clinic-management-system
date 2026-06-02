@@ -31,7 +31,10 @@ public class ReviewServiceImpl implements ReviewService {
         Appointment appointment = appointmentRepository.findById(request.getAppointmentId())
                 .orElseThrow(() -> new BusinessException("Không tìm thấy lịch khám"));
 
-        if (!appointment.getPatient().getPatientId().equals(patient.getPatientId())) {
+        Long apptUserId = (appointment.getPatient() != null && appointment.getPatient().getUser() != null) 
+                          ? appointment.getPatient().getUser().getUserId() : null;
+
+        if (!patientUserId.equals(apptUserId)) {
             throw new BusinessException("Bạn chỉ có thể đánh giá lịch khám của chính mình");
         }
 
