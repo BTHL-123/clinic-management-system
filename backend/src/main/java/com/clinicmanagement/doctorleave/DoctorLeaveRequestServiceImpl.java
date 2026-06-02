@@ -181,6 +181,18 @@ public class DoctorLeaveRequestServiceImpl implements DoctorLeaveRequestService 
             throw new BusinessException("Chỉ có thể phê duyệt yêu cầu ở trạng thái PENDING.");
         }
 
+        // ── Overlap check with appointments ───────────────────────────
+        boolean hasOverlappingAppointments = appointmentRepository.existsOverlappingPendingAppointments(
+                entity.getDoctor().getDoctorId(),
+                entity.getLeaveDate(),
+                entity.getStartTime(),
+                entity.getEndTime()
+        );
+
+        if (hasOverlappingAppointments) {
+            throw new BusinessException("Không thể duyệt nghỉ: Bác sĩ đã có lịch hẹn chưa hoàn thành trong khung giờ này. Vui lòng dời lịch hoặc hủy lịch hẹn trước.");
+        }
+
         // ── Handle overlapping Time Slots ───────────────────────────
         java.util.List<com.clinicmanagement.appointment.TimeSlot> slots = timeSlotRepository
                 .findAllSlotsByDoctorAndDate(entity.getDoctor().getDoctorId(), entity.getLeaveDate());
@@ -188,18 +200,7 @@ public class DoctorLeaveRequestServiceImpl implements DoctorLeaveRequestService 
         for (com.clinicmanagement.appointment.TimeSlot slot : slots) {
             // Check if slot overlaps with leave request time
             if (slot.getStartTime().isBefore(entity.getEndTime()) && slot.getEndTime().isAfter(entity.getStartTime())) {
-                if ("BOOKED".equals(slot.getStatus())) {
-                    // Only block if there is a PENDING appointment (CONFIRMED, SCHEDULED, CHECKED_IN)
-                    boolean hasPendingAppt = appointmentRepository.existsPendingAppointmentForSlot(
-                            entity.getDoctor().getDoctorId(),
-                            entity.getLeaveDate(),
-                            slot.getStartTime(),
-                            slot.getEndTime()
-                    );
-                    if (hasPendingAppt) {
-                        throw new BusinessException("Không thể duyệt nghỉ: Bác sĩ đã có lịch hẹn chưa hoàn thành trong khung giờ này. Vui lòng dời lịch hoặc hủy lịch hẹn trước.");
-                    }
-                } else if ("AVAILABLE".equals(slot.getStatus()) || "LOCKED".equals(slot.getStatus())) {
+                if ("AVAILABLE".equals(slot.getStatus()) || "LOCKED".equals(slot.getStatus()) || "BOOKED".equals(slot.getStatus())) {
                     slot.setStatus("CANCELLED");
                     timeSlotRepository.save(slot);
                 }
