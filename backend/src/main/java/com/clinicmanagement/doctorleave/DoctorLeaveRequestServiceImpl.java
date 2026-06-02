@@ -189,14 +189,14 @@ public class DoctorLeaveRequestServiceImpl implements DoctorLeaveRequestService 
             // Check if slot overlaps with leave request time
             if (slot.getStartTime().isBefore(entity.getEndTime()) && slot.getEndTime().isAfter(entity.getStartTime())) {
                 if ("BOOKED".equals(slot.getStatus())) {
-                    // Only block if there is an ACTIVE appointment (CONFIRMED, SCHEDULED, CHECKED_IN)
-                    boolean hasActiveAppt = appointmentRepository.existsActiveAppointmentForSlot(
+                    // Only block if there is a PENDING appointment (CONFIRMED, SCHEDULED, CHECKED_IN)
+                    boolean hasPendingAppt = appointmentRepository.existsPendingAppointmentForSlot(
                             entity.getDoctor().getDoctorId(),
                             entity.getLeaveDate(),
                             slot.getStartTime(),
                             slot.getEndTime()
                     );
-                    if (hasActiveAppt) {
+                    if (hasPendingAppt) {
                         throw new BusinessException("Không thể duyệt nghỉ: Bác sĩ đã có lịch hẹn chưa hoàn thành trong khung giờ này. Vui lòng dời lịch hoặc hủy lịch hẹn trước.");
                     }
                 } else if ("AVAILABLE".equals(slot.getStatus()) || "LOCKED".equals(slot.getStatus())) {

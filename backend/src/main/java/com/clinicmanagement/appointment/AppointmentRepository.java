@@ -59,6 +59,19 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long>,
             @Param("endTime") LocalTime endTime
     );
 
+    @Query("SELECT COUNT(a) > 0 FROM Appointment a WHERE " +
+           "a.doctor.doctorId = :doctorId AND " +
+           "a.appointmentDate = :date AND " +
+           "a.startTime = :startTime AND " +
+           "a.endTime = :endTime AND " +
+           "a.status IN ('SCHEDULED', 'CONFIRMED', 'CHECKED_IN')")
+    boolean existsPendingAppointmentForSlot(
+            @Param("doctorId") Long doctorId,
+            @Param("date") LocalDate date,
+            @Param("startTime") LocalTime startTime,
+            @Param("endTime") LocalTime endTime
+    );
+
     /**
      * Count appointments for a doctor on a given date to help with queue management.
      */
