@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { CalendarDays, Clock, CheckCircle, XCircle, RefreshCw, AlertCircle, ChevronLeft, ChevronRight, Star, MessageSquarePlus } from "lucide-react";
 import appointmentService from "../../services/appointmentService.js";
 import { createReview } from "../../services/reviewService.js";
+import { useAuth } from "../../context/useAuth.js";
 import RescheduleModal from "../appointment/RescheduleModal.jsx";
 
 // Modal Component for Cancelling Appointment
@@ -167,7 +168,7 @@ function StatusBadge({ status }) {
   );
 }
 
-function AppointmentCard({ appt, onCancelRequest, onRescheduleRequest, onReviewRequest }) {
+function AppointmentCard({ appt, onCancelRequest, onRescheduleRequest, onReviewRequest, currentUserFullName }) {
   const navigate = useNavigate();
   const date = appt.appointmentDate
     ? new Date(appt.appointmentDate).toLocaleDateString("vi-VN", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" })
@@ -294,7 +295,7 @@ function AppointmentCard({ appt, onCancelRequest, onRescheduleRequest, onReviewR
           </>
         )}
 
-        {appt.status === "COMPLETED" && (
+        {appt.status === "COMPLETED" && appt.patientName === currentUserFullName && (
           <button
             onClick={() => onReviewRequest(appt.appointmentId)}
             style={{
@@ -332,6 +333,7 @@ function EmptyState({ tab }) {
 }
 
 export default function MyAppointmentsPage() {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get("tab") === "history" ? "history" : "upcoming";
   const [data, setData] = useState(null);
@@ -501,7 +503,7 @@ export default function MyAppointmentsPage() {
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               {data.content.map((appt) => (
-                <AppointmentCard key={appt.appointmentId} appt={appt} onCancelRequest={handleCancelRequest} onRescheduleRequest={handleRescheduleRequest} onReviewRequest={handleReviewRequest} />
+                <AppointmentCard key={appt.appointmentId} appt={appt} onCancelRequest={handleCancelRequest} onRescheduleRequest={handleRescheduleRequest} onReviewRequest={handleReviewRequest} currentUserFullName={user?.fullName} />
               ))}
             </div>
           )}
