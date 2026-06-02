@@ -40,6 +40,7 @@ import MyAppointmentsPage from "./pages/patient/MyAppointmentsPage.jsx";
 import AppointmentDetailPage from "./pages/appointment/AppointmentDetailPage.jsx";
 import PatientMedicalHistoryPage from "./pages/patient/PatientMedicalHistoryPage.jsx";
 import ReviewManagement from "./pages/review/ReviewManagement.jsx";
+import ArticleManagement from "./pages/article/ArticleManagement.jsx";
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import { useAuth } from "./context/useAuth.js";
 
@@ -103,6 +104,7 @@ export default function App() {
         <Route path="examination/:consultationId" element={<ExaminationPage />} />
         <Route path="lab-requests" element={<LabRequestPage />} />
         <Route path="reviews" element={<ReviewManagement />} />
+        <Route path="articles" element={<ArticleManagement />} />
       </Route>
     </Routes>
   );
