@@ -88,6 +88,17 @@ public class DoctorLeaveRequestServiceImpl implements DoctorLeaveRequestService 
                     "Đã có yêu cầu nghỉ PENDING hoặc APPROVED trùng hoặc giao cắt với khung giờ này.");
         }
 
+        // ── Overlap check with appointments ───────────────────────────
+        boolean hasOverlappingAppointments = appointmentRepository.existsOverlappingPendingAppointments(
+                doctor.getDoctorId(),
+                request.leaveDate(),
+                request.startTime(),
+                request.endTime()
+        );
+        if (hasOverlappingAppointments) {
+            throw new BusinessException("Không thể xin nghỉ: Bạn đang có lịch khám (đã được đặt) trong khung giờ này. Vui lòng xử lý hoặc nhờ Admin dời/hủy lịch hẹn trước.");
+        }
+
         // ── Build entity ────────────────────────────────────────────────
         DoctorLeaveRequest entity = new DoctorLeaveRequest();
         entity.setDoctor(doctor);
