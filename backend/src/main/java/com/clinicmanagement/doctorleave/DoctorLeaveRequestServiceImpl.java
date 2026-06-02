@@ -25,6 +25,7 @@ public class DoctorLeaveRequestServiceImpl implements DoctorLeaveRequestService 
     private final DoctorRepository doctorRepository;
     private final UserRepository userRepository;
     private final com.clinicmanagement.appointment.TimeSlotRepository timeSlotRepository;
+    private final com.clinicmanagement.appointment.AppointmentRepository appointmentRepository;
 
     // ──────────────────────────────────────────────────────────────────────────
     // Doctor operations
@@ -188,10 +189,20 @@ public class DoctorLeaveRequestServiceImpl implements DoctorLeaveRequestService 
             // Check if slot overlaps with leave request time
             if (slot.getStartTime().isBefore(entity.getEndTime()) && slot.getEndTime().isAfter(entity.getStartTime())) {
                 if ("BOOKED".equals(slot.getStatus())) {
-                    throw new BusinessException("Không thể duyệt nghỉ: Bác sĩ đã có lịch hẹn được đặt trong khung giờ này. Vui lòng xử lý lịch hẹn trước.");
+                    // Only block if there is an ACTIVE appointment (CONFIRMED, SCHEDULED, CHECKED_IN)
+                    boolean hasActiveAppt = appointmentRepository.existsActiveAppointmentForSlot(
+                            entity.getDoctor().getDoctorId(),
+                            entity.getLeaveDate(),
+                            slot.getStartTime(),
+                            slot.getEndTime()
+                    );
+                    if (hasActiveAppt) {
+                        throw new BusinessException("Không thể duyệt nghỉ: Bác sĩ đã có lịch hẹn chưa hoàn thành trong khung giờ này. Vui lòng dời lịch hoặc hủy lịch hẹn trước.");
+                    }
+                } else if ("AVAILABLE".equals(slot.getStatus()) || "LOCKED".equals(slot.getStatus())) {
+                    slot.setStatus("CANCELLED");
+                    timeSlotRepository.save(slot);
                 }
-                slot.setStatus("CANCELLED");
-                timeSlotRepository.save(slot);
             }
         }
 
