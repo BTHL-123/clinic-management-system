@@ -26,3 +26,7 @@ Thumbs.db
 # Vite cache
 .vite/
 frontend/.vite/
+
+### Spring Boot Local Configs ###
+backend/src/main/resources/application*.yml
+backend/src/main/resources/application*.properties
