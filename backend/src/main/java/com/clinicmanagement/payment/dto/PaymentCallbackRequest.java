@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 public record PaymentCallbackRequest(
-        @NotBlank(message = "Mã giao dịch cổng thanh toán không được để trống")
         String gatewayTransactionId,
 
         @NotBlank(message = "Mã thanh toán không được để trống")
