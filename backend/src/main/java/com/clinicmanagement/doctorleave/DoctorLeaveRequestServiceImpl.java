@@ -24,6 +24,7 @@ public class DoctorLeaveRequestServiceImpl implements DoctorLeaveRequestService 
     private final DoctorLeaveRequestRepository leaveRequestRepository;
     private final DoctorRepository doctorRepository;
     private final UserRepository userRepository;
+    private final com.clinicmanagement.appointment.TimeSlotRepository timeSlotRepository;
 
     // ──────────────────────────────────────────────────────────────────────────
     // Doctor operations
@@ -73,18 +74,17 @@ public class DoctorLeaveRequestServiceImpl implements DoctorLeaveRequestService 
             throw new BusinessException("Loại yêu cầu không hợp lệ: " + request.requestType());
         }
 
-        // ── Duplicate check ─────────────────────────────────────────────
-        boolean duplicate = leaveRequestRepository
-                .existsByDoctor_DoctorIdAndLeaveDateAndStartTimeAndEndTimeAndStatus(
+        // ── Overlap check ─────────────────────────────────────────────
+        boolean overlap = leaveRequestRepository
+                .existsOverlappingRequest(
                         doctor.getDoctorId(),
                         request.leaveDate(),
                         request.startTime(),
-                        request.endTime(),
-                        DoctorLeaveRequest.LeaveStatus.PENDING
+                        request.endTime()
                 );
-        if (duplicate) {
+        if (overlap) {
             throw new BusinessException(
-                    "Đã có yêu cầu PENDING cho cùng ngày và khung giờ này. Vui lòng chờ duyệt.");
+                    "Đã có yêu cầu nghỉ PENDING hoặc APPROVED trùng hoặc giao cắt với khung giờ này.");
         }
 
         // ── Build entity ────────────────────────────────────────────────
@@ -178,6 +178,21 @@ public class DoctorLeaveRequestServiceImpl implements DoctorLeaveRequestService 
 
         if (entity.getStatus() != DoctorLeaveRequest.LeaveStatus.PENDING) {
             throw new BusinessException("Chỉ có thể phê duyệt yêu cầu ở trạng thái PENDING.");
+        }
+
+        // ── Handle overlapping Time Slots ───────────────────────────
+        java.util.List<com.clinicmanagement.appointment.TimeSlot> slots = timeSlotRepository
+                .findAllSlotsByDoctorAndDate(entity.getDoctor().getDoctorId(), entity.getLeaveDate());
+
+        for (com.clinicmanagement.appointment.TimeSlot slot : slots) {
+            // Check if slot overlaps with leave request time
+            if (slot.getStartTime().isBefore(entity.getEndTime()) && slot.getEndTime().isAfter(entity.getStartTime())) {
+                if ("BOOKED".equals(slot.getStatus())) {
+                    throw new BusinessException("Không thể duyệt nghỉ: Bác sĩ đã có lịch hẹn được đặt trong khung giờ này. Vui lòng xử lý lịch hẹn trước.");
+                }
+                slot.setStatus("CANCELLED");
+                timeSlotRepository.save(slot);
+            }
         }
 
         entity.setStatus(DoctorLeaveRequest.LeaveStatus.APPROVED);

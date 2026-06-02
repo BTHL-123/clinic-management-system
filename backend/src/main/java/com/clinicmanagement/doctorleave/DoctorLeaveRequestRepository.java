@@ -14,11 +14,18 @@ public interface DoctorLeaveRequestRepository extends JpaRepository<DoctorLeaveR
 
     List<DoctorLeaveRequest> findAllByOrderByCreatedAtDesc();
 
-    boolean existsByDoctor_DoctorIdAndLeaveDateAndStartTimeAndEndTimeAndStatus(
-            Long doctorId,
-            LocalDate leaveDate,
-            LocalTime startTime,
-            LocalTime endTime,
-            DoctorLeaveRequest.LeaveStatus status
+    @org.springframework.data.jpa.repository.Query("""
+            SELECT COUNT(r) > 0 FROM DoctorLeaveRequest r
+            WHERE r.doctor.doctorId = :doctorId
+              AND r.leaveDate = :leaveDate
+              AND r.status IN ('PENDING', 'APPROVED')
+              AND r.startTime < :endTime
+              AND r.endTime > :startTime
+            """)
+    boolean existsOverlappingRequest(
+            @org.springframework.data.repository.query.Param("doctorId") Long doctorId,
+            @org.springframework.data.repository.query.Param("leaveDate") LocalDate leaveDate,
+            @org.springframework.data.repository.query.Param("startTime") LocalTime startTime,
+            @org.springframework.data.repository.query.Param("endTime") LocalTime endTime
     );
 }
