@@ -58,6 +58,52 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long>,
             @Param("endTime") LocalTime endTime
     );
 
+    @Query("SELECT COUNT(a) > 0 FROM Appointment a WHERE " +
+           "a.doctor.doctorId = :doctorId AND " +
+           "a.appointmentDate = :date AND " +
+           "a.startTime < :endTime AND " +
+           "a.endTime > :startTime AND " +
+           "a.status IN ('SCHEDULED', 'CONFIRMED', 'CHECKED_IN')")
+    boolean existsOverlappingPendingAppointments(
+            @Param("doctorId") Long doctorId,
+            @Param("date") LocalDate date,
+            @Param("startTime") LocalTime startTime,
+            @Param("endTime") LocalTime endTime
+    );
+
+    /**
+     * Returns the full list of active appointments that overlap a requested
+     * leave window. Used to build the conflict table shown to the doctor.
+     * Statuses included: SCHEDULED, CONFIRMED, CHECKED_IN.
+     * Statuses excluded: CANCELLED, COMPLETED, NO_SHOW.
+     */
+    @Query("SELECT a FROM Appointment a WHERE " +
+           "a.doctor.doctorId = :doctorId AND " +
+           "a.appointmentDate = :date AND " +
+           "a.startTime < :endTime AND " +
+           "a.endTime > :startTime AND " +
+           "a.status IN ('SCHEDULED', 'CONFIRMED', 'CHECKED_IN') " +
+           "ORDER BY a.startTime ASC")
+    java.util.List<Appointment> findOverlappingActiveAppointments(
+            @Param("doctorId") Long doctorId,
+            @Param("date") LocalDate date,
+            @Param("startTime") LocalTime startTime,
+            @Param("endTime") LocalTime endTime
+    );
+
+    @Query("SELECT COUNT(a) > 0 FROM Appointment a WHERE " +
+           "a.doctor.doctorId = :doctorId AND " +
+           "a.appointmentDate = :date AND " +
+           "a.startTime = :startTime AND " +
+           "a.endTime = :endTime AND " +
+           "a.status IN ('SCHEDULED', 'CONFIRMED', 'CHECKED_IN')")
+    boolean existsPendingAppointmentForSlot(
+            @Param("doctorId") Long doctorId,
+            @Param("date") LocalDate date,
+            @Param("startTime") LocalTime startTime,
+            @Param("endTime") LocalTime endTime
+    );
+
     /**
      * Count appointments for a doctor on a given date to help with queue management.
      */

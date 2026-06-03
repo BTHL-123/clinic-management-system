@@ -2,6 +2,7 @@ import {
   Bell,
   Building2,
   CalendarDays,
+  CalendarOff,
   ClipboardList,
   FlaskConical,
   KeyRound,
@@ -58,6 +59,8 @@ const adminItems = [
   { to: "/dashboard/queue-management", label: "Quản lý hàng đợi", icon: Users, roles: ["ADMIN", "RECEPTIONIST"] },
   { to: "/dashboard/reviews", label: "Đánh giá", icon: Star, roles: ["ADMIN", "RECEPTIONIST"] },
   { to: "/dashboard/articles", label: "Bài viết y tế", icon: FileText, roles: ["ADMIN", "DOCTOR"] },
+  { to: "/dashboard/doctor-leave-requests", label: "Yêu cầu nghỉ", icon: CalendarOff, roles: ["DOCTOR"] },
+  { to: "/dashboard/admin/doctor-leave-requests", label: "Duyệt yêu cầu nghỉ", icon: CalendarOff, roles: ["ADMIN"] },
 ];
 
 const patientItems = [

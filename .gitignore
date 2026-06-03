@@ -27,3 +27,6 @@ Thumbs.db
 .vite/
 frontend/.vite/
 
+
+# CodeGraph
+.codegraph/
