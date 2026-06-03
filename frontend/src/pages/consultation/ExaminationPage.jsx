@@ -47,6 +47,7 @@ export default function ExaminationPage() {
   const [labNote, setLabNote] = useState("");
   const [savedLabRequests, setSavedLabRequests] = useState([]);
   const [savingLab, setSavingLab] = useState(false);
+  const [completing, setCompleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -177,7 +178,7 @@ export default function ExaminationPage() {
   const handleSave = async () => {
     if (!form.diagnosis.trim()) {
       setError("Chẩn đoán không được để trống.");
-      return;
+      return false;
     }
     setSaving(true);
     setError("");
@@ -209,22 +210,34 @@ export default function ExaminationPage() {
         setExistingRecordId(res.data.medicalRecordId);
         showToast("Đã tạo bệnh án thành công.");
       }
+      return true;
     } catch (err) {
       setError(err.message || "Không thể lưu bệnh án.");
+      return false;
     } finally {
       setSaving(false);
     }
   };
 
   const handleComplete = async () => {
-    // Lưu bệnh án trước rồi hoàn thành phiên khám
-    await handleSave();
+    if (!window.confirm("Xác nhận hoàn tất phiên khám?\nThao tác này sẽ cập nhật trạng thái lịch hẹn thành COMPLETED.")) return;
+    setCompleting(true);
+    setError("");
     try {
+      // Lưu bệnh án trước
+      const saved = await handleSave();
+      if (!saved) {
+        setCompleting(false);
+        return;
+      }
+      // Hoàn thành phiên khám
       await consultationService.complete(consultationId);
-      showToast("Phiên khám đã hoàn thành!");
-      setTimeout(() => navigate("/dashboard/consultation"), 1500);
+      showToast("Phiên khám đã hoàn thành! Đang chuyển về hàng đợi...");
+      setTimeout(() => navigate("/dashboard/consultation"), 1800);
     } catch (err) {
       setError(err.message || "Không thể hoàn thành phiên khám.");
+    } finally {
+      setCompleting(false);
     }
   };
 
@@ -562,21 +575,31 @@ export default function ExaminationPage() {
         <button
           className="secondary-button"
           onClick={handleSave}
-          disabled={saving}
+          disabled={saving || completing || consultation?.status === "COMPLETED"}
           style={{ display: "flex", alignItems: "center", gap: 6 }}
         >
           <Save size={15} />
           {saving ? "Đang lưu..." : existingRecordId ? "Cập nhật bệnh án" : "Lưu bệnh án"}
         </button>
-        <button
-          className="primary-button"
-          onClick={handleComplete}
-          disabled={saving || !form.diagnosis.trim()}
-          style={{ display: "flex", alignItems: "center", gap: 6 }}
-        >
-          <CheckCircle size={15} />
-          Hoàn thành phiên khám
-        </button>
+        {consultation?.status === "COMPLETED" ? (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 6,
+            padding: "8px 16px", borderRadius: 6, fontSize: 14, fontWeight: 600,
+            background: "#dcfce7", color: "#16a34a", border: "1px solid #86efac",
+          }}>
+            <CheckCircle size={15} /> Phiên khám đã hoàn thành
+          </div>
+        ) : (
+          <button
+            className="primary-button"
+            onClick={handleComplete}
+            disabled={saving || completing || !form.diagnosis.trim()}
+            style={{ display: "flex", alignItems: "center", gap: 6 }}
+          >
+            <CheckCircle size={15} />
+            {completing ? "Đang hoàn thành..." : "Hoàn thành phiên khám"}
+          </button>
+        )}
       </div>
     </div>
   );
