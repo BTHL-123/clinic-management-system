@@ -44,8 +44,7 @@ import PatientMedicalHistoryPage from "./pages/patient/PatientMedicalHistoryPage
 import ReviewManagement from "./pages/review/ReviewManagement.jsx";
 import ArticleManagement from "./pages/article/ArticleManagement.jsx";
 import PatientQueueStatusPage from "./pages/appointment/PatientQueueStatusPage.jsx";
-import DoctorLeaveRequestPage from "./pages/doctor/DoctorLeaveRequestPage.jsx";
-import AdminDoctorLeaveRequestPage from "./pages/doctor/AdminDoctorLeaveRequestPage.jsx";
+
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import { useAuth } from "./context/useAuth.js";
 
