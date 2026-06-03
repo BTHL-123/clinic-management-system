@@ -1,6 +1,7 @@
 package com.clinicmanagement.common.exception;
 
 import com.clinicmanagement.common.dto.ApiResponse;
+import com.clinicmanagement.common.dto.AppointmentConflictPayload;
 import com.clinicmanagement.common.dto.FieldErrorResponse;
 import jakarta.validation.ConstraintViolationException;
 import java.util.List;
@@ -39,6 +40,23 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<Void>> handleBusiness(BusinessException exception) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(exception.getMessage()));
+    }
+
+    /**
+     * Handles leave-request conflicts that have structured appointment data.
+     * Returns HTTP 409 with ApiResponse<AppointmentConflictPayload> so the
+     * frontend can display the conflicting appointment table.
+     */
+    @ExceptionHandler(AppointmentConflictException.class)
+    public ResponseEntity<ApiResponse<AppointmentConflictPayload>> handleAppointmentConflict(
+            AppointmentConflictException exception) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ApiResponse<>(
+                        false,
+                        exception.getMessage(),
+                        new AppointmentConflictPayload(exception.getConflicts()),
+                        null
+                ));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
