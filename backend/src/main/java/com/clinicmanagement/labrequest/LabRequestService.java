@@ -111,4 +111,11 @@ public class LabRequestService {
     public boolean hasLabResultByConsultationId(Long consultationId) {
         return labRequestRepository.existsCompletedResultByConsultationId(consultationId);
     }
+
+    @Transactional(readOnly = true)
+    public PageResponse<LabRequestResponse> getByPatientId(Long patientId, Pageable pageable) {
+        return PageResponse.from(
+                labRequestRepository.findByPatientIdOrderByRequestedAtDesc(patientId, pageable)
+                        .map(LabRequestResponse::from));
+    }
 }

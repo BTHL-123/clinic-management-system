@@ -37,6 +37,7 @@ import PatientDetailPage from "./pages/patient/PatientDetailPage.jsx";
 import ConsultationPage from "./pages/consultation/ConsultationPage.jsx";
 import ExaminationPage from "./pages/consultation/ExaminationPage.jsx";
 import LabRequestPage from "./pages/lab/LabRequestPage.jsx";
+import PatientLabResultPage from "./pages/lab/PatientLabResultPage.jsx";
 import ProfilePage from "./pages/profile/ProfilePage.jsx";
 import MyAppointmentsPage from "./pages/patient/MyAppointmentsPage.jsx";
 import AppointmentDetailPage from "./pages/appointment/AppointmentDetailPage.jsx";
@@ -108,6 +109,7 @@ export default function App() {
         <Route path="consultation" element={<ConsultationPage />} />
         <Route path="examination/:consultationId" element={<ExaminationPage />} />
         <Route path="lab-requests" element={<LabRequestPage />} />
+        <Route path="my-lab-results" element={<PatientLabResultPage />} />
         <Route path="reviews" element={<ReviewManagement />} />
         <Route path="articles" element={<ArticleManagement />} />
         <Route path="doctor-leave-requests" element={<DoctorLeaveRequestPage />} />
