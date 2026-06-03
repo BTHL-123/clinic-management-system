@@ -32,13 +32,12 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long>,
            "LEFT JOIN a.doctor d " +
            "LEFT JOIN d.user du " +
            "WHERE (pu.userId = :userId OR du.userId = :userId) AND " +
-           "((:upcoming = true AND (a.appointmentDate > :currentDate OR (a.appointmentDate = :currentDate AND a.endTime >= :currentTime))) OR " +
-           " (:upcoming = false AND (a.appointmentDate < :currentDate OR (a.appointmentDate = :currentDate AND a.endTime < :currentTime))))")
+           "((:upcoming = true AND a.appointmentDate >= :currentDate) OR " +
+           " (:upcoming = false AND a.appointmentDate < :currentDate))")
     Page<Appointment> findMyAppointments(
             @Param("userId") Long userId,
             @Param("upcoming") boolean upcoming,
             @Param("currentDate") LocalDate currentDate,
-            @Param("currentTime") LocalTime currentTime,
             Pageable pageable
     );
 
@@ -53,6 +52,52 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long>,
            "a.endTime = :endTime AND " +
            "a.status NOT IN ('CANCELLED', 'NO_SHOW', 'RESCHEDULED')")
     boolean existsActiveAppointmentForSlot(
+            @Param("doctorId") Long doctorId,
+            @Param("date") LocalDate date,
+            @Param("startTime") LocalTime startTime,
+            @Param("endTime") LocalTime endTime
+    );
+
+    @Query("SELECT COUNT(a) > 0 FROM Appointment a WHERE " +
+           "a.doctor.doctorId = :doctorId AND " +
+           "a.appointmentDate = :date AND " +
+           "a.startTime < :endTime AND " +
+           "a.endTime > :startTime AND " +
+           "a.status IN ('SCHEDULED', 'CONFIRMED', 'CHECKED_IN')")
+    boolean existsOverlappingPendingAppointments(
+            @Param("doctorId") Long doctorId,
+            @Param("date") LocalDate date,
+            @Param("startTime") LocalTime startTime,
+            @Param("endTime") LocalTime endTime
+    );
+
+    /**
+     * Returns the full list of active appointments that overlap a requested
+     * leave window. Used to build the conflict table shown to the doctor.
+     * Statuses included: SCHEDULED, CONFIRMED, CHECKED_IN.
+     * Statuses excluded: CANCELLED, COMPLETED, NO_SHOW.
+     */
+    @Query("SELECT a FROM Appointment a WHERE " +
+           "a.doctor.doctorId = :doctorId AND " +
+           "a.appointmentDate = :date AND " +
+           "a.startTime < :endTime AND " +
+           "a.endTime > :startTime AND " +
+           "a.status IN ('SCHEDULED', 'CONFIRMED', 'CHECKED_IN') " +
+           "ORDER BY a.startTime ASC")
+    java.util.List<Appointment> findOverlappingActiveAppointments(
+            @Param("doctorId") Long doctorId,
+            @Param("date") LocalDate date,
+            @Param("startTime") LocalTime startTime,
+            @Param("endTime") LocalTime endTime
+    );
+
+    @Query("SELECT COUNT(a) > 0 FROM Appointment a WHERE " +
+           "a.doctor.doctorId = :doctorId AND " +
+           "a.appointmentDate = :date AND " +
+           "a.startTime = :startTime AND " +
+           "a.endTime = :endTime AND " +
+           "a.status IN ('SCHEDULED', 'CONFIRMED', 'CHECKED_IN')")
+    boolean existsPendingAppointmentForSlot(
             @Param("doctorId") Long doctorId,
             @Param("date") LocalDate date,
             @Param("startTime") LocalTime startTime,

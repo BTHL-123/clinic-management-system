@@ -240,6 +240,7 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         List<TimeSlot> slots = timeSlotRepository.findAllSlotsByDoctorAndDate(doctorId, workDate);
         LocalDateTime now = LocalDateTime.now();
         return slots.stream()
+                .filter(ts -> !"CANCELLED".equals(ts.getStatus()))
                 .map(ts -> {
                     String status = ts.getStatus();
                     if ("LOCKED".equals(status) && ts.getLockedUntil() != null && ts.getLockedUntil().isBefore(now)) {

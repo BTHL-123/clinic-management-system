@@ -29,5 +29,6 @@ public record AppointmentResponse(
         String patientPhone,
         java.time.LocalDateTime checkedInAt,
         Integer queueNumber,
-        String queueStatus
+        String queueStatus,
+        Boolean hasReviewed
 ) {}

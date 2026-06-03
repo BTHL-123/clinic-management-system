@@ -3,6 +3,8 @@ import {
   Bell,
   Building2,
   CalendarDays,
+  CalendarOff,
+  ClipboardList,
   FlaskConical,
   KeyRound,
   MessageSquare,
@@ -25,6 +27,8 @@ import {
   UsersRound,
   UserSquare,
   UserCheck,
+  Star,
+  FileText,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
@@ -51,12 +55,16 @@ const adminItems = [
   { to: "/dashboard/patients", label: "Bệnh nhân", icon: Users, roles: ["ADMIN", "STAFF", "DOCTOR"] },
   { to: "/dashboard/users", label: "Tài khoản", icon: UsersRound, roles: ["ADMIN"] },
   { to: "/dashboard/security", label: "Bảo mật", icon: Shield, roles: ["ADMIN"] },
-  { to: "/dashboard/appointments", label: "Lịch khám", icon: CalendarDays },
+  { to: "/dashboard/appointments", label: "Lịch khám", icon: CalendarDays, roles: ["ADMIN", "RECEPTIONIST"] },
   { to: "/dashboard/consultation", label: "Phòng khám", icon: Stethoscope, roles: ["DOCTOR"] },
   { to: "/dashboard/lab-requests", label: "Phòng xét nghiệm", icon: FlaskConical, roles: ["LAB_TECHNICIAN", "ADMIN"] },
-  { to: "/dashboard/walk-in", label: "Walk-in Appointment", icon: UserPlus, roles: ["ADMIN", "RECEPTIONIST"] },
+  { to: "/dashboard/walk-in", label: "Khám trực tiếp", icon: UserPlus, roles: ["ADMIN", "RECEPTIONIST"] },
   { to: "/dashboard/receptionist-appointments", label: "Check-in Bệnh nhân", icon: UserCheck, roles: ["ADMIN", "RECEPTIONIST"] },
   { to: "/dashboard/queue-management", label: "Quản lý hàng đợi", icon: Users, roles: ["ADMIN", "RECEPTIONIST"] },
+  { to: "/dashboard/reviews", label: "Đánh giá", icon: Star, roles: ["ADMIN", "RECEPTIONIST"] },
+  { to: "/dashboard/articles", label: "Bài viết y tế", icon: FileText, roles: ["ADMIN", "DOCTOR"] },
+  { to: "/dashboard/doctor-leave-requests", label: "Yêu cầu nghỉ", icon: CalendarOff, roles: ["DOCTOR"] },
+  { to: "/dashboard/admin/doctor-leave-requests", label: "Duyệt yêu cầu nghỉ", icon: CalendarOff, roles: ["ADMIN"] },
 ];
 
 const patientItems = [
@@ -67,6 +75,7 @@ const patientItems = [
   { to: "/dashboard/available-slots", label: "Tìm ca khám trống", icon: Search },
   { to: "/dashboard/ai-chat", label: "Tư vấn AI", icon: MessageSquare },
   { to: "/dashboard/my-appointments", label: "Lịch hẹn của tôi", icon: CalendarDays },
+  { to: "/dashboard/queue-status", label: "Trạng thái hàng đợi", icon: ClipboardList },
   { to: "/dashboard/my-medical-history", label: "Lịch sử bệnh án", icon: History },
 ];
 
@@ -74,28 +83,35 @@ export default function Sidebar() {
   const { user } = useAuth();
   const [alertCount, setAlertCount] = useState(0);
 
-  const isPatient = user?.roles?.includes("PATIENT");
-  const items = isPatient ? patientItems : adminItems;
+const userRoles = user?.roles?.map(r => r.roleName ? r.roleName : r) || [];
 
-  const userRoles = user?.roles || [];
-  const hasInventoryRoles = userRoles.includes("ADMIN") || userRoles.includes("PHARMACIST");
+const isPatient = userRoles.includes("PATIENT");
 
-  useEffect(() => {
-    if (hasInventoryRoles) {
-      const fetchAlerts = async () => {
-        try {
-          const res = await getActiveAlerts({ page: 0, size: 1 });
-          setAlertCount(res.data?.totalElements || 0);
-        } catch (error) {
-          console.error("Error fetching inventory alerts:", error);
-        }
-      };
-      
-      fetchAlerts();
-      const interval = setInterval(fetchAlerts, 5 * 60 * 1000); // refresh every 5 mins
-      return () => clearInterval(interval);
-    }
-  }, [hasInventoryRoles]);
+const hasInventoryRoles =
+  userRoles.includes("ADMIN") || userRoles.includes("PHARMACIST");
+
+const isStaffOrAdmin = userRoles.some(role =>
+  ["ADMIN", "DOCTOR", "RECEPTIONIST", "STAFF", "PHARMACIST", "LAB_TECHNICIAN"].includes(role)
+);
+
+const items = isPatient ? patientItems : adminItems;
+
+useEffect(() => {
+  if (hasInventoryRoles) {
+    const fetchAlerts = async () => {
+      try {
+        const res = await getActiveAlerts({ page: 0, size: 1 });
+        setAlertCount(res.data?.totalElements || 0);
+      } catch (error) {
+        console.error("Error fetching inventory alerts:", error);
+      }
+    };
+
+    fetchAlerts();
+    const interval = setInterval(fetchAlerts, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }
+}, [hasInventoryRoles]);
 
   const filteredItems = items.filter(item => {
     if (!item.roles) return true; // No roles defined = accessible to everyone

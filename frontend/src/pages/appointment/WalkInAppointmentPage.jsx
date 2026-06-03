@@ -261,7 +261,7 @@ export default function WalkInAppointmentPage() {
         <div>
           <h1 className="page-title" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <UserPlus size={26} />
-            Tạo lịch khám trực tiếp (Walk-in)
+            Tạo lịch khám trực tiếp
           </h1>
           <p className="muted">
             Dành cho bệnh nhân đến trực tiếp tại phòng khám mà không có lịch đặt trước.
@@ -529,7 +529,7 @@ export default function WalkInAppointmentPage() {
                   })()
                 : "—",
             },
-            { label: "Loại lịch",    value: "Trực tiếp (Walk-in)" },
+            { label: "Loại lịch",    value: "Khám trực tiếp" },
           ].map(({ label, value }) => (
             <div key={label} style={{
               display: "flex", justifyContent: "space-between",

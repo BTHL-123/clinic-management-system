@@ -24,6 +24,8 @@ import WalkInAppointmentPage from "./pages/appointment/WalkInAppointmentPage.jsx
 import ReceptionistAppointmentsPage from "./pages/appointment/ReceptionistAppointmentsPage.jsx";
 import QueueManagementPage from "./pages/appointment/QueueManagementPage.jsx";
 import DoctorTodayAppointments from "./pages/doctor/DoctorTodayAppointments.jsx";
+import DoctorLeaveRequestPage from "./pages/doctor/DoctorLeaveRequestPage.jsx";
+import AdminDoctorLeaveRequestPage from "./pages/doctor/AdminDoctorLeaveRequestPage.jsx";
 import NotificationsPage from "./pages/notification/NotificationsPage.jsx";
 import DoctorManagement from "./pages/doctor/DoctorManagement.jsx";
 import AlertsDashboard from "./pages/inventory/AlertsDashboard.jsx";
@@ -40,6 +42,10 @@ import ProfilePage from "./pages/profile/ProfilePage.jsx";
 import MyAppointmentsPage from "./pages/patient/MyAppointmentsPage.jsx";
 import AppointmentDetailPage from "./pages/appointment/AppointmentDetailPage.jsx";
 import PatientMedicalHistoryPage from "./pages/patient/PatientMedicalHistoryPage.jsx";
+import ReviewManagement from "./pages/review/ReviewManagement.jsx";
+import ArticleManagement from "./pages/article/ArticleManagement.jsx";
+import PatientQueueStatusPage from "./pages/appointment/PatientQueueStatusPage.jsx";
+
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import { useAuth } from "./context/useAuth.js";
 
@@ -96,6 +102,7 @@ export default function App() {
         <Route path="my-appointments" element={<MyAppointmentsPage />} />
         <Route path="appointments/:id" element={<AppointmentDetailPage />} />
         <Route path="my-medical-history" element={<PatientMedicalHistoryPage />} />
+        <Route path="queue-status" element={<PatientQueueStatusPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="doctors" element={<DoctorManagement />} />
         <Route path="patients" element={<PatientManagement />} />
@@ -103,6 +110,10 @@ export default function App() {
         <Route path="consultation" element={<ConsultationPage />} />
         <Route path="examination/:consultationId" element={<ExaminationPage />} />
         <Route path="lab-requests" element={<LabRequestPage />} />
+        <Route path="reviews" element={<ReviewManagement />} />
+        <Route path="articles" element={<ArticleManagement />} />
+        <Route path="doctor-leave-requests" element={<DoctorLeaveRequestPage />} />
+        <Route path="admin/doctor-leave-requests" element={<AdminDoctorLeaveRequestPage />} />
       </Route>
     </Routes>
   );

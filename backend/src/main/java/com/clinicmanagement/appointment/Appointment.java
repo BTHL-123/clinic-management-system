@@ -79,6 +79,9 @@ public class Appointment {
     @Column(name = "cancellation_reason", columnDefinition = "TEXT")
     private String cancellationReason;
 
+    @Column(name = "no_show_reason", columnDefinition = "TEXT")
+    private String noShowReason;
+
     @Column(name = "cancelled_at")
     private LocalDateTime cancelledAt;
 

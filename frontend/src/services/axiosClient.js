@@ -18,9 +18,14 @@ axiosClient.interceptors.request.use((config) => {
 axiosClient.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    const message =
-      error.response?.data?.message || error.message || "Request failed";
-    return Promise.reject(new Error(message));
+    const data = error.response?.data;
+    const message = data?.message || error.message || "Request failed";
+    const err = new Error(message);
+    // Attach structured conflict data when the backend returns it (leave-request conflict)
+    if (data?.data?.conflictingAppointments) {
+      err.conflictingAppointments = data.data.conflictingAppointments;
+    }
+    return Promise.reject(err);
   },
 );
 

@@ -40,6 +40,10 @@ const appointmentService = {
   getDoctorTodayAppointments() {
     return axiosClient.get("/appointments/doctor/today");
   },
+
+  markNoShow(appointmentId, note) {
+    return axiosClient.put(`/receptionist/appointments/${appointmentId}/no-show`, { note });
+  },
 };
 
 export default appointmentService;
