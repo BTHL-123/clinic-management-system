@@ -292,6 +292,7 @@ function AppointmentCard({ appt, onCancelRequest, onRescheduleRequest, onReviewR
                 Đã qua giờ khám
               </span>
             )}
+          </>
         )}
         
         {appt.status === "COMPLETED" && appt.hasReviewed && (
