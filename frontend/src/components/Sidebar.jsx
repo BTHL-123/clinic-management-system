@@ -54,7 +54,7 @@ const adminItems = [
   { to: "/dashboard/appointments", label: "Lịch khám", icon: CalendarDays, roles: ["ADMIN", "RECEPTIONIST"] },
   { to: "/dashboard/consultation", label: "Phòng khám", icon: Stethoscope, roles: ["DOCTOR"] },
   { to: "/dashboard/lab-requests", label: "Phòng xét nghiệm", icon: FlaskConical, roles: ["LAB_TECHNICIAN", "ADMIN"] },
-  { to: "/dashboard/walk-in", label: "Khám trực tiếp (Walk-in)", icon: UserPlus, roles: ["ADMIN", "RECEPTIONIST"] },
+  { to: "/dashboard/walk-in", label: "Khám trực tiếp", icon: UserPlus, roles: ["ADMIN", "RECEPTIONIST"] },
   { to: "/dashboard/receptionist-appointments", label: "Check-in Bệnh nhân", icon: UserCheck, roles: ["ADMIN", "RECEPTIONIST"] },
   { to: "/dashboard/queue-management", label: "Quản lý hàng đợi", icon: Users, roles: ["ADMIN", "RECEPTIONIST"] },
   { to: "/dashboard/reviews", label: "Đánh giá", icon: Star, roles: ["ADMIN", "RECEPTIONIST"] },
