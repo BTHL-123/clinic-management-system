@@ -1,14 +1,19 @@
 import { useEffect, useState } from "react";
-import { ClipboardList, X, FileText } from "lucide-react";
+import { ClipboardList, X, FileText, ExternalLink } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { getPatientMedicalHistory } from "../services/medicalRecordService";
 import PrescriptionDetailView from "./PrescriptionDetailView";
 import LabResultView from "./LabResultView";
+import { getPrescriptionByConsultationId } from "../services/prescriptionService";
 
 export default function MedicalHistory({ patientId, onClose, inline = false }) {
+  const navigate = useNavigate();
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedRecord, setSelectedRecord] = useState(null);
+  // Map consultationId → prescriptionId (fetched lazily)
+  const [prescriptionIdMap, setPrescriptionIdMap] = useState({});
 
   useEffect(() => {
     if (!patientId) return;
@@ -34,6 +39,21 @@ export default function MedicalHistory({ patientId, onClose, inline = false }) {
     const d = new Date(dateString);
     return d.toLocaleDateString("vi-VN") + " " + d.toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' });
   };
+
+  // Khi chọn một bệnh án có đơn thuốc, lấy prescriptionId để navigate
+  useEffect(() => {
+    if (!selectedRecord?.hasPrescription) return;
+    const cid = selectedRecord.consultationId;
+    if (prescriptionIdMap[cid]) return; // Đã có rồi
+    getPrescriptionByConsultationId(cid)
+      .then((res) => {
+        const pid = res.data?.prescriptionId;
+        if (pid) {
+          setPrescriptionIdMap((prev) => ({ ...prev, [cid]: pid }));
+        }
+      })
+      .catch(() => {}); // Fail silently — inline view vẫn hiển thị
+  }, [selectedRecord]);
 
   const renderList = () => (
     <div className="table-wrapper" style={{ marginTop: 16 }}>
@@ -143,6 +163,22 @@ export default function MedicalHistory({ patientId, onClose, inline = false }) {
         )}
         {selectedRecord.hasPrescription && (
           <div style={{ background: "#f9fafb", padding: 16, borderRadius: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <span style={{ fontWeight: 600, fontSize: 14 }}>💊 Đơn thuốc</span>
+              {prescriptionIdMap[selectedRecord.consultationId] && (
+                <button
+                  onClick={() => navigate(`/dashboard/prescriptions/${prescriptionIdMap[selectedRecord.consultationId]}`)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 4,
+                    padding: "4px 12px", borderRadius: 6, border: "1px solid #e9d5ff",
+                    background: "#fdf4ff", color: "#7c3aed", cursor: "pointer",
+                    fontSize: 12, fontWeight: 600,
+                  }}
+                >
+                  <ExternalLink size={12} /> Xem đơn thuốc đầy đủ
+                </button>
+              )}
+            </div>
             <PrescriptionDetailView consultationId={selectedRecord.consultationId} />
           </div>
         )}
