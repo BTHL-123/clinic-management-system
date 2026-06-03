@@ -1,9 +1,12 @@
 package com.clinicmanagement.doctorleave;
 
+import com.clinicmanagement.appointment.Appointment;
+import com.clinicmanagement.common.exception.AppointmentConflictException;
 import com.clinicmanagement.common.exception.BusinessException;
 import com.clinicmanagement.common.exception.ResourceNotFoundException;
 import com.clinicmanagement.doctor.Doctor;
 import com.clinicmanagement.doctor.DoctorRepository;
+import com.clinicmanagement.doctorleave.dto.ConflictingAppointmentDTO;
 import com.clinicmanagement.doctorleave.dto.DoctorLeaveRequestCreateRequest;
 import com.clinicmanagement.doctorleave.dto.DoctorLeaveRequestResponse;
 import com.clinicmanagement.doctorleave.dto.ReviewDoctorLeaveRequest;
@@ -75,6 +78,24 @@ public class DoctorLeaveRequestServiceImpl implements DoctorLeaveRequestService 
             throw new BusinessException("Loại yêu cầu không hợp lệ: " + request.requestType());
         }
 
+        // ── Overlap check with appointments ───────────────────────────
+        // Fetch the full list so we can return appointment details to the doctor.
+        List<Appointment> conflictingAppointments = appointmentRepository.findOverlappingActiveAppointments(
+                doctor.getDoctorId(),
+                request.leaveDate(),
+                request.startTime(),
+                request.endTime()
+        );
+        if (!conflictingAppointments.isEmpty()) {
+            List<ConflictingAppointmentDTO> dtos = conflictingAppointments.stream()
+                    .map(ConflictingAppointmentDTO::from)
+                    .toList();
+            throw new AppointmentConflictException(
+                    "Không thể gửi yêu cầu nghỉ vì khung giờ này đã có lịch hẹn.",
+                    dtos
+            );
+        }
+
         // ── Overlap check ─────────────────────────────────────────────
         boolean overlap = leaveRequestRepository
                 .existsOverlappingRequest(
@@ -86,17 +107,6 @@ public class DoctorLeaveRequestServiceImpl implements DoctorLeaveRequestService 
         if (overlap) {
             throw new BusinessException(
                     "Đã có yêu cầu nghỉ PENDING hoặc APPROVED trùng hoặc giao cắt với khung giờ này.");
-        }
-
-        // ── Overlap check with appointments ───────────────────────────
-        boolean hasOverlappingAppointments = appointmentRepository.existsOverlappingPendingAppointments(
-                doctor.getDoctorId(),
-                request.leaveDate(),
-                request.startTime(),
-                request.endTime()
-        );
-        if (hasOverlappingAppointments) {
-            throw new BusinessException("Không thể xin nghỉ: Bạn đang có lịch khám (đã được đặt) trong khung giờ này. Vui lòng xử lý hoặc nhờ Admin dời/hủy lịch hẹn trước.");
         }
 
         // ── Build entity ────────────────────────────────────────────────

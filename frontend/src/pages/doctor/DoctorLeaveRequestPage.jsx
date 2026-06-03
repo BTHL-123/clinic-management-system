@@ -12,6 +12,23 @@ const TYPE_LABEL = {
   CHANGE_SCHEDULE: "Thay đổi lịch",
 };
 
+// Status display helpers for the conflicting-appointment table
+const CONFLICT_STATUS_LABEL = {
+  SCHEDULED:  "Chờ khám",
+  CONFIRMED:  "Đã xác nhận",
+  CHECKED_IN: "Đã check-in",
+};
+const CONFLICT_STATUS_BG = {
+  SCHEDULED:  "#fef3c7",
+  CONFIRMED:  "#dbeafe",
+  CHECKED_IN: "#dcfce7",
+};
+const CONFLICT_STATUS_COLOR = {
+  SCHEDULED:  "#92400e",
+  CONFIRMED:  "#1d4ed8",
+  CHECKED_IN: "#15803d",
+};
+
 function StatusBadge({ status }) {
   const cfg = STATUS_BADGE[status] || { label: status, color: "#6b7280", bg: "#f3f4f6" };
   return (
@@ -45,6 +62,7 @@ export default function DoctorLeaveRequestPage() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState(null);
+  const [conflictingAppointments, setConflictingAppointments] = useState([]);
 
   const fetchMyRequests = useCallback(async () => {
     setLoading(true);
@@ -62,6 +80,9 @@ export default function DoctorLeaveRequestPage() {
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    if (e.target.name === "leaveDate" || e.target.name === "startTime" || e.target.name === "endTime") {
+      setConflictingAppointments([]);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -89,9 +110,17 @@ export default function DoctorLeaveRequestPage() {
       });
       setFormSuccess("Gửi yêu cầu thành công!");
       setForm({ requestType: "LEAVE", leaveDate: today, startTime: "08:00", endTime: "17:00", reason: "" });
+      setConflictingAppointments([]);
       fetchMyRequests();
     } catch (err) {
-      setFormError(err.message || "Gửi yêu cầu thất bại.");
+      const msg = err.message || "Gửi yêu cầu thất bại.";
+      setFormError(msg);
+      // If the backend returned structured conflict data, display the table
+      if (err.conflictingAppointments && err.conflictingAppointments.length > 0) {
+        setConflictingAppointments(err.conflictingAppointments);
+      } else {
+        setConflictingAppointments([]);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -185,6 +214,52 @@ export default function DoctorLeaveRequestPage() {
           {formSuccess && (
             <div style={{ marginTop: 12, padding: "8px 14px", background: "#d1fae5", color: "#065f46", borderRadius: 8, fontSize: 13 }}>
               {formSuccess}
+            </div>
+          )}
+
+          {conflictingAppointments.length > 0 && (
+            <div style={{ marginTop: 16, padding: "16px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 600, color: "#dc2626", marginBottom: 12 }}>
+                Danh sách lịch hẹn bị trùng
+              </h3>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: "#fee2e2" }}>
+                      {["Mã lịch hẹn", "Bệnh nhân", "Số điện thoại", "Ngày khám", "Giờ khám", "Trạng thái"].map((h) => (
+                        <th key={h} style={conflictThStyle}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {conflictingAppointments.map((appt) => (
+                      <tr key={appt.appointmentId} style={{ borderBottom: "1px solid #fecaca" }}>
+                        <td style={conflictTdStyle}>
+                          <code style={{ fontFamily: "monospace", fontWeight: 600 }}>{appt.appointmentCode}</code>
+                        </td>
+                        <td style={conflictTdStyle}>{appt.patientName}</td>
+                        <td style={conflictTdStyle}>{appt.patientPhone || "—"}</td>
+                        <td style={conflictTdStyle}>{appt.appointmentDate}</td>
+                        <td style={{ ...conflictTdStyle, whiteSpace: "nowrap" }}>
+                          {appt.startTime?.slice(0, 5)}
+                        </td>
+                        <td style={conflictTdStyle}>
+                          <span style={{
+                            padding: "2px 8px",
+                            borderRadius: 999,
+                            fontSize: 11,
+                            fontWeight: 600,
+                            background: CONFLICT_STATUS_BG[appt.status] || "#f3f4f6",
+                            color: CONFLICT_STATUS_COLOR[appt.status] || "#374151",
+                          }}>
+                            {CONFLICT_STATUS_LABEL[appt.status] || appt.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
@@ -313,4 +388,22 @@ const tdStyle = {
   padding: "11px 14px",
   color: "#1e293b",
   verticalAlign: "middle",
+};
+
+const conflictThStyle = {
+  padding: "8px 12px",
+  textAlign: "left",
+  fontWeight: 600,
+  color: "#991b1b",
+  fontSize: 12,
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+  whiteSpace: "nowrap",
+};
+
+const conflictTdStyle = {
+  padding: "9px 12px",
+  color: "#1e293b",
+  verticalAlign: "middle",
+  borderTop: "1px solid #fecaca",
 };
