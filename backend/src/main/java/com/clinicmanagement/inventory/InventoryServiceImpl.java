@@ -282,7 +282,7 @@ public class InventoryServiceImpl implements InventoryService {
      * This prevents duplicate alerts.
      */
     private void createAlertIfNotExists(MedicineBatch batch, String type, String message) {
-        boolean exists = alertRepository.existsByBatchAndAlertTypeAndIsResolvedFalse(batch, type);
+        boolean exists = alertRepository.existsByBatchAndAlertType(batch, type);
         if (!exists) {
             MedicineStockAlert alert = new MedicineStockAlert();
             alert.setMedicine(batch.getMedicine());
