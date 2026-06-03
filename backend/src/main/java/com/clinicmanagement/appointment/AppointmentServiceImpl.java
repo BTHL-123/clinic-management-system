@@ -544,7 +544,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
 
         appointment.setStatus("NO_SHOW");
-        appointment.setCancellationReason(note);
+        appointment.setNoShowReason(note);
         appointment.setCancelledAt(LocalDateTime.now());
         appointment.setCancelledBy(receptionistId);
 
