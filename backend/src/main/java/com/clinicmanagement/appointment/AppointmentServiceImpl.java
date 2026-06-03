@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import com.clinicmanagement.notification.NotificationService;
 
 @Service
@@ -97,9 +96,8 @@ public class AppointmentServiceImpl implements AppointmentService {
             Pageable pageable
     ) {
         LocalDate currentDate = LocalDate.now();
-        LocalTime currentTime = LocalTime.now();
         Page<Appointment> appointments = appointmentRepository.findMyAppointments(
-                userId, upcoming, currentDate, currentTime, pageable
+                userId, upcoming, currentDate, pageable
         );
         return PageResponse.from(appointments.map(this::mapToResponse));
     }
@@ -523,5 +521,63 @@ public class AppointmentServiceImpl implements AppointmentService {
         return appointments.stream()
                 .map(this::mapToResponse)
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public AppointmentResponse markNoShow(Long appointmentId, String note, Long receptionistId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Lịch hẹn không tồn tại với ID: " + appointmentId));
+
+        String status = appointment.getStatus();
+        if ("CANCELLED".equals(status)) {
+            throw new BusinessException("Không thể đánh dấu No Show lịch hẹn đã hủy.");
+        }
+        if ("COMPLETED".equals(status)) {
+            throw new BusinessException("Không thể đánh dấu No Show lịch hẹn đã hoàn thành.");
+        }
+        if ("CHECKED_IN".equals(status)) {
+            throw new BusinessException("Không thể đánh dấu No Show lịch hẹn đã check-in.");
+        }
+        if ("NO_SHOW".equals(status)) {
+            throw new BusinessException("Lịch hẹn này đã được đánh dấu No Show trước đó.");
+        }
+
+        appointment.setStatus("NO_SHOW");
+        appointment.setNoShowReason(note);
+        appointment.setCancelledAt(LocalDateTime.now());
+        appointment.setCancelledBy(receptionistId);
+
+        // Free the time slot so it can be rebooked
+        if (appointment.getTimeSlot() != null) {
+            TimeSlot slot = appointment.getTimeSlot();
+            slot.setStatus("AVAILABLE");
+            slot.setLockedByPatientId(null);
+            slot.setLockedUntil(null);
+            timeSlotRepository.save(slot);
+        }
+
+        // Fix orphan data: cancel queue ticket if it exists (e.g. walk-in appointments)
+        queueTicketRepository.findByAppointment(appointment).ifPresent(ticket -> {
+            ticket.setStatus("CANCELLED");
+            queueTicketRepository.save(ticket);
+        });
+
+        Appointment saved = appointmentRepository.save(appointment);
+
+        try {
+            if (saved.getPatient() != null && saved.getPatient().getUser() != null) {
+                notificationService.createNotification(
+                        saved.getPatient().getUser().getUserId(),
+                        "Lịch hẹn bị đánh dấu No Show",
+                        "Lịch hẹn mã " + saved.getAppointmentCode() + " của bạn đã bị đánh dấu là bệnh nhân không đến khám (No Show).",
+                        "APPOINTMENT"
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("Không thể tạo thông báo No Show: " + e.getMessage());
+        }
+
+        return mapToResponse(saved);
     }
 }

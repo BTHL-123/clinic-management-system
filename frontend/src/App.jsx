@@ -41,6 +41,7 @@ import AppointmentDetailPage from "./pages/appointment/AppointmentDetailPage.jsx
 import PatientMedicalHistoryPage from "./pages/patient/PatientMedicalHistoryPage.jsx";
 import ReviewManagement from "./pages/review/ReviewManagement.jsx";
 import ArticleManagement from "./pages/article/ArticleManagement.jsx";
+import PatientQueueStatusPage from "./pages/appointment/PatientQueueStatusPage.jsx";
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import { useAuth } from "./context/useAuth.js";
 
@@ -96,6 +97,7 @@ export default function App() {
         <Route path="my-appointments" element={<MyAppointmentsPage />} />
         <Route path="appointments/:id" element={<AppointmentDetailPage />} />
         <Route path="my-medical-history" element={<PatientMedicalHistoryPage />} />
+        <Route path="queue-status" element={<PatientQueueStatusPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="doctors" element={<DoctorManagement />} />
         <Route path="patients" element={<PatientManagement />} />

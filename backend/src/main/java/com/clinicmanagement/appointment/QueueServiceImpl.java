@@ -1,10 +1,13 @@
 package com.clinicmanagement.appointment;
 
+import com.clinicmanagement.appointment.dto.PatientQueueStatusResponse;
 import com.clinicmanagement.appointment.dto.QueueTicketResponse;
 import com.clinicmanagement.common.exception.BusinessException;
 import com.clinicmanagement.common.exception.ResourceNotFoundException;
 import com.clinicmanagement.consultation.ConsultationSession;
 import com.clinicmanagement.consultation.ConsultationSessionRepository;
+import com.clinicmanagement.patient.Patient;
+import com.clinicmanagement.patient.PatientRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.jpa.domain.Specification;
@@ -24,6 +27,7 @@ public class QueueServiceImpl implements QueueService {
     private final AppointmentRepository appointmentRepository;
     private final ConsultationSessionRepository consultationSessionRepository;
     private final ApplicationContext applicationContext;
+    private final PatientRepository patientRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -142,5 +146,61 @@ public class QueueServiceImpl implements QueueService {
         } catch (Exception e) {
             System.err.println("Notification skipped: " + e.getMessage());
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PatientQueueStatusResponse getPatientQueueStatus(Long userId) {
+        // 1. Find patient record for logged-in user
+        Patient patient = patientRepository.findByUser_UserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hồ sơ bệnh nhân."));
+
+        // 2. Find ALL active tickets for today — ordered: CALLED first, then lowest queueNumber
+        LocalDate today = LocalDate.now();
+        List<QueueTicket> activeTickets = queueTicketRepository
+                .findActiveTicketsByPatientAndDate(patient.getPatientId(), today);
+
+        if (activeTickets.isEmpty()) {
+            throw new BusinessException("No active queue found");
+        }
+
+        // 3. Priority selection in Java (JPQL does not support CASE in ORDER BY):
+        //    a) Prefer CALLED ticket first
+        //    b) Otherwise pick earliest WAITING (lowest queueNumber, already sorted by DB)
+        QueueTicket ticket = activeTickets.stream()
+                .filter(t -> "CALLED".equals(t.getStatus()))
+                .findFirst()
+                .orElse(activeTickets.get(0));
+
+        int myQueueNumber = ticket.getQueueNumber();
+        Long doctorId = ticket.getDoctor().getDoctorId();
+
+        // 4. Find current serving number (smallest CALLED queue number for this doctor today)
+        int currentServingNumber = queueTicketRepository.findCurrentServingNumber(doctorId, today);
+
+        // 5. Count patients ahead (WAITING with smaller queue number)
+        int patientsAhead = queueTicketRepository.countPatientsAhead(doctorId, today, myQueueNumber);
+
+        // 6. Estimate waiting time: 15 min per patient ahead
+        final int AVG_CONSULTATION_MINUTES = 15;
+        int estimatedWaitMinutes = patientsAhead * AVG_CONSULTATION_MINUTES;
+
+        // 7. Build DTO
+        String patientName = patient.getFullName();
+        String doctorName = ticket.getDoctor() != null && ticket.getDoctor().getUser() != null
+                ? ticket.getDoctor().getUser().getFullName() : "Bác sĩ";
+        String appointmentCode = ticket.getAppointment() != null
+                ? ticket.getAppointment().getAppointmentCode() : null;
+
+        return new PatientQueueStatusResponse(
+                patientName,
+                doctorName,
+                appointmentCode,
+                myQueueNumber,
+                currentServingNumber,
+                patientsAhead,
+                estimatedWaitMinutes,
+                ticket.getStatus()
+        );
     }
 }
