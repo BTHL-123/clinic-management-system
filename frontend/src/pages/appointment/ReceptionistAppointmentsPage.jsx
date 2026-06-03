@@ -138,7 +138,7 @@ export default function ReceptionistAppointmentsPage() {
       case "CANCELLED":
         return <span style={{ background: "#fee2e2", color: "#991b1b", padding: "4px 8px", borderRadius: "9999px", fontSize: "12px", fontWeight: 650 }}>Cancelled</span>;
       case "NO_SHOW":
-        return <span style={{ background: "#fee2e2", color: "#dc2626", padding: "4px 8px", borderRadius: "9999px", fontSize: "12px", fontWeight: 650 }}>No Show</span>;
+        return <span style={{ background: "#fee2e2", color: "#dc2626", padding: "4px 8px", borderRadius: "9999px", fontSize: "12px", fontWeight: 650 }}>Vắng mặt</span>;
       case "COMPLETED":
         return <span style={{ background: "#f1f5f9", color: "#475569", padding: "4px 8px", borderRadius: "9999px", fontSize: "12px", fontWeight: 650 }}>Completed</span>;
       case "PENDING_PAYMENT":
@@ -197,7 +197,7 @@ export default function ReceptionistAppointmentsPage() {
               <option value="CHECKED_IN">Checked In (Đã check-in)</option>
               <option value="COMPLETED">Completed (Hoàn thành)</option>
               <option value="CANCELLED">Cancelled (Đã hủy)</option>
-              <option value="NO_SHOW">No Show (Không đến)</option>
+              <option value="NO_SHOW">Không đến khám (No Show)</option>
             </select>
           </div>
 
@@ -311,7 +311,7 @@ export default function ReceptionistAppointmentsPage() {
                               cursor: "pointer"
                             }}
                           >
-                            Mark No Show
+                            Đánh dấu Không đến
                           </button>
                         )}
                       </div>
@@ -357,18 +357,18 @@ export default function ReceptionistAppointmentsPage() {
           <div className="modal-content" style={{ background: "white", padding: "24px", borderRadius: "12px", width: "400px", maxWidth: "90%" }}>
             <h3 style={{ margin: "0 0 16px", color: "#dc2626", display: "flex", alignItems: "center", gap: "8px" }}>
               <AlertCircle size={20} />
-              Confirm No Show
+              Xác nhận bệnh nhân không đến
             </h3>
             <p style={{ marginBottom: "16px", color: "#475569", fontSize: "14px" }}>
-              Are you sure the patient did not arrive? This action will mark the appointment as No Show and cancel it.
+              Bạn có chắc chắn bệnh nhân không đến? Hành động này sẽ hủy lịch hẹn và đánh dấu bệnh nhân không đến khám (No Show).
             </p>
             <div style={{ marginBottom: "20px" }}>
               <label style={{ display: "block", marginBottom: "8px", fontSize: "14px", fontWeight: 600, color: "#334155" }}>
-                Receptionist Note (Optional)
+                Ghi chú của Lễ tân (Tùy chọn)
               </label>
               <textarea
                 style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid #cbd5e1", resize: "vertical", minHeight: "80px" }}
-                placeholder="Example: No response after multiple calls."
+                placeholder="Ví dụ: Đã gọi điện 3 cuộc nhưng bệnh nhân không nghe máy."
                 value={noShowNote}
                 onChange={(e) => setNoShowNote(e.target.value)}
               />
@@ -378,13 +378,13 @@ export default function ReceptionistAppointmentsPage() {
                 onClick={() => setShowNoShowModal(false)}
                 style={{ padding: "8px 16px", borderRadius: "6px", border: "1px solid #cbd5e1", background: "white", cursor: "pointer", fontWeight: 500 }}
               >
-                Cancel
+                Hủy bỏ
               </button>
               <button 
                 onClick={confirmNoShow}
                 style={{ padding: "8px 16px", borderRadius: "6px", border: "none", background: "#dc2626", color: "white", cursor: "pointer", fontWeight: 600 }}
               >
-                Confirm No Show
+                Xác nhận
               </button>
             </div>
           </div>
