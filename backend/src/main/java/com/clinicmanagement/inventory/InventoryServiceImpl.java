@@ -377,12 +377,14 @@ public class InventoryServiceImpl implements InventoryService {
     public void checkStockAvailability(Long medicineId, Integer requiredQuantity) {
         Medicine medicine = medicineRepository.findById(medicineId)
                 .orElseThrow(() -> new ResourceNotFoundException("Medicine not found"));
-        
-        Integer availableStock = batchRepository.findBatches(medicineId, "AVAILABLE", Pageable.unpaged())
+
+        // Tính tổng tồn kho thực tế: bao gồm AVAILABLE, LOW_STOCK, NEAR_EXPIRY
+        // Loại bỏ: CANCELLED, EXPIRED, OUT_OF_STOCK
+        Integer availableStock = batchRepository.findUsableBatches(medicineId)
                 .stream()
                 .mapToInt(MedicineBatch::getCurrentQuantity)
                 .sum();
-        
+
         if (availableStock < requiredQuantity) {
             throw new BusinessException(
                     String.format("Không đủ tồn kho cho thuốc [%s]. Yêu cầu: %d, Tồn kho: %d",
