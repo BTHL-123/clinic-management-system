@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import com.clinicmanagement.notification.NotificationService;
+import com.clinicmanagement.review.ReviewRepository;
 
 @Service
 @Transactional(readOnly = true)
@@ -31,6 +32,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final UserRepository userRepository;
     private final QueueTicketRepository queueTicketRepository;
     private final NotificationService notificationService;
+    private final ReviewRepository reviewRepository;
 
     public AppointmentServiceImpl(
             AppointmentRepository appointmentRepository,
@@ -39,7 +41,8 @@ public class AppointmentServiceImpl implements AppointmentService {
             DoctorRepository doctorRepository,
             UserRepository userRepository,
             QueueTicketRepository queueTicketRepository,
-            NotificationService notificationService
+            NotificationService notificationService,
+            ReviewRepository reviewRepository
     ) {
         this.appointmentRepository = appointmentRepository;
         this.timeSlotRepository = timeSlotRepository;
@@ -48,6 +51,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         this.userRepository = userRepository;
         this.queueTicketRepository = queueTicketRepository;
         this.notificationService = notificationService;
+        this.reviewRepository = reviewRepository;
     }
 
     @Override
@@ -106,6 +110,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         Integer queueNumber = app.getQueueTicket() != null ? app.getQueueTicket().getQueueNumber() : null;
         String queueStatus = app.getQueueTicket() != null ? app.getQueueTicket().getStatus() : null;
         String patientPhone = app.getPatient() != null ? app.getPatient().getPhone() : null;
+        Boolean hasReviewed = "COMPLETED".equals(app.getStatus()) && reviewRepository.existsByAppointmentAppointmentId(app.getAppointmentId());
         return new AppointmentResponse(
                 app.getAppointmentId(),
                 app.getAppointmentCode(),
@@ -130,7 +135,8 @@ public class AppointmentServiceImpl implements AppointmentService {
                 patientPhone,
                 app.getCheckedInAt(),
                 queueNumber,
-                queueStatus
+                queueStatus,
+                hasReviewed
         );
     }
 

@@ -292,10 +292,15 @@ function AppointmentCard({ appt, onCancelRequest, onRescheduleRequest, onReviewR
                 Đã qua giờ khám
               </span>
             )}
-          </>
+        )}
+        
+        {appt.status === "COMPLETED" && appt.hasReviewed && (
+          <span style={{ fontSize: "12px", color: "#16a34a", fontWeight: 600, display: "flex", alignItems: "center", gap: "4px", padding: "6px 0" }}>
+            ✓ Đã đánh giá
+          </span>
         )}
 
-        {appt.status === "COMPLETED" && appt.patientName === currentUserFullName && (
+        {appt.status === "COMPLETED" && appt.patientName === currentUserFullName && !appt.hasReviewed && (
           <button
             onClick={() => onReviewRequest(appt.appointmentId)}
             style={{
@@ -382,6 +387,7 @@ export default function MyAppointmentsPage() {
       setSuccessMsg("Cảm ơn bạn đã đánh giá!");
       setReviewModalOpen(false);
       setReviewTargetId(null);
+      loadData();
     } catch (err) {
       setError(err.message || "Không thể gửi đánh giá.");
     } finally {
