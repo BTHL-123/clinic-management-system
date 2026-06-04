@@ -7,6 +7,9 @@ import com.clinicmanagement.department.DepartmentRepository;
 import com.clinicmanagement.doctor.Doctor;
 import com.clinicmanagement.doctor.DoctorRepository;
 import com.clinicmanagement.role.Role;
+import com.clinicmanagement.patient.Patient;
+import com.clinicmanagement.patient.PatientRepository;
+import com.clinicmanagement.role.Role;
 import com.clinicmanagement.role.RoleRepository;
 import com.clinicmanagement.user.dto.CreateDoctorProfileRequest;
 import com.clinicmanagement.user.dto.CreateUserRequest;
@@ -39,6 +42,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final DoctorRepository doctorRepository;
     private final DepartmentRepository departmentRepository;
+    private final PatientRepository patientRepository;
 
     @Value("${app.upload.avatar-dir:uploads/avatars}")
     private String avatarUploadDir;
@@ -73,6 +77,9 @@ public class UserServiceImpl implements UserService {
 
         if (hasRole(roles, "DOCTOR")) {
             createDoctorProfile(savedUser, request.doctorProfile());
+        }
+        if (hasRole(roles, "PATIENT")) {
+            createPatientProfile(savedUser, request);
         }
 
         return UserMapper.toSummary(savedUser);
@@ -229,6 +236,24 @@ public class UserServiceImpl implements UserService {
         doctor.setConsultationFee(profileRequest.consultationFee());
         doctor.setStatus(blankToNull(profileRequest.status()) == null ? "ACTIVE" : profileRequest.status());
         doctorRepository.save(doctor);
+    }
+
+    private void createPatientProfile(User user, CreateUserRequest request) {
+        Patient patient = patientRepository.findTopByPhone(request.phone() != null ? request.phone().trim() : "").orElse(null);
+        if (patient == null) {
+            patient = new Patient();
+            patient.setPatientCode("PAT" + System.currentTimeMillis());
+            patient.setFullName(user.getFullName());
+            patient.setEmail(user.getEmail());
+            patient.setPhone(user.getPhone());
+            patient.setGender("OTHER");
+        } else {
+            if (patient.getEmail() == null || patient.getEmail().isBlank()) {
+                patient.setEmail(user.getEmail());
+            }
+        }
+        patient.setUser(user);
+        patientRepository.save(patient);
     }
 
     private String nextDoctorCode() {
