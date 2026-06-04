@@ -25,6 +25,9 @@ axiosClient.interceptors.response.use(
     if (data?.data?.conflictingAppointments) {
       err.conflictingAppointments = data.data.conflictingAppointments;
     }
+    if (data?.errors) {
+      err.errors = data.errors;
+    }
     return Promise.reject(err);
   },
 );

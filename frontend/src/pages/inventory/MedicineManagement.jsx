@@ -91,8 +91,8 @@ export default function MedicineManagement() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.medicineCode.trim() || !formData.medicineName.trim()) {
-      setFormError("Mã thuốc và Tên thuốc không được để trống.");
+    if (!formData.medicineName.trim()) {
+      setFormError("Tên thuốc không được để trống.");
       return;
     }
     try {
@@ -105,7 +105,12 @@ export default function MedicineManagement() {
       closeForm();
       await fetchMedicines();
     } catch (err) {
-      setFormError(err.message);
+      if (err.errors) {
+        const errorMessages = Object.values(err.errors).join(", ");
+        setFormError(`Lỗi dữ liệu: ${errorMessages}`);
+      } else {
+        setFormError(err.message || "Có lỗi xảy ra");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -217,12 +222,13 @@ export default function MedicineManagement() {
 
               <div className="form-grid">
                 <div className="field">
-                  <label>Mã thuốc *</label>
+                  <label>Mã thuốc (Bỏ trống để tự động tạo)</label>
                   <input
                     name="medicineCode"
                     value={formData.medicineCode}
                     onChange={handleChange}
                     disabled={!!editingId}
+                    placeholder="Nhập mã hoặc để trống..."
                     autoFocus
                   />
                 </div>

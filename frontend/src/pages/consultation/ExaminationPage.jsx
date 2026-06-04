@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Stethoscope, Save, ArrowLeft, CheckCircle, Activity, FlaskConical } from "lucide-react";
+import { Stethoscope, Save, ArrowLeft, CheckCircle, Activity, FlaskConical, Pill, ExternalLink } from "lucide-react";
 import consultationService from "../../services/consultationService";
 import {
   createMedicalRecord,
@@ -10,6 +10,12 @@ import {
 import vitalSignService from "../../services/vitalSignService";
 import { createLabRequest, getLabRequestsByConsultationId } from "../../services/labRequestService";
 import { getLabTests } from "../../services/labTestService";
+import {
+  createPrescription,
+  getPrescriptionByConsultationId,
+  checkDrugInteractions,
+} from "../../services/prescriptionService";
+import { getMedicines } from "../../services/medicineService";
 
 const EMPTY_FORM = {
   symptoms: "",
@@ -32,6 +38,19 @@ const EMPTY_VITALS = {
   spo2: "",
 };
 
+const EMPTY_RX_ITEM = {
+  medicineId: "",
+  quantity: "",
+  dosage: "",
+  frequency: "",
+  duration: "",
+  instructions: "",
+  morningDose: "",
+  noonDose: "",
+  eveningDose: "",
+  nightDose: "",
+};
+
 export default function ExaminationPage() {
   const { consultationId } = useParams();
   const navigate = useNavigate();
@@ -47,6 +66,14 @@ export default function ExaminationPage() {
   const [labNote, setLabNote] = useState("");
   const [savedLabRequests, setSavedLabRequests] = useState([]);
   const [savingLab, setSavingLab] = useState(false);
+  // Prescription states
+  const [medicines, setMedicines] = useState([]);
+  const [rxItems, setRxItems] = useState([{ ...EMPTY_RX_ITEM }]);
+  const [rxNote, setRxNote] = useState("");
+  const [savedPrescription, setSavedPrescription] = useState(null);
+  const [savingRx, setSavingRx] = useState(false);
+  const [checkingInteractions, setCheckingInteractions] = useState(false);
+  const [completing, setCompleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -62,13 +89,19 @@ export default function ExaminationPage() {
       vitalSignService.getByConsultation(consultationId).catch(() => ({ data: [] })),
       getLabTests({ status: "ACTIVE", size: 100 }).catch(() => ({ data: { content: [] } })),
       getLabRequestsByConsultationId(consultationId).catch(() => ({ data: [] })),
+      getMedicines({ status: "ACTIVE", size: 200 }).catch(() => ({ data: { content: [] } })),
+      getPrescriptionByConsultationId(consultationId).catch(() => null),
     ])
-      .then(async ([consultRes, vitalsRes, labTestsRes, labReqRes]) => {
+      .then(async ([consultRes, vitalsRes, labTestsRes, labReqRes, medicinesRes, rxRes]) => {
         const c = consultRes.data;
         setConsultation(c);
         setSavedVitals(vitalsRes.data || []);
         setLabTests(labTestsRes.data?.content || []);
         setSavedLabRequests(labReqRes.data || []);
+        setMedicines(medicinesRes.data?.content || []);
+        if (rxRes?.data) {
+          setSavedPrescription(rxRes.data);
+        }
 
         // Tìm bệnh án đã tồn tại cho consultation này
         try {
@@ -113,7 +146,8 @@ export default function ExaminationPage() {
     setVitals((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSaveVitals = async () => {    const hasAnyValue = Object.values(vitals).some((v) => v !== "");
+  const handleSaveVitals = async () => {
+    const hasAnyValue = Object.values(vitals).some((v) => v !== "");
     if (!hasAnyValue) {
       showToast("Vui lòng nhập ít nhất một chỉ số.", "error");
       return;
@@ -174,10 +208,80 @@ export default function ExaminationPage() {
     }
   };
 
+  // ── Prescription handlers ────────────────────────────────────────────────
+  const handleRxItemChange = (index, field, value) => {
+    setRxItems((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
+  const addRxItem = () => setRxItems((prev) => [...prev, { ...EMPTY_RX_ITEM }]);
+
+  const removeRxItem = (index) =>
+    setRxItems((prev) => prev.filter((_, i) => i !== index));
+
+  const handleCreatePrescription = async () => {
+    const validItems = rxItems.filter((i) => i.medicineId && i.quantity);
+    if (validItems.length === 0) {
+      showToast("Vui lòng chọn ít nhất một thuốc và nhập số lượng.", "error");
+      return;
+    }
+    setSavingRx(true);
+    try {
+      const res = await createPrescription({
+        consultationId: Number(consultationId),
+        patientId: consultation.patientId,
+        doctorId: consultation.doctorId,
+        doctorNote: rxNote || null,
+        items: validItems.map((i) => ({
+          medicineId: Number(i.medicineId),
+          quantity: Number(i.quantity),
+          dosage: i.dosage || null,
+          frequency: i.frequency || null,
+          duration: i.duration || null,
+          instructions: i.instructions || null,
+          morningDose: i.morningDose || null,
+          noonDose: i.noonDose || null,
+          eveningDose: i.eveningDose || null,
+          nightDose: i.nightDose || null,
+        })),
+      });
+      setSavedPrescription(res.data);
+      setRxItems([{ ...EMPTY_RX_ITEM }]);
+      setRxNote("");
+      showToast("Đã tạo đơn thuốc thành công.");
+    } catch (err) {
+      showToast(err.message || "Không thể tạo đơn thuốc.", "error");
+    } finally {
+      setSavingRx(false);
+    }
+  };
+
+  const handleCheckInteractions = async () => {
+    if (!savedPrescription?.prescriptionId) return;
+    setCheckingInteractions(true);
+    try {
+      const res = await checkDrugInteractions(savedPrescription.prescriptionId);
+      setSavedPrescription((prev) => ({
+        ...prev,
+        drugInteractionChecked: res.data.checked,
+        interactionWarning: res.data.warningMessage,
+      }));
+      showToast("Kiểm tra tương tác thuốc hoàn tất.");
+    } catch (err) {
+      showToast(err.message || "Không thể kiểm tra tương tác thuốc.", "error");
+    } finally {
+      setCheckingInteractions(false);
+    }
+  };
+
+  // ── Medical record save ───────────────────────────────────────────────────
   const handleSave = async () => {
     if (!form.diagnosis.trim()) {
       setError("Chẩn đoán không được để trống.");
-      return;
+      return false;
     }
     setSaving(true);
     setError("");
@@ -209,22 +313,34 @@ export default function ExaminationPage() {
         setExistingRecordId(res.data.medicalRecordId);
         showToast("Đã tạo bệnh án thành công.");
       }
+      return true;
     } catch (err) {
       setError(err.message || "Không thể lưu bệnh án.");
+      return false;
     } finally {
       setSaving(false);
     }
   };
 
   const handleComplete = async () => {
-    // Lưu bệnh án trước rồi hoàn thành phiên khám
-    await handleSave();
+    if (!window.confirm("Xác nhận hoàn tất phiên khám?\nThao tác này sẽ cập nhật trạng thái lịch hẹn thành COMPLETED.")) return;
+    setCompleting(true);
+    setError("");
     try {
+      // Lưu bệnh án trước
+      const saved = await handleSave();
+      if (!saved) {
+        setCompleting(false);
+        return;
+      }
+      // Hoàn thành phiên khám
       await consultationService.complete(consultationId);
-      showToast("Phiên khám đã hoàn thành!");
-      setTimeout(() => navigate("/dashboard/consultation"), 1500);
+      showToast("Phiên khám đã hoàn thành! Đang chuyển về hàng đợi...");
+      setTimeout(() => navigate("/dashboard/consultation"), 1800);
     } catch (err) {
       setError(err.message || "Không thể hoàn thành phiên khám.");
+    } finally {
+      setCompleting(false);
     }
   };
 
@@ -461,6 +577,225 @@ export default function ExaminationPage() {
         )}
       </div>
 
+      {/* Prescription Section */}
+      <div style={{ background: "#fdf4ff", border: "1px solid #e9d5ff", borderRadius: 8, padding: 16, marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Pill size={16} color="#7c3aed" />
+            <strong style={{ fontSize: 14, color: "#6d28d9" }}>Kê đơn thuốc</strong>
+          </div>
+          {savedPrescription && (
+            <button
+              onClick={() => navigate(`/dashboard/prescriptions/${savedPrescription.prescriptionId}`)}
+              style={{
+                display: "flex", alignItems: "center", gap: 4,
+                padding: "4px 12px", borderRadius: 6, border: "1px solid #e9d5ff",
+                background: "#f5f3ff", color: "#7c3aed", cursor: "pointer",
+                fontSize: 12, fontWeight: 600,
+              }}
+            >
+              <ExternalLink size={12} /> Xem chi tiết đơn thuốc
+            </button>
+          )}
+        </div>
+
+        {/* Đơn thuốc đã tạo */}
+        {savedPrescription ? (
+          <div>
+            <div style={{
+              background: "#fff", border: "1px solid #e9d5ff", borderRadius: 6,
+              padding: "10px 14px", marginBottom: 10, fontSize: 13,
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                <strong style={{ color: "#7c3aed" }}>{savedPrescription.prescriptionCode}</strong>
+                <span style={{
+                  fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 10,
+                  background: savedPrescription.status === "DISPENSED" ? "#dcfce7" : "#fef3c7",
+                  color: savedPrescription.status === "DISPENSED" ? "#16a34a" : "#d97706",
+                }}>
+                  {savedPrescription.status === "CREATED" ? "Mới tạo"
+                    : savedPrescription.status === "CHECKED" ? "Đã kiểm tra"
+                    : savedPrescription.status === "DISPENSED" ? "Đã cấp phát"
+                    : savedPrescription.status}
+                </span>
+              </div>
+              <div style={{ fontSize: 12, color: "#6b7280" }}>
+                {savedPrescription.items?.length || 0} loại thuốc ·{" "}
+                {savedPrescription.drugInteractionChecked
+                  ? <span style={{ color: "#16a34a" }}>✓ Đã kiểm tra tương tác</span>
+                  : <span style={{ color: "#9ca3af" }}>Chưa kiểm tra tương tác</span>}
+              </div>
+              {savedPrescription.interactionWarning && (
+                <div style={{
+                  marginTop: 8, padding: "8px 10px", borderRadius: 6, fontSize: 12,
+                  background: savedPrescription.interactionWarning.includes("No dangerous") ? "#f0fdf4" : "#fef3c7",
+                  border: `1px solid ${savedPrescription.interactionWarning.includes("No dangerous") ? "#86efac" : "#fcd34d"}`,
+                  color: savedPrescription.interactionWarning.includes("No dangerous") ? "#166534" : "#92400e",
+                }}>
+                  {savedPrescription.interactionWarning.includes("No dangerous")
+                    ? "✓ Không phát hiện tương tác nguy hiểm"
+                    : "⚠ " + savedPrescription.interactionWarning}
+                </div>
+              )}
+            </div>
+
+            {!savedPrescription.drugInteractionChecked && (
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  className="secondary-button"
+                  onClick={handleCheckInteractions}
+                  disabled={checkingInteractions}
+                  style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}
+                >
+                  <Pill size={13} />
+                  {checkingInteractions ? "Đang kiểm tra..." : "Kiểm tra tương tác thuốc"}
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Form kê đơn mới */
+          <div>
+            {rxItems.map((item, index) => (
+              <div key={index} style={{
+                background: "#fff", border: "1px solid #e9d5ff",
+                borderRadius: 6, padding: 12, marginBottom: 8,
+              }}>
+                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 8, marginBottom: 8 }}>
+                  <div>
+                    <label style={{ ...labelStyle, fontSize: 12 }}>Thuốc <span style={{ color: "#dc2626" }}>*</span></label>
+                    <select
+                      value={item.medicineId}
+                      onChange={(e) => handleRxItemChange(index, "medicineId", e.target.value)}
+                      style={{ ...inputStyle, fontSize: 13 }}
+                    >
+                      <option value="">-- Chọn thuốc --</option>
+                      {medicines.map((m) => (
+                        <option key={m.medicineId} value={m.medicineId}>
+                          {m.medicineName} {m.strength ? `(${m.strength})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ ...labelStyle, fontSize: 12 }}>Số lượng <span style={{ color: "#dc2626" }}>*</span></label>
+                    <input type="number" min="1"
+                      value={item.quantity}
+                      onChange={(e) => handleRxItemChange(index, "quantity", e.target.value)}
+                      placeholder="10" style={{ ...inputStyle, fontSize: 13 }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ ...labelStyle, fontSize: 12 }}>Liều dùng</label>
+                    <input type="text"
+                      value={item.dosage}
+                      onChange={(e) => handleRxItemChange(index, "dosage", e.target.value)}
+                      placeholder="1 viên/lần" style={{ ...inputStyle, fontSize: 13 }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ ...labelStyle, fontSize: 12 }}>Tần suất</label>
+                    <input type="text"
+                      value={item.frequency}
+                      onChange={(e) => handleRxItemChange(index, "frequency", e.target.value)}
+                      placeholder="2 lần/ngày" style={{ ...inputStyle, fontSize: 13 }}
+                    />
+                  </div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 8 }}>
+                  <div>
+                    <label style={{ ...labelStyle, fontSize: 11 }}>Thời gian dùng</label>
+                    <input type="text"
+                      value={item.duration}
+                      onChange={(e) => handleRxItemChange(index, "duration", e.target.value)}
+                      placeholder="7 ngày" style={{ ...inputStyle, fontSize: 12 }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ ...labelStyle, fontSize: 11 }}>Sáng</label>
+                    <input type="text"
+                      value={item.morningDose}
+                      onChange={(e) => handleRxItemChange(index, "morningDose", e.target.value)}
+                      placeholder="1" style={{ ...inputStyle, fontSize: 12 }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ ...labelStyle, fontSize: 11 }}>Trưa</label>
+                    <input type="text"
+                      value={item.noonDose}
+                      onChange={(e) => handleRxItemChange(index, "noonDose", e.target.value)}
+                      placeholder="0" style={{ ...inputStyle, fontSize: 12 }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ ...labelStyle, fontSize: 11 }}>Chiều</label>
+                    <input type="text"
+                      value={item.eveningDose}
+                      onChange={(e) => handleRxItemChange(index, "eveningDose", e.target.value)}
+                      placeholder="0" style={{ ...inputStyle, fontSize: 12 }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ ...labelStyle, fontSize: 11 }}>Tối</label>
+                    <input type="text"
+                      value={item.nightDose}
+                      onChange={(e) => handleRxItemChange(index, "nightDose", e.target.value)}
+                      placeholder="1" style={{ ...inputStyle, fontSize: 12 }}
+                    />
+                  </div>
+                </div>
+                {rxItems.length > 1 && (
+                  <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
+                    <button
+                      onClick={() => removeRxItem(index)}
+                      style={{
+                        fontSize: 12, color: "#dc2626", background: "none",
+                        border: "none", cursor: "pointer", padding: "2px 6px",
+                      }}
+                    >
+                      ✕ Xóa thuốc này
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Ghi chú đơn thuốc */}
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ ...labelStyle, fontSize: 12 }}>Lời dặn đơn thuốc</label>
+              <input type="text"
+                value={rxNote}
+                onChange={(e) => setRxNote(e.target.value)}
+                placeholder="Uống sau khi ăn, không dùng với rượu..."
+                style={{ ...inputStyle, fontSize: 13 }}
+              />
+            </div>
+
+            <div style={{ display: "flex", gap: 8, justifyContent: "space-between", alignItems: "center" }}>
+              <button
+                onClick={addRxItem}
+                style={{
+                  fontSize: 13, color: "#7c3aed", background: "#fdf4ff",
+                  border: "1px solid #e9d5ff", borderRadius: 6,
+                  cursor: "pointer", padding: "4px 12px", fontWeight: 600,
+                }}
+              >
+                + Thêm thuốc
+              </button>
+              <button
+                className="secondary-button"
+                onClick={handleCreatePrescription}
+                disabled={savingRx}
+                style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}
+              >
+                <Pill size={13} />
+                {savingRx ? "Đang tạo..." : "Tạo đơn thuốc"}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Form bệnh án */}
       <div style={{ display: "grid", gap: 16 }}>
 
@@ -562,21 +897,31 @@ export default function ExaminationPage() {
         <button
           className="secondary-button"
           onClick={handleSave}
-          disabled={saving}
+          disabled={saving || completing || consultation?.status === "COMPLETED"}
           style={{ display: "flex", alignItems: "center", gap: 6 }}
         >
           <Save size={15} />
           {saving ? "Đang lưu..." : existingRecordId ? "Cập nhật bệnh án" : "Lưu bệnh án"}
         </button>
-        <button
-          className="primary-button"
-          onClick={handleComplete}
-          disabled={saving || !form.diagnosis.trim()}
-          style={{ display: "flex", alignItems: "center", gap: 6 }}
-        >
-          <CheckCircle size={15} />
-          Hoàn thành phiên khám
-        </button>
+        {consultation?.status === "COMPLETED" ? (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 6,
+            padding: "8px 16px", borderRadius: 6, fontSize: 14, fontWeight: 600,
+            background: "#dcfce7", color: "#16a34a", border: "1px solid #86efac",
+          }}>
+            <CheckCircle size={15} /> Phiên khám đã hoàn thành
+          </div>
+        ) : (
+          <button
+            className="primary-button"
+            onClick={handleComplete}
+            disabled={saving || completing || !form.diagnosis.trim()}
+            style={{ display: "flex", alignItems: "center", gap: 6 }}
+          >
+            <CheckCircle size={15} />
+            {completing ? "Đang hoàn thành..." : "Hoàn thành phiên khám"}
+          </button>
+        )}
       </div>
     </div>
   );

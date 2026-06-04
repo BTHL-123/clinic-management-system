@@ -14,6 +14,8 @@ public interface LabRequestRepository extends JpaRepository<LabRequest, Long> {
 
     List<LabRequest> findByConsultationId(Long consultationId);
 
+    Page<LabRequest> findByPatientIdOrderByRequestedAtDesc(Long patientId, Pageable pageable);
+
     @Query("""
             SELECT lr FROM LabRequest lr
             WHERE (:status IS NULL OR lr.status = :status)
