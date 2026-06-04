@@ -646,7 +646,6 @@ export default function MyAppointmentsPage() {
   onConfirm={handleConfirmReview}
   busy={submittingReview}
 />
-      />
     </div>
   );
 }
