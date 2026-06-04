@@ -52,12 +52,19 @@ public class MedicineServiceImpl implements MedicineService {
     @Transactional
     @Override
     public MedicineResponse create(MedicineRequest request) {
-        if (medicineRepository.existsByMedicineCodeIgnoreCase(request.medicineCode())) {
-            throw new BusinessException("Mã thuốc '" + request.medicineCode() + "' đã tồn tại.");
+        String medCode = request.medicineCode();
+        if (medCode == null || medCode.isBlank()) {
+            // Generate a random MED-xxx code, for example MED-[timestamp]
+            medCode = "MED-" + System.currentTimeMillis();
+        } else {
+            medCode = medCode.trim().toUpperCase();
+            if (medicineRepository.existsByMedicineCodeIgnoreCase(medCode)) {
+                throw new BusinessException("Mã thuốc '" + medCode + "' đã tồn tại.");
+            }
         }
 
         Medicine medicine = Medicine.builder()
-                .medicineCode(request.medicineCode().trim().toUpperCase())
+                .medicineCode(medCode)
                 .medicineName(request.medicineName().trim())
                 .activeIngredient(request.activeIngredient())
                 .dosageForm(request.dosageForm())
@@ -76,11 +83,17 @@ public class MedicineServiceImpl implements MedicineService {
     public MedicineResponse update(Long id, MedicineRequest request) {
         Medicine medicine = findOrThrow(id);
 
-        if (medicineRepository.existsByMedicineCodeIgnoreCaseAndMedicineIdNot(request.medicineCode(), id)) {
-            throw new BusinessException("Mã thuốc '" + request.medicineCode() + "' đã tồn tại.");
+        String medCode = request.medicineCode();
+        if (medCode == null || medCode.isBlank()) {
+            medCode = medicine.getMedicineCode(); // Keep old code
+        } else {
+            medCode = medCode.trim().toUpperCase();
+            if (medicineRepository.existsByMedicineCodeIgnoreCaseAndMedicineIdNot(medCode, id)) {
+                throw new BusinessException("Mã thuốc '" + medCode + "' đã tồn tại.");
+            }
         }
 
-        medicine.setMedicineCode(request.medicineCode().trim().toUpperCase());
+        medicine.setMedicineCode(medCode);
         medicine.setMedicineName(request.medicineName().trim());
         medicine.setActiveIngredient(request.activeIngredient());
         medicine.setDosageForm(request.dosageForm());

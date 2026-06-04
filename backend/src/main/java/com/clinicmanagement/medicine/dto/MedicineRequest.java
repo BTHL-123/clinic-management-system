@@ -3,7 +3,6 @@ package com.clinicmanagement.medicine.dto;
 import jakarta.validation.constraints.NotBlank;
 
 public record MedicineRequest(
-        @NotBlank(message = "medicineCode không được để trống")
         String medicineCode,
 
         @NotBlank(message = "medicineName không được để trống")
