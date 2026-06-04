@@ -178,7 +178,7 @@ function AppointmentCard({
   onRefundRequest, 
   onReviewRequest, 
   currentUserFullName 
-}) {dev
+}) {
   const navigate = useNavigate();
   const date = appt.appointmentDate
     ? new Date(appt.appointmentDate).toLocaleDateString("vi-VN", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" })
