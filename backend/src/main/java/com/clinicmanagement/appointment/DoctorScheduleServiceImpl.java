@@ -48,6 +48,14 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
             throw new BusinessException("Start time must be before end time");
         }
 
+        java.time.LocalDate today = java.time.LocalDate.now();
+        if (request.workDate().isBefore(today)) {
+            throw new BusinessException("Cannot schedule for a past date");
+        }
+        if (request.workDate().equals(today) && request.startTime().isBefore(java.time.LocalTime.now())) {
+            throw new BusinessException("Cannot schedule for a past time today");
+        }
+
         List<DoctorSchedule> existingSchedules = doctorScheduleRepository.findActiveSchedulesByDoctorAndDate(request.doctorId(), request.workDate());
         for (DoctorSchedule existing : existingSchedules) {
             if (request.startTime().isBefore(existing.getEndTime()) && request.endTime().isAfter(existing.getStartTime())) {
@@ -90,9 +98,21 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         if ("CANCELLED".equals(schedule.getStatus())) {
             throw new BusinessException("Cannot update a cancelled schedule");
         }
+        
+        java.time.LocalDate today = java.time.LocalDate.now();
+        if (schedule.getWorkDate().isBefore(today) || 
+           (schedule.getWorkDate().equals(today) && schedule.getStartTime().isBefore(java.time.LocalTime.now()))) {
+            throw new BusinessException("Cannot update a schedule that has already started or passed");
+        }
 
         if (!request.startTime().isBefore(request.endTime())) {
             throw new BusinessException("Start time must be before end time");
+        }
+        if (request.workDate().isBefore(today)) {
+            throw new BusinessException("Cannot schedule for a past date");
+        }
+        if (request.workDate().equals(today) && request.startTime().isBefore(java.time.LocalTime.now())) {
+            throw new BusinessException("Cannot schedule for a past time today");
         }
 
         boolean hasBookedSlots = timeSlotRepository.existsByScheduleIdAndStatus(id, "BOOKED");

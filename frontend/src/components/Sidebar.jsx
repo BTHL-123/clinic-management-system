@@ -51,6 +51,7 @@ const adminItems = [
   { to: "/dashboard/inventory/batches", label: "Lô thuốc", icon: PackageOpen, roles: ["ADMIN", "PHARMACIST"] },
   { to: "/dashboard/inventory/transactions", label: "Giao dịch kho", icon: History, roles: ["ADMIN", "PHARMACIST"] },
   { to: "/dashboard/inventory/alerts", label: "Cảnh báo kho", icon: Siren, roles: ["ADMIN", "PHARMACIST"] },
+  { to: "/dashboard/pharmacist/prescriptions", label: "Cấp phát thuốc", icon: ClipboardList, roles: ["ADMIN", "PHARMACIST"] },
   { to: "/dashboard/doctors", label: "Bác sĩ", icon: UserRound, roles: ["ADMIN", "STAFF"] },
   { to: "/dashboard/patients", label: "Bệnh nhân", icon: Users, roles: ["ADMIN", "STAFF", "DOCTOR"] },
   { to: "/dashboard/users", label: "Tài khoản", icon: UsersRound, roles: ["ADMIN"] },
@@ -77,6 +78,7 @@ const patientItems = [
   { to: "/dashboard/my-appointments", label: "Lịch hẹn của tôi", icon: CalendarDays },
   { to: "/dashboard/queue-status", label: "Trạng thái hàng đợi", icon: ClipboardList },
   { to: "/dashboard/my-medical-history", label: "Lịch sử bệnh án", icon: History },
+  { to: "/dashboard/my-lab-results", label: "Kết quả xét nghiệm", icon: FlaskConical },
 ];
 
 export default function Sidebar() {
