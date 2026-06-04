@@ -235,7 +235,8 @@ export default function AvailableSlots() {
     try {
       await appointmentService.bookAppointment({
         slotId: selectedSlot.slotId,
-        reasonForVisit: visitReason
+        reasonForVisit: visitReason,
+        paymentMethod: paymentMethod
       });
       setBookingSuccess(true);
       window.dispatchEvent(new CustomEvent("notification-updated"));

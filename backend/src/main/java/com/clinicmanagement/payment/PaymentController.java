@@ -34,7 +34,7 @@ public class PaymentController {
     private final PaymentService paymentService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'PATIENT')")
     public ResponseEntity<ApiResponse<PageResponse<PaymentResponse>>> getAll(
             @RequestParam(required = false) Long invoiceId,
             @RequestParam(required = false) Long appointmentId,
@@ -42,13 +42,20 @@ public class PaymentController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String direction
+            @RequestParam(defaultValue = "desc") String direction,
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         Sort sort = direction.equalsIgnoreCase("asc")
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        return ResponseEntity.ok(ApiResponse.success(paymentService.getAll(invoiceId, appointmentId, status, pageable)));
+        
+        Long patientId = null;
+        if (userDetails != null && userDetails.getUser().getRoles().stream().anyMatch(r -> r.getRoleName().equals("PATIENT"))) {
+            patientId = userDetails.getUser().getUserId();
+        }
+        
+        return ResponseEntity.ok(ApiResponse.success(paymentService.getAll(invoiceId, appointmentId, status, patientId, pageable)));
     }
 
     @GetMapping("/{id}")

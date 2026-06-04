@@ -20,6 +20,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import com.clinicmanagement.notification.NotificationService;
 import com.clinicmanagement.review.ReviewRepository;
+import com.clinicmanagement.payment.Payment;
+import com.clinicmanagement.payment.PaymentRepository;
 
 @Service
 @Transactional(readOnly = true)
@@ -33,6 +35,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final QueueTicketRepository queueTicketRepository;
     private final NotificationService notificationService;
     private final ReviewRepository reviewRepository;
+    private final PaymentRepository paymentRepository;
 
     public AppointmentServiceImpl(
             AppointmentRepository appointmentRepository,
@@ -42,7 +45,8 @@ public class AppointmentServiceImpl implements AppointmentService {
             UserRepository userRepository,
             QueueTicketRepository queueTicketRepository,
             NotificationService notificationService,
-            ReviewRepository reviewRepository
+            ReviewRepository reviewRepository,
+            PaymentRepository paymentRepository
     ) {
         this.appointmentRepository = appointmentRepository;
         this.timeSlotRepository = timeSlotRepository;
@@ -52,6 +56,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         this.queueTicketRepository = queueTicketRepository;
         this.notificationService = notificationService;
         this.reviewRepository = reviewRepository;
+        this.paymentRepository = paymentRepository;
     }
 
     @Override
@@ -207,6 +212,18 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         Appointment savedApp = appointmentRepository.save(app);
 
+        // Tạo Payment DEPOSIT/PENDING
+        Payment payment = new Payment();
+        payment.setAppointmentId(savedApp.getAppointmentId());
+        // Generate a random payment code
+        payment.setPaymentCode("PAY-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        payment.setPaymentType("DEPOSIT");
+        payment.setPaymentMethod(request.paymentMethod() != null ? request.paymentMethod() : "CASH");
+        payment.setAmount(doctor.getConsultationFee());
+        payment.setStatus("PENDING");
+        payment.setPaidBy(patient.getUser());
+        paymentRepository.save(payment);
+
         try {
             notificationService.createNotification(
                     patient.getUser().getUserId(),
@@ -278,6 +295,15 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointment.setCancelledAt(java.time.LocalDateTime.now());
         appointment.setCancelledBy(currentUserId);
         appointmentRepository.save(appointment);
+
+        // Xử lý Payment khi hủy lịch
+        java.util.List<Payment> payments = paymentRepository.findByAppointmentId(appointmentId);
+        for (Payment p : payments) {
+            if ("PENDING".equals(p.getStatus())) {
+                p.setStatus("CANCELLED");
+                paymentRepository.save(p);
+            }
+        }
 
         // 5. Giải phóng slot — đặt lại thành AVAILABLE
         if (appointment.getTimeSlot() != null) {

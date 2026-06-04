@@ -14,7 +14,7 @@ import org.springframework.data.jpa.domain.Specification;
 
 public interface RefundService {
 
-    PageResponse<RefundResponse> getAll(Long paymentId, String status, Pageable pageable);
+    PageResponse<RefundResponse> getAll(Long paymentId, String status, Long patientId, Pageable pageable);
 
     RefundResponse getById(Long id);
 

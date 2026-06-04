@@ -32,20 +32,27 @@ public class RefundController {
     private final RefundService refundService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'PATIENT')")
     public ResponseEntity<ApiResponse<PageResponse<RefundResponse>>> getAll(
             @RequestParam(required = false) Long paymentId,
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "requestedAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String direction
+            @RequestParam(defaultValue = "desc") String direction,
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         Sort sort = direction.equalsIgnoreCase("asc")
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        return ResponseEntity.ok(ApiResponse.success(refundService.getAll(paymentId, status, pageable)));
+        
+        Long patientId = null;
+        if (userDetails != null && userDetails.getUser().getRoles().stream().anyMatch(r -> r.getRoleName().equals("PATIENT"))) {
+            patientId = userDetails.getUser().getUserId();
+        }
+        
+        return ResponseEntity.ok(ApiResponse.success(refundService.getAll(paymentId, status, patientId, pageable)));
     }
 
     @GetMapping("/{id}")
