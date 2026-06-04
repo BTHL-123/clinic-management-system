@@ -74,6 +74,7 @@ const patientItems = [
   { to: "/dashboard/my-appointments", label: "Lịch hẹn của tôi", icon: CalendarDays },
   { to: "/dashboard/queue-status", label: "Trạng thái hàng đợi", icon: ClipboardList },
   { to: "/dashboard/my-medical-history", label: "Lịch sử bệnh án", icon: History },
+  { to: "/dashboard/my-lab-results", label: "Kết quả xét nghiệm", icon: FlaskConical },
 ];
 
 export default function Sidebar() {
