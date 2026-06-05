@@ -40,12 +40,12 @@ public class InventoryServiceImpl implements InventoryService {
     public MedicineBatchResponse updateBatch(Long batchId, UpdateBatchRequest request) {
         MedicineBatch batch = batchRepository.findById(batchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Batch not found"));
-        
+
         if (request.getExpiryDate() != null) batch.setExpiryDate(request.getExpiryDate());
         if (request.getImportPrice() != null) batch.setImportPrice(request.getImportPrice());
         if (request.getSellingPrice() != null) batch.setSellingPrice(request.getSellingPrice());
         if (request.getStatus() != null) batch.setStatus(request.getStatus());
-        
+
         return mapToBatchResponse(batchRepository.save(batch));
     }
 
@@ -114,12 +114,12 @@ public class InventoryServiceImpl implements InventoryService {
     public StockTransactionResponse exportStock(ExportTransactionRequest request, User currentUser) {
         Medicine medicine = medicineRepository.findById(request.getMedicineId())
                 .orElseThrow(() -> new ResourceNotFoundException("Medicine not found"));
-        
+
         MedicineBatch batch = null;
         if (request.getBatchId() != null) {
             batch = batchRepository.findById(request.getBatchId())
                     .orElseThrow(() -> new ResourceNotFoundException("Batch not found"));
-            
+
             if (batch.getCurrentQuantity() < request.getQuantity()) {
                 throw new BusinessException("Not enough quantity in batch");
             }
@@ -142,9 +142,47 @@ public class InventoryServiceImpl implements InventoryService {
         transaction.setReferenceType("MANUAL");
         transaction.setNote(request.getNote());
         transaction.setCreatedBy(currentUser);
-        
+
         StockTransaction saved = transactionRepository.save(transaction);
         return mapToTransactionResponse(saved);
+    }
+
+    @Transactional
+    @Override
+    public void exportStockAutomated(Long medicineId, Integer requiredQuantity, String referenceType, Long referenceId, String note) {
+        Medicine medicine = medicineRepository.findById(medicineId)
+                .orElseThrow(() -> new ResourceNotFoundException("Medicine not found"));
+
+        java.util.List<MedicineBatch> availableBatches = batchRepository.findUsableFefoBatches(medicineId, java.time.LocalDate.now());
+        int remainingQuantity = requiredQuantity;
+
+        for (MedicineBatch batch : availableBatches) {
+            if (remainingQuantity <= 0) break;
+
+            int deduct = Math.min(batch.getCurrentQuantity(), remainingQuantity);
+            batch.setCurrentQuantity(batch.getCurrentQuantity() - deduct);
+
+            if (batch.getCurrentQuantity() == 0) {
+                batch.setStatus("OUT_OF_STOCK");
+            }
+            batchRepository.save(batch);
+
+            StockTransaction transaction = new StockTransaction();
+            transaction.setMedicine(medicine);
+            transaction.setBatch(batch);
+            transaction.setTransactionType("EXPORT");
+            transaction.setQuantity(deduct);
+            transaction.setReferenceType(referenceType);
+            transaction.setReferenceId(referenceId);
+            transaction.setNote(note);
+            transactionRepository.save(transaction);
+
+            remainingQuantity -= deduct;
+        }
+
+        if (remainingQuantity > 0) {
+            throw new BusinessException("Không đủ tồn kho cho thuốc: " + medicine.getMedicineName());
+        }
     }
 
     @Transactional(readOnly = true)
@@ -172,12 +210,12 @@ public class InventoryServiceImpl implements InventoryService {
     public void checkStockAlerts() {
         LocalDate today = LocalDate.now();
         List<MedicineBatch> allActiveBatches = batchRepository.findAll();
-        
+
         for (MedicineBatch batch : allActiveBatches) {
             if ("OUT_OF_STOCK".equals(batch.getStatus()) || "EXPIRED".equals(batch.getStatus())) {
                 continue;
             }
-            
+
             if (batch.getCurrentQuantity() <= 10) {
                 createAlert(batch, "LOW_STOCK", "Stock is critically low: " + batch.getCurrentQuantity());
                 if (batch.getCurrentQuantity() == 0) {
@@ -200,7 +238,7 @@ public class InventoryServiceImpl implements InventoryService {
      * Generate alerts on-demand for all batches.
      * This method can be called anytime (e.g., when loading the alert dashboard)
      * to ensure alerts are up-to-date without waiting for the midnight CronJob.
-     * 
+     *
      * Unlike checkStockAlerts(), this method checks for existing alerts before creating new ones
      * to prevent duplicates.
      */
@@ -209,14 +247,14 @@ public class InventoryServiceImpl implements InventoryService {
     public void generateAlertsOnDemand() {
         LocalDate today = LocalDate.now();
         List<MedicineBatch> allBatches = batchRepository.findAll();
-        
+
         for (MedicineBatch batch : allBatches) {
             // Skip batches that are already marked as OUT_OF_STOCK or EXPIRED in DB
             // (though we compute status dynamically, we still respect DB status for some logic)
-            
+
             // Check EXPIRED
             if (batch.getExpiryDate() != null && batch.getExpiryDate().isBefore(today)) {
-                createAlertIfNotExists(batch, "EXPIRED", 
+                createAlertIfNotExists(batch, "EXPIRED",
                     "Lô thuốc " + batch.getBatchNumber() + " đã hết hạn vào ngày " + batch.getExpiryDate());
             }
             // Check NEAR_EXPIRY (within 30 days)
@@ -224,16 +262,16 @@ public class InventoryServiceImpl implements InventoryService {
                 createAlertIfNotExists(batch, "NEAR_EXPIRY",
                     "Lô thuốc " + batch.getBatchNumber() + " sắp hết hạn vào ngày " + batch.getExpiryDate());
             }
-            
+
             // Check LOW_STOCK (quantity <= 10)
             if (batch.getCurrentQuantity() <= 10 && batch.getCurrentQuantity() > 0) {
                 createAlertIfNotExists(batch, "LOW_STOCK",
                     "Lô thuốc " + batch.getBatchNumber() + " sắp hết hàng (còn " + batch.getCurrentQuantity() + " đơn vị)");
             }
-            
+
             // Check OUT_OF_STOCK (quantity = 0)
             if (batch.getCurrentQuantity() == 0) {
-                createAlertIfNotExists(batch, "LOW_STOCK",
+                createAlertIfNotExists(batch, "OUT_OF_STOCK",
                     "Lô thuốc " + batch.getBatchNumber() + " đã hết hàng");
             }
         }
@@ -244,7 +282,7 @@ public class InventoryServiceImpl implements InventoryService {
      * This prevents duplicate alerts.
      */
     private void createAlertIfNotExists(MedicineBatch batch, String type, String message) {
-        boolean exists = alertRepository.existsByBatchAndAlertTypeAndIsResolvedFalse(batch, type);
+        boolean exists = alertRepository.existsByBatchAndAlertType(batch, type);
         if (!exists) {
             MedicineStockAlert alert = new MedicineStockAlert();
             alert.setMedicine(batch.getMedicine());
@@ -339,12 +377,14 @@ public class InventoryServiceImpl implements InventoryService {
     public void checkStockAvailability(Long medicineId, Integer requiredQuantity) {
         Medicine medicine = medicineRepository.findById(medicineId)
                 .orElseThrow(() -> new ResourceNotFoundException("Medicine not found"));
-        
-        Integer availableStock = batchRepository.findBatches(medicineId, "AVAILABLE", Pageable.unpaged())
+
+        // Tính tổng tồn kho thực tế: bao gồm AVAILABLE, LOW_STOCK, NEAR_EXPIRY
+        // Loại bỏ: CANCELLED, EXPIRED, OUT_OF_STOCK
+        Integer availableStock = batchRepository.findUsableBatches(medicineId)
                 .stream()
                 .mapToInt(MedicineBatch::getCurrentQuantity)
                 .sum();
-        
+
         if (availableStock < requiredQuantity) {
             throw new BusinessException(
                     String.format("Không đủ tồn kho cho thuốc [%s]. Yêu cầu: %d, Tồn kho: %d",

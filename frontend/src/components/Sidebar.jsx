@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   Bell,
   Building2,
@@ -17,6 +18,7 @@ import {
   Search,
   Shield,
   Siren,
+  Undo2,
   Stethoscope,
   Truck,
   UserPlus,
@@ -31,6 +33,7 @@ import {
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import Logo from "./Logo.jsx";
+import { getActiveAlerts } from "../services/inventoryService";
 
 const menuItems = [
   { to: "/dashboard", label: "Trang chủ", icon: LayoutDashboard, end: true },
@@ -42,6 +45,7 @@ const menuItems = [
   { to: "/dashboard/medical-services", label: "Dịch vụ y tế", icon: HeartPulse, roles: ["ADMIN", "RECEPTIONIST"] },
   { to: "/dashboard/invoices", label: "Hóa đơn", icon: Receipt, roles: ["ADMIN", "RECEPTIONIST"] },
   { to: "/dashboard/payments", label: "Thanh toán", icon: CreditCard, roles: ["ADMIN", "RECEPTIONIST"] },
+  { to: "/dashboard/refunds", label: "Hoàn tiền", icon: Undo2, roles: ["ADMIN"] },
   { to: "/dashboard/medicines", label: "Thuốc", icon: Pill, roles: ["ADMIN", "DOCTOR", "PHARMACIST"] },
   { to: "/dashboard/suppliers", label: "Nhà cung cấp", icon: Truck, roles: ["ADMIN", "PHARMACIST"] },
   { to: "/dashboard/inventory/batches", label: "Lô thuốc", icon: PackageOpen, roles: ["ADMIN", "PHARMACIST"] },
@@ -78,6 +82,30 @@ const normalizeRole = (role) => {
 export default function Sidebar() {
   const { user } = useAuth();
   const userRoles = new Set((user?.roles || []).map(normalizeRole));
+  const [alertCount, setAlertCount] = useState(0);
+
+  const hasInventoryRoles =
+    userRoles.has("ADMIN") || userRoles.has("PHARMACIST");
+
+  useEffect(() => {
+    if (!hasInventoryRoles) {
+      setAlertCount(0);
+      return undefined;
+    }
+
+    const fetchAlerts = async () => {
+      try {
+        const res = await getActiveAlerts({ page: 0, size: 1 });
+        setAlertCount(res.data?.totalElements || 0);
+      } catch (error) {
+        console.error("Error fetching inventory alerts:", error);
+      }
+    };
+
+    fetchAlerts();
+    const interval = setInterval(fetchAlerts, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [hasInventoryRoles]);
 
   const filteredItems = menuItems.filter(item => {
     if (!item.roles) return true;
@@ -101,6 +129,20 @@ export default function Sidebar() {
             >
               <Icon size={18} />
               <span>{item.label}</span>
+              {item.to === "/dashboard/inventory/alerts" && alertCount > 0 && (
+                <span style={{
+                  background: "#ef4444",
+                  color: "white",
+                  fontSize: "11px",
+                  fontWeight: "600",
+                  padding: "2px 6px",
+                  borderRadius: "10px",
+                  lineHeight: 1,
+                  marginLeft: "auto"
+                }}>
+                  {alertCount > 99 ? "99+" : alertCount}
+                </span>
+              )}
             </NavLink>
           );
         })}

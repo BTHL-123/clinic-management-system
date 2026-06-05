@@ -16,6 +16,7 @@ import MedicalServiceManagement from "./pages/medical-service/MedicalServiceMana
 import InvoiceManagement from "./pages/invoice/InvoiceManagement.jsx";
 import PaymentManagement from "./pages/payment/PaymentManagement.jsx";
 import PaymentCallback from "./pages/payment/PaymentCallback.jsx";
+import RefundManagement from "./pages/payment/RefundManagement.jsx";
 import AppointmentManagement from "./pages/appointment/Appointments.tsx";
 import AvailableSlots from "./pages/appointment/AvailableSlots.tsx";
 import AiChatPatient from "./pages/ai-chat/AiChatPatient.jsx";
@@ -88,6 +89,7 @@ export default function App() {
         <Route path="invoices" element={<InvoiceManagement />} />
         <Route path="payments" element={<PaymentManagement />} />
         <Route path="payment/callback" element={<PaymentCallback />} />
+        <Route path="refunds" element={<RefundManagement />} />
         <Route path="medicines" element={<MedicineManagement />} />
         <Route path="suppliers" element={<SupplierManagement />} />
         <Route path="inventory/batches" element={<InventoryBatches />} />

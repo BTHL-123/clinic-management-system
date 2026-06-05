@@ -40,6 +40,9 @@ public class Refund {
     @Column(columnDefinition = "TEXT")
     private String reason;
 
+    @Column(name = "reject_reason", columnDefinition = "TEXT")
+    private String rejectReason;
+
     @Column(nullable = false, length = 20)
     private String status = "PENDING";
 

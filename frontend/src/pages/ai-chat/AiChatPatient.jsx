@@ -4,7 +4,9 @@ import {
   createSession,
   sendMessage,
   generateSuggestion,
+  acceptSuggestion,
 } from "../../services/aiChatService";
+import { useNavigate } from "react-router-dom";
 
 export default function AiChatPatient() {
   const [sessionId, setSessionId] = useState(null);
@@ -14,6 +16,7 @@ export default function AiChatPatient() {
   const [suggestion, setSuggestion] = useState(null);
   const [error, setError] = useState("");
   const chatEndRef = useRef(null);
+  const navigate = useNavigate();
 
   // Initialize session on mount
   useEffect(() => {
@@ -46,7 +49,7 @@ export default function AiChatPatient() {
     const userMsg = inputText.trim();
     setInputText("");
     setMessages((prev) => [...prev, { sender: "USER", text: userMsg }]);
-    
+
     try {
       setLoading(true);
       const res = await sendMessage(sessionId, { messageText: userMsg });
@@ -76,6 +79,23 @@ export default function AiChatPatient() {
     }
   };
 
+  const handleAcceptSuggestion = async () => {
+    if (!suggestion) return;
+    try {
+      setLoading(true);
+      await acceptSuggestion(suggestion.suggestionId);
+      navigate("/dashboard/available-slots", {
+        state: {
+          prefillDepartmentId: suggestion.departmentId,
+          prefillDepartmentName: suggestion.departmentName
+        }
+      });
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="page-header" style={{ display: "block", height: "calc(100vh - 120px)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
@@ -86,8 +106,8 @@ export default function AiChatPatient() {
           </h1>
           <p className="muted">Chat với AI để được chẩn đoán sơ bộ và gợi ý chuyên khoa.</p>
         </div>
-        <button 
-          className="primary-button" 
+        <button
+          className="primary-button"
           onClick={handleGetSuggestion}
           disabled={loading || !sessionId || messages.length < 2}
           style={{ background: "#8b5cf6" }}
@@ -172,6 +192,18 @@ export default function AiChatPatient() {
               <p style={{ margin: "0 0 8px 0" }}>Chuyên khoa phù hợp: <strong>{suggestion.departmentName}</strong></p>
               <p style={{ margin: "0 0 8px 0" }}>Độ tin cậy: <strong>{suggestion.confidenceScore}%</strong></p>
               <p style={{ margin: 0, fontSize: "0.9rem", color: "#701a75" }}>{suggestion.explanation}</p>
+              <div style={{ marginTop: 16 }}>
+                <button
+                  onClick={handleAcceptSuggestion}
+                  disabled={loading}
+                  style={{
+                    background: "#c026d3", color: "#fff", border: "none", padding: "8px 16px",
+                    borderRadius: 8, cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", gap: 6
+                  }}
+                >
+                  <Stethoscope size={16} /> Đặt lịch khám với chuyên khoa này
+                </button>
+              </div>
             </div>
           )}
           <div ref={chatEndRef} />

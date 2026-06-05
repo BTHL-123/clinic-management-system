@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Clock, Search, CalendarDays, ArrowLeft, ShieldAlert, UserRound } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { getAvailableSlots, getSchedules, lockSlot, releaseLock } from "../../services/scheduleService";
 import { getDoctors } from "../../services/doctorService";
 import appointmentService from "../../services/appointmentService";
@@ -58,6 +59,9 @@ export default function AvailableSlots() {
   const [visitReason, setVisitReason] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("CASH");
   const [bookingSuccess, setBookingSuccess] = useState(false);
+
+  const location = useLocation();
+  const prefillDepartmentName = (location.state as any)?.prefillDepartmentName;
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -133,7 +137,11 @@ export default function AvailableSlots() {
         const schedules: DoctorSchedule[] = Array.isArray(scheduleJson.data) ? scheduleJson.data : [];
         const doctors: DoctorOption[] = Array.isArray(doctorJson.data?.content) ? doctorJson.data.content : [];
         const scheduledDoctorIds = new Set(schedules.map((schedule) => schedule.doctorId));
-        const availableDoctors = doctors.filter((doctor) => scheduledDoctorIds.has(doctor.doctorId));
+        let availableDoctors = doctors.filter((doctor) => scheduledDoctorIds.has(doctor.doctorId));
+
+        if (prefillDepartmentName) {
+          availableDoctors = availableDoctors.filter((doctor) => doctor.departmentName === prefillDepartmentName);
+        }
 
         setScheduleOptions(schedules);
         setDoctorOptions(availableDoctors);
@@ -227,7 +235,8 @@ export default function AvailableSlots() {
     try {
       await appointmentService.bookAppointment({
         slotId: selectedSlot.slotId,
-        reasonForVisit: visitReason
+        reasonForVisit: visitReason,
+        paymentMethod: paymentMethod
       });
       setBookingSuccess(true);
       window.dispatchEvent(new CustomEvent("notification-updated"));
@@ -269,6 +278,12 @@ export default function AvailableSlots() {
           </p>
         </div>
       </div>
+
+      {prefillDepartmentName && (
+        <div style={{ padding: "12px", background: "#f0fdf4", color: "#166534", borderRadius: "8px", marginBottom: "16px", border: "1px solid #bbf7d0", fontSize: "14px" }}>
+          Đang lọc bác sĩ theo chuyên khoa AI đề xuất: <strong>{prefillDepartmentName}</strong>
+        </div>
+      )}
 
       {!bookingStep ? (
         <>

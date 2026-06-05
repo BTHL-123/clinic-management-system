@@ -16,4 +16,26 @@ public interface MedicineBatchRepository extends JpaRepository<MedicineBatch, Lo
     Page<MedicineBatch> findBatches(@Param("medicineId") Long medicineId, @Param("status") String status, Pageable pageable);
 
     List<MedicineBatch> findByMedicineMedicineIdAndStatus(Long medicineId, String status);
+
+    @Query("SELECT b FROM MedicineBatch b WHERE b.medicine.medicineId = :medicineId " +
+           "AND b.status = 'AVAILABLE' AND b.currentQuantity > 0 AND b.expiryDate >= :currentDate " +
+           "ORDER BY b.expiryDate ASC, b.batchId ASC")
+    List<MedicineBatch> findFefoBatches(@Param("medicineId") Long medicineId, @Param("currentDate") java.time.LocalDate currentDate);
+
+    @Query("SELECT b FROM MedicineBatch b WHERE b.medicine.medicineId = :medicineId " +
+           "AND b.status NOT IN ('CANCELLED', 'EXPIRED', 'OUT_OF_STOCK') " +
+           "AND b.currentQuantity > 0 AND b.expiryDate >= :currentDate " +
+           "ORDER BY b.expiryDate ASC, b.batchId ASC")
+    List<MedicineBatch> findUsableFefoBatches(@Param("medicineId") Long medicineId, @Param("currentDate") java.time.LocalDate currentDate);
+
+    /**
+     * Trả về tất cả batch còn hàng thực tế cho một loại thuốc,
+     * bao gồm cả LOW_STOCK và NEAR_EXPIRY (vẫn có hàng, chưa hết hạn).
+     * Loại bỏ: CANCELLED, EXPIRED, OUT_OF_STOCK.
+     * Dùng cho checkStockAvailability để tính đúng tồn kho khả dụng khi tạo Invoice.
+     */
+    @Query("SELECT b FROM MedicineBatch b WHERE b.medicine.medicineId = :medicineId " +
+           "AND b.status NOT IN ('CANCELLED', 'EXPIRED', 'OUT_OF_STOCK') " +
+           "AND b.currentQuantity > 0")
+    List<MedicineBatch> findUsableBatches(@Param("medicineId") Long medicineId);
 }

@@ -2,8 +2,11 @@ package com.clinicmanagement.aichat;
 
 import com.clinicmanagement.aichat.dto.AiChatMessageRequest;
 import com.clinicmanagement.aichat.dto.AiChatSessionResponse;
+import com.clinicmanagement.aichat.dto.AiSpecialtySuggestionResponse;
 import com.clinicmanagement.aichat.dto.CreateAiChatSessionRequest;
 import com.clinicmanagement.aichat.dto.SendChatMessageResponse;
+import com.clinicmanagement.aichat.dto.StandardizeNoteRequest;
+import com.clinicmanagement.aichat.dto.StandardizeNoteResponse;
 import com.clinicmanagement.common.exception.BusinessException;
 import com.clinicmanagement.common.exception.ResourceNotFoundException;
 import com.clinicmanagement.department.Department;
@@ -155,6 +158,61 @@ public class AiChatServiceImpl implements AiChatService {
         suggestion.setExplanation(explanation);
 
         return suggestionRepository.save(suggestion);
+    }
+
+    @Transactional
+    @Override
+    public AiSpecialtySuggestionResponse acceptSuggestion(Long suggestionId, User currentUser) {
+        AiSpecialtySuggestion suggestion = suggestionRepository.findById(suggestionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy kết quả gợi ý chuyên khoa"));
+
+        if (suggestion.getPatient() == null || suggestion.getPatient().getUser() == null ||
+                !suggestion.getPatient().getUser().getUserId().equals(currentUser.getUserId())) {
+            throw new AccessDeniedException("Bạn không có quyền thao tác trên gợi ý này");
+        }
+
+        suggestion.setAcceptedByPatient(true);
+        AiSpecialtySuggestion saved = suggestionRepository.save(suggestion);
+
+        return new AiSpecialtySuggestionResponse(
+                saved.getSuggestionId(),
+                saved.getDepartment().getDepartmentId(),
+                saved.getDepartment().getDepartmentName(),
+                saved.getConfidenceScore().doubleValue(),
+                saved.getExplanation()
+        );
+    }
+
+    @Override
+    public StandardizeNoteResponse standardizeClinicalNote(StandardizeNoteRequest request, User currentUser) {
+        if (request.rawNote() == null || request.rawNote().trim().isEmpty()) {
+            throw new BusinessException("Ghi chú thô không được để trống");
+        }
+
+        String jsonResult = geminiService.standardizeClinicalNote(request.rawNote());
+
+        try {
+            if (jsonResult.startsWith("```json")) {
+                jsonResult = jsonResult.substring(7);
+            }
+            if (jsonResult.startsWith("```")) {
+                jsonResult = jsonResult.substring(3);
+            }
+            if (jsonResult.endsWith("```")) {
+                jsonResult = jsonResult.substring(0, jsonResult.length() - 3);
+            }
+
+            com.fasterxml.jackson.databind.JsonNode root = objectMapper.readTree(jsonResult.trim());
+            StandardizeNoteResponse response = new StandardizeNoteResponse();
+            response.setSymptoms(root.has("symptoms") ? root.get("symptoms").asText() : "");
+            response.setClinicalFindings(root.has("clinicalFindings") ? root.get("clinicalFindings").asText() : "");
+            response.setDiagnosis(root.has("diagnosis") ? root.get("diagnosis").asText() : "");
+            response.setTreatmentPlan(root.has("treatmentPlan") ? root.get("treatmentPlan").asText() : "");
+            response.setDoctorNote(root.has("doctorNote") ? root.get("doctorNote").asText() : "");
+            return response;
+        } catch (Exception e) {
+            throw new BusinessException("AI trả về định dạng không hợp lệ. Vui lòng thử lại.");
+        }
     }
 
     private void validateSessionOwner(AiChatSession session, User currentUser) {
