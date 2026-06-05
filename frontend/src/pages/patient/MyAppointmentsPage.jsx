@@ -240,6 +240,18 @@ function AppointmentCard({
             <div style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 600, marginBottom: "2px" }}>BÁC SĨ</div>
             <div style={{ fontSize: "13px", fontWeight: 600, color: "#334155" }}>{appt.doctorName || "—"}</div>
           </div>
+          <div>
+            <div style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 600, marginBottom: "2px" }}>THANH TOÁN</div>
+            <div style={{ fontSize: "13px" }}>
+              {appt.status === "PENDING_PAYMENT" ? (
+                <span style={{ color: "#dc2626", fontWeight: 600 }}>❌ Chưa thanh toán</span>
+              ) : appt.status === "CANCELLED" || appt.status === "NO_SHOW" ? (
+                <span style={{ color: "#94a3b8" }}>—</span>
+              ) : (
+                <span style={{ color: "#16a34a", fontWeight: 600 }}>✅ Đã thanh toán / Tại quầy</span>
+              )}
+            </div>
+          </div>
         </div>
         {appt.status === "CANCELLED" && appt.cancellationReason && (
           <div style={{ gridColumn: "1 / -1", marginTop: "4px" }}>
@@ -392,12 +404,17 @@ export default function MyAppointmentsPage() {
     setLoading(true);
     setError(null);
     try {
-      const payRes = await getPayments({ appointmentId: appt.appointmentId });
+      const payRes = await getPayments({ appointmentId: appt.appointmentId, size: 100 });
       const payments = payRes.data?.content || payRes.data || [];
       const paidPayment = payments.find(p => p.status === "PAID");
 
       if (!paidPayment) {
-        setError("Không tìm thấy giao dịch đã thanh toán cho lịch hẹn này.");
+        const hasOtherPayment = payments.length > 0;
+        if (hasOtherPayment) {
+           setError(`Lịch hẹn này có giao dịch nhưng ở trạng thái: ${payments[0].status}, không đủ điều kiện hoàn tiền (yêu cầu trạng thái PAID).`);
+        } else {
+           setError("Không tìm thấy giao dịch đã thanh toán cho lịch hẹn này.");
+        }
         return;
       }
 

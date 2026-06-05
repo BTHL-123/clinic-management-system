@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { Clock, Search, CalendarDays, ArrowLeft, ShieldAlert, UserRound } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { getAvailableSlots, getSchedules, lockSlot, releaseLock } from "../../services/scheduleService";
 import { getDoctors } from "../../services/doctorService";
 import appointmentService from "../../services/appointmentService";
 import { useToast } from "../../context/useToast";
-
+import { getSepayQr, getMyPaymentById } from "../../services/paymentService";
 interface TimeSlot {
   slotId: number;
   scheduleId: number;
@@ -41,6 +41,7 @@ function formatTime(t: string): string {
 
 export default function AvailableSlots() {
   const toast = useToast();
+  const navigate = useNavigate();
   const [doctorId, setDoctorId] = useState("");
   const [workDate, setWorkDate] = useState("");
   const [doctorOptions, setDoctorOptions] = useState<DoctorOption[]>([]);
@@ -60,7 +61,10 @@ export default function AvailableSlots() {
   const [patientPhone, setPatientPhone] = useState("");
   const [visitReason, setVisitReason] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("CASH");
+  const [paymentAmount, setPaymentAmount] = useState("");
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [sepayQrData, setSepayQrData] = useState<any>(null);
+  const [isCheckingSepay, setIsCheckingSepay] = useState(false);
 
   const location = useLocation();
   const prefillDepartmentName = (location.state as any)?.prefillDepartmentName;
@@ -235,26 +239,72 @@ export default function AvailableSlots() {
     if (!selectedSlot) return;
 
     try {
-      await appointmentService.bookAppointment({
+      const payload: any = {
         slotId: selectedSlot.slotId,
         reasonForVisit: visitReason,
         paymentMethod: paymentMethod
-      });
+      };
+      if (paymentMethod === "BANK_TRANSFER" && paymentAmount) {
+        payload.amount = Number(paymentAmount);
+      }
+      const response = await appointmentService.bookAppointment(payload);
       setBookingSuccess(true);
       window.dispatchEvent(new CustomEvent("notification-updated"));
-      setTimeout(() => {
+
+      const data = response?.data;
+      if (paymentMethod === "BANK_TRANSFER" && data?.paymentId) {
+        // Fetch SePay QR and do not close form automatically
+        try {
+          const qrRes = await getSepayQr(data.paymentId);
+          setSepayQrData(qrRes.data);
+        } catch (qrErr: any) {
+          alert("Lỗi khi lấy mã QR thanh toán: " + (qrErr.message || ""));
+        }
+      } else {
+        setTimeout(() => {
+          setBookingStep(false);
+          setSelectedSlot(null);
+          setPatientName("");
+          setPatientPhone("");
+          setVisitReason("");
+          setPaymentAmount("");
+          if (doctorId && workDate) {
+            fetchSlots(doctorId, workDate);
+          }
+        }, 2000);
+      }
+    } catch (err: any) {
+      const apiMsg = err.response?.data?.message || err.message;
+      alert(apiMsg || "Đặt lịch thất bại. Vui lòng thử lại.");
+    }
+  };
+
+  const checkSepayStatus = async () => {
+    if (!sepayQrData) return;
+    try {
+      setIsCheckingSepay(true);
+      const res = await getMyPaymentById(sepayQrData.paymentId);
+      if (res.data && res.data.status === "PAID") {
+        alert("Giao dịch thành công!");
+        setSepayQrData(null);
         setBookingStep(false);
+        navigate("/dashboard/my-appointments");
         setSelectedSlot(null);
         setPatientName("");
         setPatientPhone("");
         setVisitReason("");
+        setPaymentAmount("");
         if (doctorId && workDate) {
           fetchSlots(doctorId, workDate);
         }
-      }, 2000);
+      } else {
+        alert("Giao dịch chưa thành công hoặc hệ thống đang xử lý. Vui lòng thử lại sau giây lát.");
+      }
     } catch (err: any) {
       const apiMsg = err.response?.data?.message || err.message;
-      toast.error(apiMsg || "Đặt lịch thất bại. Vui lòng thử lại.", "Đặt lịch thất bại");
+      toast.error(apiMsg || "Lỗi khi kiểm tra trạng thái: " + err.message, "Kiểm tra thất bại");
+    } finally {
+      setIsCheckingSepay(false);
     }
   };
 
@@ -814,14 +864,37 @@ export default function AvailableSlots() {
                     <input
                       type="radio"
                       name="payment"
-                      value="BANK"
-                      checked={paymentMethod === "BANK"}
-                      onChange={() => setPaymentMethod("BANK")}
+                      value="BANK_TRANSFER"
+                      checked={paymentMethod === "BANK_TRANSFER"}
+                      onChange={() => setPaymentMethod("BANK_TRANSFER")}
                       disabled={isExpired}
                     />
-                    Chuyển khoản qua ngân hàng
+                    Chuyển khoản ngân hàng / SePay
                   </label>
                 </div>
+                {paymentMethod === "BANK_TRANSFER" && (
+                  <div style={{ marginTop: "12px", padding: "12px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                    <label style={{ display: "block", marginBottom: "6px", fontSize: "14px", fontWeight: 500 }}>
+                      Nhập số tiền chuyển khoản (VNĐ) <span style={{ color: "red" }}>*</span>
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="1000"
+                      placeholder="Ví dụ: 150000"
+                      value={paymentAmount}
+                      onChange={(e) => setPaymentAmount(e.target.value)}
+                      disabled={isExpired}
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        borderRadius: "6px",
+                        border: "1px solid #cbd5e1",
+                        fontSize: "15px"
+                      }}
+                    />
+                  </div>
+                )}
               </div>
 
               <div style={{ display: "flex", gap: "12px" }}>
@@ -845,6 +918,66 @@ export default function AvailableSlots() {
               </div>
             </form>
           )}
+        </div>
+      )}
+
+      {/* ── Sepay QR Modal ────────────────────────────── */}
+      {sepayQrData && (
+        <div className="modal-overlay" onClick={() => setSepayQrData(null)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 450 }}>
+            <div className="modal-header">
+              <h2>Thanh toán chuyển khoản SePay QR</h2>
+              <button className="icon-button" onClick={() => setSepayQrData(null)}>
+                X
+              </button>
+            </div>
+            <div style={{ textAlign: "center", marginBottom: 16 }}>
+              <img
+                src={sepayQrData.qrCodeUrl}
+                alt="SePay QR"
+                style={{ width: "100%", maxWidth: 300, border: "1px solid #e2e8f0", borderRadius: 8, padding: 8 }}
+              />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: "0.95rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>Ngân hàng:</span>
+                <strong>{sepayQrData.bankName}</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>Chủ tài khoản:</span>
+                <strong>{sepayQrData.accountName}</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>Số tài khoản:</span>
+                <strong>{sepayQrData.accountNumber}</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>Số tiền:</span>
+                <strong style={{ color: "#0f766e", fontSize: "1.1rem" }}>
+                  {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(sepayQrData.amount)}
+                </strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>Nội dung CK:</span>
+                <strong style={{ color: "#ef4444", backgroundColor: "#fee2e2", padding: "2px 8px", borderRadius: 4 }}>
+                  {sepayQrData.transferContent}
+                </strong>
+              </div>
+            </div>
+            <div style={{ marginTop: 24 }}>
+              <button
+                className="btn btn-primary"
+                style={{ width: "100%", padding: "12px", display: "flex", justifyContent: "center", alignItems: "center", gap: 8 }}
+                onClick={checkSepayStatus}
+                disabled={isCheckingSepay}
+              >
+                {isCheckingSepay ? "Đang kiểm tra..." : "Kiểm tra trạng thái thanh toán"}
+              </button>
+              <p style={{ textAlign: "center", fontSize: "0.85rem", color: "#64748b", marginTop: 12 }}>
+                (Hệ thống tự động cập nhật sau khi bạn chuyển khoản thành công)
+              </p>
+            </div>
+          </div>
         </div>
       )}
 

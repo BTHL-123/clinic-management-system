@@ -32,12 +32,13 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long>,
            "LEFT JOIN a.doctor d " +
            "LEFT JOIN d.user du " +
            "WHERE (pu.userId = :userId OR du.userId = :userId) AND " +
-           "((:upcoming = true AND a.appointmentDate >= :currentDate) OR " +
-           " (:upcoming = false AND a.appointmentDate < :currentDate))")
+           "((:upcoming = true AND (a.appointmentDate > :currentDate OR (a.appointmentDate = :currentDate AND a.startTime >= :currentTime)) AND a.status NOT IN ('CANCELLED', 'COMPLETED', 'NO_SHOW')) OR " +
+           " (:upcoming = false AND (a.appointmentDate < :currentDate OR (a.appointmentDate = :currentDate AND a.startTime < :currentTime) OR a.status IN ('CANCELLED', 'COMPLETED', 'NO_SHOW'))))")
     Page<Appointment> findMyAppointments(
             @Param("userId") Long userId,
             @Param("upcoming") boolean upcoming,
             @Param("currentDate") LocalDate currentDate,
+            @Param("currentTime") LocalTime currentTime,
             Pageable pageable
     );
 

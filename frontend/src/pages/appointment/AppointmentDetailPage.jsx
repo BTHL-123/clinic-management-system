@@ -144,6 +144,18 @@ export default function AppointmentDetailPage() {
             <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 600 }}>BÁC SĨ</div>
             <div style={{ fontSize: "15px", color: "#0f172a" }}>{appt.doctorName} - {appt.departmentName}</div>
           </div>
+          <div>
+            <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 600 }}>THANH TOÁN</div>
+            <div style={{ fontSize: "15px", color: "#0f172a" }}>
+              {appt.status === "PENDING_PAYMENT" ? (
+                <span style={{ color: "#dc2626", fontWeight: 600 }}>❌ Chưa thanh toán</span>
+              ) : appt.status === "CANCELLED" || appt.status === "NO_SHOW" ? (
+                <span style={{ color: "#94a3b8" }}>—</span>
+              ) : (
+                <span style={{ color: "#16a34a", fontWeight: 600 }}>✅ Đã thanh toán / Tại quầy</span>
+              )}
+            </div>
+          </div>
           <div style={{ display: "flex", gap: "32px" }}>
             <div>
               <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 600 }}>NGÀY KHÁM</div>

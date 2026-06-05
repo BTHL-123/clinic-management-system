@@ -64,6 +64,7 @@ public class SecurityConfig {
                                 "/departments/**",
                                 "/departments",
                                 "/payments/online/callback",
+                                "/payments/sepay/webhook",
                                 "/doctor-schedules/**",
                                 "/doctor-schedules",
                                 "/doctors/**",

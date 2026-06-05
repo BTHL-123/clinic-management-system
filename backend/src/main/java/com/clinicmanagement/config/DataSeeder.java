@@ -62,14 +62,13 @@ public class DataSeeder implements CommandLineRunner {
                 "CREATE_PRESCRIPTION",
                 "MANAGE_MEDICINE_STOCK",
                 "VIEW_REPORT",
-                "MANAGE_SETTINGS"
-        ).forEach(permissionCode -> {
-            if (!permissionRepository.existsByPermissionCode(permissionCode)) {
-                Permission permission = new Permission();
-                permission.setPermissionCode(permissionCode);
-                permissionRepository.save(permission);
-            }
-        });
+                "MANAGE_SETTINGS").forEach(permissionCode -> {
+                    if (!permissionRepository.existsByPermissionCode(permissionCode)) {
+                        Permission permission = new Permission();
+                        permission.setPermissionCode(permissionCode);
+                        permissionRepository.save(permission);
+                    }
+                });
     }
 
     private void seedAdmin() {
@@ -89,11 +88,15 @@ public class DataSeeder implements CommandLineRunner {
 
     private void seedDoctor() {
         Long departmentId;
-        List<Long> deptIds = jdbcTemplate.query("SELECT department_id FROM departments WHERE department_name = 'General Medicine'", (rs, rowNum) -> rs.getLong("department_id"));
+        List<Long> deptIds = jdbcTemplate.query(
+                "SELECT department_id FROM departments WHERE department_name = 'General Medicine'",
+                (rs, rowNum) -> rs.getLong("department_id"));
         if (deptIds.isEmpty()) {
-            jdbcTemplate.update("INSERT INTO departments (department_name, description, status, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)",
+            jdbcTemplate.update(
+                    "INSERT INTO departments (department_name, description, status, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)",
                     "General Medicine", "General medicine department", "ACTIVE");
-            departmentId = jdbcTemplate.queryForObject("SELECT department_id FROM departments WHERE department_name = 'General Medicine'", Long.class);
+            departmentId = jdbcTemplate.queryForObject(
+                    "SELECT department_id FROM departments WHERE department_name = 'General Medicine'", Long.class);
         } else {
             departmentId = deptIds.get(0);
         }
@@ -101,10 +104,10 @@ public class DataSeeder implements CommandLineRunner {
         Role doctorRole = roleRepository.findByRoleName("DOCTOR")
                 .orElseThrow(() -> new IllegalStateException("DOCTOR role has not been seeded"));
 
-        String[] emails = {"doctor@example.com", "doctor2@example.com", "doctor3@example.com"};
-        String[] names = {"Dr. John Doe", "Dr. Jane Smith", "Dr. Robert Lee"};
-        String[] codes = {"DOC001", "DOC002", "DOC003"};
-        String[] phones = {"0912345678", "0987654321", "0909090909"};
+        String[] emails = { "doctor@example.com", "doctor2@example.com", "doctor3@example.com" };
+        String[] names = { "Dr. John Doe", "Dr. Jane Smith", "Dr. Robert Lee" };
+        String[] codes = { "DOC001", "DOC002", "DOC003" };
+        String[] phones = { "0912345678", "0987654321", "0909090909" };
 
         for (int i = 0; i < emails.length; i++) {
             String email = emails[i];
@@ -112,23 +115,29 @@ public class DataSeeder implements CommandLineRunner {
             List<Long> userIds = jdbcTemplate.query("SELECT user_id FROM users WHERE email = ?",
                     (rs, rowNum) -> rs.getLong("user_id"), email);
             if (userIds.isEmpty()) {
-                jdbcTemplate.update("INSERT INTO users (email, password_hash, full_name, phone, auth_provider, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                jdbcTemplate.update(
+                        "INSERT INTO users (email, password_hash, full_name, phone, auth_provider, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
                         email, passwordEncoder.encode("123456"), names[i], phones[i], "LOCAL", "ACTIVE");
-                doctorUserId = jdbcTemplate.queryForObject("SELECT user_id FROM users WHERE email = ?", Long.class, email);
-                jdbcTemplate.update("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", doctorUserId, doctorRole.getRoleId());
+                doctorUserId = jdbcTemplate.queryForObject("SELECT user_id FROM users WHERE email = ?", Long.class,
+                        email);
+                jdbcTemplate.update("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", doctorUserId,
+                        doctorRole.getRoleId());
             } else {
                 doctorUserId = userIds.get(0);
             }
 
             List<Long> existingDoc = jdbcTemplate.query("SELECT doctor_id FROM doctors WHERE user_id = ?",
                     (rs, rowNum) -> rs.getLong("doctor_id"), doctorUserId);
-            
+
             if (existingDoc.isEmpty()) {
-                jdbcTemplate.update("INSERT INTO doctors (user_id, department_id, doctor_code, degree, specialization, years_of_experience, biography, consultation_fee, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
-                        doctorUserId, departmentId, codes[i], "MD", "General Practitioner", 10 + i, "A highly experienced practitioner", 150000.0, "ACTIVE");
+                jdbcTemplate.update(
+                        "INSERT INTO doctors (user_id, department_id, doctor_code, degree, specialization, years_of_experience, biography, consultation_fee, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                        doctorUserId, departmentId, codes[i], "MD", "General Practitioner", 10 + i,
+                        "A highly experienced practitioner", 150000.0, "ACTIVE");
             }
         }
-        List<Long> doctorIds = jdbcTemplate.query("SELECT doctor_id FROM doctors", (rs, rowNum) -> rs.getLong("doctor_id"));
+        List<Long> doctorIds = jdbcTemplate.query("SELECT doctor_id FROM doctors",
+                (rs, rowNum) -> rs.getLong("doctor_id"));
         System.out.println("\n=======================================================");
         System.out.println("=== DỰ ÁN CLINIC: DANH SÁCH ID BÁC SĨ ĐANG CÓ: " + doctorIds + " ===");
         System.out.println("=======================================================\n");
@@ -149,7 +158,8 @@ public class DataSeeder implements CommandLineRunner {
         patient.setRoles(Set.of(patientRole));
         User savedUser = userRepository.save(patient);
 
-        jdbcTemplate.update("INSERT INTO patients (user_id, patient_code, full_name, gender, phone, email, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+        jdbcTemplate.update(
+                "INSERT INTO patients (user_id, patient_code, full_name, gender, phone, email, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
                 savedUser.getUserId(), "PAT000001", "Nguyễn Văn Test", "MALE", "0911222333", email);
     }
 
@@ -182,21 +192,32 @@ public class DataSeeder implements CommandLineRunner {
                 "SELECT consultation_id FROM consultation_sessions WHERE consultation_id = 1001",
                 (rs, rowNum) -> rs.getLong("consultation_id"));
         if (existingSessions.isEmpty()) {
-            Long deptId1 = jdbcTemplate.queryForObject("SELECT department_id FROM doctors WHERE doctor_id = ?", Long.class, doctorId1);
-            Long deptId2 = jdbcTemplate.queryForObject("SELECT department_id FROM doctors WHERE doctor_id = ?", Long.class, doctorId2);
-            
-            jdbcTemplate.update("INSERT INTO appointments (appointment_id, appointment_code, patient_id, doctor_id, department_id, appointment_date, start_time, end_time, booking_type, status, deposit_amount, created_at, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_DATE, '08:00', '08:30', 'ONLINE', 'COMPLETED', 0.0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", 1001, "APP1001", patientId, doctorId1, deptId1);
-            jdbcTemplate.update("INSERT INTO consultation_sessions (consultation_id, appointment_id, patient_id, doctor_id, status, created_at, updated_at) VALUES (?, ?, ?, ?, 'COMPLETED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", 1001, 1001, patientId, doctorId1);
+            Long deptId1 = jdbcTemplate.queryForObject("SELECT department_id FROM doctors WHERE doctor_id = ?",
+                    Long.class, doctorId1);
+            Long deptId2 = jdbcTemplate.queryForObject("SELECT department_id FROM doctors WHERE doctor_id = ?",
+                    Long.class, doctorId2);
 
-            jdbcTemplate.update("INSERT INTO appointments (appointment_id, appointment_code, patient_id, doctor_id, department_id, appointment_date, start_time, end_time, booking_type, status, deposit_amount, created_at, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_DATE, '09:00', '09:30', 'ONLINE', 'COMPLETED', 0.0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", 1002, "APP1002", patientId, doctorId2, deptId2);
-            jdbcTemplate.update("INSERT INTO consultation_sessions (consultation_id, appointment_id, patient_id, doctor_id, status, created_at, updated_at) VALUES (?, ?, ?, ?, 'COMPLETED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", 1002, 1002, patientId, doctorId2);
+            jdbcTemplate.update(
+                    "INSERT INTO appointments (appointment_id, appointment_code, patient_id, doctor_id, department_id, appointment_date, start_time, end_time, booking_type, status, deposit_amount, created_at, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_DATE, '08:00', '08:30', 'ONLINE', 'COMPLETED', 0.0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                    1001, "APP1001", patientId, doctorId1, deptId1);
+            jdbcTemplate.update(
+                    "INSERT INTO consultation_sessions (consultation_id, appointment_id, patient_id, doctor_id, status, created_at, updated_at) VALUES (?, ?, ?, ?, 'COMPLETED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                    1001, 1001, patientId, doctorId1);
+
+            jdbcTemplate.update(
+                    "INSERT INTO appointments (appointment_id, appointment_code, patient_id, doctor_id, department_id, appointment_date, start_time, end_time, booking_type, status, deposit_amount, created_at, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_DATE, '09:00', '09:30', 'ONLINE', 'COMPLETED', 0.0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                    1002, "APP1002", patientId, doctorId2, deptId2);
+            jdbcTemplate.update(
+                    "INSERT INTO consultation_sessions (consultation_id, appointment_id, patient_id, doctor_id, status, created_at, updated_at) VALUES (?, ?, ?, ?, 'COMPLETED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                    1002, 1002, patientId, doctorId2);
         }
 
         // Bệnh án 1: Viêm loét dạ dày
-        jdbcTemplate.update("""
-                INSERT INTO medical_records (consultation_id, patient_id, doctor_id, symptoms, clinical_findings, diagnosis, treatment_plan, doctor_note, follow_up_date, follow_up_note, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
+        jdbcTemplate.update(
+                """
+                        INSERT INTO medical_records (consultation_id, patient_id, doctor_id, symptoms, clinical_findings, diagnosis, treatment_plan, doctor_note, follow_up_date, follow_up_note, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
                 1001, patientId, doctorId1,
                 "Dau bung, buon non, sot nhe 37.8C",
                 "Bung an dau vung thuong vi",
@@ -209,10 +230,11 @@ public class DataSeeder implements CommandLineRunner {
                 java.sql.Timestamp.valueOf(java.time.LocalDateTime.now().minusDays(14)));
 
         // Bệnh án 2: Viêm phế quản
-        jdbcTemplate.update("""
-                INSERT INTO medical_records (consultation_id, patient_id, doctor_id, symptoms, clinical_findings, diagnosis, treatment_plan, doctor_note, follow_up_date, follow_up_note, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
+        jdbcTemplate.update(
+                """
+                        INSERT INTO medical_records (consultation_id, patient_id, doctor_id, symptoms, clinical_findings, diagnosis, treatment_plan, doctor_note, follow_up_date, follow_up_note, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
                 1002, patientId, doctorId2,
                 "Ho khan keo dai, kho tho khi ngu",
                 "Phoi nghe ran am hai ben",

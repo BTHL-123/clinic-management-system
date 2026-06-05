@@ -63,6 +63,16 @@ public class PaymentServiceImpl implements PaymentService {
         return PaymentResponse.from(payment);
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public PaymentResponse getMyPaymentById(Long id, User currentUser) {
+        Payment payment = findOrThrow(id);
+        if (!payment.getPaidBy().getUserId().equals(currentUser.getUserId())) {
+            throw new BusinessException("Bạn không có quyền truy cập thông tin thanh toán này");
+        }
+        return PaymentResponse.from(payment);
+    }
+
     @Transactional
     @Override
     public PaymentResponse create(CreatePaymentRequest request, User currentUser) {
@@ -117,6 +127,7 @@ public class PaymentServiceImpl implements PaymentService {
                 eventPublisher.publishEvent(new PaymentCompletedEvent(
                         payment.getPaymentId(), 
                         invoice.getInvoiceId(), 
+                        payment.getAppointmentId(),
                         payment.getPaymentCode()
                 ));
             } else {
@@ -185,16 +196,23 @@ public class PaymentServiceImpl implements PaymentService {
                 if (totalPaid.compareTo(invoice.getFinalAmount()) >= 0) {
                     invoice.setStatus("PAID");
                     invoice.setPaidAt(LocalDateTime.now());
-                    
                     eventPublisher.publishEvent(new PaymentCompletedEvent(
                             payment.getPaymentId(), 
                             invoice.getInvoiceId(), 
+                            payment.getAppointmentId(),
                             payment.getPaymentCode()
                     ));
                 } else {
                     invoice.setStatus("PARTIALLY_PAID");
                 }
                 invoiceRepository.save(invoice);
+            } else if (payment.getAppointmentId() != null) {
+                eventPublisher.publishEvent(new PaymentCompletedEvent(
+                        payment.getPaymentId(), 
+                        null, 
+                        payment.getAppointmentId(),
+                        payment.getPaymentCode()
+                ));
             }
         } else {
             payment.setStatus(request.status().toUpperCase());

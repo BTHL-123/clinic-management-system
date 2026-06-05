@@ -105,13 +105,18 @@ public class AppointmentServiceImpl implements AppointmentService {
             Pageable pageable
     ) {
         LocalDate currentDate = LocalDate.now();
+        java.time.LocalTime currentTime = java.time.LocalTime.now();
         Page<Appointment> appointments = appointmentRepository.findMyAppointments(
-                userId, upcoming, currentDate, pageable
+                userId, upcoming, currentDate, currentTime, pageable
         );
         return PageResponse.from(appointments.map(this::mapToResponse));
     }
 
     private AppointmentResponse mapToResponse(Appointment app) {
+        return mapToResponse(app, null);
+    }
+
+    private AppointmentResponse mapToResponse(Appointment app, Long paymentId) {
         Integer queueNumber = app.getQueueTicket() != null ? app.getQueueTicket().getQueueNumber() : null;
         String queueStatus = app.getQueueTicket() != null ? app.getQueueTicket().getStatus() : null;
         String patientPhone = app.getPatient() != null ? app.getPatient().getPhone() : null;
@@ -141,7 +146,8 @@ public class AppointmentServiceImpl implements AppointmentService {
                 app.getCheckedInAt(),
                 queueNumber,
                 queueStatus,
-                hasReviewed
+                hasReviewed,
+                paymentId
         );
     }
 
@@ -204,10 +210,31 @@ public class AppointmentServiceImpl implements AppointmentService {
         app.setAppointmentDate(slot.getDoctorSchedule().getWorkDate());
         app.setStartTime(slot.getStartTime());
         app.setEndTime(slot.getEndTime());
-        app.setStatus("CONFIRMED");
         app.setReasonForVisit(request.reasonForVisit());
         app.setBookingType("ONLINE");
-        app.setDepositAmount(doctor.getConsultationFee());
+        java.math.BigDecimal finalAmount = doctor.getConsultationFee();
+        String pMethod = request.paymentMethod() != null ? request.paymentMethod() : "CASH";
+        if ("DEPOSIT".equals(pMethod) || "BANK".equals(pMethod)) {
+            pMethod = "BANK_TRANSFER";
+        }
+
+        if ("BANK_TRANSFER".equals(pMethod)) {
+            if (request.amount() == null || request.amount().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+                throw new com.clinicmanagement.common.exception.BusinessException("Số tiền thanh toán SePay phải lớn hơn 0");
+            }
+            if (request.amount().compareTo(new java.math.BigDecimal("500000000")) > 0) {
+                throw new com.clinicmanagement.common.exception.BusinessException("Số tiền thanh toán vượt quá giới hạn cho phép");
+            }
+            finalAmount = request.amount();
+            app.setStatus("PENDING_PAYMENT");
+        } else if (request.amount() != null && request.amount().compareTo(java.math.BigDecimal.ZERO) >= 0) {
+            finalAmount = request.amount();
+            app.setStatus("CONFIRMED");
+        } else {
+            app.setStatus("CONFIRMED");
+        }
+
+        app.setDepositAmount(finalAmount);
         app.setAppointmentCode("APT" + System.currentTimeMillis());
 
         Appointment savedApp = appointmentRepository.save(app);
@@ -218,8 +245,8 @@ public class AppointmentServiceImpl implements AppointmentService {
         // Generate a random payment code
         payment.setPaymentCode("PAY-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         payment.setPaymentType("DEPOSIT");
-        payment.setPaymentMethod(request.paymentMethod() != null ? request.paymentMethod() : "CASH");
-        payment.setAmount(doctor.getConsultationFee());
+        payment.setPaymentMethod(pMethod);
+        payment.setAmount(finalAmount);
         payment.setStatus("PENDING");
         payment.setPaidBy(patient.getUser());
         paymentRepository.save(payment);
@@ -245,7 +272,7 @@ public class AppointmentServiceImpl implements AppointmentService {
             System.err.println("Không thể tạo thông báo đặt lịch: " + e.getMessage());
         }
 
-        return mapToResponse(savedApp);
+        return mapToResponse(savedApp, payment.getPaymentId());
     }
 
     @Override

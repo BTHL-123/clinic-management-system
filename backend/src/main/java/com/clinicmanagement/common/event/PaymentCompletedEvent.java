@@ -8,5 +8,6 @@ import lombok.Getter;
 public class PaymentCompletedEvent {
     private final Long paymentId;
     private final Long invoiceId;
+    private final Long appointmentId;
     private final String paymentCode;
 }

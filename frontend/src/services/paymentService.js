@@ -6,6 +6,9 @@ export const getPayments = (params) =>
 export const getPaymentById = (id) =>
   axiosClient.get(`/payments/${id}`);
 
+export const getMyPaymentById = (id) =>
+  axiosClient.get(`/payments/my/${id}`);
+
 export const createPayment = (payload) =>
   axiosClient.post("/payments", payload);
 
@@ -17,3 +20,6 @@ export const createOnlinePaymentUrl = (payload) =>
 
 export const processPaymentCallback = (payload) =>
   axiosClient.post("/payments/online/callback", payload);
+
+export const getSepayQr = (id) =>
+  axiosClient.get(`/payments/${id}/sepay-qr`);

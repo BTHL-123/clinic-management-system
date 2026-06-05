@@ -24,7 +24,8 @@ const STATUS_OPTIONS = [
 
 const PAYMENT_METHODS = [
   { value: "CASH", label: "Tiền mặt" },
-  { value: "ONLINE", label: "Chuyển khoản" },
+  { value: "ONLINE", label: "Chuyển khoản (Cổng cũ)" },
+  { value: "BANK_TRANSFER", label: "Chuyển khoản / SePay" },
 ];
 
 const PAYMENT_TYPES = [
@@ -169,7 +170,7 @@ export default function PaymentManagement() {
   };
 
   const methodLabel = (method) => {
-    const map = { CASH: "Tiền mặt", ONLINE: "Chuyển khoản" };
+    const map = { CASH: "Tiền mặt", ONLINE: "Chuyển khoản (Cổng cũ)", BANK_TRANSFER: "Chuyển khoản / SePay" };
     return map[method] ?? method;
   };
 
@@ -236,6 +237,7 @@ export default function PaymentManagement() {
               <th>#</th>
               <th>Mã TT</th>
               <th>Hóa đơn</th>
+              <th>Người nộp</th>
               <th>Loại</th>
               <th>Phương thức</th>
               <th>Số tiền</th>
@@ -260,7 +262,10 @@ export default function PaymentManagement() {
                 <tr key={pay.paymentId}>
                   <td>{idx + 1}</td>
                   <td><code>{pay.paymentCode}</code></td>
-                  <td>{pay.invoiceCode ?? "—"}</td>
+                  <td>
+                    {pay.invoiceCode ? pay.invoiceCode : pay.appointmentId ? `Hẹn: APT-${pay.appointmentId}` : "—"}
+                  </td>
+                  <td>{pay.paidByName ?? "—"}</td>
                   <td><span className="status-badge badge-info">{typeLabel(pay.paymentType)}</span></td>
                   <td>{methodLabel(pay.paymentMethod)}</td>
                   <td style={{ fontWeight: 600 }}>{formatPrice(pay.amount)}</td>

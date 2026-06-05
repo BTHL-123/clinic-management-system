@@ -21,6 +21,8 @@ public interface PaymentService {
 
     PaymentResponse getById(Long id);
 
+    PaymentResponse getMyPaymentById(Long id, User currentUser);
+
     PaymentResponse create(CreatePaymentRequest request, User currentUser);
 
     PaymentResponse confirmCash(Long paymentId, User currentUser);

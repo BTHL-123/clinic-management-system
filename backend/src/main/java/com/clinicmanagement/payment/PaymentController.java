@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class PaymentController {
 
     private final PaymentService paymentService;
+    private final SepayService sepayService;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'PATIENT')")
@@ -62,6 +63,15 @@ public class PaymentController {
     @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
     public ResponseEntity<ApiResponse<PaymentResponse>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(paymentService.getById(id)));
+    }
+
+    @GetMapping("/my/{id}")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<PaymentResponse>> getMyPaymentById(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(paymentService.getMyPaymentById(id, userDetails.getUser())));
     }
 
     @PostMapping
@@ -101,5 +111,21 @@ public class PaymentController {
     ) {
         PaymentResponse response = paymentService.processCallback(request);
         return ResponseEntity.ok(ApiResponse.success("Xử lý callback thành công", response));
+    }
+
+    @GetMapping("/{id}/sepay-qr")
+    @PreAuthorize("hasAnyRole('PATIENT', 'ADMIN', 'RECEPTIONIST')")
+    public ResponseEntity<ApiResponse<com.clinicmanagement.payment.dto.SepayQrResponse>> getSepayQr(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(sepayService.generateQr(id)));
+    }
+
+    @PostMapping("/sepay/webhook")
+    public ResponseEntity<ApiResponse<String>> processSepayWebhook(
+            @RequestBody com.clinicmanagement.payment.dto.SepayWebhookRequest request,
+            @org.springframework.web.bind.annotation.RequestHeader(value = "Authorization", required = false) String authorizationHeader
+    ) {
+        return ResponseEntity.ok(sepayService.processWebhook(request, authorizationHeader));
     }
 }

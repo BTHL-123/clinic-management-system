@@ -16,7 +16,7 @@ import {
   getInvoices,
   updateInvoice,
 } from "../../services/invoiceService";
-import { createPayment, confirmCashPayment, createOnlinePaymentUrl } from "../../services/paymentService";
+import { createPayment, confirmCashPayment, createOnlinePaymentUrl, getSepayQr, getPaymentById } from "../../services/paymentService";
 import { getMedicines } from "../../services/medicineService";
 
 const STATUS_OPTIONS = [
@@ -71,8 +71,13 @@ export default function InvoiceManagement() {
   // payment modal
   const [payTarget, setPayTarget] = useState(null);
   const [payMethod, setPayMethod] = useState("CASH");
+  const [payAmount, setPayAmount] = useState("");
   const [paySubmitting, setPaySubmitting] = useState(false);
   const [payError, setPayError] = useState("");
+
+  // sepay modal
+  const [sepayQrData, setSepayQrData] = useState(null);
+  const [isCheckingSepay, setIsCheckingSepay] = useState(false);
 
   // medicines list
   const [medicinesList, setMedicinesList] = useState([]);
@@ -283,7 +288,9 @@ export default function InvoiceManagement() {
   const openPayment = (inv) => {
     setPayTarget(inv);
     setPayMethod("CASH");
+    setPayAmount(inv.finalAmount);
     setPayError("");
+    setSepayQrData(null);
   };
 
   const handlePayment = async () => {
@@ -302,22 +309,47 @@ export default function InvoiceManagement() {
         return; // Dừng lại ở đây vì trình duyệt sẽ redirect
       }
 
+      // CASH hoặc SEPAY đều gọi createPayment trước
       const res = await createPayment({
         invoiceId: payTarget.invoiceId,
         appointmentId: null,
         paymentType: "FINAL_PAYMENT",
-        paymentMethod: payMethod,
-        amount: payTarget.finalAmount,
+        paymentMethod: payMethod === "SEPAY" ? "BANK_TRANSFER" : payMethod,
+        amount: Number(payAmount),
       });
+
       if (payMethod === "CASH") {
         await confirmCashPayment(res.data.paymentId);
+        setPayTarget(null);
+        await fetchInvoices();
+      } else if (payMethod === "SEPAY") {
+        const qrRes = await getSepayQr(res.data.paymentId);
+        setSepayQrData(qrRes.data);
       }
-      setPayTarget(null);
-      await fetchInvoices();
     } catch (err) {
       setPayError(err.message);
     } finally {
       setPaySubmitting(false);
+    }
+  };
+
+  const checkSepayStatus = async () => {
+    if (!sepayQrData) return;
+    try {
+      setIsCheckingSepay(true);
+      const res = await getPaymentById(sepayQrData.paymentId);
+      if (res.data && res.data.status === "PAID") {
+        alert("Giao dịch thành công!");
+        setSepayQrData(null);
+        setPayTarget(null);
+        await fetchInvoices();
+      } else {
+        alert("Giao dịch chưa thành công hoặc hệ thống đang xử lý. Vui lòng thử lại sau giây lát.");
+      }
+    } catch (err) {
+      alert("Lỗi khi kiểm tra trạng thái: " + err.message);
+    } finally {
+      setIsCheckingSepay(false);
     }
   };
 
@@ -764,9 +796,29 @@ export default function InvoiceManagement() {
                 onChange={(e) => setPayMethod(e.target.value)}
               >
                 <option value="CASH">Tiền mặt</option>
-                <option value="ONLINE">Chuyển khoản</option>
+                <option value="SEPAY">Chuyển khoản (SePay QR)</option>
+                <option value="ONLINE">Chuyển khoản (Cổng cũ)</option>
               </select>
             </div>
+
+            {(payMethod === "SEPAY" || payMethod === "ONLINE") && (
+              <div className="field" style={{ marginBottom: 16 }}>
+                <label>Nhập số tiền thanh toán (VNĐ)</label>
+                <input
+                  type="number"
+                  min="1000"
+                  value={payAmount}
+                  onChange={(e) => setPayAmount(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "6px",
+                    border: "1px solid #cbd5e1",
+                    fontSize: "15px"
+                  }}
+                />
+              </div>
+            )}
 
             <div className="form-actions">
               <button className="secondary-button" onClick={() => setPayTarget(null)}>
@@ -778,6 +830,50 @@ export default function InvoiceManagement() {
                 disabled={paySubmitting}
               >
                 {paySubmitting ? "Đang xử lý..." : payMethod === "CASH" ? "Xác nhận đã thu tiền" : "Tạo giao dịch"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── SePay QR Modal ──────────────────────────────────── */}
+      {sepayQrData && (
+        <div className="modal-overlay" onClick={() => setSepayQrData(null)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 450, textAlign: "center" }}>
+            <div className="modal-header">
+              <h2>Thanh toán qua mã QR</h2>
+              <button className="icon-button" onClick={() => setSepayQrData(null)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <img src={sepayQrData.qrCodeUrl} alt="SePay QR Code" style={{ width: "250px", height: "250px", objectFit: "contain", margin: "0 auto", display: "block" }} />
+            </div>
+
+            <div style={{ display: "grid", gap: 10, marginBottom: 24, fontSize: "1rem" }}>
+              <div><strong>Số tiền:</strong>{" "}
+                <span style={{ fontWeight: 700, color: "#0f766e", fontSize: "1.2rem" }}>
+                  {formatPrice(sepayQrData.amount)}
+                </span>
+              </div>
+              <div><strong>Nội dung chuyển khoản:</strong></div>
+              <div style={{ background: "#f1f5f9", padding: "10px", borderRadius: "8px", fontWeight: "bold", letterSpacing: "1px", color: "#1e293b", fontSize: "1.1rem" }}>
+                {sepayQrData.transferContent}
+              </div>
+              <div style={{ color: "#64748b", fontSize: "0.9rem", marginTop: 4 }}>
+                Quét mã QR bằng ứng dụng ngân hàng hoặc nhập chính xác nội dung chuyển khoản ở trên.
+              </div>
+            </div>
+
+            <div className="form-actions" style={{ justifyContent: "center" }}>
+              <button
+                className="primary-button"
+                onClick={checkSepayStatus}
+                disabled={isCheckingSepay}
+                style={{ width: "100%" }}
+              >
+                {isCheckingSepay ? "Đang kiểm tra..." : "Tôi đã chuyển khoản"}
               </button>
             </div>
           </div>

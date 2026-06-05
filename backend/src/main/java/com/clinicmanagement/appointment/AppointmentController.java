@@ -77,10 +77,16 @@ public class AppointmentController {
             @RequestParam(defaultValue = "ASC") String direction,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        Sort sort = Sort.by(
-                direction.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC,
-                sortBy
-        );
+        Sort sort;
+        if ("appointmentDate".equals(sortBy)) {
+            Sort.Direction dir = direction.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC;
+            sort = Sort.by(dir, "appointmentDate").and(Sort.by(dir, "startTime"));
+        } else {
+            sort = Sort.by(
+                    direction.equalsIgnoreCase("DESC") ? Sort.Direction.DESC : Sort.Direction.ASC,
+                    sortBy
+            );
+        }
         Pageable pageable = PageRequest.of(page, size, sort);
         PageResponse<AppointmentResponse> response = appointmentService.getMyAppointments(
                 userDetails.getUser().getUserId(), upcoming, pageable
