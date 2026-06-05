@@ -4,6 +4,7 @@ import { useAuth } from "../../context/useAuth";
 import { getMyDoctorProfile } from "../../services/doctorService";
 import queueTicketService from "../../services/queueTicketService";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "../../context/useToast.js";
 
 const STATUS_LABEL = {
   WAITING: { label: "Chờ khám", color: "#d97706", bg: "#fef3c7" },
@@ -35,6 +36,7 @@ function StatusBadge({ status }) {
 }
 
 export default function ConsultationPage() {
+  const toast = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -43,7 +45,6 @@ export default function ConsultationPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [actionLoading, setActionLoading] = useState(null); // queueTicketId đang xử lý
-  const [toast, setToast] = useState(null);
   const [filterStatus, setFilterStatus] = useState("");
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0]
@@ -79,20 +80,15 @@ export default function ConsultationPage() {
     fetchQueue();
   }, [fetchQueue]);
 
-  const showToast = (message, type = "success") => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  };
-
   const handleAction = async (ticketId, action, label) => {
     setActionLoading(ticketId);
     try {
       if (action === "call") {
         await queueTicketService.call(ticketId);
-        showToast("Đã gọi bệnh nhân vào phòng khám.");
+        toast.success("Đã gọi bệnh nhân vào phòng khám.");
       } else if (action === "start") {
         const res = await queueTicketService.startExamination(ticketId);
-        showToast("Bắt đầu khám thành công!");
+        toast.success("Bắt đầu khám thành công!");
         // Điều hướng sang trang khám bệnh với consultationId
         if (res.data?.consultationId) {
           navigate(`/dashboard/examination/${res.data.consultationId}`);
@@ -100,14 +96,14 @@ export default function ConsultationPage() {
         }
       } else if (action === "done") {
         await queueTicketService.markDone(ticketId);
-        showToast("Đã hoàn thành ca khám.");
+        toast.success("Đã hoàn thành ca khám.");
       } else if (action === "skip") {
         await queueTicketService.skip(ticketId, "Bệnh nhân không có mặt");
-        showToast("Đã bỏ qua số thứ tự này.");
+        toast.success("Đã bỏ qua số thứ tự này.");
       }
       await fetchQueue();
     } catch (err) {
-      showToast(err.message || `Không thể thực hiện: ${label}`, "error");
+      toast.error(err, `Không thể thực hiện: ${label}`);
     } finally {
       setActionLoading(null);
     }
@@ -124,19 +120,6 @@ export default function ConsultationPage() {
         <Stethoscope size={22} />
         <h2 style={{ margin: 0, fontSize: 20 }}>Phòng khám — Hàng đợi bệnh nhân</h2>
       </div>
-
-      {/* Toast */}
-      {toast && (
-        <div style={{
-          background: toast.type === "error" ? "#fee2e2" : "#dcfce7",
-          color: toast.type === "error" ? "#991b1b" : "#166534",
-          border: `1px solid ${toast.type === "error" ? "#fca5a5" : "#86efac"}`,
-          padding: "10px 14px", borderRadius: 8, fontSize: 14,
-          fontWeight: 500, marginBottom: 16,
-        }}>
-          {toast.message}
-        </div>
-      )}
 
       {error && (
         <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>

@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Pill, RefreshCw, CheckCircle, Eye, AlertTriangle, ShieldCheck } from "lucide-react";
 import { getPrescriptions, dispensePrescription } from "../../services/prescriptionService";
+import { useToast } from "../../context/useToast.js";
 
 const STATUS_MAP = {
   CREATED:   { label: "Chờ cấp phát", color: "#d97706", bg: "#fef3c7" },
@@ -24,6 +25,7 @@ function StatusBadge({ status }) {
 }
 
 export default function PharmacistPrescriptionPage() {
+  const toast = useToast();
   const navigate = useNavigate();
   const [prescriptions, setPrescriptions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,13 +33,7 @@ export default function PharmacistPrescriptionPage() {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [dispensingId, setDispensingId] = useState(null);
-  const [toast, setToast] = useState(null);
   const [error, setError] = useState("");
-
-  const showToast = (message, type = "success") => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3500);
-  };
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -70,10 +66,10 @@ export default function PharmacistPrescriptionPage() {
     setDispensingId(prescriptionId);
     try {
       await dispensePrescription(prescriptionId);
-      showToast(`Đã cấp phát đơn thuốc ${prescriptionCode} thành công.`);
+      toast.success(`Đã cấp phát đơn thuốc ${prescriptionCode} thành công.`);
       fetchData();
     } catch (err) {
-      showToast(err.message || "Không thể cấp phát đơn thuốc.", "error");
+      toast.error(err, "Không thể cấp phát đơn thuốc");
     } finally {
       setDispensingId(null);
     }
@@ -86,19 +82,6 @@ export default function PharmacistPrescriptionPage() {
         <Pill size={22} color="#7c3aed" />
         <h2 style={{ margin: 0, fontSize: 20 }}>Quản lý cấp phát thuốc</h2>
       </div>
-
-      {/* Toast */}
-      {toast && (
-        <div style={{
-          background: toast.type === "error" ? "#fee2e2" : "#dcfce7",
-          color: toast.type === "error" ? "#991b1b" : "#166534",
-          border: `1px solid ${toast.type === "error" ? "#fca5a5" : "#86efac"}`,
-          padding: "10px 14px", borderRadius: 8, fontSize: 14,
-          fontWeight: 500, marginBottom: 16,
-        }}>
-          {toast.message}
-        </div>
-      )}
 
       {error && <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>}
 

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   Bell,
   Building2,
@@ -17,6 +18,7 @@ import {
   Search,
   Shield,
   Siren,
+  Undo2,
   Stethoscope,
   Truck,
   UserPlus,
@@ -27,32 +29,36 @@ import {
   UserCheck,
   Star,
   FileText,
+  FileClock,
+  Settings,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import Logo from "./Logo.jsx";
+import { getActiveAlerts } from "../services/inventoryService";
 
-const adminItems = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/dashboard/profile", label: "Hồ sơ của tôi", icon: UserSquare, roles: ["PATIENT", "DOCTOR", "STAFF"] },
+const menuItems = [
+  { to: "/dashboard", label: "Trang chủ", icon: LayoutDashboard, end: true },
+  { to: "/dashboard/profile", label: "Hồ sơ của tôi", icon: UserSquare },
   { to: "/dashboard/notifications", label: "Thông báo", icon: Bell },
   { to: "/dashboard/doctor-appointments", label: "Lịch khám hôm nay", icon: CalendarDays, roles: ["DOCTOR"] },
   { to: "/dashboard/change-password", label: "Đổi mật khẩu", icon: KeyRound },
-  { to: "/dashboard/departments", label: "Chuyên khoa", icon: Building2, roles: ["ADMIN", "STAFF"] },
-  { to: "/dashboard/medical-services", label: "Dịch vụ y tế", icon: HeartPulse, roles: ["ADMIN", "STAFF"] },
-  { to: "/dashboard/invoices", label: "Hóa đơn", icon: Receipt, roles: ["ADMIN", "STAFF"] },
-  { to: "/dashboard/payments", label: "Thanh toán", icon: CreditCard, roles: ["ADMIN", "STAFF"] },
-  { to: "/dashboard/medicines", label: "Thuốc", icon: Pill, roles: ["ADMIN", "PHARMACIST"] },
+  { to: "/dashboard/departments", label: "Chuyên khoa", icon: Building2, roles: ["ADMIN", "RECEPTIONIST"] },
+  { to: "/dashboard/medical-services", label: "Dịch vụ y tế", icon: HeartPulse, roles: ["ADMIN", "RECEPTIONIST"] },
+  { to: "/dashboard/invoices", label: "Hóa đơn", icon: Receipt, roles: ["ADMIN", "RECEPTIONIST"] },
+  { to: "/dashboard/payments", label: "Thanh toán", icon: CreditCard, roles: ["ADMIN", "RECEPTIONIST"] },
+  { to: "/dashboard/refunds", label: "Hoàn tiền", icon: Undo2, roles: ["ADMIN"] },
+  { to: "/dashboard/medicines", label: "Thuốc", icon: Pill, roles: ["ADMIN", "DOCTOR", "PHARMACIST"] },
   { to: "/dashboard/suppliers", label: "Nhà cung cấp", icon: Truck, roles: ["ADMIN", "PHARMACIST"] },
   { to: "/dashboard/inventory/batches", label: "Lô thuốc", icon: PackageOpen, roles: ["ADMIN", "PHARMACIST"] },
   { to: "/dashboard/inventory/transactions", label: "Giao dịch kho", icon: History, roles: ["ADMIN", "PHARMACIST"] },
   { to: "/dashboard/inventory/alerts", label: "Cảnh báo kho", icon: Siren, roles: ["ADMIN", "PHARMACIST"] },
   { to: "/dashboard/pharmacist/prescriptions", label: "Cấp phát thuốc", icon: ClipboardList, roles: ["ADMIN", "PHARMACIST"] },
-  { to: "/dashboard/doctors", label: "Bác sĩ", icon: UserRound, roles: ["ADMIN", "STAFF"] },
-  { to: "/dashboard/patients", label: "Bệnh nhân", icon: Users, roles: ["ADMIN", "STAFF", "DOCTOR"] },
+  { to: "/dashboard/doctors", label: "Bác sĩ", icon: UserRound, roles: ["ADMIN", "RECEPTIONIST"] },
+  { to: "/dashboard/patients", label: "Bệnh nhân", icon: Users, roles: ["ADMIN", "RECEPTIONIST", "DOCTOR"] },
   { to: "/dashboard/users", label: "Tài khoản", icon: UsersRound, roles: ["ADMIN"] },
   { to: "/dashboard/security", label: "Bảo mật", icon: Shield, roles: ["ADMIN"] },
-  { to: "/dashboard/appointments", label: "Lịch khám", icon: CalendarDays, roles: ["ADMIN", "RECEPTIONIST"] },
+  { to: "/dashboard/appointments", label: "Lịch khám", icon: CalendarDays, roles: ["ADMIN", "RECEPTIONIST", "DOCTOR"] },
   { to: "/dashboard/consultation", label: "Phòng khám", icon: Stethoscope, roles: ["DOCTOR"] },
   { to: "/dashboard/lab-requests", label: "Phòng xét nghiệm", icon: FlaskConical, roles: ["LAB_TECHNICIAN", "ADMIN"] },
   { to: "/dashboard/walk-in", label: "Khám trực tiếp", icon: UserPlus, roles: ["ADMIN", "RECEPTIONIST"] },
@@ -60,38 +66,55 @@ const adminItems = [
   { to: "/dashboard/queue-management", label: "Quản lý hàng đợi", icon: Users, roles: ["ADMIN", "RECEPTIONIST"] },
   { to: "/dashboard/reviews", label: "Đánh giá", icon: Star, roles: ["ADMIN", "RECEPTIONIST"] },
   { to: "/dashboard/articles", label: "Bài viết y tế", icon: FileText, roles: ["ADMIN", "DOCTOR"] },
+  { to: "/dashboard/audit-logs", label: "Nhật ký hệ thống", icon: FileClock, roles: ["ADMIN"] },
+  { to: "/dashboard/system-settings", label: "Cấu hình hệ thống", icon: Settings, roles: ["ADMIN"] },
   { to: "/dashboard/doctor-leave-requests", label: "Yêu cầu nghỉ", icon: CalendarOff, roles: ["DOCTOR"] },
   { to: "/dashboard/admin/doctor-leave-requests", label: "Duyệt yêu cầu nghỉ", icon: CalendarOff, roles: ["ADMIN"] },
+  { to: "/dashboard/available-slots", label: "Tìm ca khám trống", icon: Search, roles: ["PATIENT"] },
+  { to: "/dashboard/ai-chat", label: "Tư vấn AI", icon: MessageSquare, roles: ["PATIENT"] },
+  { to: "/dashboard/my-appointments", label: "Lịch hẹn của tôi", icon: CalendarDays, roles: ["PATIENT"] },
+  { to: "/dashboard/queue-status", label: "Trạng thái hàng đợi", icon: ClipboardList, roles: ["PATIENT"] },
+  { to: "/dashboard/my-medical-history", label: "Lịch sử bệnh án", icon: History, roles: ["PATIENT"] },
+  { to: "/dashboard/my-lab-results", label: "Kết quả xét nghiệm", icon: FlaskConical, roles: ["PATIENT"] },
 ];
 
-const patientItems = [
-  { to: "/dashboard", label: "Trang chủ", icon: LayoutDashboard, end: true },
-  { to: "/dashboard/profile", label: "Hồ sơ của tôi", icon: UserSquare },
-  { to: "/dashboard/notifications", label: "Thông báo", icon: Bell },
-  { to: "/dashboard/change-password", label: "Đổi mật khẩu", icon: KeyRound },
-  { to: "/dashboard/available-slots", label: "Tìm ca khám trống", icon: Search },
-  { to: "/dashboard/ai-chat", label: "Tư vấn AI", icon: MessageSquare },
-  { to: "/dashboard/my-appointments", label: "Lịch hẹn của tôi", icon: CalendarDays },
-  { to: "/dashboard/queue-status", label: "Trạng thái hàng đợi", icon: ClipboardList },
-  { to: "/dashboard/my-medical-history", label: "Lịch sử bệnh án", icon: History },
-  { to: "/dashboard/my-lab-results", label: "Kết quả xét nghiệm", icon: FlaskConical },
-];
+const normalizeRole = (role) => {
+  const roleName = typeof role === "string" ? role : role?.roleName;
+  return roleName?.replace(/^ROLE_/, "").toUpperCase();
+};
 
 export default function Sidebar() {
   const { user } = useAuth();
+  const userRoles = new Set((user?.roles || []).map(normalizeRole));
+  const [alertCount, setAlertCount] = useState(0);
   const navigate = useNavigate();
 
-  const userRoles = user?.roles?.map(r => r.roleName ? r.roleName : r) || [];
-  
-  const isStaffOrAdmin = userRoles.some(role => 
-    ["ADMIN", "DOCTOR", "RECEPTIONIST", "STAFF", "PHARMACIST", "LAB_TECHNICIAN"].includes(role)
-  );
-  
-  const items = isStaffOrAdmin ? adminItems : patientItems;
+  const hasInventoryRoles =
+    userRoles.has("ADMIN") || userRoles.has("PHARMACIST");
 
-  const filteredItems = items.filter(item => {
-    if (!item.roles) return true; // No roles defined = accessible to everyone
-    return item.roles.some(role => userRoles.includes(role));
+  useEffect(() => {
+    if (!hasInventoryRoles) {
+      setAlertCount(0);
+      return undefined;
+    }
+
+    const fetchAlerts = async () => {
+      try {
+        const res = await getActiveAlerts({ page: 0, size: 1 });
+        setAlertCount(res.data?.totalElements || 0);
+      } catch (error) {
+        console.error("Error fetching inventory alerts:", error);
+      }
+    };
+
+    fetchAlerts();
+    const interval = setInterval(fetchAlerts, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [hasInventoryRoles]);
+
+  const filteredItems = menuItems.filter(item => {
+    if (!item.roles) return true;
+    return item.roles.some(role => userRoles.has(role));
   });
 
   return (
@@ -120,6 +143,11 @@ export default function Sidebar() {
                     {isActive && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-teal-400 to-emerald-500 rounded-r-md"></div>}
                     <Icon size={20} strokeWidth={isActive ? 2.5 : 2} className={`transition-transform duration-300 ${isActive ? "scale-110 drop-shadow-sm" : "group-hover:scale-110"}`} />
                     <span className="text-[14.5px] whitespace-nowrap">{item.label}</span>
+                    {item.to === "/dashboard/inventory/alerts" && alertCount > 0 && (
+                      <span className="ml-auto bg-rose-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full leading-none">
+                        {alertCount > 99 ? "99+" : alertCount}
+                      </span>
+                    )}
                   </>
                 )}
               </NavLink>

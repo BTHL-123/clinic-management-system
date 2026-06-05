@@ -33,7 +33,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Transactional(readOnly = true)
     @Override
-    public PageResponse<PaymentResponse> getAll(Long invoiceId, Long appointmentId, String status, Pageable pageable) {
+    public PageResponse<PaymentResponse> getAll(Long invoiceId, Long appointmentId, String status, Long patientId, Pageable pageable) {
         Specification<Payment> spec = (root, query, cb) -> {
             var predicates = new ArrayList<jakarta.persistence.criteria.Predicate>();
             if (invoiceId != null) {
@@ -44,6 +44,9 @@ public class PaymentServiceImpl implements PaymentService {
             }
             if (status != null && !status.isBlank()) {
                 predicates.add(cb.equal(root.get("status"), status));
+            }
+            if (patientId != null) {
+                predicates.add(cb.equal(root.get("paidBy").get("userId"), patientId));
             }
             return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
         };

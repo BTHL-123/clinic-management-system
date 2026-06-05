@@ -15,3 +15,11 @@ export const getMessages = (sessionId) => {
 export const generateSuggestion = (sessionId) => {
   return axiosClient.post(`/ai/chat-sessions/${sessionId}/specialty-suggestion`);
 };
+
+export const acceptSuggestion = (suggestionId) => {
+  return axiosClient.put(`/ai/chat-sessions/suggestions/${suggestionId}/accept`);
+};
+
+export const standardizeClinicalNote = (rawNote) => {
+  return axiosClient.post(`/ai/chat-sessions/clinical-notes/standardize`, { rawNote });
+};

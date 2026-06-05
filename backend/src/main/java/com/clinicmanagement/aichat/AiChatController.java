@@ -5,6 +5,8 @@ import com.clinicmanagement.aichat.dto.AiChatSessionResponse;
 import com.clinicmanagement.aichat.dto.AiSpecialtySuggestionResponse;
 import com.clinicmanagement.aichat.dto.CreateAiChatSessionRequest;
 import com.clinicmanagement.aichat.dto.SendChatMessageResponse;
+import com.clinicmanagement.aichat.dto.StandardizeNoteRequest;
+import com.clinicmanagement.aichat.dto.StandardizeNoteResponse;
 import com.clinicmanagement.common.dto.ApiResponse;
 import com.clinicmanagement.security.CustomUserDetails;
 import jakarta.validation.Valid;
@@ -15,6 +17,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -74,6 +77,26 @@ public class AiChatController {
                 suggestion.getConfidenceScore().doubleValue(),
                 suggestion.getExplanation()
         );
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PutMapping("/suggestions/{suggestionId}/accept")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<AiSpecialtySuggestionResponse>> acceptSuggestion(
+            @PathVariable Long suggestionId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        AiSpecialtySuggestionResponse response = aiChatService.acceptSuggestion(suggestionId, userDetails.getUser());
+        return ResponseEntity.ok(ApiResponse.success("Đã xác nhận chọn chuyên khoa", response));
+    }
+
+    @PostMapping("/clinical-notes/standardize")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<ApiResponse<StandardizeNoteResponse>> standardizeClinicalNote(
+            @RequestBody StandardizeNoteRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        StandardizeNoteResponse response = aiChatService.standardizeClinicalNote(request, userDetails.getUser());
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

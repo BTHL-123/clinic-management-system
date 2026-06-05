@@ -6,7 +6,6 @@ import {
   SkipForward,
   Check,
   RefreshCw,
-  AlertCircle,
   CheckCircle2,
   Clock,
   User,
@@ -15,47 +14,15 @@ import {
 import appointmentService from "../../services/appointmentService";
 import queueService from "../../services/queueService";
 import { getMyDoctorProfile } from "../../services/doctorService";
-
-function Toast({ message, type }) {
-  if (!message) return null;
-  const isError = type === "error";
-  return (
-    <div
-      style={{
-        padding: "12px 16px",
-        borderRadius: "8px",
-        marginBottom: "16px",
-        fontSize: "14px",
-        fontWeight: 500,
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        background: isError ? "#fef2f2" : "#f0fdf4",
-        border: `1px solid ${isError ? "#fee2e2" : "#dcfce7"}`,
-        color: isError ? "#991b1b" : "#166534",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-      }}
-    >
-      {isError ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
-      <span>{message}</span>
-    </div>
-  );
-}
+import { useToast } from "../../context/useToast.js";
 
 export default function DoctorTodayAppointments() {
+  const toast = useToast();
   const [appointments, setAppointments] = useState([]);
   const [queueTickets, setQueueTickets] = useState([]);
   const [doctor, setDoctor] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState({ message: "", type: "" });
   const [activeTab, setActiveTab] = useState("queue"); // "queue" or "all"
-
-  const showToast = (message, type = "success") => {
-    setToast({ message, type });
-    setTimeout(() => {
-      setToast({ message: "", type: "" });
-    }, 4000);
-  };
 
   // Fetch all necessary data
   const fetchData = useCallback(async () => {
@@ -86,7 +53,7 @@ export default function DoctorTodayAppointments() {
       }
     } catch (err) {
       console.error(err);
-      showToast(err.message || "Không thể tải dữ liệu hôm nay", "error");
+      toast.error(err, "Không thể tải dữ liệu hôm nay");
     } finally {
       setLoading(false);
     }
@@ -100,30 +67,30 @@ export default function DoctorTodayAppointments() {
   const handleCall = async (id) => {
     try {
       await queueService.callPatient(id);
-      showToast("Đã gọi khám bệnh nhân!");
+      toast.success("Đã gọi khám bệnh nhân!");
       fetchData();
     } catch (err) {
-      showToast(err.message || "Gọi khám thất bại", "error");
+      toast.error(err, "Gọi khám thất bại");
     }
   };
 
   const handleSkip = async (id) => {
     try {
       await queueService.skipPatient(id);
-      showToast("Đã bỏ qua lượt bệnh nhân.");
+      toast.success("Đã bỏ qua lượt bệnh nhân.");
       fetchData();
     } catch (err) {
-      showToast(err.message || "Không thể bỏ qua", "error");
+      toast.error(err, "Không thể bỏ qua");
     }
   };
 
   const handleComplete = async (id) => {
     try {
       await queueService.completePatient(id);
-      showToast("Đã hoàn tất ca khám!");
+      toast.success("Đã hoàn tất ca khám!");
       fetchData();
     } catch (err) {
-      showToast(err.message || "Không thể hoàn tất ca khám", "error");
+      toast.error(err, "Không thể hoàn tất ca khám");
     }
   };
 
@@ -174,8 +141,6 @@ export default function DoctorTodayAppointments() {
           Làm mới
         </button>
       </div>
-
-      <Toast message={toast.message} type={toast.type} />
 
       {/* Stats Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px", marginBottom: "20px" }}>

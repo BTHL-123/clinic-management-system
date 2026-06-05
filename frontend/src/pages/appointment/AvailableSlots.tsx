@@ -4,6 +4,7 @@ import { Clock, Search, CalendarDays, ArrowLeft, ShieldAlert, CheckCircle, UserR
 import { getAvailableSlots, getSchedules, lockSlot, releaseLock } from "../../services/scheduleService";
 import { getDoctors } from "../../services/doctorService";
 import appointmentService from "../../services/appointmentService";
+import { useToast } from "../../context/useToast";
 
 interface TimeSlot {
   slotId: number;
@@ -41,6 +42,7 @@ function formatTime(t: string): string {
 export default function AvailableSlots() {
   const navigate = useNavigate();
   const location = useLocation();
+  const toast = useToast();
 
   const searchParams = new URLSearchParams(location.search);
   const paramDoctorId = searchParams.get("doctorId") || "";
@@ -66,6 +68,9 @@ export default function AvailableSlots() {
   const [visitReason, setVisitReason] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("CASH");
   const [bookingSuccess, setBookingSuccess] = useState(false);
+
+  const location = useLocation();
+  const prefillDepartmentName = (location.state as any)?.prefillDepartmentName;
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -144,7 +149,11 @@ export default function AvailableSlots() {
         const schedules: DoctorSchedule[] = Array.isArray(scheduleJson.data) ? scheduleJson.data : [];
         const doctors: DoctorOption[] = Array.isArray(doctorJson.data?.content) ? doctorJson.data.content : [];
         const scheduledDoctorIds = new Set(schedules.map((schedule) => schedule.doctorId));
-        const availableDoctors = doctors.filter((doctor) => scheduledDoctorIds.has(doctor.doctorId));
+        let availableDoctors = doctors.filter((doctor) => scheduledDoctorIds.has(doctor.doctorId));
+
+        if (prefillDepartmentName) {
+          availableDoctors = availableDoctors.filter((doctor) => doctor.departmentName === prefillDepartmentName);
+        }
 
         setScheduleOptions(schedules);
         setDoctorOptions(availableDoctors);
@@ -205,7 +214,7 @@ export default function AvailableSlots() {
       setBookingSuccess(false);
     } catch (err: any) {
       const apiMsg = err.response?.data?.message || err.message;
-      alert(apiMsg || "Ca khám này đã được người khác giữ chỗ. Vui lòng chọn ca khác.");
+      toast.error(apiMsg || "Ca khám này đã được người khác giữ chỗ. Vui lòng chọn ca khác.", "Không thể giữ ca khám");
       if (doctorId && workDate) {
         fetchSlots(doctorId, workDate);
       }
@@ -230,7 +239,7 @@ export default function AvailableSlots() {
   const handleSubmitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!patientName.trim() || !patientPhone.trim()) {
-      alert("Vui lòng điền đầy đủ họ tên và số điện thoại.");
+      toast.error("Vui lòng điền đầy đủ họ tên và số điện thoại.", "Thiếu thông tin");
       return;
     }
     if (!selectedSlot) return;
@@ -238,7 +247,8 @@ export default function AvailableSlots() {
     try {
       await appointmentService.bookAppointment({
         slotId: selectedSlot.slotId,
-        reasonForVisit: visitReason
+        reasonForVisit: visitReason,
+        paymentMethod: paymentMethod
       });
       setBookingSuccess(true);
       window.dispatchEvent(new CustomEvent("notification-updated"));
@@ -254,7 +264,7 @@ export default function AvailableSlots() {
       }, 2000);
     } catch (err: any) {
       const apiMsg = err.response?.data?.message || err.message;
-      alert(apiMsg || "Đặt lịch thất bại. Vui lòng thử lại.");
+      toast.error(apiMsg || "Đặt lịch thất bại. Vui lòng thử lại.", "Đặt lịch thất bại");
     }
   };
 
@@ -306,6 +316,12 @@ export default function AvailableSlots() {
           </p>
         </div>
       </div>
+
+      {prefillDepartmentName && (
+        <div style={{ padding: "12px", background: "#f0fdf4", color: "#166534", borderRadius: "8px", marginBottom: "16px", border: "1px solid #bbf7d0", fontSize: "14px" }}>
+          Đang lọc bác sĩ theo chuyên khoa AI đề xuất: <strong>{prefillDepartmentName}</strong>
+        </div>
+      )}
 
       {!bookingStep ? (
         <div className="flex flex-col gap-10 w-full items-center">

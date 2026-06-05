@@ -12,4 +12,6 @@ public interface StockTransactionRepository extends JpaRepository<StockTransacti
            "(:medicineId IS NULL OR t.medicine.medicineId = :medicineId) " +
            "AND (:transactionType IS NULL OR t.transactionType = :transactionType)")
     Page<StockTransaction> findTransactions(@Param("medicineId") Long medicineId, @Param("transactionType") String transactionType, Pageable pageable);
+
+    boolean existsByReferenceTypeAndReferenceId(String referenceType, Long referenceId);
 }

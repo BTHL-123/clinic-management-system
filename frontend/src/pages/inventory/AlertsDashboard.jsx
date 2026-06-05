@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle } from "lucide-react";
 import { getActiveAlerts, resolveAlert } from "../../services/inventoryService";
+import { useToast } from "../../context/useToast.js";
 
 export default function AlertsDashboard() {
+  const toast = useToast();
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -27,9 +29,10 @@ export default function AlertsDashboard() {
   const handleResolve = async (id) => {
     try {
       await resolveAlert(id);
+      toast.success("Đã đánh dấu cảnh báo là đã xử lý.");
       await fetchAlerts();
     } catch (err) {
-      alert("Không thể đánh dấu xử lý: " + err.message);
+      toast.error(err, "Không thể đánh dấu xử lý");
     }
   };
 

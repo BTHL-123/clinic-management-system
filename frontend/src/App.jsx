@@ -16,6 +16,7 @@ import MedicalServiceManagement from "./pages/medical-service/MedicalServiceMana
 import InvoiceManagement from "./pages/invoice/InvoiceManagement.jsx";
 import PaymentManagement from "./pages/payment/PaymentManagement.jsx";
 import PaymentCallback from "./pages/payment/PaymentCallback.jsx";
+import RefundManagement from "./pages/payment/RefundManagement.jsx";
 import AppointmentManagement from "./pages/appointment/Appointments.tsx";
 import AvailableSlots from "./pages/appointment/AvailableSlots.tsx";
 import AiChatPatient from "./pages/ai-chat/AiChatPatient.jsx";
@@ -47,6 +48,8 @@ import PatientMedicalHistoryPage from "./pages/patient/PatientMedicalHistoryPage
 import ReviewManagement from "./pages/review/ReviewManagement.jsx";
 import ArticleManagement from "./pages/article/ArticleManagement.jsx";
 import PatientQueueStatusPage from "./pages/appointment/PatientQueueStatusPage.jsx";
+import AuditLogPage from "./pages/audit/AuditLogPage.jsx";
+import SystemSettingsPage from "./pages/settings/SystemSettingsPage.jsx";
 
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import { useAuth } from "./context/useAuth.js";
@@ -59,6 +62,15 @@ function DashboardIndex() {
     return <PatientHome />;
   }
   return <DashboardHome />;
+}
+
+function AdminOnly({ children }) {
+  const { user } = useAuth();
+  const roles = user?.roles?.map((role) => role.roleName || role) || [];
+  if (!roles.includes("ADMIN")) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
 }
 
 export default function App() {
@@ -88,6 +100,7 @@ export default function App() {
         <Route path="invoices" element={<InvoiceManagement />} />
         <Route path="payments" element={<PaymentManagement />} />
         <Route path="payment/callback" element={<PaymentCallback />} />
+        <Route path="refunds" element={<RefundManagement />} />
         <Route path="medicines" element={<MedicineManagement />} />
         <Route path="suppliers" element={<SupplierManagement />} />
         <Route path="inventory/batches" element={<InventoryBatches />} />
@@ -116,14 +129,13 @@ export default function App() {
         <Route path="my-lab-results" element={<PatientLabResultPage />} />
         <Route path="reviews" element={<ReviewManagement />} />
         <Route path="articles" element={<ArticleManagement />} />
+        <Route path="audit-logs" element={<AdminOnly><AuditLogPage /></AdminOnly>} />
+        <Route path="system-settings" element={<AdminOnly><SystemSettingsPage /></AdminOnly>} />
         <Route path="doctor-leave-requests" element={<DoctorLeaveRequestPage />} />
         <Route path="admin/doctor-leave-requests" element={<AdminDoctorLeaveRequestPage />} />
       </Route>
     </Routes>
   );
 }
-
-
-
 
 

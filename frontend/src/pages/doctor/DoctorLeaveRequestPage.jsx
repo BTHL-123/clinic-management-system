@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import doctorLeaveRequestService from "../../services/doctorLeaveRequestService.js";
+import { useToast } from "../../context/useToast.js";
 
 const STATUS_BADGE = {
   PENDING:  { label: "Chờ duyệt",   color: "#f59e0b", bg: "#fef3c7" },
@@ -46,6 +47,7 @@ function StatusBadge({ status }) {
 }
 
 export default function DoctorLeaveRequestPage() {
+  const toast = useToast();
   const today = new Date().toISOString().split("T")[0];
 
   const [form, setForm] = useState({
@@ -132,8 +134,9 @@ export default function DoctorLeaveRequestPage() {
     try {
       await doctorLeaveRequestService.cancelLeaveRequest(id);
       setRequests((prev) => prev.filter((r) => r.id !== id));
+      toast.success("Đã hủy yêu cầu.");
     } catch (err) {
-      alert(err.message || "Hủy yêu cầu thất bại.");
+      toast.error(err, "Hủy yêu cầu thất bại");
     } finally {
       setCancellingId(null);
     }

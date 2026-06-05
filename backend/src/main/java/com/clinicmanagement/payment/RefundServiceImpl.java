@@ -7,7 +7,9 @@ import com.clinicmanagement.invoice.Invoice;
 import com.clinicmanagement.invoice.InvoiceRepository;
 import com.clinicmanagement.payment.dto.CreateRefundRequest;
 import com.clinicmanagement.payment.dto.RefundResponse;
+import com.clinicmanagement.payment.dto.RejectRefundRequest;
 import com.clinicmanagement.user.User;
+import com.clinicmanagement.notification.NotificationService;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import lombok.RequiredArgsConstructor;
@@ -24,10 +26,11 @@ public class RefundServiceImpl implements RefundService {
     private final RefundRepository refundRepository;
     private final PaymentRepository paymentRepository;
     private final InvoiceRepository invoiceRepository;
+    private final NotificationService notificationService;
 
     @Transactional(readOnly = true)
     @Override
-    public PageResponse<RefundResponse> getAll(Long paymentId, String status, Pageable pageable) {
+    public PageResponse<RefundResponse> getAll(Long paymentId, String status, Long patientId, Pageable pageable) {
         Specification<Refund> spec = (root, query, cb) -> {
             var predicates = new ArrayList<jakarta.persistence.criteria.Predicate>();
             if (paymentId != null) {
@@ -35,6 +38,9 @@ public class RefundServiceImpl implements RefundService {
             }
             if (status != null && !status.isBlank()) {
                 predicates.add(cb.equal(root.get("status"), status));
+            }
+            if (patientId != null) {
+                predicates.add(cb.equal(root.get("payment").get("paidBy").get("userId"), patientId));
             }
             return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
         };
@@ -71,7 +77,7 @@ public class RefundServiceImpl implements RefundService {
         refund.setPayment(payment);
         refund.setRefundAmount(request.refundAmount());
         refund.setReason(request.reason());
-        
+
         // Cải tiến: Lễ tân hoàn tiền trực tiếp -> Tự động duyệt và hoàn tất luôn
         refund.setStatus("COMPLETED");
         refund.setRequestedBy(currentUser);
@@ -89,6 +95,38 @@ public class RefundServiceImpl implements RefundService {
             invoice.setStatus("REFUNDED");
             invoiceRepository.save(invoice);
         }
+
+        Refund saved = refundRepository.save(refund);
+        return RefundResponse.from(saved);
+    }
+
+    @Transactional
+    @Override
+    public RefundResponse requestRefund(CreateRefundRequest request, User currentUser) {
+        Payment payment = paymentRepository.findById(request.paymentId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Không tìm thấy giao dịch thanh toán với ID: " + request.paymentId()));
+
+        if (!"PAID".equalsIgnoreCase(payment.getStatus())) {
+            throw new BusinessException("Chỉ có thể hoàn tiền cho giao dịch đã thanh toán (PAID)");
+        }
+
+        if (request.refundAmount().compareTo(payment.getAmount()) > 0) {
+            throw new BusinessException("Số tiền hoàn không được lớn hơn số tiền thanh toán");
+        }
+
+        if (payment.getPaidBy() != null && !payment.getPaidBy().getUserId().equals(currentUser.getUserId())) {
+            throw new BusinessException("Bạn không có quyền yêu cầu hoàn tiền cho giao dịch này");
+        }
+
+        Refund refund = new Refund();
+        refund.setRefundCode(nextRefundCode());
+        refund.setPayment(payment);
+        refund.setRefundAmount(request.refundAmount());
+        refund.setReason(request.reason());
+
+        refund.setStatus("PENDING");
+        refund.setRequestedBy(currentUser);
 
         Refund saved = refundRepository.save(refund);
         return RefundResponse.from(saved);
@@ -122,22 +160,54 @@ public class RefundServiceImpl implements RefundService {
         refund.setStatus("COMPLETED");
 
         Refund saved = refundRepository.save(refund);
+
+        try {
+            if (saved.getPayment() != null && saved.getPayment().getPaidBy() != null) {
+                notificationService.createNotification(
+                        saved.getPayment().getPaidBy().getUserId(),
+                        "Yêu cầu hoàn tiền đã được duyệt",
+                        "Yêu cầu hoàn tiền của bạn đã được duyệt và hoàn tất xử lý.",
+                        "SYSTEM"
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("Không thể tạo thông báo duyệt hoàn tiền: " + e.getMessage());
+        }
+
         return RefundResponse.from(saved);
     }
 
     @Transactional
     @Override
-    public RefundResponse reject(Long refundId, User currentUser) {
+    public RefundResponse reject(Long refundId, RejectRefundRequest request, User currentUser) {
         Refund refund = findOrThrow(refundId);
         if (!"PENDING".equalsIgnoreCase(refund.getStatus())) {
             throw new BusinessException("Yêu cầu hoàn tiền không ở trạng thái PENDING");
         }
 
         refund.setStatus("REJECTED");
+        refund.setRejectReason(request.rejectReason());
         refund.setApprovedBy(currentUser);
         refund.setApprovedAt(LocalDateTime.now());
 
         Refund saved = refundRepository.save(refund);
+
+        try {
+            if (saved.getPayment() != null && saved.getPayment().getPaidBy() != null) {
+                String reasonStr = (request.rejectReason() != null && !request.rejectReason().isBlank())
+                        ? " Lý do: " + request.rejectReason()
+                        : "";
+                notificationService.createNotification(
+                        saved.getPayment().getPaidBy().getUserId(),
+                        "Yêu cầu hoàn tiền bị từ chối",
+                        "Yêu cầu hoàn tiền của bạn đã bị từ chối." + reasonStr,
+                        "SYSTEM"
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("Không thể tạo thông báo từ chối hoàn tiền: " + e.getMessage());
+        }
+
         return RefundResponse.from(saved);
     }
 

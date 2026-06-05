@@ -59,6 +59,94 @@ body {
   margin: 0;
 }
 
+.toast-viewport {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 3000;
+  display: grid;
+  width: min(420px, calc(100vw - 32px));
+  gap: 10px;
+  pointer-events: none;
+}
+
+.toast {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+  padding: 13px 14px;
+  border: 1px solid #d7dee8;
+  border-left-width: 4px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1f2933;
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.16);
+  pointer-events: auto;
+}
+
+.toast-success {
+  border-left-color: #16a34a;
+}
+
+.toast-error {
+  border-left-color: #dc2626;
+}
+
+.toast-info {
+  border-left-color: #0284c7;
+}
+
+.toast-icon {
+  margin-top: 1px;
+}
+
+.toast-success .toast-icon {
+  color: #16a34a;
+}
+
+.toast-error .toast-icon {
+  color: #dc2626;
+}
+
+.toast-info .toast-icon {
+  color: #0284c7;
+}
+
+.toast-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.toast-copy strong {
+  font-size: 0.92rem;
+  line-height: 1.25;
+}
+
+.toast-copy span {
+  color: #526173;
+  font-size: 0.88rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.toast-close {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+}
+
+.toast-close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
 button,
 input,
 select,
