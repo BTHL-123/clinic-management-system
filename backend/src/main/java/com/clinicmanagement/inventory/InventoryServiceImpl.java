@@ -153,7 +153,7 @@ public class InventoryServiceImpl implements InventoryService {
         Medicine medicine = medicineRepository.findById(medicineId)
                 .orElseThrow(() -> new ResourceNotFoundException("Medicine not found"));
 
-        java.util.List<MedicineBatch> availableBatches = batchRepository.findFefoBatches(medicineId, java.time.LocalDate.now());
+        java.util.List<MedicineBatch> availableBatches = batchRepository.findUsableFefoBatches(medicineId, java.time.LocalDate.now());
         int remainingQuantity = requiredQuantity;
 
         for (MedicineBatch batch : availableBatches) {

@@ -967,6 +967,7 @@ CREATE TABLE refunds (
 
     refund_amount NUMERIC(12,2) NOT NULL CHECK (refund_amount >= 0),
     reason TEXT,
+    reject_reason TEXT,
 
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
         CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED', 'COMPLETED', 'FAILED')),
