@@ -138,7 +138,7 @@ export default function AvailableSlots() {
         const doctors: DoctorOption[] = Array.isArray(doctorJson.data?.content) ? doctorJson.data.content : [];
         const scheduledDoctorIds = new Set(schedules.map((schedule) => schedule.doctorId));
         let availableDoctors = doctors.filter((doctor) => scheduledDoctorIds.has(doctor.doctorId));
-        
+
         if (prefillDepartmentName) {
           availableDoctors = availableDoctors.filter((doctor) => doctor.departmentName === prefillDepartmentName);
         }

@@ -36,7 +36,7 @@ public class InventoryPaymentListener {
                 Long medicineId = item.getReferenceId();
                 Integer quantity = item.getQuantity();
                 String note = "Xuất thuốc cho hóa đơn " + invoice.getInvoiceCode();
-                
+
                 inventoryService.exportStockAutomated(medicineId, quantity, "INVOICE", invoiceId, note);
             }
         }

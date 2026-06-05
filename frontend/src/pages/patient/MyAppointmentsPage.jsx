@@ -91,7 +91,7 @@ function ReviewModal({ isOpen, onClose, onConfirm, busy }) {
         <p style={{ margin: "0 0 16px", color: "#64748b", fontSize: "14px" }}>
           Đánh giá trải nghiệm khám bệnh của bạn. Phản hồi này giúp chúng tôi cải thiện dịch vụ tốt hơn.
         </p>
-        
+
         <div style={{ display: "flex", gap: "8px", justifyContent: "center", marginBottom: "16px" }}>
           {[1, 2, 3, 4, 5].map((star) => (
             <Star
@@ -171,13 +171,13 @@ function StatusBadge({ status }) {
   );
 }
 
-function AppointmentCard({ 
-  appt, 
-  onCancelRequest, 
-  onRescheduleRequest, 
-  onRefundRequest, 
-  onReviewRequest, 
-  currentUserFullName 
+function AppointmentCard({
+  appt,
+  onCancelRequest,
+  onRescheduleRequest,
+  onRefundRequest,
+  onReviewRequest,
+  currentUserFullName
 }) {
   const navigate = useNavigate();
   const date = appt.appointmentDate
@@ -185,10 +185,10 @@ function AppointmentCard({
     : "—";
   const time = appt.startTime ? appt.startTime.substring(0, 5) : "—";
   const endTime = appt.endTime ? appt.endTime.substring(0, 5) : "—";
-  
+
   const now = new Date();
-  const isPastStartTime = appt.appointmentDate && appt.startTime 
-    ? now >= new Date(`${appt.appointmentDate}T${appt.startTime}`) 
+  const isPastStartTime = appt.appointmentDate && appt.startTime
+    ? now >= new Date(`${appt.appointmentDate}T${appt.startTime}`)
     : false;
 
   return (
@@ -319,7 +319,7 @@ function AppointmentCard({
             )}
           </>
         )}
-        
+
         {appt.status === "COMPLETED" && appt.hasReviewed && (
           <span style={{ fontSize: "12px", color: "#16a34a", fontWeight: 600, display: "flex", alignItems: "center", gap: "4px", padding: "6px 0" }}>
             ✓ Đã đánh giá
@@ -395,19 +395,19 @@ export default function MyAppointmentsPage() {
       const payRes = await getPayments({ appointmentId: appt.appointmentId });
       const payments = payRes.data?.content || payRes.data || [];
       const paidPayment = payments.find(p => p.status === "PAID");
-      
+
       if (!paidPayment) {
         setError("Không tìm thấy giao dịch đã thanh toán cho lịch hẹn này.");
         return;
       }
-      
+
       const refundRes = await getRefunds({ paymentId: paidPayment.paymentId });
       const refunds = refundRes.data?.content || refundRes.data || [];
       if (refunds.length > 0) {
         setError(`Đã có yêu cầu hoàn tiền cho lịch này (Trạng thái: ${refunds[0].status}).`);
         return;
       }
-      
+
       setRefundTargetPayment(paidPayment);
       setRefundModalOpen(true);
     } catch (err) {

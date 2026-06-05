@@ -42,7 +42,7 @@ public class GeminiService {
             String url = String.format(GEMINI_API_URL, model, apiKey);
 
             Map<String, Object> requestBody = new HashMap<>();
-            
+
             // Build system instruction
             Map<String, Object> systemInstruction = new HashMap<>();
             Map<String, Object> systemParts = new HashMap<>();
@@ -107,7 +107,7 @@ public class GeminiService {
             String url = String.format(GEMINI_API_URL, model, apiKey);
 
             Map<String, Object> requestBody = new HashMap<>();
-            
+
             // System instruction for JSON
             Map<String, Object> systemInstruction = new HashMap<>();
             Map<String, Object> systemParts = new HashMap<>();
@@ -120,7 +120,7 @@ public class GeminiService {
             for (AiChatMessage msg : history) {
                 combinedText.append(msg.getSenderType()).append(": ").append(msg.getMessageText()).append("\n");
             }
-            
+
             Map<String, Object> part = new HashMap<>();
             part.put("text", "Lịch sử:\n" + combinedText.toString() + "\nPhân tích và trả về JSON.");
             Map<String, Object> content = new HashMap<>();
@@ -128,7 +128,7 @@ public class GeminiService {
             content.put("parts", List.of(part));
 
             requestBody.put("contents", List.of(content));
-            
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -162,7 +162,7 @@ public class GeminiService {
             String url = String.format(GEMINI_API_URL, model, apiKey);
 
             Map<String, Object> requestBody = new HashMap<>();
-            
+
             // System instruction for JSON
             Map<String, Object> systemInstruction = new HashMap<>();
             Map<String, Object> systemParts = new HashMap<>();
@@ -178,7 +178,7 @@ public class GeminiService {
             content.put("parts", List.of(part));
 
             requestBody.put("contents", List.of(content));
-            
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 

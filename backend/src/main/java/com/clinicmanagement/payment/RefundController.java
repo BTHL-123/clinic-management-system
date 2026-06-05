@@ -46,12 +46,12 @@ public class RefundController {
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        
+
         Long patientId = null;
         if (userDetails != null && userDetails.getUser().getRoles().stream().anyMatch(r -> r.getRoleName().equals("PATIENT"))) {
             patientId = userDetails.getUser().getUserId();
         }
-        
+
         return ResponseEntity.ok(ApiResponse.success(refundService.getAll(paymentId, status, patientId, pageable)));
     }
 

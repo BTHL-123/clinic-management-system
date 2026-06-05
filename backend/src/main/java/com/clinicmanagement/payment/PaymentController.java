@@ -49,12 +49,12 @@ public class PaymentController {
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        
+
         Long patientId = null;
         if (userDetails != null && userDetails.getUser().getRoles().stream().anyMatch(r -> r.getRoleName().equals("PATIENT"))) {
             patientId = userDetails.getUser().getUserId();
         }
-        
+
         return ResponseEntity.ok(ApiResponse.success(paymentService.getAll(invoiceId, appointmentId, status, patientId, pageable)));
     }
 

@@ -77,7 +77,7 @@ public class RefundServiceImpl implements RefundService {
         refund.setPayment(payment);
         refund.setRefundAmount(request.refundAmount());
         refund.setReason(request.reason());
-        
+
         // Cải tiến: Lễ tân hoàn tiền trực tiếp -> Tự động duyệt và hoàn tất luôn
         refund.setStatus("COMPLETED");
         refund.setRequestedBy(currentUser);
@@ -124,7 +124,7 @@ public class RefundServiceImpl implements RefundService {
         refund.setPayment(payment);
         refund.setRefundAmount(request.refundAmount());
         refund.setReason(request.reason());
-        
+
         refund.setStatus("PENDING");
         refund.setRequestedBy(currentUser);
 
@@ -194,8 +194,8 @@ public class RefundServiceImpl implements RefundService {
 
         try {
             if (saved.getPayment() != null && saved.getPayment().getPaidBy() != null) {
-                String reasonStr = (request.rejectReason() != null && !request.rejectReason().isBlank()) 
-                        ? " Lý do: " + request.rejectReason() 
+                String reasonStr = (request.rejectReason() != null && !request.rejectReason().isBlank())
+                        ? " Lý do: " + request.rejectReason()
                         : "";
                 notificationService.createNotification(
                         saved.getPayment().getPaidBy().getUserId(),

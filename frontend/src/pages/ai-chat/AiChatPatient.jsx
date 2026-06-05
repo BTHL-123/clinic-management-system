@@ -49,7 +49,7 @@ export default function AiChatPatient() {
     const userMsg = inputText.trim();
     setInputText("");
     setMessages((prev) => [...prev, { sender: "USER", text: userMsg }]);
-    
+
     try {
       setLoading(true);
       const res = await sendMessage(sessionId, { messageText: userMsg });
@@ -84,11 +84,11 @@ export default function AiChatPatient() {
     try {
       setLoading(true);
       await acceptSuggestion(suggestion.suggestionId);
-      navigate("/dashboard/available-slots", { 
-        state: { 
-          prefillDepartmentId: suggestion.departmentId, 
-          prefillDepartmentName: suggestion.departmentName 
-        } 
+      navigate("/dashboard/available-slots", {
+        state: {
+          prefillDepartmentId: suggestion.departmentId,
+          prefillDepartmentName: suggestion.departmentName
+        }
       });
     } catch (err) {
       setError(err.message);
@@ -106,8 +106,8 @@ export default function AiChatPatient() {
           </h1>
           <p className="muted">Chat với AI để được chẩn đoán sơ bộ và gợi ý chuyên khoa.</p>
         </div>
-        <button 
-          className="primary-button" 
+        <button
+          className="primary-button"
           onClick={handleGetSuggestion}
           disabled={loading || !sessionId || messages.length < 2}
           style={{ background: "#8b5cf6" }}

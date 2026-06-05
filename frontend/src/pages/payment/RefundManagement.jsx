@@ -139,7 +139,7 @@ export default function RefundManagement() {
   const getStatusBadge = (status) => {
     switch (status) {
       case "PENDING": return <span style={{ background: "#fef08a", color: "#854d0e", padding: "4px 8px", borderRadius: "12px", fontSize: "12px", fontWeight: 600 }}>Chờ duyệt</span>;
-      case "APPROVED": 
+      case "APPROVED":
       case "COMPLETED": return <span style={{ background: "#bbf7d0", color: "#166534", padding: "4px 8px", borderRadius: "12px", fontSize: "12px", fontWeight: 600 }}>Hoàn thành</span>;
       case "REJECTED": return <span style={{ background: "#fecaca", color: "#991b1b", padding: "4px 8px", borderRadius: "12px", fontSize: "12px", fontWeight: 600 }}>Đã từ chối</span>;
       default: return <span>{status}</span>;
@@ -154,8 +154,8 @@ export default function RefundManagement() {
           <p style={{ margin: 0, color: "#64748b", fontSize: "14px" }}>Duyệt hoặc từ chối các yêu cầu hoàn tiền từ bệnh nhân.</p>
         </div>
         <div>
-          <select 
-            value={statusFilter} 
+          <select
+            value={statusFilter}
             onChange={e => { setStatusFilter(e.target.value); setPage(0); }}
             style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", outline: "none", background: "#fff", cursor: "pointer" }}
           >
@@ -172,7 +172,7 @@ export default function RefundManagement() {
           <AlertCircle size={16} /> {error}
         </div>
       )}
-      
+
       {successMsg && (
         <div style={{ padding: "12px", background: "#f0fdf4", color: "#16a34a", borderRadius: "8px", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
           <CheckCircle size={16} /> {successMsg}
@@ -210,14 +210,14 @@ export default function RefundManagement() {
                   <td style={{ padding: "16px" }}>
                     {r.status === "PENDING" && (
                       <div style={{ display: "flex", gap: "8px" }}>
-                        <button 
+                        <button
                           onClick={() => handleApprove(r.refundId)}
                           disabled={busyAction}
                           style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 10px", background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#16a34a", borderRadius: "6px", cursor: "pointer", fontWeight: 600 }}
                         >
                           <CheckCircle size={14} /> Duyệt
                         </button>
-                        <button 
+                        <button
                           onClick={() => openRejectModal(r.refundId)}
                           disabled={busyAction}
                           style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 10px", background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626", borderRadius: "6px", cursor: "pointer", fontWeight: 600 }}
@@ -237,10 +237,10 @@ export default function RefundManagement() {
             )}
           </tbody>
         </table>
-        
+
         {data?.totalPages > 1 && (
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderTop: "1px solid #e2e8f0", background: "#f8fafc" }}>
-            <button 
+            <button
               onClick={() => setPage(p => Math.max(0, p - 1))}
               disabled={page === 0}
               style={{ padding: "6px 12px", borderRadius: "6px", border: "1px solid #cbd5e1", background: "#fff", cursor: page === 0 ? "default" : "pointer", opacity: page === 0 ? 0.5 : 1 }}
@@ -248,7 +248,7 @@ export default function RefundManagement() {
               Trang trước
             </button>
             <span style={{ fontSize: "13px", color: "#64748b" }}>Trang {page + 1} / {data.totalPages}</span>
-            <button 
+            <button
               onClick={() => setPage(p => p + 1)}
               disabled={data.last}
               style={{ padding: "6px 12px", borderRadius: "6px", border: "1px solid #cbd5e1", background: "#fff", cursor: data.last ? "default" : "pointer", opacity: data.last ? 0.5 : 1 }}
