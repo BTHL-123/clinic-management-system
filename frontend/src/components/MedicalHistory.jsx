@@ -56,16 +56,16 @@ export default function MedicalHistory({ patientId, onClose, inline = false }) {
   }, [selectedRecord]);
 
   const renderList = () => (
-    <div className="table-wrapper" style={{ marginTop: 16 }}>
-      <table className="data-table">
+    <div className="table-wrapper" style={{ marginTop: 16, width: "100%", minWidth: "100%", display: "block" }}>
+      <table className="data-table" style={{ width: "100%", minWidth: "100%", display: "table", tableLayout: "fixed" }}>
         <thead>
           <tr>
-            <th>Ngày khám</th>
+            <th style={{ width: "160px" }}>Ngày khám</th>
             <th>Triệu chứng</th>
             <th>Chẩn đoán</th>
             <th>Bác sĩ</th>
             <th>Chuyên khoa</th>
-            <th style={{ textAlign: "center" }}>Chi tiết</th>
+            <th style={{ textAlign: "center", width: "100px" }}>Chi tiết</th>
           </tr>
         </thead>
         <tbody>
@@ -105,16 +105,31 @@ export default function MedicalHistory({ patientId, onClose, inline = false }) {
   const renderDetail = () => (
     <div style={{ marginTop: 16 }}>
       <button 
-        className="secondary-button" 
         onClick={() => setSelectedRecord(null)}
-        style={{ marginBottom: 16 }}
+        style={{
+          marginBottom: 16,
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "8px",
+          padding: "8px 16px",
+          borderRadius: "999px",
+          border: "1px solid rgba(255,255,255,0.5)",
+          background: "rgba(255,255,255,0.7)",
+          backdropFilter: "blur(8px)",
+          color: "#0f766e",
+          fontWeight: 800,
+          cursor: "pointer",
+          transition: "all 0.2s"
+        }}
+        onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.9)"}
+        onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.7)"}
       >
         &larr; Quay lại danh sách
       </button>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        <div style={{ background: "#f9fafb", padding: 16, borderRadius: 8 }}>
-          <h4 style={{ marginBottom: 12, borderBottom: "1px solid #e5e7eb", paddingBottom: 8 }}>Thông tin khám</h4>
+        <div style={{ background: "rgba(255, 255, 255, 0.45)", backdropFilter: "blur(12px)", border: "1px solid rgba(255, 255, 255, 0.45)", padding: 16, borderRadius: "16px" }}>
+          <h4 style={{ marginBottom: 12, borderBottom: "1px solid rgba(255, 255, 255, 0.3)", paddingBottom: 8, fontWeight: 700, color: "#1e293b" }}>Thông tin khám</h4>
           <p><strong>Ngày khám:</strong> {formatDate(selectedRecord.createdAt)}</p>
           <p><strong>Bác sĩ:</strong> {selectedRecord.doctorName || "—"}</p>
           <p><strong>Chuyên khoa:</strong> {selectedRecord.departmentName || "—"}</p>
@@ -128,8 +143,8 @@ export default function MedicalHistory({ patientId, onClose, inline = false }) {
           </div>
         </div>
 
-        <div style={{ background: "#f9fafb", padding: 16, borderRadius: 8 }}>
-          <h4 style={{ marginBottom: 12, borderBottom: "1px solid #e5e7eb", paddingBottom: 8 }}>Chẩn đoán & Điều trị</h4>
+        <div style={{ background: "rgba(255, 255, 255, 0.45)", backdropFilter: "blur(12px)", border: "1px solid rgba(255, 255, 255, 0.45)", padding: 16, borderRadius: "16px" }}>
+          <h4 style={{ marginBottom: 12, borderBottom: "1px solid rgba(255, 255, 255, 0.3)", paddingBottom: 8, fontWeight: 700, color: "#1e293b" }}>Chẩn đoán & Điều trị</h4>
           <div>
             <strong>Chẩn đoán:</strong>
             <p style={{ marginTop: 4, color: "#b91c1c", fontWeight: "bold" }}>{selectedRecord.diagnosis || "—"}</p>
@@ -143,7 +158,7 @@ export default function MedicalHistory({ patientId, onClose, inline = false }) {
             <p style={{ marginTop: 4, whiteSpace: "pre-wrap" }}>{selectedRecord.doctorNote || "—"}</p>
           </div>
           {(selectedRecord.followUpDate || selectedRecord.followUpNote) && (
-            <div style={{ marginTop: 12, background: "#ecfdf5", padding: 12, borderRadius: 6, border: "1px solid #d1fae5" }}>
+            <div style={{ marginTop: 12, background: "rgba(236, 253, 245, 0.5)", backdropFilter: "blur(4px)", padding: 12, borderRadius: "12px", border: "1px solid rgba(209, 250, 229, 0.6)" }}>
               <strong>Tái khám:</strong>
               {selectedRecord.followUpDate && <p style={{ marginTop: 4 }}>Ngày: {new Date(selectedRecord.followUpDate).toLocaleDateString("vi-VN")}</p>}
               {selectedRecord.followUpNote && <p style={{ marginTop: 4 }}>Ghi chú: {selectedRecord.followUpNote}</p>}
@@ -157,13 +172,13 @@ export default function MedicalHistory({ patientId, onClose, inline = false }) {
        * ═══════════════════════════════════════════════════════════════════════ */}
       <div style={{ marginTop: 16 }}>
         {selectedRecord.hasLabResult && (
-          <div style={{ background: "#f9fafb", padding: 16, borderRadius: 8, marginBottom: 12 }}>
+          <div style={{ background: "rgba(255, 255, 255, 0.45)", backdropFilter: "blur(12px)", border: "1px solid rgba(255, 255, 255, 0.45)", padding: 16, borderRadius: "16px", marginBottom: 12 }}>
             <LabResultView consultationId={selectedRecord.consultationId} />
           </div>
         )}
         {selectedRecord.hasPrescription && (
-          <div style={{ background: "#f9fafb", padding: 16, borderRadius: 8 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <div style={{ background: "rgba(255, 255, 255, 0.45)", backdropFilter: "blur(12px)", border: "1px solid rgba(255, 255, 255, 0.45)", padding: 16, borderRadius: "16px" }}>
+            <div style={{ display: "flex", justifycontent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <span style={{ fontWeight: 600, fontSize: 14 }}>💊 Đơn thuốc</span>
               {prescriptionIdMap[selectedRecord.consultationId] && (
                 <button
@@ -205,12 +220,12 @@ export default function MedicalHistory({ patientId, onClose, inline = false }) {
   );
 
   if (inline) {
-    return <div style={{ padding: "0 16px 16px 16px" }}>{content}</div>;
+    return <div className="w-full" style={{ padding: "0 16px 16px 16px", width: "100%", minWidth: "100%", display: "block" }}>{content}</div>;
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ width: "800px", maxWidth: "95vw" }}>
+    <div className="modal-overlay" onClick={onClose} style={{ backgroundColor: "rgba(13, 76, 70, 0.25)", backdropFilter: "blur(8px)" }}>
+      <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ width: "800px", maxWidth: "95vw", background: "rgba(255, 255, 255, 0.85)", backdropFilter: "blur(20px)", borderRadius: "24px", border: "1px solid rgba(255,255,255,0.5)", boxShadow: "0 10px 40px rgba(0,0,0,0.12)" }}>
         {content}
       </div>
     </div>

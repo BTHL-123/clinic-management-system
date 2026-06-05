@@ -28,7 +28,7 @@ import {
   Star,
   FileText,
 } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import Logo from "./Logo.jsx";
 
@@ -79,6 +79,7 @@ const patientItems = [
 
 export default function Sidebar() {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const userRoles = user?.roles?.map(r => r.roleName ? r.roleName : r) || [];
   
@@ -94,26 +95,47 @@ export default function Sidebar() {
   });
 
   return (
-    <aside className="sidebar">
-      <div className="brand-lockup">
-        <Logo size={36} />
+    <aside className="w-[280px] flex-shrink-0 bg-white/70 backdrop-blur-2xl border border-white/60 flex flex-col h-full z-30 shadow-[0_8px_30px_rgba(0,0,0,0.06)] relative rounded-[2rem] overflow-hidden">
+      <div className="h-[88px] flex items-center justify-center border-b border-white/60 hover:bg-white/40 transition-colors cursor-pointer" onClick={() => navigate('/')}>
+        <Logo size={42} />
       </div>
-      <nav className="nav-list" aria-label="Main navigation">
-        {filteredItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <NavLink
-              key={item.label}
-              to={item.to}
-              className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}
-              end={item.end}
-            >
-              <Icon size={18} />
-              <span>{item.label}</span>
-            </NavLink>
-          );
-        })}
-      </nav>
+      
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 custom-scrollbar">
+        <nav className="flex flex-col gap-1.5" aria-label="Main navigation">
+          {filteredItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.label}
+                to={item.to}
+                className={({ isActive }) => `flex items-center gap-3 px-4 py-3.5 rounded-[1rem] font-extrabold transition-all duration-300 group ${
+                  isActive 
+                    ? "bg-gradient-to-r from-teal-50 to-emerald-50/30 text-teal-700 shadow-sm border border-teal-100/50 relative overflow-hidden" 
+                    : "text-slate-500 hover:bg-white hover:shadow-sm hover:text-slate-800 border border-transparent"
+                }`}
+                end={item.end}
+              >
+                {({ isActive }) => (
+                  <>
+                    {isActive && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-teal-400 to-emerald-500 rounded-r-md"></div>}
+                    <Icon size={20} strokeWidth={isActive ? 2.5 : 2} className={`transition-transform duration-300 ${isActive ? "scale-110 drop-shadow-sm" : "group-hover:scale-110"}`} />
+                    <span className="text-[14.5px] whitespace-nowrap">{item.label}</span>
+                  </>
+                )}
+              </NavLink>
+            );
+          })}
+        </nav>
+      </div>
+      
+      {/* Footer Branding */}
+      <div className="p-6 border-t border-white/60 bg-gradient-to-t from-white/80 to-transparent">
+        <div className="flex items-center justify-center gap-2 text-xs font-bold text-slate-400">
+           <span>Medical Clinic</span>
+           <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+           <span>v2.0</span>
+        </div>
+      </div>
     </aside>
   );
 }

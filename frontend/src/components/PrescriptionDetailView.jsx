@@ -42,21 +42,21 @@ export default function PrescriptionDetailView({ consultationId }) {
         </div>
       )}
 
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+      <table style={{ width: "100%", tableLayout: "fixed", borderCollapse: "collapse", fontSize: 13 }}>
         <thead>
-          <tr style={{ background: "#f3f4f6" }}>
-            <th style={thStyle}>Tên thuốc</th>
-            <th style={thStyle}>Dạng bào chế</th>
-            <th style={thStyle}>Hàm lượng</th>
-            <th style={thStyle}>SL</th>
-            <th style={thStyle}>Liều dùng</th>
-            <th style={thStyle}>Tần suất</th>
-            <th style={thStyle}>Thời gian</th>
+          <tr style={{ background: "rgba(255, 255, 255, 0.3)" }}>
+            <th style={{ ...thStyle, width: "30%" }}>Tên thuốc</th>
+            <th style={{ ...thStyle, width: "15%" }}>Dạng bào chế</th>
+            <th style={{ ...thStyle, width: "12%" }}>Hàm lượng</th>
+            <th style={{ ...thStyle, width: "8%" }}>SL</th>
+            <th style={{ ...thStyle, width: "15%" }}>Liều dùng</th>
+            <th style={{ ...thStyle, width: "10%" }}>Tần suất</th>
+            <th style={{ ...thStyle, width: "10%" }}>Thời gian</th>
           </tr>
         </thead>
         <tbody>
           {prescription.items.map((item) => (
-            <tr key={item.prescriptionItemId} style={{ borderBottom: "1px solid #e5e7eb" }}>
+            <tr key={item.prescriptionItemId} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.3)" }}>
               <td style={tdStyle}>
                 <div style={{ fontWeight: 600 }}>{item.medicineName}</div>
                 <div style={{ color: "#6b7280", fontSize: 12 }}>{item.medicineCode}</div>
@@ -75,21 +75,21 @@ export default function PrescriptionDetailView({ consultationId }) {
       {(item => item)(prescription.items.some(i => i.morningDose || i.noonDose || i.eveningDose || i.nightDose)) && (
         <div style={{ marginTop: 10 }}>
           <strong style={{ fontSize: 13 }}>Lịch uống thuốc:</strong>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, marginTop: 4 }}>
+          <table style={{ width: "100%", tableLayout: "fixed", borderCollapse: "collapse", fontSize: 13, marginTop: 4 }}>
             <thead>
-              <tr style={{ background: "#f3f4f6" }}>
-                <th style={thStyle}>Thuốc</th>
-                <th style={thStyle}>Sáng</th>
-                <th style={thStyle}>Trưa</th>
-                <th style={thStyle}>Chiều</th>
-                <th style={thStyle}>Tối</th>
+              <tr style={{ background: "rgba(255, 255, 255, 0.3)" }}>
+                <th style={{ ...thStyle, width: "40%" }}>Thuốc</th>
+                <th style={{ ...thStyle, width: "15%", textAlign: "center" }}>Sáng</th>
+                <th style={{ ...thStyle, width: "15%", textAlign: "center" }}>Trưa</th>
+                <th style={{ ...thStyle, width: "15%", textAlign: "center" }}>Chiều</th>
+                <th style={{ ...thStyle, width: "15%", textAlign: "center" }}>Tối</th>
               </tr>
             </thead>
             <tbody>
               {prescription.items
                 .filter(i => i.morningDose || i.noonDose || i.eveningDose || i.nightDose)
                 .map((item) => (
-                  <tr key={item.prescriptionItemId} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                  <tr key={item.prescriptionItemId} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.3)" }}>
                     <td style={tdStyle}>{item.medicineName}</td>
                     <td style={{ ...tdStyle, textAlign: "center" }}>{item.morningDose || "—"}</td>
                     <td style={{ ...tdStyle, textAlign: "center" }}>{item.noonDose || "—"}</td>
@@ -115,7 +115,7 @@ const thStyle = {
   padding: "6px 10px",
   textAlign: "left",
   fontWeight: 600,
-  borderBottom: "1px solid #e5e7eb",
+  borderBottom: "1px solid rgba(255, 255, 255, 0.3)",
 };
 
 const tdStyle = {

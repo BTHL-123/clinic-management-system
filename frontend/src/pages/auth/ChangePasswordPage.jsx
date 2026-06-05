@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { KeyRound } from "lucide-react";
-import { Link } from "react-router-dom";
+import { KeyRound, ArrowLeft } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/useAuth.js";
 import { changePassword } from "../../services/authService";
 
 export default function ChangePasswordPage() {
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -39,17 +40,30 @@ export default function ChangePasswordPage() {
   };
 
   return (
-    <section className="content-section">
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">
-            <KeyRound size={26} />
-            Đổi mật khẩu
+    <div className="max-w-[1100px] mx-auto w-full flex flex-col items-center">
+      <div className="w-full mb-10 flex flex-col items-center">
+        <button 
+          onClick={() => navigate("/dashboard", { state: { activeClusterId: "settings" } })}
+          className="self-start inline-flex items-center gap-3 px-5 py-2.5 bg-white/90 hover:bg-white text-teal-900 font-extrabold border border-white shadow-md rounded-full hover:shadow-lg hover:-translate-x-0.5 transition-all duration-300 group"
+        >
+          <div className="bg-teal-100/80 p-1.5 rounded-full text-teal-700 group-hover:bg-teal-200 transition-colors">
+            <ArrowLeft size={16} strokeWidth={2.5} className="group-hover:-translate-x-0.5 transition-transform" />
+          </div>
+          Quay lại Màn hình chính
+        </button>
+        <div className="flex flex-col items-center text-center mt-2">
+          <h1 className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/20 backdrop-blur-xl border border-white/40 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-4">
+            <KeyRound size={32} className="text-teal-300 drop-shadow-md" />
+            <span className="drop-shadow-md">Đổi mật khẩu</span>
           </h1>
-          <p className="muted">Cập nhật mật khẩu tài khoản local của bạn.</p>
+          <p className="text-teal-50/90 font-medium drop-shadow-sm text-[16px] max-w-[600px]">
+            Cập nhật mật khẩu tài khoản local của bạn để bảo mật tốt hơn.
+          </p>
         </div>
       </div>
-      <form className="form-stack narrow-form" onSubmit={handleSubmit}>
+
+      <div className="patient-glass-card p-6 md:p-8 w-full max-w-[500px] mx-auto mb-10">
+        <form className="form-stack" onSubmit={handleSubmit}>
         {error && <div className="error-box">{error}</div>}
         {notice && <div className="success-box">{notice}</div>}
         <div className="field">
@@ -57,6 +71,7 @@ export default function ChangePasswordPage() {
           <input
             id="currentPassword"
             type="password"
+            className="patient-glass-input"
             value={form.currentPassword}
             onChange={(event) => setForm({ ...form, currentPassword: event.target.value })}
             required
@@ -67,6 +82,7 @@ export default function ChangePasswordPage() {
           <input
             id="changeNewPassword"
             type="password"
+            className="patient-glass-input"
             minLength={6}
             value={form.newPassword}
             onChange={(event) => setForm({ ...form, newPassword: event.target.value })}
@@ -78,6 +94,7 @@ export default function ChangePasswordPage() {
           <input
             id="confirmPassword"
             type="password"
+            className="patient-glass-input"
             minLength={6}
             value={form.confirmPassword}
             onChange={(event) => setForm({ ...form, confirmPassword: event.target.value })}
@@ -88,6 +105,7 @@ export default function ChangePasswordPage() {
           {submitting ? "Đang lưu..." : "Đổi mật khẩu"}
         </button>
       </form>
-    </section>
+    </div>
+    </div>
   );
 }

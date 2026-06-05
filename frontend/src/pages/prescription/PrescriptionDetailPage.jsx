@@ -50,7 +50,8 @@ export default function PrescriptionDetailPage() {
   );
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 4px" }}>
+    <div className="max-w-[1400px] w-[95%] mx-auto">
+      <div className="patient-glass-card p-6 md:p-8 w-full mb-10">
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
         <button className="icon-button" onClick={() => navigate(-1)} title="Quay lại">
@@ -62,9 +63,8 @@ export default function PrescriptionDetailPage() {
       </div>
 
       {/* Thông tin đơn */}
-      <div style={{
-        background: "#f9fafb", borderRadius: 8, padding: "14px 18px",
-        marginBottom: 20, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12,
+      <div className="patient-glass-subcard" style={{
+        padding: "16px 20px", marginBottom: 20, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12,
       }}>
         <div>
           <div style={{ fontSize: 12, color: "#6b7280" }}>Mã đơn thuốc</div>
@@ -93,9 +93,10 @@ export default function PrescriptionDetailPage() {
       {prescription.interactionWarning && (
         <div style={{
           background: prescription.interactionWarning.includes("No dangerous")
-            ? "#f0fdf4" : "#fef3c7",
-          border: `1px solid ${prescription.interactionWarning.includes("No dangerous") ? "#86efac" : "#fcd34d"}`,
-          borderRadius: 8, padding: "12px 16px", marginBottom: 16, fontSize: 13,
+            ? "rgba(220, 252, 231, 0.6)" : "rgba(254, 243, 199, 0.6)",
+          backdropFilter: "blur(8px)",
+          border: `1px solid ${prescription.interactionWarning.includes("No dangerous") ? "rgba(134, 239, 172, 0.6)" : "rgba(252, 211, 77, 0.6)"}`,
+          borderRadius: 12, padding: "12px 16px", marginBottom: 16, fontSize: 13,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
             {prescription.interactionWarning.includes("No dangerous")
@@ -114,7 +115,7 @@ export default function PrescriptionDetailPage() {
       )}
 
       {/* Danh sách thuốc */}
-      <div style={{ background: "#fdf4ff", border: "1px solid #e9d5ff", borderRadius: 8, padding: 16, marginBottom: 16 }}>
+      <div className="patient-glass-subcard" style={{ padding: 16, marginBottom: 20 }}>
         <h3 style={{ margin: "0 0 12px 0", fontSize: 15, color: "#6d28d9", display: "flex", alignItems: "center", gap: 6 }}>
           <Pill size={15} /> Danh sách thuốc ({prescription.items?.length || 0} loại)
         </h3>
@@ -122,7 +123,7 @@ export default function PrescriptionDetailPage() {
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
-              <tr style={{ background: "#f5f3ff" }}>
+              <tr style={{ background: "rgba(255, 255, 255, 0.3)" }}>
                 {["Tên thuốc", "Dạng bào chế", "Hàm lượng", "SL", "Liều dùng", "Tần suất", "Thời gian"].map((h) => (
                   <th key={h} style={thStyle}>{h}</th>
                 ))}
@@ -130,7 +131,7 @@ export default function PrescriptionDetailPage() {
             </thead>
             <tbody>
               {prescription.items?.map((item) => (
-                <tr key={item.prescriptionItemId} style={{ borderBottom: "1px solid #e9d5ff" }}>
+                <tr key={item.prescriptionItemId} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.3)" }}>
                   <td style={tdStyle}>
                     <div style={{ fontWeight: 600 }}>{item.medicineName}</div>
                     <div style={{ fontSize: 11, color: "#6b7280" }}>{item.medicineCode}</div>
@@ -152,11 +153,11 @@ export default function PrescriptionDetailPage() {
 
       {/* Lịch uống thuốc */}
       {hasDoseSchedule && (
-        <div style={{ background: "#fdf4ff", border: "1px solid #e9d5ff", borderRadius: 8, padding: 16, marginBottom: 16 }}>
+        <div className="patient-glass-subcard" style={{ padding: 16, marginBottom: 20 }}>
           <h3 style={{ margin: "0 0 12px 0", fontSize: 15, color: "#6d28d9" }}>Lịch uống thuốc</h3>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
-              <tr style={{ background: "#f5f3ff" }}>
+              <tr style={{ background: "rgba(255, 255, 255, 0.3)" }}>
                 {["Thuốc", "Sáng", "Trưa", "Chiều", "Tối"].map((h) => (
                   <th key={h} style={thStyle}>{h}</th>
                 ))}
@@ -166,7 +167,7 @@ export default function PrescriptionDetailPage() {
               {prescription.items
                 ?.filter((i) => i.morningDose || i.noonDose || i.eveningDose || i.nightDose)
                 .map((item) => (
-                  <tr key={item.prescriptionItemId} style={{ borderBottom: "1px solid #e9d5ff" }}>
+                  <tr key={item.prescriptionItemId} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.3)" }}>
                     <td style={tdStyle}><strong>{item.medicineName}</strong></td>
                     <td style={{ ...tdStyle, textAlign: "center" }}>{item.morningDose || "—"}</td>
                     <td style={{ ...tdStyle, textAlign: "center" }}>{item.noonDose || "—"}</td>
@@ -181,17 +182,18 @@ export default function PrescriptionDetailPage() {
 
       {/* Lời dặn */}
       {prescription.doctorNote && (
-        <div style={{ background: "#f9fafb", borderRadius: 8, padding: "12px 16px" }}>
+        <div className="patient-glass-subcard" style={{ padding: "12px 16px" }}>
           <strong style={{ fontSize: 13 }}>Lời dặn của bác sĩ:</strong>
           <p style={{ margin: "6px 0 0 0", fontSize: 13, color: "#374151" }}>{prescription.doctorNote}</p>
         </div>
       )}
+    </div>
     </div>
   );
 }
 
 const thStyle = {
   padding: "8px 10px", textAlign: "left",
-  fontWeight: 600, borderBottom: "1px solid #e9d5ff",
+  fontWeight: 600, borderBottom: "1px solid rgba(255, 255, 255, 0.3)",
 };
 const tdStyle = { padding: "8px 10px", verticalAlign: "top" };

@@ -65,58 +65,58 @@ export default function DoctorProfile() {
         </div>
       </div>
 
-      <div style={{ background: "#fff", borderRadius: 12, padding: 24, boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+      <div className="patient-glass-card p-6 md:p-8">
         <div className="form-stack">
           
           <div style={{ marginBottom: 20 }}>
-            <h3 style={{ borderBottom: "1px solid #eee", paddingBottom: 8, marginBottom: 16 }}>Thông tin cơ bản</h3>
+            <h3 style={{ borderBottom: "1px solid rgba(255,255,255,0.3)", paddingBottom: 8, marginBottom: 16, fontWeight: 700, color: "#1e293b" }}>Thông tin cơ bản</h3>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               
               <div className="field">
                 <label>Mã bác sĩ</label>
-                <input value={profile?.doctorCode || ""} disabled style={{ background: "#f5f7fa" }} />
+                <input value={profile?.doctorCode || ""} disabled className="patient-glass-input disabled:opacity-60" />
               </div>
               
               <div className="field">
                 <label>Họ và tên</label>
-                <input value={profile?.fullName || ""} disabled style={{ background: "#f5f7fa" }} />
+                <input value={profile?.fullName || ""} disabled className="patient-glass-input disabled:opacity-60" />
               </div>
 
               <div className="field">
                 <label>Trạng thái</label>
-                <input value={profile?.status === "ACTIVE" ? "Đang hoạt động" : "Ngừng hoạt động"} disabled style={{ background: "#f5f7fa", color: profile?.status === "ACTIVE" ? "green" : "red" }} />
+                <input value={profile?.status === "ACTIVE" ? "Đang hoạt động" : "Ngừng hoạt động"} disabled className="patient-glass-input disabled:opacity-60" style={{ color: profile?.status === "ACTIVE" ? "#16a34a" : "#dc2626", fontWeight: 700 }} />
               </div>
               
             </div>
           </div>
           
           <div style={{ marginBottom: 20 }}>
-            <h3 style={{ borderBottom: "1px solid #eee", paddingBottom: 8, marginBottom: 16 }}>Thông tin chuyên khoa</h3>
+            <h3 style={{ borderBottom: "1px solid rgba(255,255,255,0.3)", paddingBottom: 8, marginBottom: 16, fontWeight: 700, color: "#1e293b" }}>Thông tin chuyên khoa</h3>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               
               <div className="field">
                 <label>Chuyên khoa (Department)</label>
-                <input value={profile?.departmentName || ""} disabled style={{ background: "#f5f7fa" }} />
+                <input value={profile?.departmentName || ""} disabled className="patient-glass-input disabled:opacity-60" />
               </div>
 
               <div className="field">
                 <label>Bằng cấp (Degree)</label>
-                <input value={profile?.degree || ""} disabled style={{ background: "#f5f7fa" }} />
+                <input value={profile?.degree || ""} disabled className="patient-glass-input disabled:opacity-60" />
               </div>
 
               <div className="field" style={{ gridColumn: "span 2" }}>
                 <label>Chuyên môn (Specialization)</label>
-                <input value={profile?.specialization || ""} disabled style={{ background: "#f5f7fa" }} />
+                <input value={profile?.specialization || ""} disabled className="patient-glass-input disabled:opacity-60" />
               </div>
 
               <div className="field">
                 <label>Số năm kinh nghiệm</label>
-                <input value={profile?.yearsOfExperience || 0} disabled style={{ background: "#f5f7fa" }} />
+                <input value={profile?.yearsOfExperience || 0} disabled className="patient-glass-input disabled:opacity-60" />
               </div>
 
               <div className="field">
                 <label>Phí khám (VNĐ)</label>
-                <input value={profile?.consultationFee?.toLocaleString() || 0} disabled style={{ background: "#f5f7fa" }} />
+                <input value={profile?.consultationFee?.toLocaleString() || 0} disabled className="patient-glass-input disabled:opacity-60" />
               </div>
 
             </div>

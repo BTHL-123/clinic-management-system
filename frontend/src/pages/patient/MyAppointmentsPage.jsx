@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { CalendarDays, Clock, CheckCircle, XCircle, RefreshCw, AlertCircle, ChevronLeft, ChevronRight, Star, MessageSquarePlus } from "lucide-react";
+import { CalendarDays, Clock, CheckCircle, XCircle, RefreshCw, AlertCircle, ChevronLeft, ChevronRight, Star, MessageSquarePlus, ArrowLeft } from "lucide-react";
 import appointmentService from "../../services/appointmentService.js";
 import { createReview } from "../../services/reviewService.js";
 import { useAuth } from "../../context/useAuth.js";
@@ -15,15 +15,16 @@ function CancelModal({ isOpen, onClose, onConfirm, busy }) {
   return (
     <div style={{
       position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: "rgba(0,0,0,0.5)", display: "flex",
-      alignItems: "center", justifyContent: "center", zIndex: 1000
+      backgroundColor: "rgba(13, 76, 70, 0.25)", backdropFilter: "blur(8px)",
+      display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
     }}>
       <div style={{
-        background: "#fff", padding: "24px", borderRadius: "12px",
-        width: "90%", maxWidth: "400px", boxShadow: "0 4px 20px rgba(0,0,0,0.15)"
+        background: "rgba(255, 255, 255, 0.85)", backdropFilter: "blur(20px)",
+        padding: "28px", borderRadius: "24px", border: "1px solid rgba(255,255,255,0.5)",
+        width: "90%", maxWidth: "400px", boxShadow: "0 10px 40px rgba(0,0,0,0.12)"
       }}>
-        <h3 style={{ margin: "0 0 16px", color: "#0f172a", fontSize: "1.2rem" }}>Xác nhận hủy lịch</h3>
-        <p style={{ margin: "0 0 16px", color: "#64748b", fontSize: "14px" }}>
+        <h3 style={{ margin: "0 0 16px", color: "#0f172a", fontSize: "1.2rem", fontWeight: 800 }}>Xác nhận hủy lịch</h3>
+        <p style={{ margin: "0 0 16px", color: "#475569", fontSize: "14px", fontWeight: 500 }}>
           Vui lòng nhập lý do hủy lịch hẹn này. Thao tác này không thể hoàn tác.
         </p>
         <textarea
@@ -33,7 +34,8 @@ function CancelModal({ isOpen, onClose, onConfirm, busy }) {
           rows={3}
           style={{
             width: "100%", padding: "10px", borderRadius: "8px",
-            border: "1px solid #cbd5e1", outline: "none", resize: "none",
+            border: "1px solid rgba(255, 255, 255, 0.6)", background: "rgba(255,255,255,0.4)",
+            outline: "none", resize: "none",
             marginBottom: "16px", fontFamily: "inherit", fontSize: "14px",
             boxSizing: "border-box"
           }}
@@ -43,8 +45,8 @@ function CancelModal({ isOpen, onClose, onConfirm, busy }) {
             onClick={onClose}
             disabled={busy}
             style={{
-              padding: "8px 16px", borderRadius: "8px", border: "1px solid #cbd5e1",
-              background: "#fff", cursor: "pointer", fontWeight: 600, color: "#475569"
+              padding: "8px 16px", borderRadius: "8px", border: "1px solid rgba(255, 255, 255, 0.6)",
+              background: "rgba(255, 255, 255, 0.6)", cursor: "pointer", fontWeight: 600, color: "#475569"
             }}
           >
             Đóng
@@ -77,15 +79,16 @@ function ReviewModal({ isOpen, onClose, onConfirm, busy }) {
   return (
     <div style={{
       position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: "rgba(0,0,0,0.5)", display: "flex",
-      alignItems: "center", justifyContent: "center", zIndex: 1000
+      backgroundColor: "rgba(13, 76, 70, 0.25)", backdropFilter: "blur(8px)",
+      display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
     }}>
       <div style={{
-        background: "#fff", padding: "24px", borderRadius: "12px",
-        width: "90%", maxWidth: "400px", boxShadow: "0 4px 20px rgba(0,0,0,0.15)"
+        background: "rgba(255, 255, 255, 0.85)", backdropFilter: "blur(20px)",
+        padding: "28px", borderRadius: "24px", border: "1px solid rgba(255,255,255,0.5)",
+        width: "90%", maxWidth: "400px", boxShadow: "0 10px 40px rgba(0,0,0,0.12)"
       }}>
-        <h3 style={{ margin: "0 0 16px", color: "#0f172a", fontSize: "1.2rem" }}>Đánh giá dịch vụ</h3>
-        <p style={{ margin: "0 0 16px", color: "#64748b", fontSize: "14px" }}>
+        <h3 style={{ margin: "0 0 16px", color: "#0f172a", fontSize: "1.2rem", fontWeight: 800 }}>Đánh giá dịch vụ</h3>
+        <p style={{ margin: "0 0 16px", color: "#475569", fontSize: "14px", fontWeight: 500 }}>
           Đánh giá trải nghiệm khám bệnh của bạn. Phản hồi này giúp chúng tôi cải thiện dịch vụ tốt hơn.
         </p>
         
@@ -111,7 +114,8 @@ function ReviewModal({ isOpen, onClose, onConfirm, busy }) {
           rows={3}
           style={{
             width: "100%", padding: "10px", borderRadius: "8px",
-            border: "1px solid #cbd5e1", outline: "none", resize: "none",
+            border: "1px solid rgba(255, 255, 255, 0.6)", background: "rgba(255,255,255,0.4)",
+            outline: "none", resize: "none",
             marginBottom: "16px", fontFamily: "inherit", fontSize: "14px",
             boxSizing: "border-box"
           }}
@@ -121,8 +125,8 @@ function ReviewModal({ isOpen, onClose, onConfirm, busy }) {
             onClick={onClose}
             disabled={busy}
             style={{
-              padding: "8px 16px", borderRadius: "8px", border: "1px solid #cbd5e1",
-              background: "#fff", cursor: "pointer", fontWeight: 600, color: "#475569"
+              padding: "8px 16px", borderRadius: "8px", border: "1px solid rgba(255, 255, 255, 0.6)",
+              background: "rgba(255, 255, 255, 0.6)", cursor: "pointer", fontWeight: 600, color: "#475569"
             }}
           >
             Đóng
@@ -183,12 +187,15 @@ function AppointmentCard({ appt, onCancelRequest, onRescheduleRequest, onReviewR
 
   return (
     <div style={{
-      background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "12px",
+      background: "rgba(255, 255, 255, 0.45)",
+      backdropFilter: "blur(12px)",
+      border: "1px solid rgba(255, 255, 255, 0.4)",
+      borderRadius: "20px",
       padding: "20px 22px", display: "flex", flexDirection: "column", gap: "10px",
-      boxShadow: "0 1px 6px rgba(0,0,0,0.05)", transition: "box-shadow 0.18s",
+      boxShadow: "0 4px 18px rgba(0,0,0,0.04)", transition: "all 0.22s ease",
     }}
-    onMouseEnter={e => e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.10)"}
-    onMouseLeave={e => e.currentTarget.style.boxShadow = "0 1px 6px rgba(0,0,0,0.05)"}
+    onMouseEnter={e => e.currentTarget.style.boxShadow = "0 8px 25px rgba(0,0,0,0.08)"}
+    onMouseLeave={e => e.currentTarget.style.boxShadow = "0 4px 18px rgba(0,0,0,0.04)"}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
@@ -244,12 +251,12 @@ function AppointmentCard({ appt, onCancelRequest, onRescheduleRequest, onReviewR
           onClick={() => navigate(`/dashboard/appointments/${appt.appointmentId}`)}
           style={{
             display: "flex", alignItems: "center", gap: "6px",
-            padding: "6px 14px", borderRadius: "6px", border: "1px solid #cbd5e1",
-            background: "#fff", color: "#475569", cursor: "pointer",
+            padding: "6px 14px", borderRadius: "6px", border: "1px solid rgba(255, 255, 255, 0.5)",
+            background: "rgba(255, 255, 255, 0.6)", color: "#475569", cursor: "pointer",
             fontSize: "13px", fontWeight: 600, transition: "all 0.15s"
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = "#f8fafc"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
+          onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.85)"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.6)"; }}
         >
           Xem chi tiết
         </button>
@@ -262,12 +269,12 @@ function AppointmentCard({ appt, onCancelRequest, onRescheduleRequest, onReviewR
                   onClick={() => onRescheduleRequest(appt)}
                   style={{
                     display: "flex", alignItems: "center", gap: "6px",
-                    padding: "6px 14px", borderRadius: "6px", border: "1px solid #cbd5e1",
-                    background: "#fff", color: "#0ea5e9", cursor: "pointer",
+                    padding: "6px 14px", borderRadius: "6px", border: "1px solid rgba(255, 255, 255, 0.5)",
+                    background: "rgba(255, 255, 255, 0.6)", color: "#0ea5e9", cursor: "pointer",
                     fontSize: "13px", fontWeight: 600, transition: "all 0.15s"
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.background = "#f0f9ff"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "rgba(240, 249, 255, 0.8)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.6)"; }}
                 >
                   <RefreshCw size={14} />
                   Dời lịch
@@ -276,12 +283,12 @@ function AppointmentCard({ appt, onCancelRequest, onRescheduleRequest, onReviewR
                   onClick={() => onCancelRequest(appt.appointmentId)}
                   style={{
                     display: "flex", alignItems: "center", gap: "6px",
-                    padding: "6px 14px", borderRadius: "6px", border: "1px solid #fecaca",
-                    background: "#fff", color: "#dc2626", cursor: "pointer",
+                    padding: "6px 14px", borderRadius: "6px", border: "1px solid rgba(254, 202, 202, 0.5)",
+                    background: "rgba(255, 255, 255, 0.6)", color: "#dc2626", cursor: "pointer",
                     fontSize: "13px", fontWeight: 600, transition: "all 0.15s"
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.background = "#fef2f2"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "rgba(254, 242, 242, 0.8)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.6)"; }}
                 >
                   <XCircle size={14} />
                   Hủy lịch
@@ -306,12 +313,12 @@ function AppointmentCard({ appt, onCancelRequest, onRescheduleRequest, onReviewR
             onClick={() => onReviewRequest(appt.appointmentId)}
             style={{
               display: "flex", alignItems: "center", gap: "6px",
-              padding: "6px 14px", borderRadius: "6px", border: "1px solid #eab308",
-              background: "#fff", color: "#ca8a04", cursor: "pointer",
+              padding: "6px 14px", borderRadius: "6px", border: "1px solid rgba(234, 179, 8, 0.5)",
+              background: "rgba(255, 255, 255, 0.6)", color: "#ca8a04", cursor: "pointer",
               fontSize: "13px", fontWeight: 600, transition: "all 0.15s"
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = "#fefce8"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(254, 252, 232, 0.8)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.6)"; }}
           >
             <MessageSquarePlus size={14} />
             Viết đánh giá
@@ -341,6 +348,7 @@ function EmptyState({ tab }) {
 export default function MyAppointmentsPage() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const tab = searchParams.get("tab") === "history" ? "history" : "upcoming";
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -444,30 +452,39 @@ export default function MyAppointmentsPage() {
   ];
 
   return (
-    <div style={{ maxWidth: "760px" }}>
-      <div style={{ marginBottom: "24px" }}>
-        <h1 style={{ margin: "0 0 4px", fontSize: "1.5rem", fontWeight: 800, color: "#0f172a" }}>
-          Lịch hẹn của tôi
-        </h1>
-        <p style={{ margin: 0, color: "#64748b", fontSize: "14px" }}>
-          Xem lịch hẹn sắp tới và tra cứu lịch sử khám bệnh của bạn.
-        </p>
+    <div className="max-w-[1100px] mx-auto w-full flex flex-col items-center">
+      <div className="w-full mb-10 flex flex-col items-center">
+        <button 
+          onClick={() => navigate("/dashboard", { state: { activeClusterId: "booking" } })}
+          className="self-start inline-flex items-center gap-3 px-5 py-2.5 bg-white/90 hover:bg-white text-teal-900 font-extrabold border border-white shadow-md rounded-full hover:shadow-lg hover:-translate-x-0.5 transition-all duration-300 group"
+        >
+          <div className="bg-teal-100/80 p-1.5 rounded-full text-teal-700 group-hover:bg-teal-200 transition-colors">
+            <ArrowLeft size={16} strokeWidth={2.5} className="group-hover:-translate-x-0.5 transition-transform" />
+          </div>
+          Quay lại Màn hình chính
+        </button>
+        <div className="flex flex-col items-center text-center mt-2">
+          <h1 className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/20 backdrop-blur-xl border border-white/40 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-4">
+            <CalendarDays size={32} className="text-teal-300 drop-shadow-md" />
+            <span className="drop-shadow-md">Lịch hẹn của tôi</span>
+          </h1>
+          <p className="text-teal-50/90 font-medium drop-shadow-sm text-[16px] max-w-[600px]">
+            Xem lịch hẹn sắp tới và tra cứu lịch sử khám bệnh của bạn.
+          </p>
+        </div>
       </div>
 
-      <div style={{ display: "flex", gap: "8px", marginBottom: "24px" }}>
+      <div className="patient-glass-card p-6 md:p-8 w-full max-w-[800px] mx-auto mb-10">
+        <div className="flex flex-wrap gap-3 mb-8">
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            style={{
-              display: "flex", alignItems: "center", gap: "6px",
-              padding: "8px 18px", borderRadius: "8px", fontSize: "13px",
-              fontWeight: 600, cursor: "pointer", border: "1.5px solid",
-              transition: "all 0.15s",
-              background: tab === t.key ? "#0f766e" : "#ffffff",
-              color: tab === t.key ? "#ffffff" : "#475569",
-              borderColor: tab === t.key ? "#0f766e" : "#e2e8f0",
-            }}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-bold tracking-wide transition-all duration-200 shadow-sm ${
+              tab === t.key 
+                ? "bg-teal-700/80 backdrop-blur-md text-white border border-teal-800/40" 
+                : "bg-white/30 backdrop-blur-sm border border-white/30 text-teal-950 hover:bg-white/50 hover:text-teal-900"
+            }`}
           >
             {t.icon}
             {t.label}
@@ -546,6 +563,7 @@ export default function MyAppointmentsPage() {
           )}
         </>
       )}
+      </div>
 
       <CancelModal
         isOpen={cancelModalOpen}

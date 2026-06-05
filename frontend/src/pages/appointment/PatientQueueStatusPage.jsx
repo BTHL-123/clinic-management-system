@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Clock,
   Users,
@@ -7,6 +8,7 @@ import {
   UserCheck,
   RefreshCw,
   AlertCircle,
+  ArrowLeft,
 } from "lucide-react";
 import queueService from "../../services/queueService";
 
@@ -56,22 +58,35 @@ const STATUS_CONFIG = {
 };
 
 function StatCard({ icon: Icon, label, value, color, bg }) {
+  let glassBg = "rgba(255, 255, 255, 0.45)";
+  if (bg === "#f0fdfa") glassBg = "rgba(240, 253, 250, 0.5)";
+  else if (bg === "#f0f9ff") glassBg = "rgba(240, 249, 255, 0.5)";
+  else if (bg === "#fffbeb") glassBg = "rgba(255, 251, 235, 0.5)";
+  else if (bg === "#f5f3ff") glassBg = "rgba(245, 243, 255, 0.5)";
+
   return (
     <div
       style={{
-        background: bg || "#f8fafc",
-        border: `1px solid ${color}20`,
-        borderRadius: "16px",
+        background: glassBg,
+        backdropFilter: "blur(8px)",
+        border: `1px solid ${color}30`,
+        borderRadius: "20px",
         padding: "24px",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         gap: "8px",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-        transition: "transform 0.2s",
+        boxShadow: "0 4px 15px rgba(0,0,0,0.02)",
+        transition: "all 0.22s ease",
       }}
-      onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
-      onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
+      onMouseEnter={e => {
+        e.currentTarget.style.transform = "translateY(-3px)";
+        e.currentTarget.style.boxShadow = "0 8px 25px rgba(0,0,0,0.05)";
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = "translateY(0)";
+        e.currentTarget.style.boxShadow = "0 4px 15px rgba(0,0,0,0.02)";
+      }}
     >
       <div
         style={{
@@ -86,7 +101,7 @@ function StatCard({ icon: Icon, label, value, color, bg }) {
       >
         <Icon size={24} style={{ color }} />
       </div>
-      <span style={{ fontSize: "13px", fontWeight: 600, color: "#64748b", textAlign: "center" }}>
+      <span style={{ fontSize: "13px", fontWeight: 600, color: "#475569", textAlign: "center" }}>
         {label}
       </span>
       <span style={{ fontSize: "32px", fontWeight: 800, color, lineHeight: 1 }}>
@@ -97,6 +112,7 @@ function StatCard({ icon: Icon, label, value, color, bg }) {
 }
 
 export default function PatientQueueStatusPage() {
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -126,23 +142,40 @@ export default function PatientQueueStatusPage() {
   const isNoQueue = error?.toLowerCase().includes("no active queue");
 
   return (
-    <div className="content">
-      {/* Header */}
-      <div className="page-header">
-        <h1 className="page-title">
-          <Activity size={24} style={{ color: "#0f766e" }} />
-          Trạng thái hàng đợi
-        </h1>
-        <button
-          className="ghost-button"
-          onClick={fetchStatus}
-          disabled={loading}
-          style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+    <div className="max-w-[1100px] mx-auto w-full flex flex-col items-center">
+      <div className="w-full mb-10 flex flex-col items-center">
+        <button 
+          onClick={() => navigate("/dashboard", { state: { activeClusterId: "booking" } })}
+          className="self-start inline-flex items-center gap-3 px-5 py-2.5 bg-white/90 hover:bg-white text-teal-900 font-extrabold border border-white shadow-md rounded-full hover:shadow-lg hover:-translate-x-0.5 transition-all duration-300 group"
         >
-          <RefreshCw size={16} className={loading ? "spin-animation" : ""} />
-          Làm mới
+          <div className="bg-teal-100/80 p-1.5 rounded-full text-teal-700 group-hover:bg-teal-200 transition-colors">
+            <ArrowLeft size={16} strokeWidth={2.5} className="group-hover:-translate-x-0.5 transition-transform" />
+          </div>
+          Quay lại Màn hình chính
         </button>
+        <div className="flex flex-col items-center text-center mt-2">
+          <h1 className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/20 backdrop-blur-xl border border-white/40 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-4">
+            <Activity size={32} className="text-teal-300 drop-shadow-md" />
+            <span className="drop-shadow-md">Trạng thái hàng đợi</span>
+          </h1>
+          <p className="text-teal-50/90 font-medium drop-shadow-sm text-[16px] max-w-[600px]">
+            Theo dõi số thứ tự khám của bạn hôm nay và thời gian chờ ước tính.
+          </p>
+        </div>
       </div>
+
+      <div className="patient-glass-card p-6 md:p-8 w-full max-w-[800px] mx-auto mb-10">
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "20px" }}>
+          <button
+            className="ghost-button"
+            onClick={fetchStatus}
+            disabled={loading}
+            style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+          >
+            <RefreshCw size={16} className={loading ? "spin-animation" : ""} />
+            Làm mới
+          </button>
+        </div>
 
       {/* Loading */}
       {loading && (
@@ -172,9 +205,10 @@ export default function PatientQueueStatusPage() {
             justifyContent: "center",
             minHeight: "320px",
             gap: "16px",
-            background: "#f8fafc",
-            borderRadius: "16px",
-            border: "2px dashed #e2e8f0",
+            background: "rgba(255,255,255,0.3)",
+            backdropFilter: "blur(8px)",
+            borderRadius: "24px",
+            border: "2px dashed rgba(255,255,255,0.45)",
             padding: "48px",
             textAlign: "center",
           }}
@@ -184,18 +218,18 @@ export default function PatientQueueStatusPage() {
               width: 72,
               height: 72,
               borderRadius: "50%",
-              background: "#f1f5f9",
+              background: "rgba(255,255,255,0.5)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <Users size={36} style={{ color: "#94a3b8" }} />
+            <Users size={36} style={{ color: "#0f766e" }} />
           </div>
-          <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#334155", margin: 0 }}>
+          <h2 style={{ fontSize: "20px", fontWeight: 800, color: "#1e293b", margin: 0 }}>
             Không có lịch hẹn hôm nay
           </h2>
-          <p style={{ fontSize: "14px", color: "#64748b", margin: 0, maxWidth: "380px" }}>
+          <p style={{ fontSize: "14px", color: "#475569", margin: 0, maxWidth: "380px", fontWeight: 500 }}>
             Bạn chưa có lịch khám nào được check-in hôm nay.
             Vui lòng đặt lịch hoặc liên hệ lễ tân để check-in.
           </p>
@@ -230,9 +264,10 @@ export default function PatientQueueStatusPage() {
           {/* Status Banner */}
           <div
             style={{
-              background: `linear-gradient(135deg, ${statusCfg.color}15 0%, ${statusCfg.color}08 100%)`,
-              border: `2px solid ${statusCfg.border}`,
-              borderRadius: "20px",
+              background: `linear-gradient(135deg, ${statusCfg.color}18 0%, ${statusCfg.color}0a 100%)`,
+              backdropFilter: "blur(12px)",
+              border: `2px solid ${statusCfg.border}a0`,
+              borderRadius: "24px",
               padding: "28px 32px",
               display: "flex",
               flexDirection: "column",
@@ -271,8 +306,10 @@ export default function PatientQueueStatusPage() {
               style={{
                 marginTop: "8px",
                 padding: "16px",
-                background: "rgba(255,255,255,0.7)",
-                borderRadius: "12px",
+                background: "rgba(255,255,255,0.45)",
+                backdropFilter: "blur(6px)",
+                border: "1px solid rgba(255,255,255,0.3)",
+                borderRadius: "16px",
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
                 gap: "12px",
@@ -354,6 +391,7 @@ export default function PatientQueueStatusPage() {
           </p>
         </div>
       )}
+    </div>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
-import { FlaskConical, RefreshCw, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
+import { FlaskConical, RefreshCw, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { getMyLabRequests } from "../../services/labRequestService";
 
 const STATUS_MAP = {
@@ -31,15 +32,17 @@ function LabRequestRow({ req }) {
 
   return (
     <div style={{
-      border: "1px solid #e5e7eb", borderRadius: 8, marginBottom: 12,
+      border: "1px solid rgba(255, 255, 255, 0.4)", borderRadius: 16, marginBottom: 12,
+      background: "rgba(255, 255, 255, 0.4)", backdropFilter: "blur(8px)",
       overflow: "hidden",
+      boxShadow: "0 2px 12px rgba(0,0,0,0.02)"
     }}>
       {/* Header row */}
       <div
         onClick={() => setExpanded((v) => !v)}
         style={{
           display: "flex", alignItems: "center", gap: 12,
-          padding: "12px 16px", background: "#f9fafb",
+          padding: "14px 18px", background: "rgba(255, 255, 255, 0.25)",
           cursor: "pointer", userSelect: "none",
         }}
       >
@@ -70,7 +73,7 @@ function LabRequestRow({ req }) {
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
-                <tr style={{ background: "#eff6ff" }}>
+                <tr style={{ background: "rgba(255, 255, 255, 0.35)" }}>
                   {["Tên xét nghiệm", "Mã XN", "Kết quả", "Đơn vị", "Khoảng bình thường", "Kết luận", "Trạng thái"].map((h) => (
                     <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontWeight: 600, borderBottom: "1px solid #bfdbfe" }}>
                       {h}
@@ -117,6 +120,7 @@ function LabRequestRow({ req }) {
 }
 
 export default function PatientLabResultPage() {
+  const navigate = useNavigate();
   const [labRequests, setLabRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -140,24 +144,38 @@ export default function PatientLabResultPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   return (
-    <div>
-      {/* Header */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <FlaskConical size={24} color="#2563eb" />
-            Kết quả xét nghiệm
-          </h1>
-          <p className="muted">Xem toàn bộ phiếu xét nghiệm và kết quả của bạn.</p>
-        </div>
-        <button
-          className="secondary-button"
-          onClick={fetchData}
-          style={{ display: "flex", alignItems: "center", gap: 6 }}
+    <div className="max-w-[1100px] mx-auto w-full flex flex-col items-center">
+      <div className="w-full mb-10 flex flex-col items-center">
+        <button 
+          onClick={() => navigate("/dashboard", { state: { activeClusterId: "records" } })}
+          className="self-start inline-flex items-center gap-3 px-5 py-2.5 bg-white/90 hover:bg-white text-teal-900 font-extrabold border border-white shadow-md rounded-full hover:shadow-lg hover:-translate-x-0.5 transition-all duration-300 group"
         >
-          <RefreshCw size={14} /> Làm mới
+          <div className="bg-teal-100/80 p-1.5 rounded-full text-teal-700 group-hover:bg-teal-200 transition-colors">
+            <ArrowLeft size={16} strokeWidth={2.5} className="group-hover:-translate-x-0.5 transition-transform" />
+          </div>
+          Quay lại Màn hình chính
         </button>
+        <div className="flex flex-col items-center text-center mt-2">
+          <h1 className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/20 backdrop-blur-xl border border-white/40 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-4">
+            <FlaskConical size={32} className="text-teal-300 drop-shadow-md" />
+            <span className="drop-shadow-md">Kết quả xét nghiệm</span>
+          </h1>
+          <p className="text-teal-50/90 font-medium drop-shadow-sm text-[16px] max-w-[600px]">
+            Xem chi tiết toàn bộ các kết quả xét nghiệm lâm sàng của bạn.
+          </p>
+        </div>
       </div>
+
+      <div className="patient-glass-card p-6 md:p-8 w-full max-w-[800px] mx-auto mb-10">
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "20px" }}>
+          <button
+            className="secondary-button"
+            onClick={fetchData}
+            style={{ display: "flex", alignItems: "center", gap: 6 }}
+          >
+            <RefreshCw size={14} /> Làm mới
+          </button>
+        </div>
 
       {error && <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>}
 
@@ -204,6 +222,7 @@ export default function PatientLabResultPage() {
           )}
         </>
       )}
+    </div>
     </div>
   );
 }
