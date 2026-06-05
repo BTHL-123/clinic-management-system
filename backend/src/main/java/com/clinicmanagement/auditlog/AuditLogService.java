@@ -1,11 +1,12 @@
 package com.clinicmanagement.auditlog;
 
+import com.clinicmanagement.auditlog.dto.AuditLogResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface AuditLogService {
 
-    Page<AuditLog> getAuditLogs(Pageable pageable);
+    Page<AuditLogResponse> getAuditLogs(Long userId, String action, String tableName, Pageable pageable);
 
-    AuditLog getAuditLogById(Long auditLogId);
+    AuditLogResponse getAuditLogById(Long auditLogId);
 }
