@@ -5,37 +5,12 @@ import {
   UserCheck,
   RefreshCw,
   AlertCircle,
-  CheckCircle2,
 } from "lucide-react";
 import appointmentService from "../../services/appointmentService";
-
-function Toast({ message, type }) {
-  if (!message) return null;
-  const isError = type === "error";
-  return (
-    <div
-      style={{
-        padding: "12px 16px",
-        borderRadius: "8px",
-        marginBottom: "16px",
-        fontSize: "14px",
-        fontWeight: 500,
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        background: isError ? "#fef2f2" : "#f0fdf4",
-        border: `1px solid ${isError ? "#fee2e2" : "#dcfce7"}`,
-        color: isError ? "#991b1b" : "#166534",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-      }}
-    >
-      {isError ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
-      <span>{message}</span>
-    </div>
-  );
-}
+import { useToast } from "../../context/useToast.js";
 
 export default function ReceptionistAppointmentsPage() {
+  const toast = useToast();
   const todayStr = new Date().toISOString().split("T")[0];
 
   // Filters
@@ -50,20 +25,10 @@ export default function ReceptionistAppointmentsPage() {
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
 
-  // Toast
-  const [toast, setToast] = useState({ message: "", type: "" });
-
   // No Show Modal State
   const [showNoShowModal, setShowNoShowModal] = useState(false);
   const [selectedAppId, setSelectedAppId] = useState(null);
   const [noShowNote, setNoShowNote] = useState("");
-
-  const showToast = (message, type = "success") => {
-    setToast({ message, type });
-    setTimeout(() => {
-      setToast({ message: "", type: "" });
-    }, 4000);
-  };
 
   const fetchAppointments = useCallback(async (page = 0) => {
     setLoading(true);
@@ -82,7 +47,7 @@ export default function ReceptionistAppointmentsPage() {
         setTotalElements(data.totalElements || 0);
       }
     } catch (err) {
-      showToast(err.message || "Không thể tải danh sách lịch hẹn", "error");
+      toast.error(err, "Không thể tải danh sách lịch hẹn");
     } finally {
       setLoading(false);
     }
@@ -100,10 +65,10 @@ export default function ReceptionistAppointmentsPage() {
   const handleCheckIn = async (appointmentId) => {
     try {
       await appointmentService.checkInAppointment(appointmentId);
-      showToast("Check-in bệnh nhân thành công!");
+      toast.success("Check-in bệnh nhân thành công!");
       fetchAppointments(currentPage);
     } catch (err) {
-      showToast(err.message || "Check-in thất bại", "error");
+      toast.error(err, "Check-in thất bại");
     }
   };
 
@@ -117,10 +82,10 @@ export default function ReceptionistAppointmentsPage() {
     if (!selectedAppId) return;
     try {
       await appointmentService.markNoShow(selectedAppId, noShowNote);
-      showToast("Đã đánh dấu bệnh nhân không đến khám (No Show)");
+      toast.success("Đã đánh dấu bệnh nhân không đến khám (No Show)");
       fetchAppointments(currentPage);
     } catch (err) {
-      showToast(err.message || "Đánh dấu No Show thất bại", "error");
+      toast.error(err, "Đánh dấu No Show thất bại");
     } finally {
       setShowNoShowModal(false);
       setSelectedAppId(null);
@@ -164,8 +129,6 @@ export default function ReceptionistAppointmentsPage() {
           Làm mới
         </button>
       </div>
-
-      <Toast message={toast.message} type={toast.type} />
 
       {/* Toolbar / Filters */}
       <div className="panel" style={{ marginBottom: "20px" }}>

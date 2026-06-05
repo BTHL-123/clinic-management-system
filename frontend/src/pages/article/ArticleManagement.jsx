@@ -9,6 +9,7 @@ import {
   deleteArticle,
   publishArticle
 } from "../../services/articleService.js";
+import { useToast } from "../../context/useToast.js";
 
 // Custom toolbar options for ReactQuill
 const modules = {
@@ -23,6 +24,7 @@ const modules = {
 };
 
 function ArticleModal({ isOpen, onClose, onSave, article, busy }) {
+  const toast = useToast();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [thumbnailUrl, setThumbnailUrl] = useState("");
@@ -44,7 +46,7 @@ function ArticleModal({ isOpen, onClose, onSave, article, busy }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) {
-      alert("Vui lòng nhập đủ Tiêu đề và Nội dung.");
+      toast.error("Vui lòng nhập đủ Tiêu đề và Nội dung.", "Thiếu thông tin");
       return;
     }
     onSave({ title, content, thumbnailUrl });
@@ -154,6 +156,7 @@ function ArticleModal({ isOpen, onClose, onSave, article, busy }) {
 }
 
 export default function ArticleManagement() {
+  const toast = useToast();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -198,9 +201,10 @@ export default function ArticleManagement() {
         await createArticle({ ...payload, status: "DRAFT" });
       }
       setModalOpen(false);
+      toast.success(editingArticle ? "Đã cập nhật bài viết." : "Đã tạo bài viết nháp.");
       loadData();
     } catch (err) {
-      alert("Lỗi khi lưu bài viết: " + err.message);
+      toast.error(err, "Lỗi khi lưu bài viết");
     } finally {
       setBusy(false);
     }
@@ -210,9 +214,10 @@ export default function ArticleManagement() {
     if (!window.confirm("Bạn có chắc chắn muốn đăng bài viết này? Bài viết sẽ được hiển thị trên trang chủ.")) return;
     try {
       await publishArticle(id);
+      toast.success("Đã đăng bài viết.");
       loadData();
     } catch (err) {
-      alert("Lỗi khi đăng bài: " + err.message);
+      toast.error(err, "Lỗi khi đăng bài");
     }
   };
 
@@ -220,9 +225,10 @@ export default function ArticleManagement() {
     if (!window.confirm("Bạn có chắc chắn muốn xóa bài viết này?")) return;
     try {
       await deleteArticle(id);
+      toast.success("Đã xóa bài viết.");
       loadData();
     } catch (err) {
-      alert("Lỗi khi xóa: " + err.message);
+      toast.error(err, "Lỗi khi xóa");
     }
   };
 

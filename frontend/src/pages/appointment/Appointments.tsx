@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { CalendarDays, Pencil, Trash2, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
+import { useToast } from "../../context/useToast";
 
 interface DoctorSchedule {
   scheduleId: number;
@@ -70,23 +71,19 @@ interface ToastProps {
   type: "success" | "error";
 }
 
-function Toast({ message, type }: ToastProps) {
-  if (!message) return null;
-  const isError = type === "error";
-  return (
-    <div className="error-box" style={{
-      background: isError ? "#fee2e2" : "#dcfce7",
-      color: isError ? "#991b1b" : "#166534",
-      border: `1px solid ${isError ? "#fca5a5" : "#86efac"}`,
-      padding: "12px 14px",
-      borderRadius: "8px",
-      fontSize: "14px",
-      fontWeight: 500,
-      marginBottom: "16px"
-    }}>
-      {message}
-    </div>
-  );
+function ToastRelay({ message, type }: ToastProps) {
+  const toast = useToast();
+
+  useEffect(() => {
+    if (!message) return;
+    if (type === "error") {
+      toast.error(message);
+      return;
+    }
+    toast.success(message);
+  }, [message, type, toast]);
+
+  return null;
 }
 
 interface TabBtnProps {
@@ -227,8 +224,8 @@ function CreatePanel({ doctors, onDone }: CreatePanelProps) {
 
   return (
     <form className="form-stack" style={{ marginTop: 0 }} onSubmit={onSubmit}>
-      <Toast message={msg} type="success" />
-      <Toast message={err} type="error" />
+      <ToastRelay message={msg} type="success" />
+      <ToastRelay message={err} type="error" />
       <FormFields form={form} doctors={doctors} onChange={onChange} />
       <div className="form-actions" style={{ marginTop: "20px" }}>
         <button
@@ -316,8 +313,8 @@ function UpdatePanel({ doctors, onDone, selectedData }: UpdatePanelProps) {
 
   return (
     <form className="form-stack" style={{ marginTop: 0 }} onSubmit={onSubmit}>
-      <Toast message={msg} type="success" />
-      <Toast message={err} type="error" />
+      <ToastRelay message={msg} type="success" />
+      <ToastRelay message={err} type="error" />
       <div className="field">
         <label htmlFor="u-scheduleId">ID Lịch cần cập nhật (Chọn từ bảng)</label>
         <input
@@ -408,8 +405,8 @@ function CancelPanel({ onDone, selectedData }: CancelPanelProps) {
 
   return (
     <form className="form-stack" style={{ marginTop: 0 }} onSubmit={onSubmit}>
-      <Toast message={msg} type="success" />
-      <Toast message={err} type="error" />
+      <ToastRelay message={msg} type="success" />
+      <ToastRelay message={err} type="error" />
       <div className="field">
         <label htmlFor="c-scheduleId">ID Lịch cần hủy (Chọn từ bảng)</label>
         <input

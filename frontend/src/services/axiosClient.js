@@ -1,4 +1,5 @@
 import axios from "axios";
+import { notifyError } from "./toastService.js";
 
 const axiosClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api",
@@ -21,12 +22,18 @@ axiosClient.interceptors.response.use(
     const data = error.response?.data;
     const message = data?.message || error.message || "Request failed";
     const err = new Error(message);
+    err.status = error.response?.status;
+    err.response = error.response;
     // Attach structured conflict data when the backend returns it (leave-request conflict)
     if (data?.data?.conflictingAppointments) {
       err.conflictingAppointments = data.data.conflictingAppointments;
     }
     if (data?.errors) {
       err.errors = data.errors;
+    }
+    if (!error.config?.skipErrorToast) {
+      notifyError(err);
+      err.toastShown = true;
     }
     return Promise.reject(err);
   },
