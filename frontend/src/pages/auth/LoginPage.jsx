@@ -57,7 +57,7 @@ export default function LoginPage() {
         type: "standard",
         text: "signin_with",
         shape: "rectangular",
-        width: 360,
+        width: 384,
       });
     };
 
@@ -195,16 +195,16 @@ export default function LoginPage() {
                   <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Hoặc</span>
                   <div className="h-px bg-slate-200 flex-1"></div>
                 </div>
-                <div className="flex justify-center w-full [&>div]:w-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white/50 hover:bg-white transition-colors shadow-sm" ref={googleButtonRef} />
+                <div className="flex justify-center w-full" ref={googleButtonRef} />
               </>
             )}
           </form>
         </div>
 
         {/* Bottom Link */}
-        <p className="text-center font-medium text-slate-500 mt-8">
+        <p className="text-center font-medium text-teal-50 mt-8 drop-shadow-sm">
           Chưa có tài khoản?{" "}
-          <Link className="font-bold text-teal-600 hover:text-teal-500 transition-colors" to="/register">
+          <Link className="font-bold text-white hover:text-teal-100 transition-colors underline decoration-white/30 hover:decoration-white" to="/register">
             Tạo tài khoản mới
           </Link>
         </p>
