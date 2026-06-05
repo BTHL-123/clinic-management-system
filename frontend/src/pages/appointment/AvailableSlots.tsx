@@ -68,8 +68,6 @@ export default function AvailableSlots() {
   const [visitReason, setVisitReason] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("CASH");
   const [bookingSuccess, setBookingSuccess] = useState(false);
-
-  const location = useLocation();
   const prefillDepartmentName = (location.state as any)?.prefillDepartmentName;
 
   const today = new Date().toISOString().split("T")[0];
