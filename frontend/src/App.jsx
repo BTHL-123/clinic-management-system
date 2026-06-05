@@ -48,6 +48,7 @@ import PatientMedicalHistoryPage from "./pages/patient/PatientMedicalHistoryPage
 import ReviewManagement from "./pages/review/ReviewManagement.jsx";
 import ArticleManagement from "./pages/article/ArticleManagement.jsx";
 import PatientQueueStatusPage from "./pages/appointment/PatientQueueStatusPage.jsx";
+import AuditLogPage from "./pages/audit/AuditLogPage.jsx";
 
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import { useAuth } from "./context/useAuth.js";
@@ -60,6 +61,15 @@ function DashboardIndex() {
     return <PatientHome />;
   }
   return <DashboardHome />;
+}
+
+function AdminOnly({ children }) {
+  const { user } = useAuth();
+  const roles = user?.roles?.map((role) => role.roleName || role) || [];
+  if (!roles.includes("ADMIN")) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
 }
 
 export default function App() {
@@ -118,14 +128,13 @@ export default function App() {
         <Route path="my-lab-results" element={<PatientLabResultPage />} />
         <Route path="reviews" element={<ReviewManagement />} />
         <Route path="articles" element={<ArticleManagement />} />
+        <Route path="audit-logs" element={<AdminOnly><AuditLogPage /></AdminOnly>} />
         <Route path="doctor-leave-requests" element={<DoctorLeaveRequestPage />} />
         <Route path="admin/doctor-leave-requests" element={<AdminDoctorLeaveRequestPage />} />
       </Route>
     </Routes>
   );
 }
-
-
 
 
 
