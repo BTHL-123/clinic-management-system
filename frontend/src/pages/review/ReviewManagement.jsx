@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Search, EyeOff, Eye, Trash2, AlertCircle, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { getReviews, toggleReviewVisibility, deleteReview } from "../../services/reviewService.js";
+import { useToast } from "../../context/useToast.js";
 
 export default function ReviewManagement() {
+  const toast = useToast();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -29,9 +31,10 @@ export default function ReviewManagement() {
   const handleToggleVisibility = async (id) => {
     try {
       await toggleReviewVisibility(id);
+      toast.success("Đã cập nhật trạng thái đánh giá.");
       loadData();
     } catch (err) {
-      alert("Lỗi khi thay đổi trạng thái: " + err.message);
+      toast.error(err, "Lỗi khi thay đổi trạng thái");
     }
   };
 
@@ -39,9 +42,10 @@ export default function ReviewManagement() {
     if (!window.confirm("Bạn có chắc chắn muốn xóa vĩnh viễn đánh giá này?")) return;
     try {
       await deleteReview(id);
+      toast.success("Đã xóa đánh giá.");
       loadData();
     } catch (err) {
-      alert("Lỗi khi xóa: " + err.message);
+      toast.error(err, "Lỗi khi xóa");
     }
   };
 

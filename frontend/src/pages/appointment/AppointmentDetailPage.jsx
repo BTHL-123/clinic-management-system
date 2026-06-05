@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { CalendarDays, Clock, ArrowLeft, XCircle, RefreshCw } from "lucide-react";
 import appointmentService from "../../services/appointmentService";
 import RescheduleModal from "./RescheduleModal";
+import { useToast } from "../../context/useToast.js";
 
 // Reuse CancelModal
 function CancelModal({ isOpen, onClose, onConfirm, busy }) {
@@ -66,6 +67,7 @@ function CancelModal({ isOpen, onClose, onConfirm, busy }) {
 }
 
 export default function AppointmentDetailPage() {
+  const toast = useToast();
   const { id } = useParams();
   const navigate = useNavigate();
   const [appt, setAppt] = useState(null);
@@ -94,9 +96,10 @@ export default function AppointmentDetailPage() {
     try {
       await appointmentService.cancelAppointment(id, reason);
       setCancelModalOpen(false);
+      toast.success("Đã hủy lịch hẹn.");
       loadData();
     } catch (err) {
-      alert(err.message || "Không thể hủy lịch hẹn");
+      toast.error(err, "Không thể hủy lịch hẹn");
     } finally {
       setCancelling(false);
     }
@@ -209,7 +212,7 @@ export default function AppointmentDetailPage() {
         isOpen={rescheduleModalOpen}
         onClose={() => setRescheduleModalOpen(false)}
         onRescheduleSuccess={() => {
-          alert("Dời lịch hẹn thành công!");
+          toast.success("Dời lịch hẹn thành công!");
           loadData();
         }}
         appointment={appt}

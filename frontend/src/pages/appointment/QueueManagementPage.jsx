@@ -5,7 +5,6 @@ import {
   Calendar,
   UserCheck,
   RefreshCw,
-  AlertCircle,
   CheckCircle2,
   ChevronRight,
   Play,
@@ -15,34 +14,10 @@ import {
 } from "lucide-react";
 import queueService from "../../services/queueService";
 import { getDoctors } from "../../services/doctorService";
-
-function Toast({ message, type }) {
-  if (!message) return null;
-  const isError = type === "error";
-  return (
-    <div
-      style={{
-        padding: "12px 16px",
-        borderRadius: "8px",
-        marginBottom: "16px",
-        fontSize: "14px",
-        fontWeight: 500,
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        background: isError ? "#fef2f2" : "#f0fdf4",
-        border: `1px solid ${isError ? "#fee2e2" : "#dcfce7"}`,
-        color: isError ? "#991b1b" : "#166534",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-      }}
-    >
-      {isError ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
-      <span>{message}</span>
-    </div>
-  );
-}
+import { useToast } from "../../context/useToast.js";
 
 export default function QueueManagementPage() {
+  const toast = useToast();
   const todayStr = new Date().toISOString().split("T")[0];
 
   // Filters
@@ -54,16 +29,6 @@ export default function QueueManagementPage() {
   const [queueTickets, setQueueTickets] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  // Toast
-  const [toast, setToast] = useState({ message: "", type: "" });
-
-  const showToast = (message, type = "success") => {
-    setToast({ message, type });
-    setTimeout(() => {
-      setToast({ message: "", type: "" });
-    }, 4000);
-  };
 
   // Fetch doctors for filter dropdown
   useEffect(() => {
@@ -92,7 +57,7 @@ export default function QueueManagementPage() {
       const list = response?.data || [];
       setQueueTickets(list);
     } catch (err) {
-      showToast(err.message || "Không thể tải danh sách hàng đợi", "error");
+      toast.error(err, "Không thể tải danh sách hàng đợi");
     } finally {
       setLoading(false);
     }
@@ -106,30 +71,30 @@ export default function QueueManagementPage() {
   const handleCall = async (id) => {
     try {
       await queueService.callPatient(id);
-      showToast("Đã gọi khám bệnh nhân thành công!");
+      toast.success("Đã gọi khám bệnh nhân thành công!");
       fetchQueue();
     } catch (err) {
-      showToast(err.message || "Gọi khám thất bại", "error");
+      toast.error(err, "Gọi khám thất bại");
     }
   };
 
   const handleSkip = async (id) => {
     try {
       await queueService.skipPatient(id);
-      showToast("Đã bỏ qua bệnh nhân.");
+      toast.success("Đã bỏ qua bệnh nhân.");
       fetchQueue();
     } catch (err) {
-      showToast(err.message || "Không thể bỏ qua", "error");
+      toast.error(err, "Không thể bỏ qua");
     }
   };
 
   const handleComplete = async (id) => {
     try {
       await queueService.completePatient(id);
-      showToast("Đã hoàn tất ca khám.");
+      toast.success("Đã hoàn tất ca khám.");
       fetchQueue();
     } catch (err) {
-      showToast(err.message || "Không thể hoàn tất", "error");
+      toast.error(err, "Không thể hoàn tất");
     }
   };
 
@@ -173,8 +138,6 @@ export default function QueueManagementPage() {
           Làm mới
         </button>
       </div>
-
-      <Toast message={toast.message} type={toast.type} />
 
       {/* Grid of stats overview */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px", marginBottom: "20px" }}>

@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { FlaskConical, RefreshCw, CheckCircle, ClipboardEdit, X } from "lucide-react";
 import { getAllLabRequests, acceptLabRequest } from "../../services/labRequestService";
 import { createLabResult } from "../../services/labResultService";
+import { useToast } from "../../context/useToast.js";
 
 const STATUS_MAP = {
   REQUESTED:   { label: "Chờ tiếp nhận", color: "#d97706", bg: "#fef3c7" },
@@ -31,12 +32,12 @@ const EMPTY_RESULT = {
 };
 
 export default function LabRequestPage() {
+  const toast = useToast();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filterStatus, setFilterStatus] = useState("IN_PROGRESS");
   const [actionLoading, setActionLoading] = useState(null);
-  const [toast, setToast] = useState(null);
 
   // Modal nhập kết quả
   const [resultModal, setResultModal] = useState(null); // { req, item }
@@ -58,19 +59,14 @@ export default function LabRequestPage() {
 
   useEffect(() => { fetchRequests(); }, [fetchRequests]);
 
-  const showToast = (message, type = "success") => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  };
-
   const handleAccept = async (id) => {
     setActionLoading(id);
     try {
       const res = await acceptLabRequest(id);
       setRequests((prev) => prev.map((r) => r.labRequestId === id ? res.data : r));
-      showToast("Đã tiếp nhận phiếu xét nghiệm.");
+      toast.success("Đã tiếp nhận phiếu xét nghiệm.");
     } catch (err) {
-      showToast(err.message || "Không thể tiếp nhận phiếu.", "error");
+      toast.error(err, "Không thể tiếp nhận phiếu");
     } finally {
       setActionLoading(null);
     }
@@ -83,7 +79,7 @@ export default function LabRequestPage() {
 
   const handleSaveResult = async () => {
     if (!resultForm.resultValue.trim()) {
-      showToast("Vui lòng nhập giá trị kết quả.", "error");
+      toast.error("Vui lòng nhập giá trị kết quả.", "Thiếu thông tin");
       return;
     }
     setSavingResult(true);
@@ -96,11 +92,11 @@ export default function LabRequestPage() {
         conclusion: resultForm.conclusion || null,
         resultFileUrl: resultForm.resultFileUrl || null,
       });
-      showToast(`Đã nhập kết quả cho "${resultModal.item.testName}".`);
+      toast.success(`Đã nhập kết quả cho "${resultModal.item.testName}".`);
       setResultModal(null);
       await fetchRequests();
     } catch (err) {
-      showToast(err.message || "Không thể lưu kết quả.", "error");
+      toast.error(err, "Không thể lưu kết quả");
     } finally {
       setSavingResult(false);
     }
@@ -115,17 +111,6 @@ export default function LabRequestPage() {
         <FlaskConical size={22} />
         <h2 style={{ margin: 0, fontSize: 20 }}>Phòng xét nghiệm</h2>
       </div>
-
-      {toast && (
-        <div style={{
-          background: toast.type === "error" ? "#fee2e2" : "#dcfce7",
-          color: toast.type === "error" ? "#991b1b" : "#166534",
-          border: `1px solid ${toast.type === "error" ? "#fca5a5" : "#86efac"}`,
-          padding: "10px 14px", borderRadius: 8, fontSize: 14, fontWeight: 500, marginBottom: 16,
-        }}>
-          {toast.message}
-        </div>
-      )}
 
       {error && <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>}
 

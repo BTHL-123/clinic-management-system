@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import doctorLeaveRequestService from "../../services/doctorLeaveRequestService.js";
+import { useToast } from "../../context/useToast.js";
 
 const STATUS_OPTIONS = ["ALL", "PENDING", "APPROVED", "REJECTED"];
 
@@ -93,6 +94,7 @@ function RejectModal({ request, onClose, onConfirm }) {
 
 /* ─── Main Page ────────────────────────────────────────────────────────────── */
 export default function AdminDoctorLeaveRequestPage() {
+  const toast = useToast();
   const [filter, setFilter] = useState("ALL");
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -127,8 +129,9 @@ export default function AdminDoctorLeaveRequestPage() {
       setRequests((prev) =>
         prev.map((r) => (r.id === id ? { ...r, ...updated } : r))
       );
+      toast.success("Đã phê duyệt yêu cầu.");
     } catch (err) {
-      alert(err.message || "Phê duyệt thất bại.");
+      toast.error(err, "Phê duyệt thất bại");
     } finally {
       setActionLoading(null);
     }

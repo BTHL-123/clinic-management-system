@@ -18,6 +18,7 @@ import {
   checkDrugInteractions,
 } from "../../services/prescriptionService";
 import { getMedicines } from "../../services/medicineService";
+import { useToast } from "../../context/useToast.js";
 
 const EMPTY_FORM = {
   symptoms: "",
@@ -54,6 +55,7 @@ const EMPTY_RX_ITEM = {
 };
 
 export default function ExaminationPage() {
+  const toast = useToast();
   const { consultationId } = useParams();
   const navigate = useNavigate();
 
@@ -79,7 +81,6 @@ export default function ExaminationPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [toast, setToast] = useState(null);
 
   const [rawNote, setRawNote] = useState("");
   const [aiProcessing, setAiProcessing] = useState(false);
@@ -139,8 +140,11 @@ export default function ExaminationPage() {
   }, [consultationId]);
 
   const showToast = (message, type = "success") => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
+    if (type === "error") {
+      toast.error(message);
+      return;
+    }
+    toast.success(message);
   };
 
   const handleChange = (e) => {
@@ -405,19 +409,6 @@ export default function ExaminationPage() {
           </span>
         )}
       </div>
-
-      {/* Toast */}
-      {toast && (
-        <div style={{
-          background: toast.type === "error" ? "#fee2e2" : "#dcfce7",
-          color: toast.type === "error" ? "#991b1b" : "#166534",
-          border: `1px solid ${toast.type === "error" ? "#fca5a5" : "#86efac"}`,
-          padding: "10px 14px", borderRadius: 8, fontSize: 14,
-          fontWeight: 500, marginBottom: 16,
-        }}>
-          {toast.message}
-        </div>
-      )}
 
       {error && (
         <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>

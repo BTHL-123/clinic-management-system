@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import { getAvailableSlots, getSchedules, lockSlot, releaseLock } from "../../services/scheduleService";
 import { getDoctors } from "../../services/doctorService";
 import appointmentService from "../../services/appointmentService";
+import { useToast } from "../../context/useToast";
 
 interface TimeSlot {
   slotId: number;
@@ -39,6 +40,7 @@ function formatTime(t: string): string {
 }
 
 export default function AvailableSlots() {
+  const toast = useToast();
   const [doctorId, setDoctorId] = useState("");
   const [workDate, setWorkDate] = useState("");
   const [doctorOptions, setDoctorOptions] = useState<DoctorOption[]>([]);
@@ -202,7 +204,7 @@ export default function AvailableSlots() {
       setBookingSuccess(false);
     } catch (err: any) {
       const apiMsg = err.response?.data?.message || err.message;
-      alert(apiMsg || "Ca khám này đã được người khác giữ chỗ. Vui lòng chọn ca khác.");
+      toast.error(apiMsg || "Ca khám này đã được người khác giữ chỗ. Vui lòng chọn ca khác.", "Không thể giữ ca khám");
       if (doctorId && workDate) {
         fetchSlots(doctorId, workDate);
       }
@@ -227,7 +229,7 @@ export default function AvailableSlots() {
   const handleSubmitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!patientName.trim() || !patientPhone.trim()) {
-      alert("Vui lòng điền đầy đủ họ tên và số điện thoại.");
+      toast.error("Vui lòng điền đầy đủ họ tên và số điện thoại.", "Thiếu thông tin");
       return;
     }
     if (!selectedSlot) return;
@@ -252,7 +254,7 @@ export default function AvailableSlots() {
       }, 2000);
     } catch (err: any) {
       const apiMsg = err.response?.data?.message || err.message;
-      alert(apiMsg || "Đặt lịch thất bại. Vui lòng thử lại.");
+      toast.error(apiMsg || "Đặt lịch thất bại. Vui lòng thử lại.", "Đặt lịch thất bại");
     }
   };
 
