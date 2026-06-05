@@ -30,6 +30,7 @@ import {
   Star,
   FileText,
   FileClock,
+  Settings,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
@@ -66,6 +67,7 @@ const menuItems = [
   { to: "/dashboard/reviews", label: "Đánh giá", icon: Star, roles: ["ADMIN", "RECEPTIONIST"] },
   { to: "/dashboard/articles", label: "Bài viết y tế", icon: FileText, roles: ["ADMIN", "DOCTOR"] },
   { to: "/dashboard/audit-logs", label: "Nhật ký hệ thống", icon: FileClock, roles: ["ADMIN"] },
+  { to: "/dashboard/system-settings", label: "Cấu hình hệ thống", icon: Settings, roles: ["ADMIN"] },
   { to: "/dashboard/doctor-leave-requests", label: "Yêu cầu nghỉ", icon: CalendarOff, roles: ["DOCTOR"] },
   { to: "/dashboard/admin/doctor-leave-requests", label: "Duyệt yêu cầu nghỉ", icon: CalendarOff, roles: ["ADMIN"] },
   { to: "/dashboard/available-slots", label: "Tìm ca khám trống", icon: Search, roles: ["PATIENT"] },
