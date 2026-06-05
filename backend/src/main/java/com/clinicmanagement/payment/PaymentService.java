@@ -17,7 +17,7 @@ import org.springframework.data.jpa.domain.Specification;
 
 public interface PaymentService {
 
-    PageResponse<PaymentResponse> getAll(Long invoiceId, Long appointmentId, String status, Pageable pageable);
+    PageResponse<PaymentResponse> getAll(Long invoiceId, Long appointmentId, String status, Long patientId, Pageable pageable);
 
     PaymentResponse getById(Long id);
 
