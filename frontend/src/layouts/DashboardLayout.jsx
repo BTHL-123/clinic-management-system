@@ -25,7 +25,7 @@ export default function DashboardLayout() {
   const rolesText = user?.roles?.map(r => r.roleName ? r.roleName : r).join(", ") || "User";
 
   return (
-    <div className="flex flex-col min-h-screen w-full relative selection:bg-teal-200 selection:text-teal-900 font-sans p-4 md:p-6 overflow-hidden">
+    <div className="flex flex-col min-h-screen w-full relative selection:bg-teal-200 selection:text-teal-900 font-sans overflow-y-auto overflow-x-hidden">
 
       {/* Global Background from LandingPage */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-gradient-to-br from-[#14b8a6] to-[#0f766e]">
@@ -52,7 +52,7 @@ export default function DashboardLayout() {
       </div>
 
       {/* Floating Context Pill (Top Right) */}
-      <header className="absolute top-6 right-6 z-40 flex justify-end">
+      <header className="fixed top-6 right-6 z-50 flex justify-end">
         <div className="bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.08)] py-2.5 px-5 rounded-[2rem] flex items-center gap-4 md:gap-6">
 
           <button
@@ -87,19 +87,20 @@ export default function DashboardLayout() {
         </div>
       </header>
 
-      <main className="flex-1 w-full max-w-[1400px] mx-auto pt-[80px] relative z-10 flex flex-col h-full">
-        <AnimatePresence>
-          <motion.div
-            key={location.pathname}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, ease: "easeOut" }}
-            className="flex-1 flex flex-col w-full h-full"
-          >
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={location.pathname}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+          className="flex-1 w-full relative z-10 flex flex-col"
+        >
+          <main className="flex-1 w-full max-w-[1400px] mx-auto pt-[80px] px-4 md:px-6 pb-4 md:pb-6 flex flex-col">
             <Outlet />
-          </motion.div>
-        </AnimatePresence>
-      </main>
+          </main>
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }

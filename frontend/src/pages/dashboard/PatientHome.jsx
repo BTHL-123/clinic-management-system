@@ -46,30 +46,21 @@ export default function PatientHome() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const openedFromState = !!location.state?.activeClusterId;
+  const stateClusterId = location.state?.activeClusterId;
+  const initialCluster = stateClusterId ? clusters.find((c) => c.id === stateClusterId) : null;
 
-  const [activeCluster, setActiveCluster] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [isFromState, setIsFromState] = useState(false);
+  const [activeCluster, setActiveCluster] = useState(initialCluster);
+  const [showModal, setShowModal] = useState(!!initialCluster);
+  const [isFastMount, setIsFastMount] = useState(!!initialCluster);
   const [aiQuery, setAiQuery] = useState("");
 
-  // When returning from a feature page, delay the modal slightly so the page settles first
-  const didMount = React.useRef(false);
   React.useEffect(() => {
-    if (openedFromState && !didMount.current) {
-      const stateClusterId = location.state?.activeClusterId;
-      const cluster = clusters.find((c) => c.id === stateClusterId);
-      if (cluster) {
-        setActiveCluster(cluster);
-        setIsFromState(true);
-        // Small delay lets the page fade in first, then popup slides up
-        const t = setTimeout(() => setShowModal(true), 80);
-        return () => clearTimeout(t);
-      }
+    if (isFastMount) {
+      // Wait for the page transition to fully finish before restoring the closing animation duration
+      const t = setTimeout(() => setIsFastMount(false), 500);
+      return () => clearTimeout(t);
     }
-    didMount.current = true;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isFastMount]);
 
   return (
     <div className="w-full relative min-h-[calc(100vh-120px)] flex flex-col justify-center">
@@ -140,20 +131,23 @@ export default function PatientHome() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto w-full px-4">
         {clusters.map((cluster) => (
           <motion.div
-            // Only use layoutId when NOT in back-navigation mode to avoid conflicts
-            layoutId={isFromState ? undefined : cluster.id}
             key={cluster.id}
             onClick={() => {
-              setIsFromState(false);
               setActiveCluster(cluster);
               setShowModal(true);
             }}
-            className={`relative bg-gradient-to-br ${cluster.color} rounded-[2rem] p-8 text-white cursor-pointer shadow-xl hover:shadow-2xl transition-shadow duration-300 overflow-hidden group min-h-[260px] flex flex-col justify-end`}
+            className="relative rounded-[2rem] p-8 text-white cursor-pointer shadow-xl hover:shadow-2xl transition-shadow duration-300 overflow-hidden group min-h-[260px] flex flex-col justify-end"
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
           >
+            {/* Morphing Background */}
+            <motion.div
+              layoutId={`bg-${cluster.id}`}
+              className={`absolute inset-0 bg-gradient-to-br ${cluster.color} z-0`}
+              transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+            />
             {/* Decorative abstract circle */}
-            <div className="absolute -top-12 -right-12 w-48 h-48 bg-white/10 rounded-full blur-[40px] group-hover:scale-125 transition-transform duration-700"></div>
+            <div className="absolute -top-12 -right-12 w-48 h-48 bg-white/10 rounded-full blur-[40px] group-hover:scale-125 transition-transform duration-700 z-0"></div>
             
             <div className="relative z-10">
               <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-white/20">
@@ -174,28 +168,35 @@ export default function PatientHome() {
       {/* Expanded Cluster Modal */}
       <AnimatePresence>
         {showModal && activeCluster && (
-          <>
+          <motion.div key="modal-overlay" className="fixed inset-0 z-[100]">
             {/* Backdrop */}
             <motion.div
-              initial={{ opacity: 0 }}
+              initial={isFastMount ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.35, ease: "easeInOut" }}
               onClick={() => { setActiveCluster(null); setShowModal(false); }}
-              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40"
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
             />
             
             {/* Expanded Content */}
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-12 pointer-events-none">
-              <motion.div
-                // No layoutId when returning — pure standalone animation, zero conflict
-                layoutId={isFromState ? undefined : activeCluster.id}
-                initial={{ opacity: 0, y: 36, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 20, scale: 0.97 }}
-                transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-                className={`bg-gradient-to-br ${activeCluster.color} w-full max-w-4xl h-full max-h-[80vh] rounded-[3rem] shadow-2xl overflow-hidden relative flex flex-col pointer-events-auto border border-white/20`}
-              >
+            <div className="absolute inset-0 z-50 flex items-center justify-center p-4 md:p-12 pointer-events-none">
+              <div className="w-full max-w-4xl h-full max-h-[80vh] relative flex flex-col pointer-events-auto rounded-[3rem] overflow-hidden">
+                {/* Morphing Background */}
+                <motion.div
+                  layoutId={`bg-${activeCluster.id}`}
+                  className={`absolute inset-0 bg-gradient-to-br ${activeCluster.color} z-0 rounded-[3rem] shadow-2xl`}
+                  transition={{ duration: isFastMount ? 0 : 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+                />
+
+                {/* Content Fade Container */}
+                <motion.div
+                  initial={isFastMount ? false : { opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.25 }}
+                  className="relative z-10 flex flex-col h-full w-full border border-white/20 rounded-[3rem]"
+                >
                 {/* Decorative */}
                 <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-white/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
 
@@ -219,12 +220,7 @@ export default function PatientHome() {
                 </div>
 
                 <div className="flex-1 p-8 md:p-10 overflow-y-auto relative z-10 custom-scrollbar">
-                  <motion.div 
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.18, duration: 0.4, ease: "easeOut" }}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-6"
-                  >
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {activeCluster.items.map((item, idx) => (
                       <div
                         key={idx}
@@ -242,11 +238,12 @@ export default function PatientHome() {
                         </div>
                       </div>
                     ))}
-                  </motion.div>
+                  </div>
                 </div>
-              </motion.div>
+                </motion.div>
+              </div>
             </div>
-          </>
+          </motion.div>
         )}
       </AnimatePresence>
       <style>{`
