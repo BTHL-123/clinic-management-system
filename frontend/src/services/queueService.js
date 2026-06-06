@@ -18,7 +18,7 @@ const queueService = {
   },
 
   getMyQueueStatus() {
-    return axiosClient.get("/patient/queue-status");
+    return axiosClient.get("/patient/queue-status", { skipErrorToast: true });
   },
 };
 

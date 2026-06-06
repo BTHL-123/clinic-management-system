@@ -1,257 +1,303 @@
-import React, { useState } from "react";
-import { Search, CalendarDays, Clock, FileText, Settings, Shield, Bell, ChevronRight, X, HeartPulse, Sparkles } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { 
+  CalendarDays, FileText, Activity, Settings,
+  HeartPulse, Sparkles, UserCircle, CalendarPlus, ListOrdered, Bell,
+  QrCode, ArrowRight, ActivitySquare, ShieldCheck
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/useAuth.js";
 import { motion, AnimatePresence } from "framer-motion";
+import { 
+  LineChart, Line, ResponsiveContainer, XAxis, Tooltip, AreaChart, Area
+} from "recharts";
+import appointmentService from "../../services/appointmentService.js";
 
-const clusters = [
-  {
-    id: "booking",
-    title: "Quản lý Khám bệnh",
-    subtitle: "Đặt lịch, theo dõi hàng đợi và lịch hẹn của bạn",
-    color: "from-teal-500 to-emerald-600",
-    icon: <CalendarDays size={32} />,
-    items: [
-      { label: "Tìm ca khám trống", path: "/dashboard/available-slots", icon: <Search size={20} />, desc: "Đặt lịch mới ngay" },
-      { label: "Lịch hẹn của tôi", path: "/dashboard/my-appointments", icon: <CalendarDays size={20} />, desc: "Quản lý các lịch sắp tới" },
-      { label: "Trạng thái hàng đợi", path: "/dashboard/queue-status", icon: <Clock size={20} />, desc: "Theo dõi số thứ tự hôm nay" },
-    ]
-  },
-  {
-    id: "records",
-    title: "Hồ sơ Y tế",
-    subtitle: "Tra cứu bệnh án, kết quả xét nghiệm, và đơn thuốc",
-    color: "from-blue-500 to-indigo-600",
-    icon: <HeartPulse size={32} />,
-    items: [
-      { label: "Lịch sử khám bệnh", path: "/dashboard/my-medical-history", icon: <FileText size={20} />, desc: "Xem lại các lần khám trước" },
-      { label: "Kết quả xét nghiệm", path: "/dashboard/my-lab-results", icon: <Search size={20} />, desc: "Xem chỉ số xét nghiệm" },
-    ]
-  },
-  {
-    id: "settings",
-    title: "Cài đặt Cá nhân",
-    subtitle: "Bảo mật tài khoản và thông báo",
-    color: "from-slate-600 to-slate-800",
-    icon: <Settings size={32} />,
-    items: [
-      { label: "Hồ sơ cá nhân", path: "/dashboard/profile", icon: <Settings size={20} />, desc: "Cập nhật thông tin cá nhân" },
-      { label: "Đổi mật khẩu", path: "/dashboard/change-password", icon: <Shield size={20} />, desc: "Bảo mật tài khoản" },
-      { label: "Thông báo", path: "/dashboard/notifications", icon: <Bell size={20} />, desc: "Quản lý thông báo nhận được" },
-    ]
-  }
+const heartRateData = [
+  { time: '08:00', value: 72 }, { time: '10:00', value: 75 },
+  { time: '12:00', value: 85 }, { time: '14:00', value: 70 },
+  { time: '16:00', value: 78 }, { time: '18:00', value: 74 },
+  { time: '20:00', value: 68 },
 ];
 
 export default function PatientHome() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const stateClusterId = location.state?.activeClusterId;
-  const initialCluster = stateClusterId ? clusters.find((c) => c.id === stateClusterId) : null;
-
-  const [activeCluster, setActiveCluster] = useState(initialCluster);
-  const [showModal, setShowModal] = useState(!!initialCluster);
-  const [isFastMount, setIsFastMount] = useState(!!initialCluster);
   const [aiQuery, setAiQuery] = useState("");
+  const [upcomingAppointment, setUpcomingAppointment] = useState(null);
+  const [loadingAppt, setLoadingAppt] = useState(true);
 
-  React.useEffect(() => {
-    if (isFastMount) {
-      // Wait for the page transition to fully finish before restoring the closing animation duration
-      const t = setTimeout(() => setIsFastMount(false), 500);
-      return () => clearTimeout(t);
+  useEffect(() => {
+    fetchUpcomingAppointment();
+  }, []);
+
+  const fetchUpcomingAppointment = async () => {
+    try {
+      const res = await appointmentService.getMyAppointments(true, 0, 1);
+      const content = res.data?.content || res.content;
+      if (content && content.length > 0) {
+        setUpcomingAppointment(content[0]);
+      }
+    } catch (err) {
+      console.error("Failed to fetch upcoming appointment", err);
+    } finally {
+      setLoadingAppt(false);
     }
-  }, [isFastMount]);
+  };
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Chào buổi sáng";
+    if (hour < 18) return "Chào buổi chiều";
+    return "Chào buổi tối";
+  };
 
   return (
-    <div className="w-full relative min-h-[calc(100vh-120px)] flex flex-col justify-center">
-      <div className="mb-16 text-center mt-6">
-        {/* Personalized Greeting Badge & Trust Badge */}
-        <div className="flex flex-wrap justify-center gap-3 md:gap-4 mb-6">
-          <div className="flex items-center gap-2 bg-white/15 border border-white/20 text-white px-5 py-2 rounded-full text-[15px] font-extrabold backdrop-blur-md shadow-[0_4px_15px_rgba(255,255,255,0.05)] hover:bg-white/25 transition-colors">
-            <span className="text-lg leading-none">👋</span>
-            Xin chào, {user?.fullName ?? "Bệnh nhân"}
+    <div className="w-full flex flex-col gap-8 h-[calc(100vh-104px)] overflow-y-auto custom-scrollbar pr-2 pb-8">
+      
+      {/* HEADER SECTION */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 shrink-0 mt-4">
+        <div>
+          <div className="flex items-center gap-2 text-teal-200 mb-2 font-medium">
+            <HeartPulse size={18} className="animate-pulse" />
+            <span>Hệ thống Y tế Tiêu chuẩn</span>
           </div>
-          <div className="hidden sm:flex items-center gap-2 bg-white/10 border border-white/20 text-white px-4 py-2 rounded-full text-sm font-semibold backdrop-blur-sm">
-            <HeartPulse size={16} className="text-teal-300 animate-pulse" />
-            Hệ thống Y tế Tiêu chuẩn
-          </div>
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-white tracking-tight drop-shadow-md">
+            {getGreeting()}, <br className="hidden md:block" />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-200 to-emerald-200">
+              {user?.fullName ?? "Bệnh nhân"}
+            </span>
+          </h1>
         </div>
+      </div>
 
-        {/* Grand Hero Title */}
-        <h1 className="text-4xl md:text-6xl lg:text-[4.5rem] font-black tracking-tight leading-[1.1] mb-6 text-white drop-shadow-lg">
-          Chăm sóc Sức khỏe <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-300 via-emerald-200 to-teal-100 filter drop-shadow-[0_0_15px_rgba(94,234,212,0.3)]">
-            Toàn diện & Tận tâm
-          </span>
-        </h1>
-
-        {/* Elegant Subtitle */}
-        <p className="text-lg md:text-xl text-white max-w-2xl mx-auto font-semibold leading-relaxed drop-shadow-sm">
-          Nền tảng đặt lịch khám thông minh, kết nối bạn với hàng ngàn bác sĩ chuyên khoa. Hãy chọn một khu vực để bắt đầu.
-        </p>
-
-        {/* AI Query Bar (UI Layout Only) */}
-        <div className="max-w-2xl mx-auto w-full px-4 mt-10 relative z-20">
-          <form 
-            onSubmit={(e) => {
-              e.preventDefault();
-              console.log("AI query submitted:", aiQuery);
-            }} 
-            className="relative group"
-          >
-            {/* Glowing Aura Effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-teal-500/25 to-emerald-500/25 rounded-full blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-            
-            {/* Main Bar Wrapper */}
-            <div className="relative flex items-center bg-slate-950/70 backdrop-blur-md border border-white/20 hover:border-teal-400/40 focus-within:border-teal-400/60 rounded-full px-6 py-3.5 shadow-2xl transition-all duration-300">
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-teal-500/20 text-teal-300 shrink-0 mr-3.5 border border-teal-500/30">
-                <Sparkles size={20} className="animate-pulse" />
-              </div>
-              <input
-                type="text"
-                placeholder="Tra cứu AI đề xuất khoa và bác sĩ: Nhập triệu chứng của bạn (ví dụ: đau bụng, ho sốt...)"
-                className="bg-transparent border-none outline-none text-white font-medium w-full text-[15px] ai-search-input"
-                style={{ color: '#ffffff' }}
-                value={aiQuery}
-                onChange={(e) => setAiQuery(e.target.value)}
-              />
-              <button
-                type="submit"
-                disabled={!aiQuery.trim()}
-                className="ml-3 px-5 py-2.5 rounded-full bg-gradient-to-r from-teal-400 to-emerald-400 text-slate-900 font-bold hover:shadow-[0_0_20px_rgba(94,234,212,0.4)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 whitespace-nowrap text-sm cursor-pointer disabled:opacity-50 disabled:scale-100 disabled:shadow-none"
+      {/* CREATIVE AURORA DASHBOARD WIDGETS */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 w-full">
+        
+        {/* LEFT COLUMN: UPCOMING APPOINTMENT & AI ORB */}
+        <div className="xl:col-span-8 flex flex-col gap-8">
+          
+          {/* FLOATING TICKET UI */}
+          <AnimatePresence>
+            {!loadingAppt && upcomingAppointment ? (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="patient-glass-panel rounded-[3rem] relative overflow-hidden group flex flex-col md:flex-row transition-all hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.22)]"
               >
-                <span>Hỏi AI</span>
-                <Search size={14} strokeWidth={2.5} />
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto w-full px-4">
-        {clusters.map((cluster) => (
-          <motion.div
-            key={cluster.id}
-            onClick={() => {
-              setActiveCluster(cluster);
-              setShowModal(true);
-            }}
-            className="relative rounded-[2rem] p-8 text-white cursor-pointer shadow-xl hover:shadow-2xl transition-shadow duration-300 overflow-hidden group min-h-[260px] flex flex-col justify-end"
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-          >
-            {/* Morphing Background */}
-            <motion.div
-              layoutId={`bg-${cluster.id}`}
-              className={`absolute inset-0 bg-gradient-to-br ${cluster.color} z-0`}
-              transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
-            />
-            {/* Decorative abstract circle */}
-            <div className="absolute -top-12 -right-12 w-48 h-48 bg-white/10 rounded-full blur-[40px] group-hover:scale-125 transition-transform duration-700 z-0"></div>
-            
-            <div className="relative z-10">
-              <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-white/20">
-                {cluster.icon}
-              </div>
-            </div>
-            
-            <div className="relative z-10">
-              <h2 className="font-extrabold text-2xl mb-2">{cluster.title}</h2>
-              <p className="text-white/80 font-medium text-sm leading-relaxed">
-                {cluster.subtitle}
-              </p>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Expanded Cluster Modal */}
-      <AnimatePresence>
-        {showModal && activeCluster && (
-          <motion.div key="modal-overlay" className="fixed inset-0 z-[100]">
-            {/* Backdrop */}
-            <motion.div
-              initial={isFastMount ? false : { opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.35, ease: "easeInOut" }}
-              onClick={() => { setActiveCluster(null); setShowModal(false); }}
-              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
-            />
-            
-            {/* Expanded Content */}
-            <div className="absolute inset-0 z-50 flex items-center justify-center p-4 md:p-12 pointer-events-none">
-              <div className="w-full max-w-4xl h-full max-h-[80vh] relative flex flex-col pointer-events-auto rounded-[3rem] overflow-hidden">
-                {/* Morphing Background */}
-                <motion.div
-                  layoutId={`bg-${activeCluster.id}`}
-                  className={`absolute inset-0 bg-gradient-to-br ${activeCluster.color} z-0 rounded-[3rem] shadow-2xl`}
-                  transition={{ duration: isFastMount ? 0 : 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
-                />
-
-                {/* Content Fade Container */}
-                <motion.div
-                  initial={isFastMount ? false : { opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.25 }}
-                  className="relative z-10 flex flex-col h-full w-full border border-white/20 rounded-[3rem]"
-                >
-                {/* Decorative */}
-                <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-white/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
-
-                <div className="p-8 md:p-10 flex items-center justify-between relative z-10 border-b border-white/10">
-                  <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 text-white">
-                      {activeCluster.icon}
+                {/* Decorative Pattern - Frosted Glass blob */}
+                <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-teal-200/40 to-cyan-200/30 rounded-full blur-[60px] -translate-y-1/2 translate-x-1/3 group-hover:scale-110 transition-transform duration-1000"></div>
+                
+                {/* Main Ticket Info */}
+                <div className="p-8 md:p-10 flex-1 relative z-10 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center gap-3 bg-teal-50 text-teal-700 w-max px-4 py-2 rounded-full text-sm font-bold border border-teal-100 mb-8 uppercase tracking-wider shadow-sm">
+                      <ShieldCheck size={16} /> Phiếu Khám Sắp Tới
                     </div>
-                    <div>
-                      <h2 className="font-extrabold text-3xl md:text-4xl text-white">{activeCluster.title}</h2>
-                      <p className="text-white/80 font-medium mt-1 hidden md:block">{activeCluster.subtitle}</p>
+
+                    <div className="flex justify-between items-end mb-8">
+                      <div>
+                        <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mb-1">Thời gian</p>
+                        <h2 className="text-5xl md:text-6xl font-black text-slate-900 tracking-tight">
+                          {new Date(`1970-01-01T${upcomingAppointment.estimatedStartTime}`).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                        </h2>
+                        <p className="text-teal-600 font-extrabold text-xl mt-2">
+                          {new Date(upcomingAppointment.appointmentDate).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        </p>
+                      </div>
+                      <div className="text-right hidden sm:block">
+                        <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mb-1">Phòng khám</p>
+                        <p className="text-3xl font-black text-slate-900">P. {upcomingAppointment.roomId || 'Đang chờ'}</p>
+                      </div>
                     </div>
+                  </div>
+
+                  <div className="flex items-center justify-between border-t border-slate-100 pt-6 mt-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-full bg-teal-50 flex items-center justify-center text-teal-700 border border-teal-100 p-1 shadow-sm">
+                        {upcomingAppointment.doctorAvatarUrl ? (
+                          <img src={upcomingAppointment.doctorAvatarUrl} alt="Dr." className="w-full h-full rounded-full object-cover" />
+                        ) : (
+                          <UserCircle size={36} />
+                        )}
+                      </div>
+                      <div>
+                        <div className="text-slate-500 text-xs font-bold uppercase tracking-widest">Bác sĩ phụ trách</div>
+                        <div className="text-slate-900 font-black text-xl">{upcomingAppointment.doctorName}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ticket Stub */}
+                <div className="w-full md:w-72 bg-gradient-to-b from-teal-50 to-cyan-50 backdrop-blur-md border-l border-slate-100 p-8 flex flex-col items-center justify-center relative border-t md:border-t-0">
+                  {/* Dashed tear line */}
+                  <div className="hidden md:block absolute left-[-1px] top-6 bottom-6 w-[2px] bg-[linear-gradient(to_bottom,transparent_50%,rgba(148,163,184,0.35)_50%)] bg-[length:100%_20px]"></div>
+                  
+                  <div className="bg-white p-4 rounded-3xl mb-8 shadow-md border border-slate-100">
+                    <QrCode size={120} className="text-slate-900" />
                   </div>
                   
-                  <button
-                    onClick={() => { setActiveCluster(null); setShowModal(false); }}
-                    className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors border border-white/20 backdrop-blur-md"
+                  <button 
+                    onClick={() => navigate('/dashboard/queue-status')}
+                    className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-400 hover:to-teal-500 text-white font-black py-4 rounded-2xl transition-all shadow-lg hover:shadow-teal-400/30 hover:-translate-y-1"
                   >
-                    <X size={24} />
+                    LẤY SỐ THỨ TỰ
                   </button>
                 </div>
-
-                <div className="flex-1 p-8 md:p-10 overflow-y-auto relative z-10 custom-scrollbar">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {activeCluster.items.map((item, idx) => (
-                      <div
-                        key={idx}
-                        onClick={() => navigate(item.path)}
-                        className="bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 rounded-[1.5rem] p-6 cursor-pointer transition-all hover:-translate-y-1 group flex items-start gap-5"
-                      >
-                        <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-white shadow-inner shrink-0 group-hover:scale-110 transition-transform">
-                          {item.icon}
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-lg text-white mb-1 flex items-center gap-2">
-                            {item.label} <ChevronRight size={16} className="opacity-0 -ml-2 group-hover:opacity-100 group-hover:ml-0 transition-all" />
-                          </h3>
-                          <p className="text-white/70 text-sm leading-snug">{item.desc}</p>
-                        </div>
-                      </div>
-                    ))}
+              </motion.div>
+            ) : (
+              !loadingAppt && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="patient-glass-panel rounded-[3rem] p-12 flex flex-col items-center justify-center min-h-[320px] relative overflow-hidden hover:shadow-[0_12px_40px_rgba(0,0,0,0.22)] transition-all"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-t from-teal-900/20 to-transparent"></div>
+                  <div className="w-28 h-28 patient-glass-panel-sm rounded-[2.5rem] rotate-12 flex items-center justify-center text-teal-200 mb-8 relative z-10">
+                    <CalendarPlus size={56} className="-rotate-12" />
                   </div>
-                </div>
+                  <h3 className="text-3xl font-black text-slate-900 mb-4 relative z-10 drop-shadow-sm">Sức khỏe là vô giá</h3>
+                  <p className="text-slate-700 mb-10 max-w-md text-center text-lg relative z-10 font-medium drop-shadow-sm">Hãy đặt lịch hẹn định kỳ để chúng tôi có thể chăm sóc sức khỏe cho bạn và gia đình một cách tốt nhất.</p>
+                  <button 
+                    onClick={() => navigate("/dashboard/available-slots")}
+                    className="bg-teal-600 hover:bg-teal-500 text-white font-black text-lg py-4 px-10 rounded-2xl transition-all hover:scale-105 shadow-[0_0_30px_rgba(45,212,191,0.25)] relative z-10 flex items-center gap-3"
+                  >
+                    Đặt khám ngay <ArrowRight size={22} />
+                  </button>
                 </motion.div>
+              )
+            )}
+          </AnimatePresence>
+
+          {/* AI ENERGY ORB WIDGET */}
+          <div className="patient-glass-panel rounded-[3rem] p-8 md:p-10 relative overflow-hidden group hover:shadow-[0_12px_40px_rgba(0,0,0,0.22)] transition-all">
+            <div className="absolute right-0 top-1/2 w-64 h-64 bg-violet-200/30 rounded-full blur-[60px] translate-x-1/3 -translate-y-1/2 pointer-events-none group-hover:bg-violet-200/50 transition-colors duration-1000"></div>
+            
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-8 relative z-10">
+              {/* The Energy Orb */}
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-500 via-cyan-500 to-emerald-500 flex items-center justify-center text-white shrink-0 shadow-[0_0_40px_rgba(45,212,191,0.35)] animate-pulse relative">
+                <div className="absolute inset-0 rounded-full bg-white/20 blur-md mix-blend-overlay"></div>
+                <Sparkles size={36} className="relative z-10 drop-shadow-md" />
+              </div>
+
+              <div className="flex-1 w-full">
+                <h3 className="text-2xl font-black text-slate-900 mb-2 drop-shadow-sm">Trợ lý Sức khỏe AI</h3>
+                <p className="text-slate-700 font-medium mb-5 drop-shadow-sm">Hệ thống AI sẽ phân tích triệu chứng và đề xuất chuyên khoa phù hợp nhất cho bạn.</p>
+                
+                <form 
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    console.log("AI query submitted:", aiQuery);
+                  }} 
+                  className="relative group w-full"
+                >
+                  <div className="relative flex items-center patient-input-field rounded-2xl p-2 transition-all">
+                    <input
+                      type="text"
+                      placeholder="Mô tả triệu chứng (VD: Tôi hay bị đau đầu, buồn nôn...)"
+                      className="bg-transparent border-none outline-none font-medium w-full px-4 text-[16px]"
+                      value={aiQuery}
+                      onChange={(e) => setAiQuery(e.target.value)}
+                    />
+                    <button
+                      type="submit"
+                      disabled={!aiQuery.trim()}
+                      className="px-8 py-3 rounded-[14px] bg-teal-600 hover:bg-teal-500 text-white font-bold transition-all disabled:opacity-40 disabled:bg-slate-400 shrink-0 shadow-[0_4px_14px_rgba(13,148,136,0.4)]"
+                    >
+                      Hỏi AI
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      <style>{`
-        .ai-search-input::placeholder {
-          color: rgba(255, 255, 255, 0.75) !important;
-          opacity: 1 !important;
-        }
-      `}</style>
+          </div>
+
+        </div>
+
+        {/* RIGHT COLUMN: ASYMMETRIC BENTO GRID */}
+        <div className="xl:col-span-4 flex flex-col gap-6 h-full">
+          
+          {/* WELLNESS SCORE WIDGET */}
+          <div className="patient-glass-panel rounded-[3rem] p-8 flex flex-col relative overflow-hidden flex-shrink-0 hover:shadow-[0_12px_40px_rgba(0,0,0,0.22)] transition-all">
+            <h3 className="text-slate-900 font-black text-xl mb-8 flex items-center gap-2">
+              <ActivitySquare className="text-teal-600" /> Điểm Sức Khỏe
+            </h3>
+            
+            <div className="flex justify-center mb-6">
+              <div className="relative w-48 h-48">
+                <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(148,163,184,0.25)" strokeWidth="8" />
+                  <circle 
+                    cx="50" cy="50" r="45" fill="none" 
+                    stroke="url(#wellnessGradient)" strokeWidth="8" 
+                    strokeDasharray="283" strokeDashoffset="42" /* 85% */
+                    strokeLinecap="round" 
+                  />
+                  <defs>
+                    <linearGradient id="wellnessGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#14b8a6" />
+                      <stop offset="100%" stopColor="#0891b2" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-5xl font-black text-slate-900 tracking-tighter">85</span>
+                  <span className="text-teal-600 font-bold text-sm uppercase tracking-widest mt-1">Tốt</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Micro Area Chart */}
+            <div className="h-20 w-full mt-auto relative">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={heartRateData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorHeart" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#2dd4bf" stopOpacity={0.4}/>
+                      <stop offset="95%" stopColor="#2dd4bf" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <Area type="monotone" dataKey="value" stroke="#2dd4bf" strokeWidth={3} fillOpacity={1} fill="url(#colorHeart)" />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: 'rgba(15,23,42,0.9)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}
+                    itemStyle={{ fontWeight: 'bold', color: '#2dd4bf' }}
+                    labelStyle={{ display: 'none' }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* ASYMMETRIC ACTION BLOCKS */}
+          <div className="grid grid-cols-2 gap-4 flex-1">
+            <motion.div
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => navigate("/dashboard/my-medical-history")}
+              className="patient-glass-panel-sm rounded-[2.5rem] p-6 cursor-pointer transition-all flex flex-col justify-between group hover:-translate-y-0.5 hover:shadow-[0_8px_28px_rgba(0,0,0,0.18)]"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-fuchsia-400/25 text-fuchsia-200 flex items-center justify-center mb-6 shadow-sm group-hover:-translate-y-1 transition-transform border border-fuchsia-300/20">
+                <FileText size={26} />
+              </div>
+              <div className="text-slate-900 font-black text-xl leading-tight">Hồ sơ<br/>Bệnh án</div>
+            </motion.div>
+
+            <motion.div
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => navigate("/dashboard/my-lab-results")}
+              className="patient-glass-panel-sm rounded-[2.5rem] p-6 cursor-pointer transition-all flex flex-col justify-between group hover:-translate-y-0.5 hover:shadow-[0_8px_28px_rgba(0,0,0,0.18)]"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-sky-400/25 text-sky-200 flex items-center justify-center mb-6 shadow-sm group-hover:-translate-y-1 transition-transform border border-sky-300/20">
+                <ActivitySquare size={26} />
+              </div>
+              <div className="text-slate-900 font-black text-xl leading-tight">Kết quả<br/>Xét nghiệm</div>
+            </motion.div>
+          </div>
+
+        </div>
+      </div>
+
     </div>
   );
 }

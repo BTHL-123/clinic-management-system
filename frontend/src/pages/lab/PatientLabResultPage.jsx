@@ -23,59 +23,50 @@ function StatusBadge({ status }) {
 }
 
 function ResultValueCell({ value }) {
-  if (!value) return <span style={{ color: "#9ca3af" }}>—</span>;
-  return <strong>{value}</strong>;
+  if (!value) return <span className="text-white/40">—</span>;
+  return <strong className="text-white">{value}</strong>;
 }
 
 function LabRequestRow({ req }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div style={{
-      border: "1px solid rgba(255, 255, 255, 0.4)", borderRadius: 16, marginBottom: 12,
-      background: "rgba(255, 255, 255, 0.4)", backdropFilter: "blur(8px)",
-      overflow: "hidden",
-      boxShadow: "0 2px 12px rgba(0,0,0,0.02)"
-    }}>
+    <div className="border border-white/20 rounded-2xl mb-3 bg-white/10 backdrop-blur-md overflow-hidden shadow-sm hover:shadow-md transition-all">
       {/* Header row */}
       <div
         onClick={() => setExpanded((v) => !v)}
-        style={{
-          display: "flex", alignItems: "center", gap: 12,
-          padding: "14px 18px", background: "rgba(255, 255, 255, 0.25)",
-          cursor: "pointer", userSelect: "none",
-        }}
+        className="flex items-center gap-3 px-4 py-3.5 bg-white/5 cursor-pointer select-none hover:bg-white/10 transition-colors"
       >
-        <FlaskConical size={16} color="#2563eb" />
-        <div style={{ flex: 1 }}>
-          <span style={{ fontWeight: 700, color: "#1d4ed8" }}>{req.requestCode}</span>
-          <span style={{ fontSize: 12, color: "#6b7280", marginLeft: 10 }}>
+        <FlaskConical size={16} className="text-teal-400" />
+        <div className="flex-1">
+          <span className="font-bold text-white">{req.requestCode}</span>
+          <span className="text-[12px] text-white/60 ml-2.5">
             {new Date(req.requestedAt).toLocaleDateString("vi-VN", {
               day: "2-digit", month: "2-digit", year: "numeric",
             })}
           </span>
         </div>
         <StatusBadge status={req.status} />
-        <span style={{ fontSize: 12, color: "#6b7280" }}>
+        <span className="text-[12px] text-white/60 ml-2">
           {req.items?.length || 0} xét nghiệm
         </span>
-        {expanded ? <ChevronUp size={16} color="#6b7280" /> : <ChevronDown size={16} color="#6b7280" />}
+        {expanded ? <ChevronUp size={16} className="text-white/60 ml-2" /> : <ChevronDown size={16} className="text-white/60 ml-2" />}
       </div>
 
       {/* Expanded detail */}
       {expanded && (
-        <div style={{ padding: "0 16px 16px 16px" }}>
+        <div className="px-4 pb-4">
           {req.note && (
-            <p style={{ fontSize: 13, color: "#6b7280", margin: "10px 0 8px" }}>
-              <strong>Ghi chú:</strong> {req.note}
+            <p className="text-[13px] text-white/70 my-2.5">
+              <strong className="text-white">Ghi chú:</strong> {req.note}
             </p>
           )}
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <div className="overflow-x-auto mt-2">
+            <table className="w-full border-collapse text-[13px] text-left">
               <thead>
-                <tr style={{ background: "rgba(255, 255, 255, 0.35)" }}>
+                <tr className="bg-white/10 border-b border-white/20">
                   {["Tên xét nghiệm", "Mã XN", "Kết quả", "Đơn vị", "Khoảng bình thường", "Kết luận", "Trạng thái"].map((h) => (
-                    <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontWeight: 600, borderBottom: "1px solid #bfdbfe" }}>
+                    <th key={h} className="p-2.5 font-semibold text-white/80 whitespace-nowrap">
                       {h}
                     </th>
                   ))}
@@ -83,27 +74,27 @@ function LabRequestRow({ req }) {
               </thead>
               <tbody>
                 {req.items?.map((item) => (
-                  <tr key={item.labRequestItemId} style={{ borderBottom: "1px solid #e5e7eb" }}>
-                    <td style={{ padding: "8px 10px", fontWeight: 600 }}>{item.testName}</td>
-                    <td style={{ padding: "8px 10px", color: "#6b7280" }}>{item.testCode}</td>
+                  <tr key={item.labRequestItemId} className="border-b border-white/10 hover:bg-white/5 transition-colors">
+                    <td className="p-2.5 font-semibold text-white">{item.testName}</td>
+                    <td className="p-2.5 text-white/60">{item.testCode}</td>
                     {item.labResult ? (
                       <>
-                        <td style={{ padding: "8px 10px" }}>
+                        <td className="p-2.5">
                           <ResultValueCell value={item.labResult.resultValue} />
                         </td>
-                        <td style={{ padding: "8px 10px" }}>{item.labResult.resultUnit || "—"}</td>
-                        <td style={{ padding: "8px 10px" }}>{item.labResult.normalRange || "—"}</td>
-                        <td style={{ padding: "8px 10px" }}>{item.labResult.conclusion || "—"}</td>
-                        <td style={{ padding: "8px 10px" }}>
+                        <td className="p-2.5 text-white/80">{item.labResult.resultUnit || "—"}</td>
+                        <td className="p-2.5 text-white/80">{item.labResult.normalRange || "—"}</td>
+                        <td className="p-2.5 text-white/80">{item.labResult.conclusion || "—"}</td>
+                        <td className="p-2.5">
                           <StatusBadge status={item.status} />
                         </td>
                       </>
                     ) : (
                       <>
-                        <td colSpan={4} style={{ padding: "8px 10px", color: "#9ca3af", fontStyle: "italic" }}>
+                        <td colSpan={4} className="p-2.5 text-white/40 italic">
                           Chưa có kết quả
                         </td>
-                        <td style={{ padding: "8px 10px" }}>
+                        <td className="p-2.5">
                           <StatusBadge status={item.status} />
                         </td>
                       </>
@@ -145,33 +136,32 @@ export default function PatientLabResultPage() {
 
   return (
     <div className="max-w-[1100px] mx-auto w-full flex flex-col items-center">
-      <div className="w-full mb-10 flex flex-col items-center">
-        <button 
-          onClick={() => navigate("/dashboard", { state: { activeClusterId: "records" } })}
-          className="self-start inline-flex items-center gap-3 px-5 py-2.5 bg-white/90 hover:bg-white text-teal-900 font-extrabold border border-white shadow-md rounded-full hover:shadow-lg hover:-translate-x-0.5 transition-all duration-300 group"
-        >
-          <div className="bg-teal-100/80 p-1.5 rounded-full text-teal-700 group-hover:bg-teal-200 transition-colors">
-            <ArrowLeft size={16} strokeWidth={2.5} className="group-hover:-translate-x-0.5 transition-transform" />
-          </div>
-          Quay lại Màn hình chính
-        </button>
-        <div className="flex flex-col items-center text-center mt-2">
-          <h1 className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/20 backdrop-blur-xl border border-white/40 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-4">
-            <FlaskConical size={32} className="text-teal-300 drop-shadow-md" />
+      <div className="w-full mb-10 relative flex flex-col sm:flex-row justify-center items-center min-h-[80px]">
+        <div className="w-full sm:absolute sm:left-0 sm:top-4 flex justify-start mb-4 sm:mb-0 px-4 sm:px-0">
+          <button 
+            onClick={() => navigate("/dashboard", { state: { activeClusterId: "records" } })}
+            className="bg-white/10 hover:bg-white/20 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm"
+          >
+            <ArrowLeft size={18} />
+            Quay lại
+          </button>
+        </div>
+        <div className="flex flex-col items-center text-center mt-2 px-4">
+          <h1 className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-4">
+            <FlaskConical size={32} className="text-teal-400 drop-shadow-md" />
             <span className="drop-shadow-md">Kết quả xét nghiệm</span>
           </h1>
-          <p className="text-teal-50/90 font-medium drop-shadow-sm text-[16px] max-w-[600px]">
+          <p className="text-white/70 font-medium drop-shadow-sm text-[16px] max-w-[600px]">
             Xem chi tiết toàn bộ các kết quả xét nghiệm lâm sàng của bạn.
           </p>
         </div>
       </div>
 
       <div className="patient-glass-card p-6 md:p-8 w-full max-w-[800px] mx-auto mb-10">
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "20px" }}>
+        <div className="flex justify-end mb-5">
           <button
-            className="secondary-button"
+            className="flex items-center gap-1.5 px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl transition-colors border border-white/20"
             onClick={fetchData}
-            style={{ display: "flex", alignItems: "center", gap: 6 }}
           >
             <RefreshCw size={14} /> Làm mới
           </button>
@@ -180,16 +170,13 @@ export default function PatientLabResultPage() {
       {error && <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>}
 
       {loading ? (
-        <div style={{ padding: 32, color: "#6b7280", textAlign: "center" }}>
+        <div className="p-8 text-white/50 text-center font-medium">
           Đang tải kết quả xét nghiệm...
         </div>
       ) : labRequests.length === 0 ? (
-        <div style={{
-          textAlign: "center", padding: "60px 24px", color: "#9ca3af",
-          background: "#f9fafb", borderRadius: 12, border: "1px dashed #d1d5db",
-        }}>
-          <FlaskConical size={40} style={{ marginBottom: 12, opacity: 0.4 }} />
-          <p style={{ margin: 0 }}>Bạn chưa có phiếu xét nghiệm nào.</p>
+        <div className="text-center py-16 px-6 text-white/50 bg-white/5 rounded-2xl border border-dashed border-white/20">
+          <FlaskConical size={40} className="mx-auto mb-3 opacity-40 text-white" />
+          <p className="m-0 font-medium">Bạn chưa có phiếu xét nghiệm nào.</p>
         </div>
       ) : (
         <>
@@ -198,23 +185,21 @@ export default function PatientLabResultPage() {
           ))}
 
           {totalPages > 1 && (
-            <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 16 }}>
+            <div className="flex justify-center items-center gap-2 mt-4">
               <button
-                className="secondary-button"
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
-                style={{ display: "flex", alignItems: "center", gap: 4 }}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-white/20 bg-white/5 text-white/80 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronLeft size={15} /> Trước
               </button>
-              <span style={{ padding: "6px 12px", fontSize: 13, color: "#6b7280" }}>
+              <span className="px-3 py-1.5 text-[13px] text-white/60 font-medium">
                 Trang {page + 1} / {totalPages}
               </span>
               <button
-                className="secondary-button"
                 onClick={() => setPage((p) => p + 1)}
                 disabled={page >= totalPages - 1}
-                style={{ display: "flex", alignItems: "center", gap: 4 }}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-white/20 bg-white/5 text-white/80 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 Tiếp <ChevronRight size={15} />
               </button>

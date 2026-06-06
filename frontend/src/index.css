@@ -59,6 +59,30 @@ body {
   margin: 0;
 }
 
+/* Custom Scrollbar Styles */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
 .toast-viewport {
   position: fixed;
   top: 18px;
@@ -1597,39 +1621,278 @@ a {
   }
 }
 
+/* Patient glassmorphism panels */
+.patient-glass-panel {
+  background: rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.18),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.patient-shell .patient-glass-panel {
+  background: rgba(255, 255, 255, 0.34);
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.22),
+    0 2px 8px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.patient-glass-panel-sm {
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow:
+    0 6px 24px rgba(0, 0, 0, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.patient-shell .patient-glass-panel-sm {
+  background: rgba(255, 255, 255, 0.28);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* High-contrast input on vivid patient background */
+.patient-shell .patient-input-field {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.patient-shell .patient-input-field:focus-within {
+  border-color: rgba(45, 212, 191, 0.7);
+  box-shadow:
+    0 0 0 3px rgba(45, 212, 191, 0.25),
+    0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.patient-shell .patient-input-field input {
+  color: #0f172a;
+}
+
+.patient-shell .patient-input-field input::placeholder {
+  color: #64748b;
+}
+
+/* Notification bell — glass style inside patient shell */
+.patient-shell .notification-bell-button.icon-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.95);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 2px 8px rgba(0, 0, 0, 0.12);
+  transition: all 0.2s ease;
+}
+
+.patient-shell .notification-bell-button.icon-button:hover {
+  background: rgba(255, 255, 255, 0.32);
+  border-color: rgba(255, 255, 255, 0.6);
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+.patient-shell .notification-badge {
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.5);
+}
+
+/* Sidebar nav legibility */
+.patient-shell .patient-nav-label {
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+/* Header icon buttons — glass style */
+.patient-shell .patient-header-icon-btn {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.95);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.patient-shell .patient-header-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.32);
+  border-color: rgba(255, 255, 255, 0.6);
+  color: #ffffff;
+}
+
+.patient-shell .patient-header-icon-btn-danger:hover {
+  background: rgba(244, 63, 94, 0.25);
+  border-color: rgba(251, 113, 133, 0.5);
+  color: #fecdd3;
+}
+
 /* Glassmorphism System for Patient Dashboard Features */
-.patient-glass-card {
-  background: rgba(255, 255, 255, 0.45) !important;
+.patient-shell .patient-glass-card {
+  background: rgba(255, 255, 255, 0.34) !important;
   backdrop-filter: blur(24px) !important;
   -webkit-backdrop-filter: blur(24px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.45) !important;
-  border-radius: 2rem !important; /* rounded-3xl */
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.55) !important;
+  border-radius: 2rem !important;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.18),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
+  color: #0f172a !important;
 }
 
-.patient-glass-subcard {
-  background: rgba(255, 255, 255, 0.5) !important;
+.patient-shell .patient-glass-subcard {
+  background: rgba(255, 255, 255, 0.28) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+  border-radius: 1.25rem !important;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+  color: #1e293b !important;
+}
+
+.patient-shell .patient-glass-input {
+  background: rgba(255, 255, 255, 0.2) !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.4) !important;
-  border-radius: 1.25rem !important; /* rounded-2xl */
-  box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.04) !important;
-}
-
-.patient-glass-input {
-  background: rgba(255, 255, 255, 0.3) !important;
-  backdrop-filter: blur(4px) !important;
-  -webkit-backdrop-filter: blur(4px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.45) !important;
-  border-radius: 0.75rem !important; /* rounded-xl */
-  color: #0f172a !important; /* slate-900 */
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  border-radius: 0.75rem !important;
+  color: #0f172a !important;
   font-weight: 500 !important;
   transition: all 0.2s ease !important;
 }
+.patient-shell .patient-glass-input::placeholder {
+  color: rgba(51, 65, 85, 0.65) !important;
+}
+.patient-shell .patient-glass-input:focus {
+  background: rgba(255, 255, 255, 0.32) !important;
+  border-color: rgba(94, 234, 212, 0.7) !important;
+  box-shadow: 0 0 0 4px rgba(45, 212, 191, 0.2) !important;
+  outline: none !important;
+}
+
+.patient-shell .patient-glass-card .table-wrapper {
+  width: 100% !important;
+  background: transparent !important;
+  border: 1px solid rgba(148, 163, 184, 0.25) !important;
+  border-radius: 1.25rem !important;
+  box-shadow: none !important;
+  overflow: hidden;
+}
+.patient-shell .patient-glass-card .data-table {
+  width: 100% !important;
+  min-width: 100% !important;
+  table-layout: fixed !important;
+  background: transparent !important;
+  border: none !important;
+}
+.patient-shell .patient-glass-card .data-table th {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #0f766e !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+  font-weight: 800;
+}
+.patient-shell .patient-glass-card .data-table td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #1e293b !important;
+  font-weight: 600;
+}
+.patient-shell .patient-glass-card .data-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+.patient-shell .patient-glass-card .table-row:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+.patient-shell .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+}
+.patient-shell .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.45);
+}
+.patient-shell .custom-scrollbar {
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+
+/* Glass panels on vivid dark background */
+.patient-shell .bg-white\/10.backdrop-blur-xl,
+.patient-shell .bg-white\/10.backdrop-blur-2xl,
+.patient-shell .bg-white\/10.backdrop-blur-3xl,
+.patient-shell .bg-white\/10.backdrop-blur-md {
+  background: rgba(255, 255, 255, 0.22) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-color: rgba(255, 255, 255, 0.42) !important;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
+}
+
+.patient-shell .bg-white\/10.hover\:bg-white\/20:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+}
+
+.patient-shell .patient-glass-subcard .text-white,
+.patient-shell .patient-glass-subcard .text-white\/60,
+.patient-shell .patient-glass-subcard .text-white\/50,
+.patient-shell .patient-glass-subcard .text-white\/80,
+.patient-shell .patient-glass-subcard .text-white\/90 {
+  color: inherit !important;
+}
+
+/* Legacy dark-theme patient glass (fallback for non-shell contexts) */
+.patient-glass-card {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 2rem !important; /* rounded-3xl */
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.3) !important;
+  color: #ffffff !important;
+}
+
+.patient-glass-subcard {
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 1.25rem !important; /* rounded-2xl */
+  box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.2) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.patient-glass-input {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 0.75rem !important; /* rounded-xl */
+  color: #ffffff !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+}
+.patient-glass-input::placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
 .patient-glass-input:focus {
-  background: rgba(255, 255, 255, 0.6) !important;
-  border-color: rgba(20, 184, 166, 0.6) !important; /* teal-500/60 */
-  box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.15) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(94, 234, 212, 0.6) !important; /* teal-400/60 */
+  box-shadow: 0 0 0 4px rgba(94, 234, 212, 0.15) !important;
   outline: none !important;
 }
 
@@ -1637,7 +1900,7 @@ a {
 .patient-glass-card .table-wrapper {
   width: 100% !important;
   background: transparent !important;
-  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
   border-radius: 1.25rem !important;
   box-shadow: none !important;
   overflow: hidden;
@@ -1650,14 +1913,14 @@ a {
   border: none !important;
 }
 .patient-glass-card .data-table th {
-  background: rgba(255, 255, 255, 0.3) !important;
-  color: #0f3d30 !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.35) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
   font-weight: 800;
 }
 .patient-glass-card .data-table td {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.25) !important;
-  color: #0f172a !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
   font-weight: 600;
 }
 .patient-glass-card .data-table tbody tr {
@@ -1665,13 +1928,53 @@ a {
   transition: background 0.2s ease;
 }
 .patient-glass-card .data-table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.25) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
 }
 .patient-glass-card .table-row {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
   background: transparent !important;
   transition: background 0.2s ease;
 }
 .patient-glass-card .table-row:hover {
-  background: rgba(255, 255, 255, 0.25) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Light Glassmorphism System for Shared/Doctor/Admin Pages */
+.light-glass-card {
+  background: rgba(255, 255, 255, 0.45) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+  border-radius: 2rem !important; /* rounded-3xl */
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08) !important;
+  color: #0f172a !important;
+}
+
+.light-glass-subcard {
+  background: rgba(255, 255, 255, 0.5) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  border-radius: 1.25rem !important; /* rounded-2xl */
+  box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+.light-glass-input {
+  background: rgba(255, 255, 255, 0.3) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+  border-radius: 0.75rem !important; /* rounded-xl */
+  color: #0f172a !important; /* slate-900 */
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+}
+.light-glass-input::placeholder {
+  color: rgba(15, 23, 42, 0.5) !important;
+}
+.light-glass-input:focus {
+  background: rgba(255, 255, 255, 0.6) !important;
+  border-color: rgba(20, 184, 166, 0.6) !important; /* teal-500/60 */
+  box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.15) !important;
+  outline: none !important;
 }

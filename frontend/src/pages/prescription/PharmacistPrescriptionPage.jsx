@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Pill, RefreshCw, CheckCircle, Eye, AlertTriangle, ShieldCheck } from "lucide-react";
+import { Pill, RefreshCw, CheckCircle, Eye, AlertTriangle, ShieldCheck, ArrowLeft } from "lucide-react";
 import { getPrescriptions, dispensePrescription } from "../../services/prescriptionService";
 import { useToast } from "../../context/useToast.js";
 
@@ -12,13 +12,16 @@ const STATUS_MAP = {
 };
 
 function StatusBadge({ status }) {
-  const s = STATUS_MAP[status] || { label: status, color: "#6b7280", bg: "#f3f4f6" };
+  const s = STATUS_MAP[status] || { label: status };
+  
+  let badgeClass = "bg-white/10 text-white/50 border-white/20"; // default
+  if (status === "CREATED") badgeClass = "bg-amber-500/20 text-amber-300 border-amber-500/30";
+  if (status === "CHECKED") badgeClass = "bg-sky-500/20 text-sky-300 border-sky-500/30";
+  if (status === "DISPENSED") badgeClass = "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
+  if (status === "CANCELLED") badgeClass = "bg-rose-500/20 text-rose-300 border-rose-500/30";
+
   return (
-    <span style={{
-      background: s.bg, color: s.color,
-      padding: "2px 10px", borderRadius: 12, fontSize: 12, fontWeight: 600,
-      whiteSpace: "nowrap",
-    }}>
+    <span className={`px-3 py-1 rounded-full text-xs font-bold border whitespace-nowrap ${badgeClass}`}>
       {s.label}
     </span>
   );
@@ -76,21 +79,38 @@ export default function PharmacistPrescriptionPage() {
   };
 
   return (
-    <div>
+    <div className="w-full flex flex-col items-center">
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-        <Pill size={22} color="#7c3aed" />
-        <h2 style={{ margin: 0, fontSize: 20 }}>Quản lý cấp phát thuốc</h2>
+      <div className="w-full flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => navigate("/dashboard")}
+            className="bg-white/10 hover:bg-white/20 active:scale-95 text-white p-2 rounded-xl backdrop-blur-md border border-white/20 transition-all shadow-sm group"
+          >
+            <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+          </button>
+          <div>
+            <h1 className="text-3xl font-extrabold text-white flex items-center gap-3 drop-shadow-md">
+              <div className="bg-violet-500/20 p-2.5 rounded-xl border border-violet-500/30 text-violet-300">
+                <Pill size={28} />
+              </div>
+              Quản lý cấp phát thuốc
+            </h1>
+            <p className="text-white/70 font-medium mt-1 drop-shadow-sm">Kiểm tra và cấp phát thuốc theo đơn của bác sĩ.</p>
+          </div>
+        </div>
       </div>
 
-      {error && <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>}
+      {error && <div className="bg-rose-500/20 border border-rose-500/50 text-rose-200 p-4 rounded-xl mb-6 w-full">{error}</div>}
 
+      {/* Main Content Box */}
+      <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-6 shadow-xl w-full">
       {/* Filters */}
-      <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap", alignItems: "center" }}>
+      <div className="flex flex-wrap gap-4 mb-6 items-center">
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          style={{ padding: "7px 10px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 14 }}
+          className="bg-slate-900/40 border border-white/10 text-white text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:border-violet-400/50 transition-colors [&>option]:bg-slate-800"
         >
           <option value="">Tất cả trạng thái</option>
           <option value="CREATED">Chờ cấp phát</option>
@@ -98,80 +118,72 @@ export default function PharmacistPrescriptionPage() {
           <option value="DISPENSED">Đã cấp phát</option>
         </select>
         <button
-          className="secondary-button"
+          className="px-4 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white transition-colors flex items-center gap-2 font-medium"
           onClick={fetchData}
-          style={{ display: "flex", alignItems: "center", gap: 6 }}
         >
-          <RefreshCw size={14} /> Làm mới
+          <RefreshCw size={16} className={loading ? "animate-spin" : ""} /> Làm mới
         </button>
       </div>
 
       {/* Table */}
-      <div className="table-wrapper">
-        <table className="data-table">
+      <div className="overflow-x-auto custom-scrollbar">
+        <table className="w-full text-left border-collapse">
           <thead>
-            <tr>
-              <th>Mã đơn thuốc</th>
-              <th style={{ width: 120 }}>Trạng thái</th>
-              <th style={{ width: 90, textAlign: "center" }}>Số thuốc</th>
-              <th style={{ width: 140 }}>Tương tác thuốc</th>
-              <th style={{ width: 160 }}>Ngày tạo</th>
-              <th style={{ textAlign: "center" }}>Thao tác</th>
+            <tr className="border-b border-white/10 text-white/60 text-sm">
+              <th className="p-4 font-semibold pb-3">Mã đơn thuốc</th>
+              <th className="p-4 font-semibold pb-3 w-[140px]">Trạng thái</th>
+              <th className="p-4 font-semibold pb-3 w-[100px] text-center">Số thuốc</th>
+              <th className="p-4 font-semibold pb-3 w-[160px]">Tương tác thuốc</th>
+              <th className="p-4 font-semibold pb-3 w-[180px]">Ngày tạo</th>
+              <th className="p-4 font-semibold pb-3 text-center">Thao tác</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="text-white/80">
             {loading ? (
-              <tr><td colSpan={6} className="empty-row">Đang tải...</td></tr>
+              <tr><td colSpan={6} className="p-8 text-center text-white/50">Đang tải...</td></tr>
             ) : prescriptions.length === 0 ? (
-              <tr><td colSpan={6} className="empty-row">Không có đơn thuốc nào.</td></tr>
+              <tr><td colSpan={6} className="p-8 text-center text-white/50">Không có đơn thuốc nào.</td></tr>
             ) : (
               prescriptions.map((rx) => {
                 const isDispensing = dispensingId === rx.prescriptionId;
                 return (
-                  <tr key={rx.prescriptionId}>
-                    <td>
-                      <div style={{ fontWeight: 700, color: "#7c3aed" }}>{rx.prescriptionCode}</div>
-                      <div style={{ fontSize: 12, color: "#6b7280" }}>
-                        Ca khám #{rx.consultationId}
-                      </div>
+                  <tr key={rx.prescriptionId} className="border-b border-white/5 hover:bg-white/5 transition-colors group">
+                    <td className="p-4">
+                      <div className="font-bold text-violet-300">{rx.prescriptionCode}</div>
+                      <div className="text-xs text-white/50 mt-1">Ca khám #{rx.consultationId}</div>
                     </td>
-                    <td><StatusBadge status={rx.status} /></td>
-                    <td style={{ textAlign: "center" }}>{rx.items?.length || 0}</td>
-                    <td>
+                    <td className="p-4"><StatusBadge status={rx.status} /></td>
+                    <td className="p-4 text-center font-medium">{rx.items?.length || 0}</td>
+                    <td className="p-4">
                       {rx.drugInteractionChecked ? (
                         rx.interactionWarning && !rx.interactionWarning.includes("No dangerous") ? (
-                          <span style={{ display: "flex", alignItems: "center", gap: 4, color: "#d97706", fontSize: 12, fontWeight: 600 }}>
-                            <AlertTriangle size={13} /> Có cảnh báo
+                          <span className="inline-flex items-center gap-1.5 text-amber-400 text-xs font-bold bg-amber-400/10 px-2 py-1 rounded-md border border-amber-400/20">
+                            <AlertTriangle size={14} /> Có cảnh báo
                           </span>
                         ) : (
-                          <span style={{ display: "flex", alignItems: "center", gap: 4, color: "#16a34a", fontSize: 12, fontWeight: 600 }}>
-                            <ShieldCheck size={13} /> An toàn
+                          <span className="inline-flex items-center gap-1.5 text-emerald-400 text-xs font-bold bg-emerald-400/10 px-2 py-1 rounded-md border border-emerald-400/20">
+                            <ShieldCheck size={14} /> An toàn
                           </span>
                         )
                       ) : (
-                        <span style={{ color: "#9ca3af", fontSize: 12 }}>Chưa kiểm tra</span>
+                        <span className="text-white/40 text-xs italic">Chưa kiểm tra</span>
                       )}
                     </td>
-                    <td style={{ fontSize: 13, color: "#6b7280" }}>
+                    <td className="p-4 text-white/60 text-sm">
                       {new Date(rx.createdAt).toLocaleString("vi-VN", {
                         day: "2-digit", month: "2-digit", year: "numeric",
                         hour: "2-digit", minute: "2-digit",
                       })}
                     </td>
-                    <td>
-                      <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
+                    <td className="p-4">
+                      <div className="flex gap-2 justify-center">
                         {/* Xem chi tiết */}
                         <button
                           onClick={() => navigate(`/dashboard/prescriptions/${rx.prescriptionId}`)}
                           title="Xem chi tiết"
-                          style={{
-                            display: "flex", alignItems: "center", gap: 4,
-                            padding: "4px 10px", borderRadius: 6, border: "none",
-                            background: "#f3f4f6", color: "#374151",
-                            cursor: "pointer", fontSize: 12, fontWeight: 600,
-                          }}
+                          className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors flex items-center gap-2 text-xs font-semibold"
                         >
-                          <Eye size={13} /> Xem
+                          <Eye size={14} /> Xem
                         </button>
 
                         {/* Cấp phát */}
@@ -180,25 +192,16 @@ export default function PharmacistPrescriptionPage() {
                             onClick={() => handleDispense(rx.prescriptionId, rx.prescriptionCode)}
                             disabled={isDispensing}
                             title="Cấp phát thuốc"
-                            style={{
-                              display: "flex", alignItems: "center", gap: 4,
-                              padding: "4px 10px", borderRadius: 6, border: "none",
-                              background: isDispensing ? "#d1fae5" : "#16a34a",
-                              color: "#fff", cursor: isDispensing ? "not-allowed" : "pointer",
-                              fontSize: 12, fontWeight: 600, opacity: isDispensing ? 0.7 : 1,
-                            }}
+                            className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2 text-xs font-semibold ${isDispensing ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 cursor-wait" : "bg-emerald-500 hover:bg-emerald-400 text-white shadow-lg shadow-emerald-500/20"}`}
                           >
-                            <CheckCircle size={13} />
+                            <CheckCircle size={14} />
                             {isDispensing ? "Đang xử lý..." : "Cấp phát"}
                           </button>
                         )}
 
                         {rx.status === "DISPENSED" && (
-                          <span style={{
-                            fontSize: 12, color: "#16a34a", fontWeight: 600,
-                            padding: "4px 8px", background: "#dcfce7", borderRadius: 6,
-                          }}>
-                            ✓ Đã cấp phát
+                          <span className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold flex items-center gap-1.5">
+                            ✓ Đã cấp
                           </span>
                         )}
                       </div>
@@ -213,19 +216,19 @@ export default function PharmacistPrescriptionPage() {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 16 }}>
+        <div className="flex justify-center items-center gap-4 mt-6">
           <button
-            className="secondary-button"
+            className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white transition-colors disabled:opacity-30 text-sm font-medium"
             onClick={() => setPage((p) => Math.max(0, p - 1))}
             disabled={page === 0}
           >
             ← Trước
           </button>
-          <span style={{ padding: "6px 12px", fontSize: 13, color: "#6b7280" }}>
-            Trang {page + 1} / {totalPages}
+          <span className="text-white/60 text-sm font-medium bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+            Trang <span className="text-white font-bold">{page + 1}</span> / {totalPages}
           </span>
           <button
-            className="secondary-button"
+            className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white transition-colors disabled:opacity-30 text-sm font-medium"
             onClick={() => setPage((p) => p + 1)}
             disabled={page >= totalPages - 1}
           >
@@ -233,6 +236,7 @@ export default function PharmacistPrescriptionPage() {
           </button>
         </div>
       )}
+      </div>
     </div>
   );
 }

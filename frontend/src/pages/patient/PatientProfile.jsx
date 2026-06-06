@@ -87,35 +87,31 @@ export default function PatientProfile() {
   };
 
   if (loading) {
-    return <div className="page-header">Đang tải hồ sơ...</div>;
+    return <div className="text-white/70 font-medium p-4">Đang tải hồ sơ...</div>;
   }
 
   if (notFound) {
     return (
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">
-            <UserSquare size={26} />
-            Hồ sơ cá nhân
-          </h1>
-          <p className="muted" style={{ color: "red", marginTop: 10 }}>
-            Tài khoản của bạn chưa được liên kết với bất kỳ hồ sơ bệnh nhân nào. Vui lòng liên hệ với lễ tân để được hỗ trợ.
-          </p>
-        </div>
+      <div className="mb-6 px-2">
+        <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-1">
+          <UserSquare size={26} className="text-teal-400" />
+          Hồ sơ cá nhân
+        </h2>
+        <p className="text-red-400 font-medium mt-2">
+          Tài khoản của bạn chưa được liên kết với bất kỳ hồ sơ bệnh nhân nào. Vui lòng liên hệ với lễ tân để được hỗ trợ.
+        </p>
       </div>
     );
   }
 
   return (
     <>
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">
-            <UserSquare size={26} />
-            Hồ sơ cá nhân
-          </h1>
-          <p className="muted">Quản lý và cập nhật thông tin sức khỏe của bạn.</p>
-        </div>
+      <div className="mb-6 px-2 mt-4">
+        <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-1">
+          <UserSquare size={26} className="text-teal-400" />
+          Hồ sơ cá nhân
+        </h2>
+        <p className="text-white/70 font-medium">Quản lý và cập nhật thông tin sức khỏe của bạn.</p>
       </div>
 
       {error && <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>}

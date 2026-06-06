@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { PackageOpen, Plus, Search, X, Edit, Trash2 } from "lucide-react";
+import { PackageOpen, Plus, Search, X, Edit, Trash2, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { getBatches, importBatch, updateBatch, deleteBatch } from "../../services/inventoryService";
 import { getMedicines } from "../../services/medicineService";
 import { getSuppliers } from "../../services/supplierService";
@@ -16,6 +17,7 @@ const EMPTY_FORM = {
 };
 
 export default function InventoryBatches() {
+  const navigate = useNavigate();
   const [batches, setBatches] = useState([]);
   const [medicines, setMedicines] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
@@ -143,69 +145,84 @@ export default function InventoryBatches() {
 
   return (
     <>
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">
-            <PackageOpen size={26} />
-            Lô Thuốc & Nhập Kho
-          </h1>
-          <p className="muted">Quản lý lô thuốc hiện tại và thực hiện nhập kho mới.</p>
+    <div className="w-full flex flex-col items-center">
+      <div className="w-full flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => navigate("/dashboard")}
+            className="bg-white/10 hover:bg-white/20 active:scale-95 text-white p-2 rounded-xl backdrop-blur-md border border-white/20 transition-all shadow-sm group"
+          >
+            <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+          </button>
+          <div>
+            <h1 className="text-3xl font-extrabold text-white flex items-center gap-3 drop-shadow-md">
+              <div className="bg-indigo-500/20 p-2.5 rounded-xl border border-indigo-500/30 text-indigo-300">
+                <PackageOpen size={28} />
+              </div>
+              Lô Thuốc & Nhập Kho
+            </h1>
+            <p className="text-white/70 font-medium mt-1 drop-shadow-sm">Quản lý lô thuốc hiện tại và thực hiện nhập kho mới.</p>
+          </div>
         </div>
-        <button className="primary-button" onClick={openImport}>
-          <Plus size={16} />
+        <button className="bg-gradient-to-r from-indigo-400 to-purple-400 hover:from-indigo-300 hover:to-purple-300 text-slate-900 font-bold px-5 py-2.5 rounded-xl shadow-lg hover:shadow-indigo-400/30 transition-all flex items-center gap-2" onClick={openImport}>
+          <Plus size={18} strokeWidth={2.5} />
           Nhập kho
         </button>
       </div>
 
-      <div className="search-bar">
-        <Search size={16} className="search-icon" />
-        <input
-          type="text"
-          placeholder="Tìm kiếm theo tên thuốc hoặc số lô..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
+      <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-6 shadow-xl w-full">
+        <div className="relative mb-6">
+          <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-white/50">
+            <Search size={18} />
+          </div>
+          <input
+            type="text"
+            placeholder="Tìm kiếm theo tên thuốc hoặc số lô..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-slate-900/40 border border-white/10 text-white placeholder-white/40 text-sm rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:border-indigo-400/50 transition-colors"
+          />
+        </div>
 
-      {error && <div className="error-box">{error}</div>}
+      {error && <div className="bg-rose-500/20 border border-rose-500/50 text-rose-200 p-4 rounded-xl mb-6">{error}</div>}
 
-      <div className="table-wrapper">
-        <table className="data-table">
+      <div className="overflow-x-auto custom-scrollbar">
+        <table className="w-full text-left border-collapse">
           <thead>
-            <tr>
-              <th>Thuốc</th>
-              <th>Số lô</th>
-              <th>Ngày hết hạn</th>
-              <th>Giá bán</th>
-              <th>Tồn hiện tại</th>
-              <th>Trạng thái</th>
-              <th style={{ textAlign: "center" }}>Hành động</th>
+            <tr className="border-b border-white/10 text-white/60 text-sm">
+              <th className="p-4 font-semibold pb-3">Thuốc</th>
+              <th className="p-4 font-semibold pb-3">Số lô</th>
+              <th className="p-4 font-semibold pb-3">Ngày hết hạn</th>
+              <th className="p-4 font-semibold pb-3">Giá bán</th>
+              <th className="p-4 font-semibold pb-3">Tồn hiện tại</th>
+              <th className="p-4 font-semibold pb-3">Trạng thái</th>
+              <th className="p-4 font-semibold pb-3 text-center">Hành động</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="text-white/80">
             {loading ? (
               <tr>
-                <td colSpan={6} className="empty-row">Đang tải dữ liệu...</td>
+                <td colSpan={7} className="p-8 text-center text-white/50">Đang tải dữ liệu...</td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={6} className="empty-row">Không tìm thấy lô thuốc nào.</td>
+                <td colSpan={7} className="p-8 text-center text-white/50">Không tìm thấy lô thuốc nào.</td>
               </tr>
             ) : (
               filtered.map((b) => (
-                <tr key={b.batchId}>
-                  <td><strong>{b.medicineName}</strong></td>
-                  <td>{b.batchNumber}</td>
-                  <td>{b.expiryDate}</td>
-                  <td>{b.sellingPrice?.toLocaleString("vi-VN")} đ</td>
-                  <td>
-                    <strong>{b.currentQuantity}</strong> / {b.initialQuantity}
+                <tr key={b.batchId} className="border-b border-white/5 hover:bg-white/5 transition-colors group">
+                  <td className="p-4 font-semibold text-white">{b.medicineName}</td>
+                  <td className="p-4">{b.batchNumber}</td>
+                  <td className="p-4">{b.expiryDate}</td>
+                  <td className="p-4 text-emerald-300 font-medium">{b.sellingPrice?.toLocaleString("vi-VN")} đ</td>
+                  <td className="p-4">
+                    <span className="font-bold text-white">{b.currentQuantity}</span> <span className="text-white/50">/ {b.initialQuantity}</span>
                   </td>
-                  <td>
-                    <span className={`status-badge ${
-                      b.status === "AVAILABLE" ? "badge-active"
-                      : b.status === "NEAR_EXPIRY" ? "badge-warning"
-                      : "badge-inactive"
+                  <td className="p-4">
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                      b.status === "AVAILABLE" ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+                      : b.status === "NEAR_EXPIRY" ? "bg-amber-500/20 text-amber-300 border-amber-500/30"
+                      : "bg-white/10 text-white/50 border-white/20"
                     }`}>
                       {b.status === "AVAILABLE" ? "Còn hàng"
                       : b.status === "LOW_STOCK" ? "Sắp hết"
@@ -215,18 +232,17 @@ export default function InventoryBatches() {
                       : "Hết hàng"}
                     </span>
                   </td>
-                  <td>
-                    <div className="action-group">
-                      <button className="icon-button" title="Chỉnh sửa" onClick={() => openEdit(b)}>
-                        <Edit size={15} />
+                  <td className="p-4 text-center">
+                    <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-colors" title="Chỉnh sửa" onClick={() => openEdit(b)}>
+                        <Edit size={16} />
                       </button>
                       <button 
-                        className="icon-button" 
+                        className="p-2 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg text-rose-400 transition-colors" 
                         title="Hủy lô" 
                         onClick={() => handleDelete(b.batchId, b.batchNumber)}
-                        style={{ color: "#ef4444" }}
                       >
-                        <Trash2 size={15} />
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </td>
@@ -236,22 +252,23 @@ export default function InventoryBatches() {
           </tbody>
         </table>
       </div>
+      </div>
 
       {showForm && (
-        <div className="modal-overlay" onClick={closeForm}>
-          <div className="modal-card modal-lg" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{editingId ? "Cập nhật lô thuốc" : "Nhập kho thuốc"}</h2>
-              <button className="icon-button" onClick={closeForm}><X size={18} /></button>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900/80 backdrop-blur-xl border border-white/20 rounded-[2rem] p-8 w-full max-w-2xl shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-white">{editingId ? "Cập nhật lô thuốc" : "Nhập kho thuốc"}</h2>
+              <button className="text-white/50 hover:text-white transition-colors" onClick={closeForm}><X size={24} /></button>
             </div>
 
-            <form className="form-stack" onSubmit={handleSubmit}>
-              {formError && <div className="error-box">{formError}</div>}
+            <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
+              {formError && <div className="bg-rose-500/20 border border-rose-500/50 text-rose-200 p-3 rounded-xl text-sm">{formError}</div>}
 
-              <div className="form-grid">
-                <div className="field">
-                  <label>Chọn thuốc *</label>
-                  <select name="medicineId" value={formData.medicineId} onChange={handleChange} disabled={!!editingId}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-white/80">Chọn thuốc *</label>
+                  <select name="medicineId" value={formData.medicineId} onChange={handleChange} disabled={!!editingId} className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-indigo-400 focus:outline-none disabled:opacity-50 [&>option]:bg-slate-800">
                     <option value="">-- Chọn thuốc --</option>
                     {medicines.map((m) => (
                       <option key={m.medicineId} value={m.medicineId}>
@@ -260,9 +277,9 @@ export default function InventoryBatches() {
                     ))}
                   </select>
                 </div>
-                <div className="field">
-                  <label>Nhà cung cấp</label>
-                  <select name="supplierId" value={formData.supplierId} onChange={handleChange} disabled={!!editingId}>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-white/80">Nhà cung cấp</label>
+                  <select name="supplierId" value={formData.supplierId} onChange={handleChange} disabled={!!editingId} className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-indigo-400 focus:outline-none disabled:opacity-50 [&>option]:bg-slate-800">
                     <option value="">-- Tự nhập / Không chọn --</option>
                     {suppliers.map((s) => (
                       <option key={s.supplierId} value={s.supplierId}>
@@ -271,36 +288,39 @@ export default function InventoryBatches() {
                     ))}
                   </select>
                 </div>
-                <div className="field">
-                  <label>Số lô (Batch Number) *</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-white/80">Số lô (Batch Number) *</label>
                   <input
                     name="batchNumber"
                     value={formData.batchNumber}
                     onChange={handleChange}
                     disabled={!!editingId}
+                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-indigo-400 focus:outline-none disabled:opacity-50"
                   />
                 </div>
-                <div className="field">
-                  <label>Ngày sản xuất</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-white/80">Ngày sản xuất</label>
                   <input
                     type="date"
                     name="manufactureDate"
                     value={formData.manufactureDate}
                     onChange={handleChange}
                     disabled={!!editingId}
+                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-indigo-400 focus:outline-none disabled:opacity-50 [color-scheme:dark]"
                   />
                 </div>
-                <div className="field">
-                  <label>Ngày hết hạn *</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-white/80">Ngày hết hạn *</label>
                   <input
                     type="date"
                     name="expiryDate"
                     value={formData.expiryDate}
                     onChange={handleChange}
+                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-indigo-400 focus:outline-none [color-scheme:dark]"
                   />
                 </div>
-                <div className="field">
-                  <label>Số lượng nhập *</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-white/80">Số lượng nhập *</label>
                   <input
                     type="number"
                     name="quantity"
@@ -308,33 +328,36 @@ export default function InventoryBatches() {
                     value={formData.quantity}
                     onChange={handleChange}
                     disabled={!!editingId}
+                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-indigo-400 focus:outline-none disabled:opacity-50"
                   />
                 </div>
-                <div className="field">
-                  <label>Giá nhập (VNĐ) *</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-white/80">Giá nhập (VNĐ) *</label>
                   <input
                     type="number"
                     name="importPrice"
                     min="0"
                     value={formData.importPrice}
                     onChange={handleChange}
+                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-indigo-400 focus:outline-none"
                   />
                 </div>
-                <div className="field">
-                  <label>Giá bán dự kiến (VNĐ) *</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-white/80">Giá bán dự kiến (VNĐ) *</label>
                   <input
                     type="number"
                     name="sellingPrice"
                     min="0"
                     value={formData.sellingPrice}
                     onChange={handleChange}
+                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-indigo-400 focus:outline-none"
                   />
                 </div>
               </div>
 
-              <div className="form-actions">
-                <button type="button" className="secondary-button" onClick={closeForm}>Hủy</button>
-                <button type="submit" className="primary-button" disabled={submitting}>
+              <div className="flex justify-end gap-3 mt-4">
+                <button type="button" className="px-5 py-2.5 rounded-xl border border-white/20 text-white hover:bg-white/10 transition-colors font-medium" onClick={closeForm}>Hủy</button>
+                <button type="submit" className="px-5 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-bold transition-colors shadow-lg shadow-indigo-500/30" disabled={submitting}>
                   {submitting ? "Đang xử lý..." : (editingId ? "Cập nhật" : "Nhập kho")}
                 </button>
               </div>
@@ -342,6 +365,7 @@ export default function InventoryBatches() {
           </div>
         </div>
       )}
+    </div>
     </>
   );
 }

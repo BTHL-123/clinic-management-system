@@ -289,27 +289,27 @@ export default function AvailableSlots() {
 
   return (
     <div className="max-w-[1100px] mx-auto w-full flex flex-col items-center">
-      <div className="w-full mb-10 flex flex-col items-center">
-        <button 
-          onClick={() => {
-            if (selectedSlot && !bookingSuccess) {
-              releaseLock(selectedSlot.slotId).catch(() => {});
-            }
-            navigate("/dashboard", { state: { activeClusterId: "booking" } });
-          }}
-          className="self-start inline-flex items-center gap-3 px-5 py-2.5 bg-white/90 hover:bg-white text-teal-900 font-extrabold border border-white shadow-md rounded-full hover:shadow-lg hover:-translate-x-0.5 transition-all duration-300 group"
-        >
-          <div className="bg-teal-100/80 p-1.5 rounded-full text-teal-700 group-hover:bg-teal-200 transition-colors">
-            <ArrowLeft size={16} strokeWidth={2.5} className="group-hover:-translate-x-0.5 transition-transform" />
-          </div>
-          Quay lại Màn hình chính
-        </button>
-        <div className="flex flex-col items-center text-center mt-2">
-          <h1 className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/20 backdrop-blur-xl border border-white/40 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-4">
-            <Search size={32} className="text-teal-300 drop-shadow-md" />
+      <div className="w-full mb-10 relative flex flex-col sm:flex-row justify-center items-center min-h-[80px]">
+        <div className="w-full sm:absolute sm:left-0 sm:top-4 flex justify-start mb-4 sm:mb-0 px-4 sm:px-0">
+          <button 
+            onClick={() => {
+              if (selectedSlot && !bookingSuccess) {
+                releaseLock(selectedSlot.slotId).catch(() => {});
+              }
+              navigate("/dashboard", { state: { activeClusterId: "booking" } });
+            }}
+            className="bg-white/10 hover:bg-white/20 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm"
+          >
+            <ArrowLeft size={18} />
+            Quay lại
+          </button>
+        </div>
+        <div className="flex flex-col items-center text-center mt-2 px-4">
+          <h1 className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-4">
+            <Search size={32} className="text-teal-400 drop-shadow-md" />
             <span className="drop-shadow-md">Tìm kiếm ca khám trống</span>
           </h1>
-          <p className="text-teal-50/90 font-medium drop-shadow-sm text-[16px] max-w-[600px]">
+          <p className="text-white/70 font-medium drop-shadow-sm text-[16px] max-w-[600px]">
             Chọn ngày khám, sau đó chọn bác sĩ có lịch làm việc trong ngày để xem các khung giờ còn trống.
           </p>
         </div>
@@ -327,7 +327,7 @@ export default function AvailableSlots() {
             <div className="patient-glass-card p-6 md:p-8 w-full max-w-[600px] mx-auto lg:mx-0">
             <div className="flex flex-col gap-5">
               <div className="flex flex-col gap-2">
-                <label htmlFor="as-workDate" className="font-bold text-slate-800 text-[14px]">Ngày khám</label>
+                <label htmlFor="as-workDate" className="font-bold text-white/90 text-[14px]">Ngày khám</label>
                 <input
                   type="date"
                   id="as-workDate"
@@ -344,7 +344,7 @@ export default function AvailableSlots() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <label htmlFor="as-doctorId" className="font-bold text-slate-800 text-[14px]">Bác sĩ có lịch trong ngày</label>
+                <label htmlFor="as-doctorId" className="font-bold text-white/90 text-[14px]">Bác sĩ có lịch trong ngày</label>
                 <select
                   id="as-doctorId"
                   value={doctorId}
@@ -432,26 +432,26 @@ export default function AvailableSlots() {
                         gap: "12px",
                         padding: "12px 14px",
                         borderRadius: "14px",
-                        border: isSelected ? "1.5px solid rgba(15, 118, 110, 0.8)" : "1px solid rgba(255, 255, 255, 0.3)",
-                        background: isSelected ? "rgba(240, 253, 250, 0.65)" : "rgba(255, 255, 255, 0.25)",
+                        border: isSelected ? "1.5px solid rgba(94, 234, 212, 0.6)" : "1px solid rgba(255, 255, 255, 0.15)",
+                        background: isSelected ? "rgba(94, 234, 212, 0.15)" : "rgba(255, 255, 255, 0.05)",
                         backdropFilter: "blur(8px)",
-                        boxShadow: isSelected ? "0 4px 12px rgba(15, 118, 110, 0.1)" : "none",
-                        color: "#0f172a",
+                        boxShadow: isSelected ? "0 4px 12px rgba(94, 234, 212, 0.15)" : "none",
+                        color: "#ffffff",
                         cursor: "pointer",
                         textAlign: "left",
                         transition: "all 0.2s ease",
                       }}
                     >
                       <span style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
-                        <UserRound size={18} color={isSelected ? "#0f766e" : "#64748b"} />
+                        <UserRound size={18} color={isSelected ? "#5eead4" : "#94a3b8"} />
                         <span style={{ minWidth: 0 }}>
                           <strong style={{ display: "block", fontSize: "14px" }}>{getDoctorLabel(doctor)}</strong>
-                          <span style={{ display: "block", fontSize: "12px", color: "#64748b" }}>
+                          <span style={{ display: "block", fontSize: "12px", color: "#cbd5e1" }}>
                             {[doctor.departmentName, doctor.specialization].filter(Boolean).join(" - ") || "Chưa có chuyên khoa"}
                           </span>
                         </span>
                       </span>
-                      <span style={{ fontSize: "12px", color: "#0f766e", fontWeight: 700, whiteSpace: "nowrap" }}>
+                      <span style={{ fontSize: "12px", color: "#5eead4", fontWeight: 700, whiteSpace: "nowrap" }}>
                         {getDoctorScheduleText(doctor.doctorId)}
                       </span>
                     </button>
@@ -470,16 +470,16 @@ export default function AvailableSlots() {
 
           {selectedDoctor && doctorId && (
             <div className="patient-glass-card p-6 lg:p-8 animate-[fadeIn_0.3s_ease] w-full max-w-[450px] mx-auto lg:mx-0">
-              <h3 className="text-[1.1rem] font-extrabold text-slate-800 mb-6 flex items-center gap-2">
+              <h3 className="text-[1.1rem] font-extrabold text-white mb-6 flex items-center gap-2">
                  Chi tiết Bác sĩ
               </h3>
               <div className="flex gap-5 items-center">
-                <div className="w-20 h-20 rounded-full bg-teal-100 flex-shrink-0 flex items-center justify-center border-4 border-white shadow-sm overflow-hidden">
-                  <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${selectedDoctor.doctorId}&backgroundColor=ccfbf1`} alt="Avatar" className="w-full h-full object-cover" />
+                <div className="w-20 h-20 rounded-full bg-teal-900/50 flex-shrink-0 flex items-center justify-center border-2 border-teal-400/50 shadow-sm overflow-hidden">
+                  <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${selectedDoctor.doctorId}&backgroundColor=115e59`} alt="Avatar" className="w-full h-full object-cover" />
                 </div>
                 <div className="flex flex-col">
-                  <strong className="text-lg text-slate-900">{getDoctorLabel(selectedDoctor)}</strong>
-                  <span className="text-sm text-slate-500 font-medium mb-2">{selectedDoctor.departmentName || "Khám tổng quát"}</span>
+                  <strong className="text-lg text-white">{getDoctorLabel(selectedDoctor)}</strong>
+                  <span className="text-sm text-white/70 font-medium mb-2">{selectedDoctor.departmentName || "Khám tổng quát"}</span>
                   <div className="flex items-center gap-1">
                     {[1, 2, 3, 4, 5].map(star => <Star key={star} size={14} className="fill-amber-400 text-amber-400" />)}
                   </div>
@@ -607,28 +607,28 @@ export default function AvailableSlots() {
       ) : (
         <div className="patient-glass-card p-6 md:p-8 w-full max-w-[600px] mx-auto relative animate-[fadeIn_0.3s_ease]">
           {isExpired && (
-            <div className="absolute inset-0 bg-white/80 backdrop-blur-md rounded-[2rem] flex flex-col items-center justify-center z-10 animate-[fadeIn_0.15s_ease]">
-              <ShieldAlert size={56} className="text-red-500 mb-4" strokeWidth={1.5} />
-              <h3 className="m-0 text-slate-800 text-xl font-extrabold mb-2">
+            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md rounded-[2rem] flex flex-col items-center justify-center z-10 animate-[fadeIn_0.15s_ease]">
+              <ShieldAlert size={56} className="text-red-400 mb-4" strokeWidth={1.5} />
+              <h3 className="m-0 text-white text-xl font-extrabold mb-2">
                 Phiên giữ chỗ đã hết hạn
               </h3>
-              <p className="m-0 text-slate-500 font-medium">
+              <p className="m-0 text-white/70 font-medium">
                 Đang tự động quay trở lại màn hình chọn ca khám...
               </p>
             </div>
           )}
 
-          <div className="flex items-center justify-between mb-8 border-b border-slate-200/60 pb-5">
+          <div className="flex items-center justify-between mb-8 border-b border-white/20 pb-5">
             <button
               onClick={handleCancelBooking}
-              className="inline-flex items-center gap-2 text-slate-500 hover:text-teal-700 font-bold text-[13px] transition-colors group"
+              className="inline-flex items-center gap-2 text-white/70 hover:text-white font-bold text-[13px] transition-colors group"
             >
               <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
               Quay lại chọn ca
             </button>
 
             <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-[13px] tracking-wide border transition-colors ${
-              isWarningTime ? "bg-red-50 text-red-600 border-red-200 animate-pulse" : "bg-teal-50 text-teal-700 border-teal-200"
+              isWarningTime ? "bg-red-500/20 text-red-300 border-red-500/30 animate-pulse" : "bg-teal-500/20 text-teal-300 border-teal-500/30"
             }`}>
               <Clock size={16} strokeWidth={2.5} />
               <span>Thời gian giữ chỗ: {timeString}</span>
@@ -637,32 +637,32 @@ export default function AvailableSlots() {
 
           {bookingSuccess ? (
             <div className="text-center py-12">
-              <CheckCircle size={64} strokeWidth={1.5} className="mx-auto mb-5 text-emerald-500" />
-              <h3 className="m-0 text-2xl font-extrabold mb-2 text-slate-800">
+              <CheckCircle size={64} strokeWidth={1.5} className="mx-auto mb-5 text-emerald-400" />
+              <h3 className="m-0 text-2xl font-extrabold mb-2 text-white">
                 Đặt lịch thành công!
               </h3>
-              <p className="m-0 text-slate-500 font-medium">
+              <p className="m-0 text-white/70 font-medium">
                 Hệ thống đang cập nhật trạng thái của ca khám...
               </p>
             </div>
           ) : (
             <form onSubmit={handleSubmitBooking}>
-              <h2 className="m-0 mb-5 text-[1.3rem] font-extrabold text-slate-800 tracking-tight">
+              <h2 className="m-0 mb-5 text-[1.3rem] font-extrabold text-white tracking-tight">
                 Thông tin đặt lịch khám
               </h2>
 
-              <div className="bg-gradient-to-br from-teal-100/30 to-emerald-100/30 backdrop-blur-md rounded-2xl p-5 mb-6 border border-white/20 shadow-sm">
+              <div className="bg-white/5 backdrop-blur-md rounded-2xl p-5 mb-6 border border-white/20 shadow-sm">
                 <div className="flex justify-between items-center mb-3.5">
-                  <span className="text-slate-500 text-[13px] font-bold uppercase tracking-wider">Bác sĩ</span>
-                  <strong className="text-slate-800">{getDoctorLabel(selectedDoctor)}</strong>
+                  <span className="text-white/60 text-[13px] font-bold uppercase tracking-wider">Bác sĩ</span>
+                  <strong className="text-white">{getDoctorLabel(selectedDoctor)}</strong>
                 </div>
                 <div className="flex justify-between items-center mb-3.5">
-                  <span className="text-slate-500 text-[13px] font-bold uppercase tracking-wider">Ngày khám</span>
-                  <strong className="text-slate-800">{workDate}</strong>
+                  <span className="text-white/60 text-[13px] font-bold uppercase tracking-wider">Ngày khám</span>
+                  <strong className="text-white">{workDate}</strong>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-500 text-[13px] font-bold uppercase tracking-wider">Khung giờ</span>
-                  <strong className="text-teal-800 bg-teal-100/60 border border-teal-200/50 px-3.5 py-1.5 rounded-lg shadow-sm">
+                  <span className="text-white/60 text-[13px] font-bold uppercase tracking-wider">Khung giờ</span>
+                  <strong className="text-teal-300 bg-teal-500/20 border border-teal-500/30 px-3.5 py-1.5 rounded-lg shadow-sm">
                     {selectedSlot ? `${formatTime(selectedSlot.startTime)} – ${formatTime(selectedSlot.endTime)}` : ""}
                   </strong>
                 </div>
@@ -670,8 +670,8 @@ export default function AvailableSlots() {
 
               <div className="flex flex-col gap-4 mb-8">
                 <div className="flex flex-col gap-2">
-                  <label htmlFor="bk-name" className="font-bold text-slate-700 text-[13px]">
-                    Họ tên Bệnh nhân <span className="text-rose-500">*</span>
+                  <label htmlFor="bk-name" className="font-bold text-white/90 text-[13px]">
+                    Họ tên Bệnh nhân <span className="text-rose-400">*</span>
                   </label>
                   <input
                     type="text"
@@ -681,13 +681,13 @@ export default function AvailableSlots() {
                     value={patientName}
                     onChange={(e) => setPatientName(e.target.value)}
                     disabled={isExpired}
-                    className="w-full px-4 py-3 patient-glass-input placeholder:text-slate-500 disabled:opacity-50"
+                    className="w-full px-4 py-3 patient-glass-input placeholder:text-white/50 disabled:opacity-50"
                   />
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <label htmlFor="bk-phone" className="font-bold text-slate-700 text-[13px]">
-                    Số điện thoại liên hệ <span className="text-rose-500">*</span>
+                  <label htmlFor="bk-phone" className="font-bold text-white/90 text-[13px]">
+                    Số điện thoại liên hệ <span className="text-rose-400">*</span>
                   </label>
                   <input
                     type="tel"
@@ -697,12 +697,12 @@ export default function AvailableSlots() {
                     value={patientPhone}
                     onChange={(e) => setPatientPhone(e.target.value)}
                     disabled={isExpired}
-                    className="w-full px-4 py-3 patient-glass-input placeholder:text-slate-500 disabled:opacity-50"
+                    className="w-full px-4 py-3 patient-glass-input placeholder:text-white/50 disabled:opacity-50"
                   />
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <label htmlFor="bk-reason" className="font-bold text-slate-700 text-[13px]">
+                  <label htmlFor="bk-reason" className="font-bold text-white/90 text-[13px]">
                     Lý do khám bệnh
                   </label>
                   <textarea
@@ -712,12 +712,12 @@ export default function AvailableSlots() {
                     value={visitReason}
                     onChange={(e) => setVisitReason(e.target.value)}
                     disabled={isExpired}
-                    className="w-full px-4 py-3 patient-glass-input placeholder:text-slate-500 min-h-[100px] resize-y disabled:opacity-50"
+                    className="w-full px-4 py-3 patient-glass-input placeholder:text-white/50 min-h-[100px] resize-y disabled:opacity-50"
                   />
                 </div>
 
                 <div className="flex flex-col gap-2 mt-2">
-                  <label className="font-bold text-slate-700 text-[13px]">Phương thức thanh toán</label>
+                  <label className="font-bold text-white/90 text-[13px]">Phương thức thanh toán</label>
                   <div className="flex gap-6 mt-1">
                     <label className="flex items-center gap-2.5 cursor-pointer group">
                       <input
@@ -727,9 +727,9 @@ export default function AvailableSlots() {
                         checked={paymentMethod === "CASH"}
                         onChange={() => setPaymentMethod("CASH")}
                         disabled={isExpired}
-                        className="w-4 h-4 text-teal-600 border-slate-300 focus:ring-teal-500/30 focus:ring-2 disabled:opacity-50"
+                        className="w-4 h-4 text-teal-400 border-white/30 focus:ring-teal-400/30 focus:ring-2 disabled:opacity-50"
                       />
-                      <span className="text-[14px] font-medium text-slate-700 group-hover:text-teal-700 transition-colors">Tiền mặt tại quầy</span>
+                      <span className="text-[14px] font-medium text-white/80 group-hover:text-teal-300 transition-colors">Tiền mặt tại quầy</span>
                     </label>
                     <label className="flex items-center gap-2.5 cursor-pointer group">
                       <input
@@ -739,9 +739,9 @@ export default function AvailableSlots() {
                         checked={paymentMethod === "BANK"}
                         onChange={() => setPaymentMethod("BANK")}
                         disabled={isExpired}
-                        className="w-4 h-4 text-teal-600 border-slate-300 focus:ring-teal-500/30 focus:ring-2 disabled:opacity-50"
+                        className="w-4 h-4 text-teal-400 border-white/30 focus:ring-teal-400/30 focus:ring-2 disabled:opacity-50"
                       />
-                      <span className="text-[14px] font-medium text-slate-700 group-hover:text-teal-700 transition-colors">Chuyển khoản (NH)</span>
+                      <span className="text-[14px] font-medium text-white/80 group-hover:text-teal-300 transition-colors">Chuyển khoản (NH)</span>
                     </label>
                   </div>
                 </div>
@@ -759,7 +759,7 @@ export default function AvailableSlots() {
                   type="button"
                   onClick={handleCancelBooking}
                   disabled={isExpired}
-                  className="px-6 bg-slate-100 text-slate-600 font-bold text-[15px] py-3.5 rounded-xl hover:bg-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 bg-white/10 text-white font-bold text-[15px] py-3.5 rounded-xl hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Hủy bỏ
                 </button>

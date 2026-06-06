@@ -4,6 +4,7 @@ import { CalendarDays, Clock, ArrowLeft, XCircle, RefreshCw } from "lucide-react
 import appointmentService from "../../services/appointmentService";
 import RescheduleModal from "./RescheduleModal";
 import { useToast } from "../../context/useToast.js";
+import { useAuth } from "../../context/useAuth.js";
 
 // Reuse CancelModal
 function CancelModal({ isOpen, onClose, onConfirm, busy }) {
@@ -70,6 +71,8 @@ function CancelModal({ isOpen, onClose, onConfirm, busy }) {
 
 export default function AppointmentDetailPage() {
   const toast = useToast();
+  const { user } = useAuth();
+  const isPatientMode = user?.roles?.includes("PATIENT");
   const { id } = useParams();
   const navigate = useNavigate();
   const [appt, setAppt] = useState(null);
@@ -117,20 +120,39 @@ export default function AppointmentDetailPage() {
     : false;
 
   return (
-    <div style={{ maxWidth: "600px", width: "100%" }}>
-      <button 
-        onClick={() => navigate(-1)}
-        className="inline-flex items-center gap-3 px-5 py-2.5 bg-white/90 hover:bg-white text-teal-900 font-extrabold border border-white shadow-md rounded-full hover:shadow-lg hover:-translate-x-0.5 transition-all duration-300 group mb-6"
-      >
-        <div className="bg-teal-100/80 p-1.5 rounded-full text-teal-700 group-hover:bg-teal-200 transition-colors">
-          <ArrowLeft size={16} strokeWidth={2.5} className="group-hover:-translate-x-0.5 transition-transform" />
+    <div className="max-w-[800px] mx-auto w-full flex flex-col items-center">
+      <div className="w-full mb-10 relative flex flex-col sm:flex-row justify-center items-center min-h-[80px]">
+        <div className="w-full sm:absolute sm:left-0 sm:top-4 flex justify-start mb-4 sm:mb-0 px-4 sm:px-0">
+          <button 
+            onClick={() => navigate(-1)}
+            className={isPatientMode 
+              ? "bg-white/10 hover:bg-white/20 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm"
+              : "inline-flex items-center gap-3 px-5 py-2.5 bg-white/90 hover:bg-white text-teal-900 font-extrabold border border-white shadow-md rounded-full hover:shadow-lg hover:-translate-x-0.5 transition-all duration-300 group mb-6"}
+          >
+            {isPatientMode ? (
+              <ArrowLeft size={18} />
+            ) : (
+              <div className="bg-teal-100/80 p-1.5 rounded-full text-teal-700 group-hover:bg-teal-200 transition-colors">
+                <ArrowLeft size={16} strokeWidth={2.5} className="group-hover:-translate-x-0.5 transition-transform" />
+              </div>
+            )}
+            Quay lại
+          </button>
         </div>
-        Quay lại
-      </button>
+        <div className="flex flex-col items-center text-center mt-2 px-4">
+          <h1 className={isPatientMode 
+            ? "inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-4"
+            : "inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/20 backdrop-blur-xl border border-white/40 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-4"}
+          >
+            <CalendarDays size={32} className={isPatientMode ? "text-teal-400 drop-shadow-md" : "text-teal-300 drop-shadow-md"} />
+            <span className="drop-shadow-md">Chi tiết lịch hẹn</span>
+          </h1>
+        </div>
+      </div>
 
-      <div className="patient-glass-card p-6 md:p-8" style={{ width: "100%" }}>
+      <div className={`${isPatientMode ? "patient-glass-card" : "light-glass-card"} p-6 md:p-8 w-full max-w-[600px] mx-auto`}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-          <h2 style={{ margin: 0, fontSize: "1.25rem", color: "#1e293b", fontWeight: 800 }}>Chi tiết lịch hẹn</h2>
+          <h2 style={{ margin: 0, fontSize: "1.25rem", color: isPatientMode ? "white" : "#1e293b", fontWeight: 800 }}>Chi tiết lịch hẹn</h2>
           <span style={{ padding: "4px 12px", borderRadius: "20px", background: appt.status === "CANCELLED" ? "#fee2e2" : "#e0f2fe", color: appt.status === "CANCELLED" ? "#991b1b" : "#0284c7", fontSize: "12px", fontWeight: 600 }}>
             {appt.status}
           </span>
@@ -138,30 +160,30 @@ export default function AppointmentDetailPage() {
 
         <div style={{ display: "grid", gap: "16px" }}>
           <div>
-            <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 600 }}>MÃ LỊCH HẸN</div>
-            <div style={{ fontSize: "15px", color: "#0f172a", fontWeight: 500 }}>{appt.appointmentCode}</div>
+            <div style={{ fontSize: "12px", color: isPatientMode ? "rgba(255,255,255,0.6)" : "#64748b", fontWeight: 600 }}>MÃ LỊCH HẸN</div>
+            <div style={{ fontSize: "15px", color: isPatientMode ? "white" : "#0f172a", fontWeight: 500 }}>{appt.appointmentCode}</div>
           </div>
           <div>
-            <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 600 }}>BỆNH NHÂN</div>
-            <div style={{ fontSize: "15px", color: "#0f172a" }}>{appt.patientName}</div>
+            <div style={{ fontSize: "12px", color: isPatientMode ? "rgba(255,255,255,0.6)" : "#64748b", fontWeight: 600 }}>BỆNH NHÂN</div>
+            <div style={{ fontSize: "15px", color: isPatientMode ? "white" : "#0f172a" }}>{appt.patientName}</div>
           </div>
           <div>
-            <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 600 }}>BÁC SĨ</div>
-            <div style={{ fontSize: "15px", color: "#0f172a" }}>{appt.doctorName} - {appt.departmentName}</div>
+            <div style={{ fontSize: "12px", color: isPatientMode ? "rgba(255,255,255,0.6)" : "#64748b", fontWeight: 600 }}>BÁC SĨ</div>
+            <div style={{ fontSize: "15px", color: isPatientMode ? "white" : "#0f172a" }}>{appt.doctorName} - {appt.departmentName}</div>
           </div>
           <div style={{ display: "flex", gap: "32px" }}>
             <div>
-              <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 600 }}>NGÀY KHÁM</div>
-              <div style={{ fontSize: "15px", color: "#0f172a", display: "flex", alignItems: "center", gap: "6px" }}><CalendarDays size={16}/> {appt.appointmentDate}</div>
+              <div style={{ fontSize: "12px", color: isPatientMode ? "rgba(255,255,255,0.6)" : "#64748b", fontWeight: 600 }}>NGÀY KHÁM</div>
+              <div style={{ fontSize: "15px", color: isPatientMode ? "white" : "#0f172a", display: "flex", alignItems: "center", gap: "6px" }}><CalendarDays size={16}/> {appt.appointmentDate}</div>
             </div>
             <div>
-              <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 600 }}>GIỜ KHÁM</div>
-              <div style={{ fontSize: "15px", color: "#0f172a", display: "flex", alignItems: "center", gap: "6px" }}><Clock size={16}/> {appt.startTime?.substring(0,5)} - {appt.endTime?.substring(0,5)}</div>
+              <div style={{ fontSize: "12px", color: isPatientMode ? "rgba(255,255,255,0.6)" : "#64748b", fontWeight: 600 }}>GIỜ KHÁM</div>
+              <div style={{ fontSize: "15px", color: isPatientMode ? "white" : "#0f172a", display: "flex", alignItems: "center", gap: "6px" }}><Clock size={16}/> {appt.startTime?.substring(0,5)} - {appt.endTime?.substring(0,5)}</div>
             </div>
           </div>
           <div>
-            <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 600 }}>LÝ DO KHÁM</div>
-            <div style={{ fontSize: "15px", color: "#0f172a" }}>{appt.reasonForVisit || "—"}</div>
+            <div style={{ fontSize: "12px", color: isPatientMode ? "rgba(255,255,255,0.6)" : "#64748b", fontWeight: 600 }}>LÝ DO KHÁM</div>
+            <div style={{ fontSize: "15px", color: isPatientMode ? "rgba(255,255,255,0.9)" : "#0f172a" }}>{appt.reasonForVisit || "—"}</div>
           </div>
           {appt.status === "CANCELLED" && (
             <div style={{ background: "rgba(254, 242, 242, 0.5)", backdropFilter: "blur(4px)", padding: "12px", borderRadius: "12px", border: "1px solid rgba(254, 202, 202, 0.6)" }}>

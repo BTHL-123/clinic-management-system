@@ -56,11 +56,26 @@ import { useAuth } from "./context/useAuth.js";
 
 import LandingPage from "./pages/LandingPage.jsx";
 
+import DoctorHome from "./pages/dashboard/DoctorHome.jsx";
+import PharmacistHome from "./pages/dashboard/PharmacistHome.jsx";
+
 function DashboardIndex() {
   const { user } = useAuth();
-  if (user?.roles?.includes("PATIENT")) {
+  const roles = user?.roles?.map((role) => role.roleName || role) || [];
+
+  if (roles.includes("ADMIN")) {
+    return <DashboardHome />;
+  }
+  if (roles.includes("DOCTOR")) {
+    return <DoctorHome />;
+  }
+  if (roles.includes("PATIENT")) {
     return <PatientHome />;
   }
+  if (roles.includes("PHARMACIST")) {
+    return <PharmacistHome />;
+  }
+  
   return <DashboardHome />;
 }
 
