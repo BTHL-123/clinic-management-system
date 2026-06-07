@@ -136,5 +136,18 @@ public class DoctorScheduleController {
         slotLockService.releaseLock(slotId, userDetails.getUser().getUserId());
         return ResponseEntity.ok(ApiResponse.success("Hủy giữ chỗ thành công", null));
     }
-}
 
+    @PutMapping("/slots/{slotId}/block")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
+    public ResponseEntity<ApiResponse<TimeSlotResponse>> blockSlot(@PathVariable Long slotId) {
+        TimeSlotResponse response = doctorScheduleService.blockSlot(slotId);
+        return ResponseEntity.ok(ApiResponse.success("Khóa ca khám thành công", response));
+    }
+
+    @PutMapping("/slots/{slotId}/unblock")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
+    public ResponseEntity<ApiResponse<TimeSlotResponse>> unblockSlot(@PathVariable Long slotId) {
+        TimeSlotResponse response = doctorScheduleService.unblockSlot(slotId);
+        return ResponseEntity.ok(ApiResponse.success("Mở lại ca khám thành công", response));
+    }
+}

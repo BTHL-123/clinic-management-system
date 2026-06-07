@@ -25,3 +25,9 @@ export const lockSlot = (slotId) =>
 
 export const releaseLock = (slotId) =>
   axiosClient.delete(`/doctor-schedules/slots/${slotId}/lock`);
+
+export const blockSlot = (slotId) =>
+  axiosClient.put(`/doctor-schedules/slots/${slotId}/block`);
+
+export const unblockSlot = (slotId) =>
+  axiosClient.put(`/doctor-schedules/slots/${slotId}/unblock`);
