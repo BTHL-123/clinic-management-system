@@ -74,6 +74,9 @@ public class WalkInAppointmentServiceImpl implements WalkInAppointmentService {
         if ("CANCELLED".equals(slotStatus)) {
             throw new BusinessException("Ca khám này đã bị hủy.");
         }
+        if ("BLOCKED".equals(slotStatus)) {
+            throw new BusinessException("Ca khám này đang tạm đóng.");
+        }
 
         // ── 6. Extra duplicate guard at appointment level ─────────────────────
         boolean duplicateExists = appointmentRepository.existsActiveAppointmentForSlot(
