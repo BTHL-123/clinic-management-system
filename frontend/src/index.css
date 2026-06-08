@@ -2153,6 +2153,113 @@ a {
   padding-top: 0;
 }
 
+.admin-shell .admin-sidebar {
+  position: fixed !important;
+  top: 24px;
+  bottom: 24px;
+  left: 56px;
+  z-index: 45;
+  height: calc(100dvh - 48px);
+  max-height: calc(100dvh - 48px);
+}
+
+.admin-shell .admin-sidebar-collapsed {
+  width: 86px;
+  border-radius: 2rem !important;
+}
+
+.admin-shell .admin-sidebar-expanded {
+  width: 258px;
+}
+
+.admin-shell main {
+  padding-left: 152px;
+}
+
+.admin-shell:has(.admin-sidebar-expanded) main {
+  padding-left: 334px;
+}
+
+.admin-shell .sidebar-scroll {
+  min-height: 0;
+}
+
+.admin-shell .admin-sidebar-collapsed .sidebar-brand {
+  flex: 0 0 82px;
+  justify-content: center;
+  min-height: 82px;
+  padding: 0;
+  gap: 0;
+}
+
+.admin-shell .admin-sidebar-collapsed .sidebar-brand div {
+  display: none;
+}
+
+.admin-shell .admin-sidebar-collapsed .sidebar-brand svg,
+.admin-shell .admin-sidebar-collapsed .sidebar-brand img {
+  max-width: 42px;
+}
+
+.admin-sidebar-toggle {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 1.15rem;
+  margin: 0 auto 12px;
+  background: rgba(255, 255, 255, 0.22);
+  color: rgba(255, 255, 255, 0.92);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.admin-sidebar-toggle .rotate {
+  transform: rotate(180deg);
+}
+
+.admin-quick-link {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 1.15rem;
+  margin: 0 auto;
+  color: rgba(255, 255, 255, 0.88);
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.admin-quick-link:hover,
+.admin-quick-link.active {
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.admin-shell .admin-sidebar-collapsed .sidebar-nav {
+  width: 100%;
+  gap: 10px;
+}
+
+.admin-shell .admin-sidebar-collapsed .sidebar-scroll {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  padding: 14px 0;
+}
+
+.admin-shell .admin-sidebar-collapsed .sidebar-footer {
+  padding: 14px 0;
+}
+
+.admin-shell .admin-sidebar-collapsed .sidebar-footer div {
+  justify-content: center;
+}
+
 .admin-shell .admin-nav-trigger,
 .admin-shell .admin-child-link {
   border-radius: 1rem;
@@ -2563,6 +2670,10 @@ a {
   .dashboard-sidebar,
   .admin-sidebar {
     display: none;
+  }
+
+  .admin-shell main {
+    padding-left: 1rem;
   }
 
   .row-actions {

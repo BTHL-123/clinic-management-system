@@ -32,6 +32,7 @@ import {
   FileClock,
   Settings,
   ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
@@ -141,6 +142,17 @@ const adminMenuGroups = [
   },
 ];
 
+const adminQuickItems = [
+  { to: "/dashboard", label: "Tổng quan", icon: LayoutDashboard, end: true },
+  { to: "/dashboard/appointments", label: "Lịch hẹn", icon: CalendarDays },
+  { to: "/dashboard/patients", label: "Bệnh nhân", icon: Users },
+  { to: "/dashboard/doctors", label: "Bác sĩ", icon: UserRound },
+  { to: "/dashboard/users", label: "Người dùng", icon: UsersRound },
+  { to: "/dashboard/medicines", label: "Dịch vụ / thuốc", icon: Pill },
+  { to: "/dashboard/security", label: "Phân quyền", icon: Shield },
+  { to: "/dashboard/system-settings", label: "Cấu hình", icon: Settings },
+];
+
 const normalizeRole = (role) => {
   const roleName = typeof role === "string" ? role : role?.roleName;
   return roleName?.replace(/^ROLE_/, "").toUpperCase();
@@ -153,6 +165,9 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const isAdmin = userRoles.has("ADMIN");
+  const [adminSidebarExpanded, setAdminSidebarExpanded] = useState(() => {
+    return localStorage.getItem("adminSidebarExpanded") === "true";
+  });
   const activeAdminGroup = adminMenuGroups.find((group) =>
     group.items.some((item) =>
       item.end ? location.pathname === item.to : location.pathname.startsWith(item.to),
@@ -162,6 +177,12 @@ export default function Sidebar() {
 
   const hasInventoryRoles =
     userRoles.has("ADMIN") || userRoles.has("PHARMACIST");
+
+  useEffect(() => {
+    if (isAdmin) {
+      localStorage.setItem("adminSidebarExpanded", adminSidebarExpanded);
+    }
+  }, [adminSidebarExpanded, isAdmin]);
 
   useEffect(() => {
     if (!hasInventoryRoles) {
@@ -211,10 +232,10 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className={`dashboard-sidebar ${isAdmin ? "admin-sidebar" : ""}`}>
-      <div className="sidebar-brand" onClick={() => navigate('/dashboard')}>
-        <Logo size={42} />
-        {isAdmin && (
+    <aside className={`dashboard-sidebar ${isAdmin ? `admin-sidebar ${adminSidebarExpanded ? "admin-sidebar-expanded" : "admin-sidebar-collapsed"}` : ""}`}>
+      <div className="sidebar-brand" onClick={() => navigate('/dashboard')} title="Trang chủ">
+        <Logo size={42} showText={!isAdmin || adminSidebarExpanded} />
+        {isAdmin && adminSidebarExpanded && (
           <div>
             <strong>Clinic Admin</strong>
             <span>Operations</span>
@@ -223,8 +244,33 @@ export default function Sidebar() {
       </div>
       
       <div className="sidebar-scroll custom-scrollbar">
+        {isAdmin && (
+          <button
+            className="admin-sidebar-toggle"
+            type="button"
+            aria-label={adminSidebarExpanded ? "Thu gọn sidebar" : "Mở rộng sidebar"}
+            onClick={() => setAdminSidebarExpanded((expanded) => !expanded)}
+          >
+            <ChevronRight size={22} className={adminSidebarExpanded ? "rotate" : ""} />
+          </button>
+        )}
         <nav className="sidebar-nav" aria-label="Main navigation">
-          {isAdmin ? (
+          {isAdmin && !adminSidebarExpanded ? (
+            adminQuickItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <NavLink
+                  key={item.label}
+                  to={item.to}
+                  className={({ isActive }) => `admin-quick-link ${isActive ? "active" : ""}`}
+                  end={item.end}
+                  title={item.label}
+                >
+                  <Icon size={22} strokeWidth={2.25} />
+                </NavLink>
+              );
+            })
+          ) : isAdmin ? (
             adminMenuGroups.map((group) => {
               const GroupIcon = group.icon;
               const isOpen = openAdminGroups.has(group.key);
@@ -293,8 +339,14 @@ export default function Sidebar() {
       
       <div className="sidebar-footer">
         <div>
-          <span>Medical Clinic</span>
-          <strong>v2.0</strong>
+          {isAdmin && !adminSidebarExpanded ? (
+            <strong>v2</strong>
+          ) : (
+            <>
+              <span>Medical Clinic</span>
+              <strong>v2.0</strong>
+            </>
+          )}
         </div>
       </div>
     </aside>
