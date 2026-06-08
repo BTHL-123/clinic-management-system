@@ -3,11 +3,17 @@ import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import NotificationBell from "../components/NotificationBell.jsx";
 import { useAuth } from "../context/useAuth.js";
+import Sidebar from "../components/Sidebar.jsx";
 import DoctorSidebar from "./DoctorSidebar.jsx";
 import PharmacistSidebar from "./PharmacistSidebar.jsx";
 import PatientSidebar from "./PatientSidebar.jsx";
 import bgImage from "../assets/images/background_2k.png";
 import patientBgImage from "../assets/images/patient_bg.png";
+
+const normalizeRole = (role) => {
+  const roleName = typeof role === "string" ? role : role?.roleName;
+  return roleName?.replace(/^ROLE_/, "").toUpperCase();
+};
 
 export default function DashboardLayout() {
   const { user, logout } = useAuth();
@@ -27,9 +33,9 @@ export default function DashboardLayout() {
     .join("")
     .toUpperCase();
 
-  const rolesText = user?.roles?.map(r => r.roleName ? r.roleName : r).join(", ") || "User";
+  const roles = (user?.roles || []).map(normalizeRole).filter(Boolean);
+  const rolesText = roles.join(", ") || "User";
 
-  const roles = user?.roles?.map(r => r.roleName ? r.roleName : r) || [];
   const isDoctorOrPharmacist = roles.includes("DOCTOR") || roles.includes("PHARMACIST");
   const isPatientOnly = roles.includes("PATIENT") && !isDoctorOrPharmacist;
 
@@ -92,7 +98,7 @@ export default function DashboardLayout() {
       )}
 
       {/* Floating Context Pill (Top Right) - Hidden for Doctors as they have a custom topbar */}
-      {!user?.roles?.includes("DOCTOR") && (
+      {!roles.includes("DOCTOR") && (
         <header className="fixed top-6 right-6 z-50 flex justify-end">
           <div className={`${isPatientOnly ? "patient-glass-panel" : "bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.08)]"} py-2.5 px-5 rounded-[2rem] flex items-center gap-4 md:gap-6`}>
 
@@ -138,13 +144,15 @@ export default function DashboardLayout() {
         className="flex-1 w-full relative z-10 flex flex-col"
       >
         <main className="flex-1 w-full max-w-[1700px] mx-auto pt-[80px] px-4 md:px-6 pb-4 md:pb-6 flex gap-6 h-full">
-          {user?.roles?.includes("DOCTOR") ? (
+          {roles.includes("DOCTOR") ? (
             <DoctorSidebar />
-          ) : user?.roles?.includes("PHARMACIST") ? (
+          ) : roles.includes("PHARMACIST") ? (
             <PharmacistSidebar />
-          ) : user?.roles?.includes("PATIENT") ? (
+          ) : roles.includes("PATIENT") ? (
             <PatientSidebar />
-          ) : null}
+          ) : (
+            <Sidebar />
+          )}
 
           <div className="flex-1 min-w-0 flex flex-col h-full">
             <Outlet />
