@@ -1,3 +1,10 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+
+@custom-variant dark (&:is(.dark *));
+
 :root {
   color: #1f2933;
   background: #f6f7f9;
@@ -8,6 +15,38 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
 }
 
 .appointment-week-page {
@@ -690,6 +729,30 @@ body {
   margin: 0;
 }
 
+/* Custom Scrollbar Styles */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
 .toast-viewport {
   position: fixed;
   top: 18px;
@@ -1152,6 +1215,250 @@ a {
   color: #b42318;
 }
 
+.dashboard-sidebar {
+  position: relative;
+  z-index: 30;
+  display: flex;
+  width: 280px;
+  height: 100%;
+  flex-shrink: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(22px);
+}
+
+.sidebar-brand {
+  display: flex;
+  min-height: 88px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.65);
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.sidebar-brand:hover {
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.sidebar-brand div {
+  display: grid;
+  gap: 2px;
+}
+
+.sidebar-brand strong {
+  color: #0f172a;
+  font-size: 0.94rem;
+  font-weight: 850;
+}
+
+.sidebar-brand span {
+  color: #64748b;
+  font-size: 0.74rem;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.sidebar-scroll {
+  flex: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 14px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebar-link {
+  position: relative;
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 11px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: #5f6f85;
+  font-size: 0.91rem;
+  font-weight: 780;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.sidebar-link:hover {
+  border-color: #e2e8f0;
+  background: #ffffff;
+  color: #1e293b;
+}
+
+.sidebar-link.active {
+  border-color: #bde8e2;
+  background: #ecfdf8;
+  color: #0f766e;
+}
+
+.sidebar-link.active::before {
+  position: absolute;
+  inset: 10px auto 10px 0;
+  width: 3px;
+  border-radius: 999px;
+  background: #0f766e;
+  content: "";
+}
+
+.sidebar-link span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-badge {
+  margin-left: auto;
+  border-radius: 999px;
+  background: #e11d48;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1;
+  padding: 4px 7px;
+}
+
+.sidebar-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.65);
+  padding: 14px 16px;
+}
+
+.sidebar-footer div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 750;
+}
+
+.admin-sidebar {
+  width: 236px;
+  border-color: #dfe7ef;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+}
+
+.admin-sidebar .sidebar-brand {
+  min-height: 76px;
+  justify-content: flex-start;
+  padding: 0 16px;
+  border-bottom-color: #e7edf4;
+}
+
+.admin-sidebar .sidebar-scroll {
+  padding: 10px;
+}
+
+.admin-sidebar .sidebar-link {
+  min-height: 42px;
+  border-radius: 8px;
+  padding: 9px 10px;
+  font-size: 0.9rem;
+}
+
+.admin-nav-group {
+  display: grid;
+  gap: 4px;
+}
+
+.admin-nav-trigger {
+  display: flex;
+  min-height: 42px;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #526174;
+  padding: 9px 10px;
+  text-align: left;
+  font-size: 0.9rem;
+  font-weight: 820;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.admin-nav-trigger:hover {
+  border-color: #e2e8f0;
+  background: #ffffff;
+  color: #172033;
+}
+
+.admin-nav-trigger.active {
+  border-color: #bde8e2;
+  background: #ecfdf8;
+  color: #0f766e;
+}
+
+.admin-nav-trigger span {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-nav-trigger .open {
+  transform: rotate(180deg);
+}
+
+.admin-nav-children {
+  display: grid;
+  gap: 2px;
+  border-left: 1px solid #dbe5ee;
+  margin: 0 0 4px 19px;
+  padding: 2px 0 2px 9px;
+}
+
+.admin-child-link {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 8px;
+  border-radius: 8px;
+  color: #64748b;
+  padding: 7px 9px;
+  font-size: 0.83rem;
+  font-weight: 720;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.admin-child-link:hover {
+  background: #f8fafc;
+  color: #1e293b;
+}
+
+.admin-child-link.active {
+  background: #f0fdfa;
+  color: #0f766e;
+  font-weight: 830;
+}
+
+.admin-child-link span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-sidebar .sidebar-footer {
+  border-top-color: #e7edf4;
+}
+
 .content {
   padding: 28px;
 }
@@ -1427,6 +1734,900 @@ a {
   font-size: 1.7rem;
 }
 
+.admin-shell main {
+  max-width: 1560px;
+  padding-top: 92px;
+  gap: 18px;
+}
+
+.admin-shell .page-stack {
+  gap: 14px;
+}
+
+.admin-shell .page-heading {
+  min-height: 54px;
+  align-items: center;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.78);
+  padding-bottom: 12px;
+}
+
+.admin-shell .page-heading h1 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.35rem;
+  font-weight: 850;
+  letter-spacing: 0;
+}
+
+.admin-shell .muted,
+.admin-shell .page-heading p {
+  color: #64748b;
+  font-size: 0.88rem;
+}
+
+.admin-shell .panel {
+  border-color: #dfe7ef;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.admin-shell .panel h2,
+.admin-shell .panel h3 {
+  color: #172033;
+  font-size: 1rem;
+  font-weight: 820;
+}
+
+.admin-shell .toolbar {
+  grid-template-columns: minmax(260px, 1fr) 170px 180px 40px;
+  gap: 10px;
+}
+
+.admin-shell .toolbar select,
+.admin-shell .search-box,
+.admin-shell .form-grid input,
+.admin-shell .form-grid select,
+.admin-shell .field input,
+.admin-shell .field select,
+.admin-shell .field textarea {
+  border-color: #d9e2ec;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.admin-shell .primary-button {
+  min-height: 40px;
+  border-radius: 8px;
+  background: #0f766e;
+  font-size: 0.92rem;
+  box-shadow: none;
+}
+
+.admin-shell .primary-button:hover {
+  background: #115e59;
+  box-shadow: none;
+  transform: none;
+}
+
+.admin-shell .ghost-button,
+.admin-shell .icon-button {
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.admin-shell .split-layout {
+  grid-template-columns: minmax(300px, 0.78fr) minmax(0, 1.5fr);
+  gap: 14px;
+}
+
+.admin-shell .data-table {
+  border-color: #e5ebf2;
+  border-radius: 8px;
+}
+
+.admin-shell .table-head {
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.76rem;
+}
+
+.admin-shell .table-row {
+  min-height: 58px;
+  border-bottom-color: #e8eef5;
+}
+
+.admin-shell .table-row:hover:not(.table-head) {
+  background: #fbfdff;
+}
+
+.admin-shell .status-pill {
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 0.74rem;
+}
+
+.admin-account-menu {
+  position: relative;
+}
+
+.admin-account-trigger {
+  display: flex;
+  height: 42px;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #dbe5ee;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #64748b;
+  padding: 3px 8px 3px 3px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.admin-account-trigger .open {
+  transform: rotate(180deg);
+}
+
+.admin-account-avatar {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #0f766e;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.admin-account-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-account-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  display: grid;
+  width: 190px;
+  gap: 4px;
+  border: 1px solid #dbe5ee;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 6px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+}
+
+.admin-account-dropdown button {
+  display: flex;
+  min-height: 36px;
+  align-items: center;
+  gap: 9px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #405064;
+  padding: 8px 9px;
+  text-align: left;
+  font-size: 0.86rem;
+  font-weight: 760;
+}
+
+.admin-account-dropdown button:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.admin-account-dropdown button.danger {
+  color: #b42318;
+}
+
+.admin-account-dropdown button.danger:hover {
+  background: #fef2f2;
+}
+
+.admin-shell {
+  background: #0d4f56;
+}
+
+.admin-shell > .fixed.inset-0 {
+  background-color: #0b4f55 !important;
+}
+
+.admin-shell > .fixed.inset-0::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(4, 46, 57, 0.36), rgba(13, 148, 136, 0.08) 46%, rgba(6, 63, 71, 0.32)),
+    radial-gradient(circle at 68% 18%, rgba(184, 255, 244, 0.22), transparent 27%),
+    radial-gradient(circle at 34% 30%, rgba(150, 246, 232, 0.18), transparent 30%),
+    radial-gradient(circle at 82% 72%, rgba(255, 255, 255, 0.1), transparent 24%);
+  content: "";
+}
+
+.admin-shell main {
+  max-width: 1500px;
+  gap: 26px;
+  padding-top: 86px;
+}
+
+.admin-shell header > div {
+  border-color: rgba(255, 255, 255, 0.45) !important;
+  background: rgba(222, 253, 247, 0.24) !important;
+  box-shadow:
+    0 16px 34px rgba(7, 44, 51, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.58) !important;
+}
+
+.admin-shell .admin-sidebar {
+  width: 258px;
+  border-color: rgba(255, 255, 255, 0.5);
+  border-radius: 28px;
+  background: rgba(222, 253, 247, 0.24);
+  box-shadow:
+    0 18px 50px rgba(7, 44, 51, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.58);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.admin-shell .admin-sidebar .sidebar-brand {
+  min-height: 82px;
+  border-bottom-color: rgba(255, 255, 255, 0.22);
+}
+
+.admin-shell .admin-sidebar .sidebar-brand strong,
+.admin-shell .admin-sidebar .sidebar-brand span,
+.admin-shell .admin-nav-trigger,
+.admin-shell .admin-child-link,
+.admin-shell .sidebar-footer div {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.admin-shell .admin-nav-trigger:hover,
+.admin-shell .admin-nav-trigger.active {
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.admin-shell .admin-nav-children {
+  border-left-color: rgba(255, 255, 255, 0.24);
+}
+
+.admin-shell .admin-child-link:hover,
+.admin-shell .admin-child-link.active {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.admin-shell .sidebar-footer {
+  border-top-color: rgba(255, 255, 255, 0.22);
+}
+
+.admin-shell .page-heading {
+  border-bottom-color: rgba(255, 255, 255, 0.22);
+}
+
+.admin-shell .page-heading h1,
+.admin-shell .admin-dashboard h1,
+.admin-shell .panel h1,
+.admin-shell .panel h2,
+.admin-shell .panel h3 {
+  color: #f8fffd !important;
+  text-shadow: 0 2px 12px rgba(4, 47, 46, 0.2);
+}
+
+.admin-shell .muted,
+.admin-shell .page-heading p,
+.admin-shell .admin-dashboard p,
+.admin-shell .table-header span,
+.admin-shell .pagination {
+  color: rgba(230, 255, 250, 0.76) !important;
+}
+
+.admin-shell .panel,
+.admin-shell .role-card,
+.admin-shell .permission-item,
+.admin-shell .metric-card,
+.admin-shell .data-table,
+.admin-shell .admin-dashboard > div:not(:first-child) > div,
+.admin-shell .admin-dashboard table {
+  border-color: rgba(255, 255, 255, 0.48) !important;
+  border-radius: 28px !important;
+  background: rgba(222, 253, 247, 0.28) !important;
+  box-shadow:
+    0 18px 50px rgba(7, 44, 51, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.58) !important;
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+}
+
+.admin-shell .admin-dashboard > div:nth-of-type(2) > div {
+  min-height: 132px;
+}
+
+.admin-shell .admin-dashboard > div:nth-of-type(3) > div,
+.admin-shell .admin-dashboard > div:nth-of-type(4) > div {
+  overflow: hidden;
+}
+
+.admin-shell .admin-dashboard h3,
+.admin-shell .admin-dashboard td,
+.admin-shell .admin-dashboard th,
+.admin-shell .admin-dashboard span,
+.admin-shell .text-button,
+.admin-shell .role-card,
+.admin-shell .permission-item {
+  color: #092033 !important;
+}
+
+.admin-shell .admin-dashboard > div:first-child h1,
+.admin-shell .admin-dashboard > div:first-child p {
+  color: #f8fffd !important;
+}
+
+.admin-shell .admin-dashboard > div:first-child > div:last-child {
+  border: 1px solid rgba(255, 255, 255, 0.34) !important;
+  background: rgba(222, 253, 247, 0.22) !important;
+  border-radius: 999px !important;
+  backdrop-filter: blur(16px);
+}
+
+.admin-shell .admin-dashboard > div:first-child button {
+  border-radius: 999px !important;
+}
+
+.admin-shell .toolbar select,
+.admin-shell .search-box,
+.admin-shell .form-grid input,
+.admin-shell .form-grid select,
+.admin-shell .field input,
+.admin-shell .field select,
+.admin-shell .field textarea,
+.admin-shell .admin-account-trigger,
+.admin-shell .admin-account-dropdown {
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  background: rgba(255, 255, 255, 0.76) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.admin-shell .primary-button {
+  border-radius: 14px;
+  background: #0f988c;
+  box-shadow: 0 12px 26px rgba(15, 118, 110, 0.24);
+}
+
+.admin-shell .primary-button:hover {
+  background: #0f766e;
+}
+
+.admin-shell .ghost-button,
+.admin-shell .icon-button {
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.admin-shell .table-head,
+.admin-shell .admin-dashboard thead tr {
+  background: rgba(255, 255, 255, 0.24) !important;
+  color: rgba(9, 32, 51, 0.72) !important;
+}
+
+.admin-shell .table-row,
+.admin-shell .admin-dashboard tr {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.admin-shell .table-row:hover:not(.table-head),
+.admin-shell .admin-dashboard tbody tr:hover {
+  background: rgba(255, 255, 255, 0.16) !important;
+}
+
+/* Admin pages reuse the Patient visual language: vivid teal shell + frosted cards. */
+.admin-shell .admin-sidebar,
+.admin-shell header > div,
+.admin-shell .panel,
+.admin-shell .role-card,
+.admin-shell .permission-item,
+.admin-shell .metric-card,
+.admin-shell .data-table,
+.admin-shell .admin-dashboard > div:not(:first-child) > div {
+  background: rgba(255, 255, 255, 0.34) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.55) !important;
+  border-radius: 2rem !important;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.18),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
+}
+
+.admin-shell .admin-sidebar {
+  width: 258px;
+  padding-top: 0;
+}
+
+.admin-shell .admin-sidebar {
+  position: fixed !important;
+  top: 24px;
+  bottom: 24px;
+  left: 56px;
+  z-index: 45;
+  height: calc(100dvh - 48px);
+  max-height: calc(100dvh - 48px);
+}
+
+.admin-shell .admin-sidebar-collapsed {
+  width: 86px;
+  border-radius: 2rem !important;
+}
+
+.admin-shell .admin-sidebar-expanded {
+  width: 258px;
+}
+
+.admin-shell main {
+  padding-left: 152px;
+}
+
+.admin-shell:has(.admin-sidebar-expanded) main {
+  padding-left: 334px;
+}
+
+.admin-shell .sidebar-scroll {
+  min-height: 0;
+}
+
+.admin-shell .admin-sidebar-collapsed .sidebar-brand {
+  flex: 0 0 82px;
+  justify-content: center;
+  min-height: 82px;
+  padding: 0;
+  gap: 0;
+}
+
+.admin-shell .admin-sidebar-collapsed .sidebar-brand div {
+  display: none;
+}
+
+.admin-shell .admin-sidebar-collapsed .sidebar-brand svg,
+.admin-shell .admin-sidebar-collapsed .sidebar-brand img {
+  max-width: 42px;
+}
+
+.admin-sidebar-toggle {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 1.15rem;
+  margin: 0 auto 12px;
+  background: rgba(255, 255, 255, 0.22);
+  color: rgba(255, 255, 255, 0.92);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.admin-sidebar-toggle .rotate {
+  transform: rotate(180deg);
+}
+
+.admin-quick-link {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 1.15rem;
+  margin: 0 auto;
+  color: rgba(255, 255, 255, 0.88);
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.admin-quick-link:hover,
+.admin-quick-link.active {
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.admin-shell .admin-sidebar-collapsed .sidebar-nav {
+  width: 100%;
+  gap: 10px;
+}
+
+.admin-shell .admin-sidebar-collapsed .sidebar-scroll {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  padding: 14px 0;
+}
+
+.admin-shell .admin-sidebar-collapsed .sidebar-footer {
+  padding: 14px 0;
+}
+
+.admin-shell .admin-sidebar-collapsed .sidebar-footer div {
+  justify-content: center;
+}
+
+.admin-shell .admin-nav-trigger,
+.admin-shell .admin-child-link {
+  border-radius: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.admin-shell .admin-nav-trigger:hover,
+.admin-shell .admin-nav-trigger.active,
+.admin-shell .admin-child-link:hover,
+.admin-shell .admin-child-link.active {
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.admin-shell .admin-nav-children {
+  border-left-color: rgba(255, 255, 255, 0.25);
+}
+
+.admin-shell .sidebar-brand strong,
+.admin-shell .sidebar-brand span,
+.admin-shell .sidebar-footer div {
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.admin-shell .page-heading h1,
+.admin-shell .admin-dashboard > div:first-child h1 {
+  color: #ffffff !important;
+  font-size: clamp(1.8rem, 3vw, 3rem) !important;
+  font-weight: 900 !important;
+  letter-spacing: 0 !important;
+}
+
+.admin-shell .page-heading p,
+.admin-shell .admin-dashboard > div:first-child p,
+.admin-shell .muted {
+  color: rgba(204, 251, 241, 0.9) !important;
+}
+
+.admin-shell .panel h2,
+.admin-shell .panel h3,
+.admin-shell .table-header h2,
+.admin-shell .table-header h3 {
+  color: #071827 !important;
+  font-weight: 900;
+}
+
+.admin-shell .toolbar select,
+.admin-shell .search-box,
+.admin-shell .form-grid input,
+.admin-shell .form-grid select,
+.admin-shell .field input,
+.admin-shell .field select,
+.admin-shell .field textarea,
+.admin-shell .admin-account-trigger,
+.admin-shell .admin-account-dropdown {
+  background: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.85) !important;
+  border-radius: 0.9rem !important;
+}
+
+.admin-shell .primary-button {
+  border-radius: 1rem !important;
+  background: #0d9488 !important;
+  color: #ffffff !important;
+  font-weight: 900;
+  box-shadow: 0 0 30px rgba(45, 212, 191, 0.22) !important;
+}
+
+.admin-shell .ghost-button,
+.admin-shell .icon-button {
+  border-color: rgba(255, 255, 255, 0.45) !important;
+  background: rgba(255, 255, 255, 0.24) !important;
+  color: #083344 !important;
+}
+
+.admin-shell .admin-dashboard > div:first-child > div:last-child {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+  border-radius: 2rem !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 2px 8px rgba(0, 0, 0, 0.12) !important;
+}
+
+.admin-shell .appointment-week-toolbar,
+.admin-shell .appointment-calendar-panel,
+.admin-shell .appointment-side-panel,
+.admin-shell .appointment-table-section,
+.admin-shell .appointment-day-summary,
+.admin-shell .appointment-resource-head,
+.admin-shell .appointment-doctor-card,
+.admin-shell .appointment-selected-card {
+  background: rgba(255, 255, 255, 0.34) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.55) !important;
+  border-radius: 2rem !important;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.18),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
+}
+
+.admin-shell .appointment-week-title strong,
+.admin-shell .appointment-section-title h2 {
+  color: #ffffff !important;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.admin-shell .appointment-week-title span,
+.admin-shell .appointment-legend,
+.admin-shell .appointment-section-title p,
+.admin-shell .appointment-resource-time-axis,
+.admin-shell .appointment-resource-head small,
+.admin-shell .appointment-doctor-card small,
+.admin-shell .appointment-selected-card span {
+  color: rgba(204, 251, 241, 0.9) !important;
+}
+
+.admin-shell .appointment-filter-control,
+.admin-shell .appointment-panel-tabs,
+.admin-shell .calendar-ghost-btn,
+.admin-shell .appointment-table-slot-btn {
+  background: rgba(255, 255, 255, 0.22) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+  border-radius: 1.25rem !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.admin-shell .appointment-filter-control select,
+.admin-shell .appointment-panel-tabs button,
+.admin-shell .appointment-resource-head strong,
+.admin-shell .appointment-doctor-card strong,
+.admin-shell .appointment-selected-card strong {
+  color: #071827 !important;
+}
+
+.admin-shell .appointment-panel-tabs button.active {
+  background: rgba(255, 255, 255, 0.76) !important;
+  color: #0f766e !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.admin-shell .appointment-day-summary.selected {
+  border-color: rgba(94, 234, 212, 0.95) !important;
+  background: rgba(204, 251, 241, 0.38) !important;
+  box-shadow:
+    0 0 0 3px rgba(94, 234, 212, 0.22),
+    0 8px 32px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
+}
+
+.admin-shell .appointment-day-summary strong,
+.admin-shell .appointment-day-summary span,
+.admin-shell .appointment-day-summary small,
+.admin-shell .appointment-day-summary em {
+  color: #071827 !important;
+}
+
+.admin-shell .appointment-day-summary em {
+  background: rgba(255, 255, 255, 0.36) !important;
+}
+
+.admin-shell .appointment-resource-slot {
+  border-radius: 1rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.admin-shell .appointment-resource-slot.free {
+  background: rgba(255, 255, 255, 0.18) !important;
+  border-color: rgba(255, 255, 255, 0.45) !important;
+  color: rgba(204, 251, 241, 0.9) !important;
+}
+
+.admin-shell .appointment-resource-slot.available,
+.admin-shell .appointment-resource-slot.full {
+  background: rgba(204, 251, 241, 0.55) !important;
+  border-color: rgba(94, 234, 212, 0.8) !important;
+}
+
+.admin-shell .appointment-resource-slot.available span,
+.admin-shell .appointment-resource-slot.full span {
+  background: rgba(153, 246, 228, 0.72) !important;
+}
+
+.admin-shell .appointment-resource-slot.blocked {
+  background: rgba(255, 247, 237, 0.76) !important;
+  border-color: rgba(251, 146, 60, 0.7) !important;
+}
+
+.admin-shell .appointment-resource-slot.booked {
+  background: rgba(219, 234, 254, 0.76) !important;
+}
+
+.admin-shell .appointment-resource-slot.locked {
+  background: rgba(226, 232, 240, 0.72) !important;
+}
+
+.admin-shell .appointment-resource-slot.cancelled,
+.admin-shell .appointment-resource-slot.on_leave {
+  background: rgba(254, 226, 226, 0.76) !important;
+}
+
+.admin-shell .appointment-resource-empty {
+  border-color: rgba(255, 255, 255, 0.45) !important;
+  border-radius: 1.25rem !important;
+  color: rgba(204, 251, 241, 0.9) !important;
+}
+
+.admin-shell .appointment-panel-submit,
+.admin-shell .calendar-primary-btn {
+  border-radius: 1rem !important;
+  background: #0d9488 !important;
+  box-shadow: 0 0 30px rgba(45, 212, 191, 0.22) !important;
+}
+
+.admin-shell .appointment-warning {
+  background: rgba(255, 247, 237, 0.8) !important;
+  border-color: rgba(251, 146, 60, 0.7) !important;
+  border-radius: 1rem !important;
+}
+
+/* Admin global de-white pass: catches legacy pages with generic panels, modals, tables, and inline white styles. */
+.admin-shell .light-glass-card,
+.admin-shell .light-glass-subcard,
+.admin-shell .modal-card,
+.admin-shell .table-wrapper,
+.admin-shell .search-bar,
+.admin-shell .filter-bar,
+.admin-shell .form-card,
+.admin-shell .page-card,
+.admin-shell .content-card,
+.admin-shell .stats-card,
+.admin-shell .stat-card,
+.admin-shell .summary-card,
+.admin-shell .dashboard-card,
+.admin-shell .management-card,
+.admin-shell .card,
+.admin-shell [class*="Card"],
+.admin-shell [class*="card"],
+.admin-shell [style*='background: "#fff"'],
+.admin-shell [style*="background: '#fff'"],
+.admin-shell [style*='background: "#ffffff"'],
+.admin-shell [style*="background: '#ffffff'"],
+.admin-shell [style*="background: rgb(255, 255, 255)"],
+.admin-shell [style*="background-color: rgb(255, 255, 255)"],
+.admin-shell [style*="background: #fff"],
+.admin-shell [style*="background: #ffffff"],
+.admin-shell [style*="background-color: #fff"],
+.admin-shell [style*="background-color: #ffffff"] {
+  background: rgba(255, 255, 255, 0.34) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border-color: rgba(255, 255, 255, 0.55) !important;
+  border-radius: 2rem !important;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.18),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
+}
+
+.admin-shell .modal-overlay {
+  background: rgba(2, 44, 34, 0.48) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+}
+
+.admin-shell .data-table,
+.admin-shell table {
+  background: transparent !important;
+}
+
+.admin-shell .data-table th,
+.admin-shell table th,
+.admin-shell thead,
+.admin-shell thead tr,
+.admin-shell [style*="background: #f8fafc"],
+.admin-shell [style*='background: "#f8fafc"'],
+.admin-shell [style*="background: #f1f5f9"],
+.admin-shell [style*='background: "#f1f5f9"'] {
+  background: rgba(255, 255, 255, 0.18) !important;
+  color: rgba(7, 24, 39, 0.82) !important;
+}
+
+.admin-shell .data-table td,
+.admin-shell table td,
+.admin-shell .cell-name,
+.admin-shell .cell-desc {
+  border-color: rgba(255, 255, 255, 0.16) !important;
+}
+
+.admin-shell input:not([type="checkbox"]):not([type="radio"]),
+.admin-shell select,
+.admin-shell textarea {
+  background: rgba(255, 255, 255, 0.82) !important;
+  border-color: rgba(255, 255, 255, 0.72) !important;
+  border-radius: 0.9rem !important;
+}
+
+.admin-shell button[style*="background: #fff"],
+.admin-shell button[style*='background: "#fff"'],
+.admin-shell button[style*="background: #ffffff"],
+.admin-shell button[style*='background: "#ffffff"'] {
+  background: rgba(255, 255, 255, 0.24) !important;
+  border-color: rgba(255, 255, 255, 0.45) !important;
+}
+
+.admin-shell [style*="box-shadow"],
+.admin-shell [style*="boxShadow"] {
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+}
+
+/* Admin input readability pass: keep controls glassy but text high-contrast. */
+.admin-shell input:not([type="checkbox"]):not([type="radio"]),
+.admin-shell select,
+.admin-shell textarea,
+.admin-shell .search-box,
+.admin-shell .search-box input,
+.admin-shell .search-bar input,
+.admin-shell .appointment-filter-control,
+.admin-shell .appointment-filter-control select,
+.admin-shell .light-glass-input {
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: #071827 !important;
+  border-color: rgba(255, 255, 255, 0.86) !important;
+  text-shadow: none !important;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
+}
+
+.admin-shell .search-box {
+  color: #334155 !important;
+}
+
+.admin-shell input::placeholder,
+.admin-shell textarea::placeholder,
+.admin-shell .search-box input::placeholder,
+.admin-shell .search-bar input::placeholder,
+.admin-shell .light-glass-input::placeholder {
+  color: #475569 !important;
+  opacity: 0.82 !important;
+}
+
+.admin-shell input:focus,
+.admin-shell select:focus,
+.admin-shell textarea:focus,
+.admin-shell .search-box:focus-within,
+.admin-shell .search-bar input:focus,
+.admin-shell .appointment-filter-control:focus-within {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border-color: rgba(94, 234, 212, 0.92) !important;
+  box-shadow:
+    0 0 0 4px rgba(45, 212, 191, 0.24),
+    0 4px 16px rgba(0, 0, 0, 0.1) !important;
+  outline: none !important;
+}
+
 @media (max-width: 900px) {
   .auth-shell {
     grid-template-columns: 1fr;
@@ -1464,6 +2665,15 @@ a {
 
   .table-row {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-sidebar,
+  .admin-sidebar {
+    display: none;
+  }
+
+  .admin-shell main {
+    padding-left: 1rem;
   }
 
   .row-actions {
@@ -1942,4 +3152,646 @@ a {
 
 .notification-view-all:hover {
   color: #0099cc;
+}
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: 'Geist Variable', sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  cursor: pointer;
+  padding: 0;
+}
+
+.notification-header .mark-all-read:hover {
+  text-decoration: underline;
+}
+
+.notification-list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 340px;
+}
+
+.notification-item {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.notification-item:hover {
+  background: rgba(241, 245, 249, 0.5);
+}
+
+.notification-item.unread {
+  background: rgba(240, 249, 255, 0.8);
+}
+
+.notification-item.unread:hover {
+  background: rgba(224, 242, 254, 0.7);
+}
+
+.notification-item .item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.notification-item .item-icon.type-appointment {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.notification-item .item-icon.type-system {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.notification-item .item-icon.type-alert {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.notification-item .item-details {
+  flex: 1;
+}
+
+.notification-item .item-title {
+  margin: 0 0 4px;
+  font-size: 0.88rem;
+  font-weight: 650;
+  color: #1e293b;
+}
+
+.notification-item.unread .item-title {
+  color: #0f172a;
+}
+
+.notification-item .item-message {
+  margin: 0 0 6px;
+  font-size: 0.82rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.notification-item .item-time {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.notification-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: #64748b;
+}
+
+.notification-empty .icon {
+  font-size: 1.8rem;
+  margin-bottom: 8px;
+}
+
+.notification-footer {
+  padding: 10px 16px;
+  border-top: 1px solid #f1f5f9;
+  background: rgba(248, 250, 252, 0.6);
+  text-align: center;
+}
+
+.notification-view-all {
+  display: inline-block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #00b5f1;
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  padding: 4px 0;
+}
+
+.notification-view-all:hover {
+  color: #0099cc;
+}
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: 'Geist Variable', sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* Patient glassmorphism panels */
+.patient-glass-panel {
+  background: rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.18),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.patient-shell .patient-glass-panel {
+  background: rgba(255, 255, 255, 0.34);
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.22),
+    0 2px 8px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.patient-glass-panel-sm {
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow:
+    0 6px 24px rgba(0, 0, 0, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.patient-shell .patient-glass-panel-sm {
+  background: rgba(255, 255, 255, 0.28);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* High-contrast input on vivid patient background */
+.patient-shell .patient-input-field {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.patient-shell .patient-input-field:focus-within {
+  border-color: rgba(45, 212, 191, 0.7);
+  box-shadow:
+    0 0 0 3px rgba(45, 212, 191, 0.25),
+    0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.patient-shell .patient-input-field input {
+  color: #0f172a;
+}
+
+.patient-shell .patient-input-field input::placeholder {
+  color: #64748b;
+}
+
+/* Notification bell — glass style inside patient shell */
+.patient-shell .notification-bell-button.icon-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.95);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 2px 8px rgba(0, 0, 0, 0.12);
+  transition: all 0.2s ease;
+}
+
+.patient-shell .notification-bell-button.icon-button:hover {
+  background: rgba(255, 255, 255, 0.32);
+  border-color: rgba(255, 255, 255, 0.6);
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+.patient-shell .notification-badge {
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.5);
+}
+
+/* Sidebar nav legibility */
+.patient-shell .patient-nav-label {
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+/* Header icon buttons — glass style */
+.patient-shell .patient-header-icon-btn {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.95);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.patient-shell .patient-header-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.32);
+  border-color: rgba(255, 255, 255, 0.6);
+  color: #ffffff;
+}
+
+.patient-shell .patient-header-icon-btn-danger:hover {
+  background: rgba(244, 63, 94, 0.25);
+  border-color: rgba(251, 113, 133, 0.5);
+  color: #fecdd3;
+}
+
+/* Glassmorphism System for Patient Dashboard Features */
+.patient-shell .patient-glass-card {
+  background: rgba(255, 255, 255, 0.34) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.55) !important;
+  border-radius: 2rem !important;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.18),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
+  color: #0f172a !important;
+}
+
+.patient-shell .patient-glass-subcard {
+  background: rgba(255, 255, 255, 0.28) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+  border-radius: 1.25rem !important;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+  color: #1e293b !important;
+}
+
+.patient-shell .patient-glass-input {
+  background: rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  border-radius: 0.75rem !important;
+  color: #0f172a !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+}
+.patient-shell .patient-glass-input::placeholder {
+  color: rgba(51, 65, 85, 0.65) !important;
+}
+.patient-shell .patient-glass-input:focus {
+  background: rgba(255, 255, 255, 0.32) !important;
+  border-color: rgba(94, 234, 212, 0.7) !important;
+  box-shadow: 0 0 0 4px rgba(45, 212, 191, 0.2) !important;
+  outline: none !important;
+}
+
+.patient-shell .patient-glass-card .table-wrapper {
+  width: 100% !important;
+  background: transparent !important;
+  border: 1px solid rgba(148, 163, 184, 0.25) !important;
+  border-radius: 1.25rem !important;
+  box-shadow: none !important;
+  overflow: hidden;
+}
+.patient-shell .patient-glass-card .data-table {
+  width: 100% !important;
+  min-width: 100% !important;
+  table-layout: fixed !important;
+  background: transparent !important;
+  border: none !important;
+}
+.patient-shell .patient-glass-card .data-table th {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #0f766e !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+  font-weight: 800;
+}
+.patient-shell .patient-glass-card .data-table td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #1e293b !important;
+  font-weight: 600;
+}
+.patient-shell .patient-glass-card .data-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+.patient-shell .patient-glass-card .table-row:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+.patient-shell .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+}
+.patient-shell .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.45);
+}
+.patient-shell .custom-scrollbar {
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+
+/* Glass panels on vivid dark background */
+.patient-shell .bg-white\/10.backdrop-blur-xl,
+.patient-shell .bg-white\/10.backdrop-blur-2xl,
+.patient-shell .bg-white\/10.backdrop-blur-3xl,
+.patient-shell .bg-white\/10.backdrop-blur-md {
+  background: rgba(255, 255, 255, 0.22) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-color: rgba(255, 255, 255, 0.42) !important;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
+}
+
+.patient-shell .bg-white\/10.hover\:bg-white\/20:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+}
+
+.patient-shell .patient-glass-subcard .text-white,
+.patient-shell .patient-glass-subcard .text-white\/60,
+.patient-shell .patient-glass-subcard .text-white\/50,
+.patient-shell .patient-glass-subcard .text-white\/80,
+.patient-shell .patient-glass-subcard .text-white\/90 {
+  color: inherit !important;
+}
+
+/* Legacy dark-theme patient glass (fallback for non-shell contexts) */
+.patient-glass-card {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 2rem !important; /* rounded-3xl */
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.3) !important;
+  color: #ffffff !important;
+}
+
+.patient-glass-subcard {
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 1.25rem !important; /* rounded-2xl */
+  box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.2) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.patient-glass-input {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 0.75rem !important; /* rounded-xl */
+  color: #ffffff !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+}
+.patient-glass-input::placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+.patient-glass-input:focus {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(94, 234, 212, 0.6) !important; /* teal-400/60 */
+  box-shadow: 0 0 0 4px rgba(94, 234, 212, 0.15) !important;
+  outline: none !important;
+}
+
+/* Glass table modifications inside patient components */
+.patient-glass-card .table-wrapper {
+  width: 100% !important;
+  background: transparent !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 1.25rem !important;
+  box-shadow: none !important;
+  overflow: hidden;
+}
+.patient-glass-card .data-table {
+  width: 100% !important;
+  min-width: 100% !important;
+  table-layout: fixed !important;
+  background: transparent !important;
+  border: none !important;
+}
+.patient-glass-card .data-table th {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+  font-weight: 800;
+}
+.patient-glass-card .data-table td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-weight: 600;
+}
+.patient-glass-card .data-table tbody tr {
+  background: transparent !important;
+  transition: background 0.2s ease;
+}
+.patient-glass-card .data-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+.patient-glass-card .table-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: transparent !important;
+  transition: background 0.2s ease;
+}
+.patient-glass-card .table-row:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Light Glassmorphism System for Shared/Doctor/Admin Pages */
+.light-glass-card {
+  background: rgba(255, 255, 255, 0.45) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+  border-radius: 2rem !important; /* rounded-3xl */
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08) !important;
+  color: #0f172a !important;
+}
+
+.light-glass-subcard {
+  background: rgba(255, 255, 255, 0.5) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  border-radius: 1.25rem !important; /* rounded-2xl */
+  box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+.light-glass-input {
+  background: rgba(255, 255, 255, 0.3) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+  border-radius: 0.75rem !important; /* rounded-xl */
+  color: #0f172a !important; /* slate-900 */
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+}
+.light-glass-input::placeholder {
+  color: rgba(15, 23, 42, 0.5) !important;
+}
+.light-glass-input:focus {
+  background: rgba(255, 255, 255, 0.6) !important;
+  border-color: rgba(20, 184, 166, 0.6) !important; /* teal-500/60 */
+  box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.15) !important;
+  outline: none !important;
 }

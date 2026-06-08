@@ -3,44 +3,37 @@ import doctorLeaveRequestService from "../../services/doctorLeaveRequestService.
 import { useToast } from "../../context/useToast.js";
 
 const STATUS_BADGE = {
-  PENDING:  { label: "Chờ duyệt",   color: "#f59e0b", bg: "#fef3c7" },
-  APPROVED: { label: "Đã duyệt",    color: "#10b981", bg: "#d1fae5" },
-  REJECTED: { label: "Bị từ chối",  color: "#ef4444", bg: "#fee2e2" },
+  PENDING: { label: "Chờ duyệt", color: "text-amber-300", bg: "bg-amber-500/20", border: "border-amber-500/30" },
+  APPROVED: { label: "Đã duyệt", color: "text-emerald-300", bg: "bg-emerald-500/20", border: "border-emerald-500/30" },
+  REJECTED: { label: "Bị từ chối", color: "text-rose-300", bg: "bg-rose-500/20", border: "border-rose-500/30" },
 };
 
 const TYPE_LABEL = {
-  LEAVE:           "Xin nghỉ",
+  LEAVE: "Xin nghỉ",
   CHANGE_SCHEDULE: "Thay đổi lịch",
 };
 
 // Status display helpers for the conflicting-appointment table
 const CONFLICT_STATUS_LABEL = {
-  SCHEDULED:  "Chờ khám",
-  CONFIRMED:  "Đã xác nhận",
+  SCHEDULED: "Chờ khám",
+  CONFIRMED: "Đã xác nhận",
   CHECKED_IN: "Đã check-in",
 };
 const CONFLICT_STATUS_BG = {
-  SCHEDULED:  "#fef3c7",
-  CONFIRMED:  "#dbeafe",
-  CHECKED_IN: "#dcfce7",
+  SCHEDULED: "bg-amber-500/20",
+  CONFIRMED: "bg-blue-500/20",
+  CHECKED_IN: "bg-emerald-500/20",
 };
 const CONFLICT_STATUS_COLOR = {
-  SCHEDULED:  "#92400e",
-  CONFIRMED:  "#1d4ed8",
-  CHECKED_IN: "#15803d",
+  SCHEDULED: "text-amber-300",
+  CONFIRMED: "text-blue-300",
+  CHECKED_IN: "text-emerald-300",
 };
 
 function StatusBadge({ status }) {
-  const cfg = STATUS_BADGE[status] || { label: status, color: "#6b7280", bg: "#f3f4f6" };
+  const cfg = STATUS_BADGE[status] || { label: status, color: "text-slate-300", bg: "bg-slate-500/20", border: "border-slate-500/30" };
   return (
-    <span style={{
-      padding: "3px 10px",
-      borderRadius: 999,
-      fontSize: 12,
-      fontWeight: 600,
-      color: cfg.color,
-      background: cfg.bg,
-    }}>
+    <span className={`${cfg.bg} ${cfg.color} border ${cfg.border} px-2.5 py-1 rounded-full text-xs font-bold whitespace-nowrap`}>
       {cfg.label}
     </span>
   );
@@ -143,36 +136,34 @@ export default function DoctorLeaveRequestPage() {
   };
 
   return (
-    <div style={{ maxWidth: 960, margin: "0 auto", padding: "24px 16px" }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24, color: "#1e293b" }}>
+    <div className="text-white flex flex-col h-full gap-6 pb-6">
+      <h1 className="text-2xl font-bold flex items-center gap-3">
         📋 Yêu cầu nghỉ / Thay đổi lịch
       </h1>
 
       {/* ─── Form ─── */}
-      <div style={{
-        background: "#fff",
-        borderRadius: 12,
-        boxShadow: "0 2px 12px rgba(0,0,0,.08)",
-        padding: 28,
-        marginBottom: 32,
-      }}>
-        <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 20, color: "#334155" }}>
+      <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-8 shadow-xl">
+        <h2 className="text-lg font-bold mb-6 text-white/90">
           Gửi yêu cầu mới
         </h2>
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-
-            <div style={{ gridColumn: "1 / -1" }}>
-              <label style={labelStyle}>Loại yêu cầu</label>
-              <select name="requestType" value={form.requestType} onChange={handleChange} style={inputStyle}>
-                <option value="LEAVE">Xin nghỉ</option>
-                <option value="CHANGE_SCHEDULE">Thay đổi lịch</option>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="col-span-1 md:col-span-2">
+              <label className="block text-sm font-semibold text-white/60 mb-2">Loại yêu cầu</label>
+              <select
+                name="requestType"
+                value={form.requestType}
+                onChange={handleChange}
+                className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 outline-none focus:border-teal-500/50 focus:bg-white/10 transition-all font-medium appearance-none"
+              >
+                <option value="LEAVE" className="bg-slate-800">Xin nghỉ</option>
+                <option value="CHANGE_SCHEDULE" className="bg-slate-800">Thay đổi lịch</option>
               </select>
             </div>
 
             <div>
-              <label style={labelStyle}>Ngày</label>
+              <label className="block text-sm font-semibold text-white/60 mb-2">Ngày</label>
               <input
                 type="date"
                 name="leaveDate"
@@ -180,23 +171,37 @@ export default function DoctorLeaveRequestPage() {
                 value={form.leaveDate}
                 onChange={handleChange}
                 required
-                style={inputStyle}
+                className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 outline-none focus:border-teal-500/50 focus:bg-white/10 transition-all font-medium [color-scheme:dark]"
               />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label style={labelStyle}>Giờ bắt đầu</label>
-                <input type="time" name="startTime" value={form.startTime} onChange={handleChange} required style={inputStyle} />
+                <label className="block text-sm font-semibold text-white/60 mb-2">Giờ bắt đầu</label>
+                <input
+                  type="time"
+                  name="startTime"
+                  value={form.startTime}
+                  onChange={handleChange}
+                  required
+                  className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 outline-none focus:border-teal-500/50 focus:bg-white/10 transition-all font-medium [color-scheme:dark]"
+                />
               </div>
               <div>
-                <label style={labelStyle}>Giờ kết thúc</label>
-                <input type="time" name="endTime" value={form.endTime} onChange={handleChange} required style={inputStyle} />
+                <label className="block text-sm font-semibold text-white/60 mb-2">Giờ kết thúc</label>
+                <input
+                  type="time"
+                  name="endTime"
+                  value={form.endTime}
+                  onChange={handleChange}
+                  required
+                  className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 outline-none focus:border-teal-500/50 focus:bg-white/10 transition-all font-medium [color-scheme:dark]"
+                />
               </div>
             </div>
 
-            <div style={{ gridColumn: "1 / -1" }}>
-              <label style={labelStyle}>Lý do</label>
+            <div className="col-span-1 md:col-span-2">
+              <label className="block text-sm font-semibold text-white/60 mb-2">Lý do</label>
               <textarea
                 name="reason"
                 value={form.reason}
@@ -204,57 +209,46 @@ export default function DoctorLeaveRequestPage() {
                 rows={3}
                 required
                 placeholder="Nhập lý do xin nghỉ hoặc thay đổi lịch..."
-                style={{ ...inputStyle, resize: "vertical" }}
+                className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 outline-none focus:border-teal-500/50 focus:bg-white/10 transition-all font-medium placeholder:text-white/30 resize-y"
               />
             </div>
           </div>
 
           {formError && (
-            <div style={{ marginTop: 12, padding: "8px 14px", background: "#fee2e2", color: "#dc2626", borderRadius: 8, fontSize: 13 }}>
+            <div className="bg-rose-500/20 border border-rose-500/30 text-rose-300 p-3 rounded-xl text-sm font-medium">
               {formError}
             </div>
           )}
           {formSuccess && (
-            <div style={{ marginTop: 12, padding: "8px 14px", background: "#d1fae5", color: "#065f46", borderRadius: 8, fontSize: 13 }}>
+            <div className="bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 p-3 rounded-xl text-sm font-medium">
               {formSuccess}
             </div>
           )}
 
           {conflictingAppointments.length > 0 && (
-            <div style={{ marginTop: 16, padding: "16px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8 }}>
-              <h3 style={{ fontSize: 14, fontWeight: 600, color: "#dc2626", marginBottom: 12 }}>
+            <div className="mt-2 bg-rose-500/10 border border-rose-500/20 rounded-xl p-5">
+              <h3 className="text-sm font-bold text-rose-400 mb-4">
                 Danh sách lịch hẹn bị trùng
               </h3>
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                  <thead>
-                    <tr style={{ background: "#fee2e2" }}>
+              <div className="overflow-x-auto custom-scrollbar">
+                <table className="w-full text-left border-collapse whitespace-nowrap text-sm">
+                  <thead className="bg-rose-500/20 text-rose-300">
+                    <tr>
                       {["Mã lịch hẹn", "Bệnh nhân", "Số điện thoại", "Ngày khám", "Giờ khám", "Trạng thái"].map((h) => (
-                        <th key={h} style={conflictThStyle}>{h}</th>
+                        <th key={h} className="p-3 font-semibold">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {conflictingAppointments.map((appt) => (
-                      <tr key={appt.appointmentId} style={{ borderBottom: "1px solid #fecaca" }}>
-                        <td style={conflictTdStyle}>
-                          <code style={{ fontFamily: "monospace", fontWeight: 600 }}>{appt.appointmentCode}</code>
-                        </td>
-                        <td style={conflictTdStyle}>{appt.patientName}</td>
-                        <td style={conflictTdStyle}>{appt.patientPhone || "—"}</td>
-                        <td style={conflictTdStyle}>{appt.appointmentDate}</td>
-                        <td style={{ ...conflictTdStyle, whiteSpace: "nowrap" }}>
-                          {appt.startTime?.slice(0, 5)}
-                        </td>
-                        <td style={conflictTdStyle}>
-                          <span style={{
-                            padding: "2px 8px",
-                            borderRadius: 999,
-                            fontSize: 11,
-                            fontWeight: 600,
-                            background: CONFLICT_STATUS_BG[appt.status] || "#f3f4f6",
-                            color: CONFLICT_STATUS_COLOR[appt.status] || "#374151",
-                          }}>
+                      <tr key={appt.appointmentId} className="border-b border-rose-500/10 hover:bg-rose-500/10 transition-colors">
+                        <td className="p-3 font-mono font-bold text-rose-300">{appt.appointmentCode}</td>
+                        <td className="p-3 font-medium text-white">{appt.patientName}</td>
+                        <td className="p-3 text-white/70">{appt.patientPhone || "—"}</td>
+                        <td className="p-3 text-white/90">{appt.appointmentDate}</td>
+                        <td className="p-3 font-medium">{appt.startTime?.slice(0, 5)}</td>
+                        <td className="p-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-bold border ${CONFLICT_STATUS_BG[appt.status] || "bg-white/10"} ${CONFLICT_STATUS_COLOR[appt.status] || "text-white/70"} border-current/30`}>
                             {CONFLICT_STATUS_LABEL[appt.status] || appt.status}
                           </span>
                         </td>
@@ -266,83 +260,66 @@ export default function DoctorLeaveRequestPage() {
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={submitting}
-            style={{
-              marginTop: 20,
-              padding: "10px 28px",
-              background: submitting ? "#93c5fd" : "#2563eb",
-              color: "#fff",
-              border: "none",
-              borderRadius: 8,
-              fontWeight: 600,
-              fontSize: 14,
-              cursor: submitting ? "not-allowed" : "pointer",
-              transition: "background .2s",
-            }}
-          >
-            {submitting ? "Đang gửi..." : "Gửi yêu cầu"}
-          </button>
+          <div className="flex justify-start">
+            <button
+              type="submit"
+              disabled={submitting}
+              className={`px-8 py-3 rounded-xl font-bold transition-all flex items-center justify-center ${submitting
+                  ? "bg-blue-500/40 text-blue-200 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5"
+                }`}
+            >
+              {submitting ? "Đang gửi..." : "Gửi yêu cầu"}
+            </button>
+          </div>
         </form>
       </div>
 
       {/* ─── Table ─── */}
-      <div style={{
-        background: "#fff",
-        borderRadius: 12,
-        boxShadow: "0 2px 12px rgba(0,0,0,.08)",
-        padding: 28,
-      }}>
-        <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 20, color: "#334155" }}>
+      <div className="flex-1 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-8 shadow-xl flex flex-col min-h-0 overflow-hidden">
+        <h2 className="text-lg font-bold mb-6 text-white/90">
           Danh sách yêu cầu của tôi
         </h2>
 
         {loading ? (
-          <div style={{ textAlign: "center", color: "#94a3b8", padding: 32 }}>Đang tải...</div>
+          <div className="text-center text-white/50 p-8 font-medium">Đang tải...</div>
         ) : requests.length === 0 ? (
-          <div style={{ textAlign: "center", color: "#94a3b8", padding: 32 }}>Chưa có yêu cầu nào.</div>
+          <div className="text-center text-white/50 p-8 font-medium">Chưa có yêu cầu nào.</div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-              <thead>
-                <tr style={{ background: "#f8fafc" }}>
+          <div className="flex-1 overflow-auto custom-scrollbar -mx-8 px-8">
+            <table className="w-full text-left border-collapse whitespace-nowrap">
+              <thead className="bg-white/5 border-b border-white/10 text-white/70 text-sm sticky top-0 backdrop-blur-md z-10">
+                <tr>
                   {["Loại", "Ngày", "Giờ", "Lý do", "Trạng thái", "Ghi chú admin", "Hành động"].map((h) => (
-                    <th key={h} style={thStyle}>{h}</th>
+                    <th key={h} className="p-4 font-semibold">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {requests.map((r) => (
-                  <tr key={r.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                    <td style={tdStyle}>{TYPE_LABEL[r.requestType] ?? r.requestType}</td>
-                    <td style={tdStyle}>{r.leaveDate}</td>
-                    <td style={{ ...tdStyle, whiteSpace: "nowrap" }}>{r.startTime?.slice(0, 5)} – {r.endTime?.slice(0, 5)}</td>
-                    <td style={{ ...tdStyle, maxWidth: 200 }}>{r.reason}</td>
-                    <td style={tdStyle}><StatusBadge status={r.status} /></td>
-                    <td style={{ ...tdStyle, color: "#64748b", fontStyle: r.adminComment ? "normal" : "italic" }}>
+                  <tr key={r.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                    <td className="p-4 font-bold text-white/90">{TYPE_LABEL[r.requestType] ?? r.requestType}</td>
+                    <td className="p-4 font-medium text-white">{r.leaveDate}</td>
+                    <td className="p-4 text-white/80">{r.startTime?.slice(0, 5)} – {r.endTime?.slice(0, 5)}</td>
+                    <td className="p-4 text-white/80 max-w-[200px] truncate" title={r.reason}>{r.reason}</td>
+                    <td className="p-4"><StatusBadge status={r.status} /></td>
+                    <td className={`p-4 ${r.adminComment ? "text-white/80" : "text-white/40 italic"}`}>
                       {r.adminComment || "—"}
                     </td>
-                    <td style={tdStyle}>
+                    <td className="p-4">
                       {r.status === "PENDING" ? (
                         <button
                           onClick={() => handleCancel(r.id)}
                           disabled={cancellingId === r.id}
-                          style={{
-                            padding: "5px 14px",
-                            background: cancellingId === r.id ? "#fca5a5" : "#fee2e2",
-                            color: "#dc2626",
-                            border: "1.5px solid #fca5a5",
-                            borderRadius: 6,
-                            fontSize: 12,
-                            fontWeight: 600,
-                            cursor: cancellingId === r.id ? "not-allowed" : "pointer",
-                          }}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${cancellingId === r.id
+                              ? "bg-rose-500/20 text-rose-300 border-rose-500/30 cursor-not-allowed opacity-60"
+                              : "bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20"
+                            }`}
                         >
                           {cancellingId === r.id ? "Đang hủy..." : "Hủy"}
                         </button>
                       ) : (
-                        <span style={{ color: "#94a3b8", fontSize: 12 }}>—</span>
+                        <span className="text-white/30 text-sm">—</span>
                       )}
                     </td>
                   </tr>
@@ -355,58 +332,3 @@ export default function DoctorLeaveRequestPage() {
     </div>
   );
 }
-
-const labelStyle = {
-  display: "block",
-  fontSize: 13,
-  fontWeight: 500,
-  color: "#475569",
-  marginBottom: 6,
-};
-
-const inputStyle = {
-  width: "100%",
-  padding: "9px 12px",
-  border: "1.5px solid #e2e8f0",
-  borderRadius: 8,
-  fontSize: 13,
-  color: "#1e293b",
-  background: "#f8fafc",
-  outline: "none",
-  boxSizing: "border-box",
-};
-
-const thStyle = {
-  padding: "10px 14px",
-  textAlign: "left",
-  fontWeight: 600,
-  color: "#475569",
-  fontSize: 12,
-  textTransform: "uppercase",
-  letterSpacing: "0.05em",
-  whiteSpace: "nowrap",
-};
-
-const tdStyle = {
-  padding: "11px 14px",
-  color: "#1e293b",
-  verticalAlign: "middle",
-};
-
-const conflictThStyle = {
-  padding: "8px 12px",
-  textAlign: "left",
-  fontWeight: 600,
-  color: "#991b1b",
-  fontSize: 12,
-  textTransform: "uppercase",
-  letterSpacing: "0.05em",
-  whiteSpace: "nowrap",
-};
-
-const conflictTdStyle = {
-  padding: "9px 12px",
-  color: "#1e293b",
-  verticalAlign: "middle",
-  borderTop: "1px solid #fecaca",
-};

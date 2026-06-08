@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Clock,
   Users,
@@ -7,96 +8,75 @@ import {
   UserCheck,
   RefreshCw,
   AlertCircle,
+  ArrowLeft,
 } from "lucide-react";
 import queueService from "../../services/queueService";
 
 const STATUS_CONFIG = {
   WAITING: {
     label: "Đang chờ",
-    color: "#0369a1",
-    bg: "#e0f2fe",
-    border: "#bae6fd",
+    color: "text-sky-300",
+    bg: "bg-sky-500/20",
+    border: "border-sky-500/30",
+    gradient: "from-sky-500/20 to-sky-500/5",
     message: "Vui lòng chờ đến lượt của bạn.",
   },
   CALLED: {
     label: "Đã được gọi",
-    color: "#c2410c",
-    bg: "#fff7ed",
-    border: "#fed7aa",
+    color: "text-amber-300",
+    bg: "bg-amber-500/20",
+    border: "border-amber-500/30",
+    gradient: "from-amber-500/20 to-amber-500/5",
     message: "Đến lượt bạn rồi! Vui lòng vào phòng khám.",
   },
   IN_CONSULTATION: {
     label: "Đang khám",
-    color: "#7c3aed",
-    bg: "#f5f3ff",
-    border: "#ddd6fe",
+    color: "text-purple-300",
+    bg: "bg-purple-500/20",
+    border: "border-purple-500/30",
+    gradient: "from-purple-500/20 to-purple-500/5",
     message: "Bác sĩ đang khám cho bạn.",
   },
   COMPLETED: {
     label: "Hoàn tất",
-    color: "#15803d",
-    bg: "#f0fdf4",
-    border: "#bbf7d0",
+    color: "text-emerald-300",
+    bg: "bg-emerald-500/20",
+    border: "border-emerald-500/30",
+    gradient: "from-emerald-500/20 to-emerald-500/5",
     message: "Buổi khám đã hoàn tất. Chúc bạn sức khỏe!",
   },
   SKIPPED: {
     label: "Đã bỏ qua",
-    color: "#dc2626",
-    bg: "#fef2f2",
-    border: "#fecaca",
+    color: "text-rose-300",
+    bg: "bg-rose-500/20",
+    border: "border-rose-500/30",
+    gradient: "from-rose-500/20 to-rose-500/5",
     message: "Bạn đã bị bỏ qua. Vui lòng liên hệ lễ tân.",
   },
   CANCELLED: {
     label: "Đã hủy",
-    color: "#475569",
-    bg: "#f1f5f9",
-    border: "#cbd5e1",
+    color: "text-slate-300",
+    bg: "bg-slate-500/20",
+    border: "border-slate-500/30",
+    gradient: "from-slate-500/20 to-slate-500/5",
     message: "Lịch khám đã bị hủy.",
   },
 };
 
-function StatCard({ icon: Icon, label, value, color, bg }) {
+function StatCard({ icon: Icon, label, value, color }) {
   return (
-    <div
-      style={{
-        background: bg || "#f8fafc",
-        border: `1px solid ${color}20`,
-        borderRadius: "16px",
-        padding: "24px",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: "8px",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-        transition: "transform 0.2s",
-      }}
-      onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
-      onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
-    >
-      <div
-        style={{
-          width: 48,
-          height: 48,
-          borderRadius: "12px",
-          background: `${color}15`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Icon size={24} style={{ color }} />
+    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-[1.5rem] p-6 shadow-xl flex flex-col items-center gap-2 hover:-translate-y-1 hover:shadow-2xl transition-all duration-300">
+      <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 ${color}`}>
+        <Icon size={24} />
       </div>
-      <span style={{ fontSize: "13px", fontWeight: 600, color: "#64748b", textAlign: "center" }}>
-        {label}
-      </span>
-      <span style={{ fontSize: "32px", fontWeight: 800, color, lineHeight: 1 }}>
-        {value ?? "—"}
-      </span>
+      <span className="text-sm font-semibold text-white/60 text-center">{label}</span>
+      <span className={`text-4xl font-extrabold leading-none mt-1 ${color}`}>{value ?? "—"}</span>
     </div>
   );
 }
 
 export default function PatientQueueStatusPage() {
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -126,234 +106,142 @@ export default function PatientQueueStatusPage() {
   const isNoQueue = error?.toLowerCase().includes("no active queue");
 
   return (
-    <div className="content">
-      {/* Header */}
-      <div className="page-header">
-        <h1 className="page-title">
-          <Activity size={24} style={{ color: "#0f766e" }} />
-          Trạng thái hàng đợi
-        </h1>
-        <button
-          className="ghost-button"
-          onClick={fetchStatus}
-          disabled={loading}
-          style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
-        >
-          <RefreshCw size={16} className={loading ? "spin-animation" : ""} />
-          Làm mới
-        </button>
+    <div className="max-w-[1100px] mx-auto w-full flex flex-col items-center">
+      <div className="w-full mb-10 relative flex flex-col sm:flex-row justify-center items-center min-h-[80px]">
+        <div className="w-full sm:absolute sm:left-0 sm:top-4 flex justify-start mb-4 sm:mb-0 px-4 sm:px-0">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="bg-white/10 hover:bg-white/20 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm"
+          >
+            <ArrowLeft size={18} />
+            Quay lại
+          </button>
+        </div>
+        
+        <div className="flex flex-col items-center text-center mt-2 px-4">
+          <h1 className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-4">
+            <Activity size={32} className="text-teal-400 drop-shadow-md" />
+            <span className="drop-shadow-md">Trạng thái hàng đợi</span>
+          </h1>
+          <p className="text-white/70 font-medium drop-shadow-sm text-[16px] max-w-[600px]">
+            Theo dõi số thứ tự khám của bạn hôm nay và thời gian chờ ước tính.
+          </p>
+        </div>
       </div>
 
-      {/* Loading */}
-      {loading && (
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            minHeight: "300px",
-            flexDirection: "column",
-            gap: "16px",
-            color: "#64748b",
-          }}
-        >
-          <RefreshCw size={32} className="spin-animation" style={{ color: "#0f766e" }} />
-          <span style={{ fontSize: "15px", fontWeight: 500 }}>Đang tải trạng thái hàng đợi...</span>
-        </div>
-      )}
-
-      {/* No Active Queue */}
-      {!loading && isNoQueue && (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            minHeight: "320px",
-            gap: "16px",
-            background: "#f8fafc",
-            borderRadius: "16px",
-            border: "2px dashed #e2e8f0",
-            padding: "48px",
-            textAlign: "center",
-          }}
-        >
-          <div
-            style={{
-              width: 72,
-              height: 72,
-              borderRadius: "50%",
-              background: "#f1f5f9",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
+      <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-6 md:p-8 rounded-[2rem] shadow-2xl w-full max-w-[800px] mx-auto mb-10">
+        <div className="flex justify-end mb-6">
+          <button
+            className="bg-white/10 hover:bg-white/20 text-white font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-2"
+            onClick={fetchStatus}
+            disabled={loading}
           >
-            <Users size={36} style={{ color: "#94a3b8" }} />
+            <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+            Làm mới
+          </button>
+        </div>
+
+        {/* Loading */}
+        {loading && (
+          <div className="flex flex-col justify-center items-center min-h-[300px] gap-4 text-white/60">
+            <RefreshCw size={36} className="animate-spin text-teal-400" />
+            <span className="text-lg font-medium">Đang tải trạng thái hàng đợi...</span>
           </div>
-          <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#334155", margin: 0 }}>
-            Không có lịch hẹn hôm nay
-          </h2>
-          <p style={{ fontSize: "14px", color: "#64748b", margin: 0, maxWidth: "380px" }}>
-            Bạn chưa có lịch khám nào được check-in hôm nay.
-            Vui lòng đặt lịch hoặc liên hệ lễ tân để check-in.
-          </p>
-        </div>
-      )}
+        )}
 
-      {/* Generic Error */}
-      {!loading && error && !isNoQueue && (
-        <div
-          style={{
-            padding: "16px",
-            borderRadius: "10px",
-            background: "#fef2f2",
-            border: "1px solid #fee2e2",
-            color: "#991b1b",
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            fontSize: "14px",
-            fontWeight: 500,
-          }}
-        >
-          <AlertCircle size={18} />
-          {error}
-        </div>
-      )}
-
-      {/* Queue Status Card */}
-      {!loading && data && statusCfg && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-
-          {/* Status Banner */}
-          <div
-            style={{
-              background: `linear-gradient(135deg, ${statusCfg.color}15 0%, ${statusCfg.color}08 100%)`,
-              border: `2px solid ${statusCfg.border}`,
-              borderRadius: "20px",
-              padding: "28px 32px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "12px",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <span
-                style={{
-                  background: statusCfg.bg,
-                  color: statusCfg.color,
-                  border: `1px solid ${statusCfg.border}`,
-                  borderRadius: "9999px",
-                  padding: "6px 16px",
-                  fontSize: "13px",
-                  fontWeight: 700,
-                  letterSpacing: "0.5px",
-                }}
-              >
-                {statusCfg.label}
-              </span>
+        {/* No Active Queue */}
+        {!loading && isNoQueue && (
+          <div className="flex flex-col items-center justify-center min-h-[320px] gap-4 bg-white/5 backdrop-blur-md rounded-3xl border-2 border-dashed border-white/20 p-12 text-center">
+            <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center">
+              <Users size={40} className="text-teal-400" />
             </div>
-            <p
-              style={{
-                margin: 0,
-                fontSize: "18px",
-                fontWeight: 700,
-                color: statusCfg.color,
-              }}
-            >
-              {statusCfg.message}
+            <h2 className="text-2xl font-bold text-white m-0">Không có lịch hẹn hôm nay</h2>
+            <p className="text-base text-white/60 m-0 max-w-[380px] font-medium leading-relaxed">
+              Bạn chưa có lịch khám nào được check-in hôm nay.
+              Vui lòng đặt lịch hoặc liên hệ lễ tân để check-in.
             </p>
+          </div>
+        )}
 
-            {/* Appointment info */}
-            <div
-              style={{
-                marginTop: "8px",
-                padding: "16px",
-                background: "rgba(255,255,255,0.7)",
-                borderRadius: "12px",
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "12px",
-              }}
-            >
-              <div>
-                <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 600 }}>BỆNH NHÂN</span>
-                <p style={{ margin: "4px 0 0", fontSize: "15px", fontWeight: 700, color: "#1e293b" }}>
-                  {data.patientName}
-                </p>
+        {/* Generic Error */}
+        {!loading && error && !isNoQueue && (
+          <div className="bg-rose-500/20 border border-rose-500/30 text-rose-300 p-4 rounded-xl flex items-center gap-3 text-sm font-medium">
+            <AlertCircle size={20} />
+            {error}
+          </div>
+        )}
+
+        {/* Queue Status Card */}
+        {!loading && data && statusCfg && (
+          <div className="flex flex-col gap-6">
+
+            {/* Status Banner */}
+            <div className={`bg-gradient-to-br ${statusCfg.gradient} backdrop-blur-md border-2 ${statusCfg.border} rounded-3xl p-8 flex flex-col gap-4 shadow-xl`}>
+              <div className="flex items-center gap-3">
+                <span className={`${statusCfg.bg} ${statusCfg.color} border ${statusCfg.border} rounded-full px-4 py-1.5 text-sm font-extrabold uppercase tracking-wide`}>
+                  {statusCfg.label}
+                </span>
               </div>
-              <div>
-                <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 600 }}>BÁC SĨ</span>
-                <p style={{ margin: "4px 0 0", fontSize: "15px", fontWeight: 700, color: "#1e293b" }}>
-                  {data.doctorName}
-                </p>
-              </div>
-              <div>
-                <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 600 }}>MÃ LỊCH HẸN</span>
-                <p style={{ margin: "4px 0 0", fontSize: "15px", fontWeight: 700, color: "#0f766e" }}>
-                  {data.appointmentCode || "—"}
-                </p>
+              <p className={`text-xl md:text-2xl font-bold ${statusCfg.color}`}>
+                {statusCfg.message}
+              </p>
+
+              {/* Appointment info */}
+              <div className="mt-2 p-5 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <span className="text-xs font-bold text-white/50 tracking-wider">BỆNH NHÂN</span>
+                  <p className="mt-1 text-lg font-bold text-white truncate">{data.patientName}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-white/50 tracking-wider">BÁC SĨ</span>
+                  <p className="mt-1 text-lg font-bold text-white truncate">{data.doctorName}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-white/50 tracking-wider">MÃ LỊCH HẸN</span>
+                  <p className="mt-1 text-lg font-bold text-teal-300 truncate">{data.appointmentCode || "—"}</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Stats Grid */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-              gap: "16px",
-            }}
-          >
-            <StatCard
-              icon={Hash}
-              label="Số thứ tự của bạn"
-              value={`#${data.myQueueNumber}`}
-              color="#0f766e"
-              bg="#f0fdfa"
-            />
-            <StatCard
-              icon={UserCheck}
-              label="Đang khám số"
-              value={data.currentServingNumber > 0 ? `#${data.currentServingNumber}` : "—"}
-              color="#0284c7"
-              bg="#f0f9ff"
-            />
-            <StatCard
-              icon={Users}
-              label="Người phía trước"
-              value={data.patientsAhead}
-              color={data.patientsAhead === 0 ? "#15803d" : "#d97706"}
-              bg={data.patientsAhead === 0 ? "#f0fdf4" : "#fffbeb"}
-            />
-            <StatCard
-              icon={Clock}
-              label="Thời gian chờ ước tính"
-              value={
-                data.patientsAhead === 0
-                  ? "~0 phút"
-                  : `~${data.estimatedWaitMinutes} phút`
-              }
-              color="#7c3aed"
-              bg="#f5f3ff"
-            />
-          </div>
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatCard
+                icon={Hash}
+                label="Số thứ tự của bạn"
+                value={`#${data.myQueueNumber}`}
+                color="text-teal-300"
+              />
+              <StatCard
+                icon={UserCheck}
+                label="Đang khám số"
+                value={data.currentServingNumber > 0 ? `#${data.currentServingNumber}` : "—"}
+                color="text-sky-300"
+              />
+              <StatCard
+                icon={Users}
+                label="Người phía trước"
+                value={data.patientsAhead}
+                color={data.patientsAhead === 0 ? "text-emerald-300" : "text-amber-300"}
+              />
+              <StatCard
+                icon={Clock}
+                label="Thời gian chờ"
+                value={
+                  data.patientsAhead === 0
+                    ? "~0 p"
+                    : `~${data.estimatedWaitMinutes} p`
+                }
+                color="text-purple-300"
+              />
+            </div>
 
-          {/* Auto-refresh note */}
-          <p
-            style={{
-              textAlign: "center",
-              fontSize: "12px",
-              color: "#94a3b8",
-              margin: 0,
-            }}
-          >
-            Tự động cập nhật mỗi 30 giây. Nhấn <strong>Làm mới</strong> để cập nhật ngay.
-          </p>
-        </div>
-      )}
+            {/* Auto-refresh note */}
+            <p className="text-center text-xs text-white/40 mt-2">
+              Tự động cập nhật mỗi 30 giây. Nhấn <strong>Làm mới</strong> để cập nhật ngay.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

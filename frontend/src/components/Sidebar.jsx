@@ -31,8 +31,10 @@ import {
   FileText,
   FileClock,
   Settings,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import Logo from "./Logo.jsx";
 import { getActiveAlerts } from "../services/inventoryService";
@@ -78,6 +80,79 @@ const menuItems = [
   { to: "/dashboard/my-lab-results", label: "Kết quả xét nghiệm", icon: FlaskConical, roles: ["PATIENT"] },
 ];
 
+const adminMenuGroups = [
+  {
+    key: "overview",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    items: [
+      { to: "/dashboard", label: "Tổng quan", end: true },
+    ],
+  },
+  {
+    key: "operations",
+    label: "Vận hành",
+    icon: CalendarDays,
+    items: [
+      { to: "/dashboard/appointments", label: "Lịch hẹn" },
+      { to: "/dashboard/patients", label: "Bệnh nhân" },
+      { to: "/dashboard/doctors", label: "Bác sĩ" },
+      { to: "/dashboard/lab-requests", label: "Hồ sơ khám / xét nghiệm" },
+      { to: "/dashboard/walk-in", label: "Khám trực tiếp" },
+      { to: "/dashboard/queue-management", label: "Hàng đợi" },
+      { to: "/dashboard/admin/doctor-leave-requests", label: "Duyệt nghỉ phép" },
+    ],
+  },
+  {
+    key: "services",
+    label: "Dịch vụ",
+    icon: HeartPulse,
+    items: [
+      { to: "/dashboard/departments", label: "Chuyên khoa" },
+      { to: "/dashboard/medical-services", label: "Dịch vụ y tế" },
+      { to: "/dashboard/medicines", label: "Thuốc" },
+      { to: "/dashboard/suppliers", label: "Nhà cung cấp" },
+      { to: "/dashboard/inventory/batches", label: "Lô thuốc" },
+      { to: "/dashboard/inventory/transactions", label: "Giao dịch kho" },
+      { to: "/dashboard/inventory/alerts", label: "Cảnh báo kho" },
+    ],
+  },
+  {
+    key: "administration",
+    label: "Quản trị",
+    icon: Shield,
+    items: [
+      { to: "/dashboard/users", label: "Người dùng" },
+      { to: "/dashboard/security", label: "Vai trò / phân quyền" },
+      { to: "/dashboard/system-settings", label: "Cấu hình hệ thống" },
+      { to: "/dashboard/audit-logs", label: "Nhật ký hệ thống" },
+    ],
+  },
+  {
+    key: "reports",
+    label: "Báo cáo",
+    icon: CreditCard,
+    items: [
+      { to: "/dashboard/payments", label: "Doanh thu" },
+      { to: "/dashboard/invoices", label: "Hóa đơn" },
+      { to: "/dashboard/refunds", label: "Hoàn tiền" },
+      { to: "/dashboard/reviews", label: "Đánh giá" },
+      { to: "/dashboard/articles", label: "Bài viết" },
+    ],
+  },
+];
+
+const adminQuickItems = [
+  { to: "/dashboard", label: "Tổng quan", icon: LayoutDashboard, end: true },
+  { to: "/dashboard/appointments", label: "Lịch hẹn", icon: CalendarDays },
+  { to: "/dashboard/patients", label: "Bệnh nhân", icon: Users },
+  { to: "/dashboard/doctors", label: "Bác sĩ", icon: UserRound },
+  { to: "/dashboard/users", label: "Người dùng", icon: UsersRound },
+  { to: "/dashboard/medicines", label: "Dịch vụ / thuốc", icon: Pill },
+  { to: "/dashboard/security", label: "Phân quyền", icon: Shield },
+  { to: "/dashboard/system-settings", label: "Cấu hình", icon: Settings },
+];
+
 const normalizeRole = (role) => {
   const roleName = typeof role === "string" ? role : role?.roleName;
   return roleName?.replace(/^ROLE_/, "").toUpperCase();
@@ -87,9 +162,27 @@ export default function Sidebar() {
   const { user } = useAuth();
   const userRoles = new Set((user?.roles || []).map(normalizeRole));
   const [alertCount, setAlertCount] = useState(0);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isAdmin = userRoles.has("ADMIN");
+  const [adminSidebarExpanded, setAdminSidebarExpanded] = useState(() => {
+    return localStorage.getItem("adminSidebarExpanded") === "true";
+  });
+  const activeAdminGroup = adminMenuGroups.find((group) =>
+    group.items.some((item) =>
+      item.end ? location.pathname === item.to : location.pathname.startsWith(item.to),
+    ),
+  )?.key;
+  const [openAdminGroups, setOpenAdminGroups] = useState(() => new Set(["overview", "operations"]));
 
   const hasInventoryRoles =
     userRoles.has("ADMIN") || userRoles.has("PHARMACIST");
+
+  useEffect(() => {
+    if (isAdmin) {
+      localStorage.setItem("adminSidebarExpanded", adminSidebarExpanded);
+    }
+  }, [adminSidebarExpanded, isAdmin]);
 
   useEffect(() => {
     if (!hasInventoryRoles) {
@@ -116,41 +209,146 @@ export default function Sidebar() {
     return item.roles.some(role => userRoles.has(role));
   });
 
+  useEffect(() => {
+    if (!activeAdminGroup) return;
+    setOpenAdminGroups((current) => {
+      if (current.has(activeAdminGroup)) return current;
+      const next = new Set(current);
+      next.add(activeAdminGroup);
+      return next;
+    });
+  }, [activeAdminGroup]);
+
+  const toggleAdminGroup = (groupKey) => {
+    setOpenAdminGroups((current) => {
+      const next = new Set(current);
+      if (next.has(groupKey)) {
+        next.delete(groupKey);
+      } else {
+        next.add(groupKey);
+      }
+      return next;
+    });
+  };
+
   return (
-    <aside className="sidebar">
-      <div className="brand-lockup">
-        <Logo size={36} />
+    <aside className={`dashboard-sidebar ${isAdmin ? `admin-sidebar ${adminSidebarExpanded ? "admin-sidebar-expanded" : "admin-sidebar-collapsed"}` : ""}`}>
+      <div className="sidebar-brand" onClick={() => navigate('/dashboard')} title="Trang chủ">
+        <Logo size={42} showText={!isAdmin || adminSidebarExpanded} />
+        {isAdmin && adminSidebarExpanded && (
+          <div>
+            <strong>Clinic Admin</strong>
+            <span>Operations</span>
+          </div>
+        )}
       </div>
-      <nav className="nav-list" aria-label="Main navigation">
-        {filteredItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}
-              end={item.end}
-            >
-              <Icon size={18} />
-              <span>{item.label}</span>
-              {item.to === "/dashboard/inventory/alerts" && alertCount > 0 && (
-                <span style={{
-                  background: "#ef4444",
-                  color: "white",
-                  fontSize: "11px",
-                  fontWeight: "600",
-                  padding: "2px 6px",
-                  borderRadius: "10px",
-                  lineHeight: 1,
-                  marginLeft: "auto"
-                }}>
-                  {alertCount > 99 ? "99+" : alertCount}
-                </span>
-              )}
-            </NavLink>
-          );
-        })}
-      </nav>
+      
+      <div className="sidebar-scroll custom-scrollbar">
+        {isAdmin && (
+          <button
+            className="admin-sidebar-toggle"
+            type="button"
+            aria-label={adminSidebarExpanded ? "Thu gọn sidebar" : "Mở rộng sidebar"}
+            onClick={() => setAdminSidebarExpanded((expanded) => !expanded)}
+          >
+            <ChevronRight size={22} className={adminSidebarExpanded ? "rotate" : ""} />
+          </button>
+        )}
+        <nav className="sidebar-nav" aria-label="Main navigation">
+          {isAdmin && !adminSidebarExpanded ? (
+            adminQuickItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <NavLink
+                  key={item.label}
+                  to={item.to}
+                  className={({ isActive }) => `admin-quick-link ${isActive ? "active" : ""}`}
+                  end={item.end}
+                  title={item.label}
+                >
+                  <Icon size={22} strokeWidth={2.25} />
+                </NavLink>
+              );
+            })
+          ) : isAdmin ? (
+            adminMenuGroups.map((group) => {
+              const GroupIcon = group.icon;
+              const isOpen = openAdminGroups.has(group.key);
+              const isActiveGroup = activeAdminGroup === group.key;
+
+              return (
+                <div className="admin-nav-group" key={group.key}>
+                  <button
+                    className={`admin-nav-trigger ${isActiveGroup ? "active" : ""}`}
+                    type="button"
+                    onClick={() => toggleAdminGroup(group.key)}
+                    aria-expanded={isOpen}
+                  >
+                    <GroupIcon size={19} strokeWidth={isActiveGroup ? 2.5 : 2} />
+                    <span>{group.label}</span>
+                    <ChevronDown className={isOpen ? "open" : ""} size={16} />
+                  </button>
+
+                  {isOpen && (
+                    <div className="admin-nav-children">
+                      {group.items.map((item) => (
+                        <NavLink
+                          key={item.label}
+                          to={item.to}
+                          className={({ isActive }) => `admin-child-link ${isActive ? "active" : ""}`}
+                          end={item.end}
+                        >
+                          <span>{item.label}</span>
+                          {item.to === "/dashboard/inventory/alerts" && alertCount > 0 && (
+                            <span className="sidebar-badge">
+                              {alertCount > 99 ? "99+" : alertCount}
+                            </span>
+                          )}
+                        </NavLink>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          ) : filteredItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.label}
+                to={item.to}
+                className={({ isActive }) => `sidebar-link ${isActive ? "active" : ""}`}
+                end={item.end}
+              >
+                {({ isActive }) => (
+                  <>
+                    <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                    <span>{item.label}</span>
+                    {item.to === "/dashboard/inventory/alerts" && alertCount > 0 && (
+                      <span className="sidebar-badge">
+                        {alertCount > 99 ? "99+" : alertCount}
+                      </span>
+                    )}
+                  </>
+                )}
+              </NavLink>
+            );
+          })}
+        </nav>
+      </div>
+      
+      <div className="sidebar-footer">
+        <div>
+          {isAdmin && !adminSidebarExpanded ? (
+            <strong>v2</strong>
+          ) : (
+            <>
+              <span>Medical Clinic</span>
+              <strong>v2.0</strong>
+            </>
+          )}
+        </div>
+      </div>
     </aside>
   );
 }

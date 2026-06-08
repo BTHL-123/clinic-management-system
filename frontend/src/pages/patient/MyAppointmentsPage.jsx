@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { CalendarDays, Clock, CheckCircle, XCircle, RefreshCw, AlertCircle, ChevronLeft, ChevronRight, Star, MessageSquarePlus } from "lucide-react";
+import { CalendarDays, Clock, CheckCircle, XCircle, RefreshCw, AlertCircle, ChevronLeft, ChevronRight, Star, MessageSquarePlus, ArrowLeft } from "lucide-react";
 import appointmentService from "../../services/appointmentService.js";
 import { createReview } from "../../services/reviewService.js";
 import { useAuth } from "../../context/useAuth.js";
@@ -18,15 +18,16 @@ function CancelModal({ isOpen, onClose, onConfirm, busy }) {
   return (
     <div style={{
       position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: "rgba(0,0,0,0.5)", display: "flex",
-      alignItems: "center", justifyContent: "center", zIndex: 1000
+      backgroundColor: "rgba(13, 76, 70, 0.25)", backdropFilter: "blur(8px)",
+      display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
     }}>
       <div style={{
-        background: "#fff", padding: "24px", borderRadius: "12px",
-        width: "90%", maxWidth: "400px", boxShadow: "0 4px 20px rgba(0,0,0,0.15)"
+        background: "rgba(255, 255, 255, 0.85)", backdropFilter: "blur(20px)",
+        padding: "28px", borderRadius: "24px", border: "1px solid rgba(255,255,255,0.5)",
+        width: "90%", maxWidth: "400px", boxShadow: "0 10px 40px rgba(0,0,0,0.12)"
       }}>
-        <h3 style={{ margin: "0 0 16px", color: "#0f172a", fontSize: "1.2rem" }}>Xác nhận hủy lịch</h3>
-        <p style={{ margin: "0 0 16px", color: "#64748b", fontSize: "14px" }}>
+        <h3 style={{ margin: "0 0 16px", color: "#0f172a", fontSize: "1.2rem", fontWeight: 800 }}>Xác nhận hủy lịch</h3>
+        <p style={{ margin: "0 0 16px", color: "#475569", fontSize: "14px", fontWeight: 500 }}>
           Vui lòng nhập lý do hủy lịch hẹn này. Thao tác này không thể hoàn tác.
         </p>
         <textarea
@@ -36,7 +37,8 @@ function CancelModal({ isOpen, onClose, onConfirm, busy }) {
           rows={3}
           style={{
             width: "100%", padding: "10px", borderRadius: "8px",
-            border: "1px solid #cbd5e1", outline: "none", resize: "none",
+            border: "1px solid rgba(255, 255, 255, 0.6)", background: "rgba(255,255,255,0.4)",
+            outline: "none", resize: "none",
             marginBottom: "16px", fontFamily: "inherit", fontSize: "14px",
             boxSizing: "border-box"
           }}
@@ -46,8 +48,8 @@ function CancelModal({ isOpen, onClose, onConfirm, busy }) {
             onClick={onClose}
             disabled={busy}
             style={{
-              padding: "8px 16px", borderRadius: "8px", border: "1px solid #cbd5e1",
-              background: "#fff", cursor: "pointer", fontWeight: 600, color: "#475569"
+              padding: "8px 16px", borderRadius: "8px", border: "1px solid rgba(255, 255, 255, 0.6)",
+              background: "rgba(255, 255, 255, 0.6)", cursor: "pointer", fontWeight: 600, color: "#475569"
             }}
           >
             Đóng
@@ -80,15 +82,16 @@ function ReviewModal({ isOpen, onClose, onConfirm, busy }) {
   return (
     <div style={{
       position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: "rgba(0,0,0,0.5)", display: "flex",
-      alignItems: "center", justifyContent: "center", zIndex: 1000
+      backgroundColor: "rgba(13, 76, 70, 0.25)", backdropFilter: "blur(8px)",
+      display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
     }}>
       <div style={{
-        background: "#fff", padding: "24px", borderRadius: "12px",
-        width: "90%", maxWidth: "400px", boxShadow: "0 4px 20px rgba(0,0,0,0.15)"
+        background: "rgba(255, 255, 255, 0.85)", backdropFilter: "blur(20px)",
+        padding: "28px", borderRadius: "24px", border: "1px solid rgba(255,255,255,0.5)",
+        width: "90%", maxWidth: "400px", boxShadow: "0 10px 40px rgba(0,0,0,0.12)"
       }}>
-        <h3 style={{ margin: "0 0 16px", color: "#0f172a", fontSize: "1.2rem" }}>Đánh giá dịch vụ</h3>
-        <p style={{ margin: "0 0 16px", color: "#64748b", fontSize: "14px" }}>
+        <h3 style={{ margin: "0 0 16px", color: "#0f172a", fontSize: "1.2rem", fontWeight: 800 }}>Đánh giá dịch vụ</h3>
+        <p style={{ margin: "0 0 16px", color: "#475569", fontSize: "14px", fontWeight: 500 }}>
           Đánh giá trải nghiệm khám bệnh của bạn. Phản hồi này giúp chúng tôi cải thiện dịch vụ tốt hơn.
         </p>
 
@@ -114,7 +117,8 @@ function ReviewModal({ isOpen, onClose, onConfirm, busy }) {
           rows={3}
           style={{
             width: "100%", padding: "10px", borderRadius: "8px",
-            border: "1px solid #cbd5e1", outline: "none", resize: "none",
+            border: "1px solid rgba(255, 255, 255, 0.6)", background: "rgba(255,255,255,0.4)",
+            outline: "none", resize: "none",
             marginBottom: "16px", fontFamily: "inherit", fontSize: "14px",
             boxSizing: "border-box"
           }}
@@ -124,8 +128,8 @@ function ReviewModal({ isOpen, onClose, onConfirm, busy }) {
             onClick={onClose}
             disabled={busy}
             style={{
-              padding: "8px 16px", borderRadius: "8px", border: "1px solid #cbd5e1",
-              background: "#fff", cursor: "pointer", fontWeight: 600, color: "#475569"
+              padding: "8px 16px", borderRadius: "8px", border: "1px solid rgba(255, 255, 255, 0.6)",
+              background: "rgba(255, 255, 255, 0.6)", cursor: "pointer", fontWeight: 600, color: "#475569"
             }}
           >
             Đóng
@@ -163,8 +167,7 @@ function StatusBadge({ status }) {
   return (
     <span style={{
       fontSize: "11px", fontWeight: 700, padding: "3px 10px",
-      borderRadius: "20px", background: cfg.bg, color: cfg.color,
-      border: `1px solid ${cfg.color}22`,
+      borderRadius: "20px", background: cfg.bg, color: cfg.color
     }}>
       {cfg.label}
     </span>
@@ -192,89 +195,68 @@ function AppointmentCard({
     : false;
 
   return (
-    <div style={{
-      background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "12px",
-      padding: "20px 22px", display: "flex", flexDirection: "column", gap: "10px",
-      boxShadow: "0 1px 6px rgba(0,0,0,0.05)", transition: "box-shadow 0.18s",
-    }}
-    onMouseEnter={e => e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.10)"}
-    onMouseLeave={e => e.currentTarget.style.boxShadow = "0 1px 6px rgba(0,0,0,0.05)"}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+    <div className="patient-glass-subcard p-5 flex flex-col gap-3 hover:bg-white/10 transition-all">
+      <div className="flex justify-between items-start">
         <div>
-          <div style={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a" }}>
+          <div className="font-bold text-[0.95rem] text-white">
             {appt.appointmentCode}
           </div>
-          <div style={{ fontSize: "12px", color: "#94a3b8", marginTop: "2px" }}>
+          <div className="text-[12px] text-white/60 mt-0.5">
             Mã lịch hẹn
           </div>
         </div>
         <StatusBadge status={appt.status} />
       </div>
 
-      <div style={{ height: "1px", background: "#f1f5f9" }} />
+      <div className="h-px bg-white/10" />
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+      <div className="grid grid-cols-2 gap-2">
         <div>
-          <div style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 600, marginBottom: "2px" }}>NGÀY KHÁM</div>
-          <div style={{ fontSize: "13px", fontWeight: 600, color: "#334155" }}>{date}</div>
+          <div className="text-[11px] text-white/50 font-semibold mb-0.5">NGÀY KHÁM</div>
+          <div className="text-[13px] font-semibold text-white/90">{date}</div>
         </div>
         <div>
-          <div style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 600, marginBottom: "2px" }}>GIỜ KHÁM</div>
-          <div style={{ fontSize: "13px", fontWeight: 600, color: "#334155" }}>{time} – {endTime}</div>
+          <div className="text-[11px] text-white/50 font-semibold mb-0.5">GIỜ KHÁM</div>
+          <div className="text-[13px] font-semibold text-white/90">{time} – {endTime}</div>
         </div>
         <div>
-          <div style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 600, marginBottom: "2px" }}>LÝ DO KHÁM</div>
-          <div style={{ fontSize: "13px", color: "#475569" }}>{appt.reasonForVisit || "—"}</div>
+          <div className="text-[11px] text-white/50 font-semibold mb-0.5">LÝ DO KHÁM</div>
+          <div className="text-[13px] text-white/80">{appt.reasonForVisit || "—"}</div>
         </div>
         <div>
-          <div style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 600, marginBottom: "2px" }}>HÌNH THỨC</div>
-          <div style={{ fontSize: "13px", color: "#475569" }}>{appt.bookingType === "ONLINE" ? "Trực tuyến" : "Trực tiếp"}</div>
+          <div className="text-[11px] text-white/50 font-semibold mb-0.5">HÌNH THỨC</div>
+          <div className="text-[13px] text-white/80">{appt.bookingType === "ONLINE" ? "Trực tuyến" : "Trực tiếp"}</div>
         </div>
-        <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginTop: "4px" }}>
+        <div className="col-span-2 grid grid-cols-2 gap-2 mt-1">
           <div>
-            <div style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 600, marginBottom: "2px" }}>BỆNH NHÂN</div>
-            <div style={{ fontSize: "13px", fontWeight: 600, color: "#334155" }}>{appt.patientName || "—"}</div>
+            <div className="text-[11px] text-white/50 font-semibold mb-0.5">BỆNH NHÂN</div>
+            <div className="text-[13px] font-semibold text-white/90">{appt.patientName || "—"}</div>
           </div>
           <div>
-            <div style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 600, marginBottom: "2px" }}>BÁC SĨ</div>
-            <div style={{ fontSize: "13px", fontWeight: 600, color: "#334155" }}>{appt.doctorName || "—"}</div>
+            <div className="text-[11px] text-white/50 font-semibold mb-0.5">BÁC SĨ</div>
+            <div className="text-[13px] font-semibold text-white/90">{appt.doctorName || "—"}</div>
           </div>
         </div>
         {appt.status === "CANCELLED" && appt.cancellationReason && (
-          <div style={{ gridColumn: "1 / -1", marginTop: "4px" }}>
-            <div style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 600, marginBottom: "2px" }}>LÝ DO HỦY</div>
-            <div style={{ fontSize: "13px", color: "#dc2626" }}>{appt.cancellationReason}</div>
+          <div className="col-span-2 mt-1">
+            <div className="text-[11px] text-white/50 font-semibold mb-0.5">LÝ DO HỦY</div>
+            <div className="text-[13px] text-red-400">{appt.cancellationReason}</div>
           </div>
         )}
       </div>
 
-      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "12px", gap: "8px" }}>
+      <div className="flex justify-end mt-3 gap-2">
         {appt.status === "CANCELLED" && appt.depositAmount > 0 && (
           <button
             onClick={() => onRefundRequest(appt)}
-            style={{
-              display: "flex", alignItems: "center", gap: "6px",
-              padding: "6px 14px", borderRadius: "6px", border: "1px solid #fecaca",
-              background: "#fff", color: "#ef4444", cursor: "pointer",
-              fontSize: "13px", fontWeight: 600, transition: "all 0.15s"
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = "#fef2f2"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md border border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20 hover:text-red-200 cursor-pointer text-[13px] font-semibold transition-all"
           >
             Yêu cầu hoàn tiền
           </button>
         )}
         <button
           onClick={() => navigate(`/dashboard/appointments/${appt.appointmentId}`)}
-          style={{
-            display: "flex", alignItems: "center", gap: "6px",
-            padding: "6px 14px", borderRadius: "6px", border: "1px solid #cbd5e1",
-            background: "#fff", color: "#475569", cursor: "pointer",
-            fontSize: "13px", fontWeight: 600, transition: "all 0.15s"
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = "#f8fafc"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md border border-white/30 bg-white/10 text-white/80 hover:bg-white/20 hover:text-white cursor-pointer text-[13px] font-semibold transition-all"
         >
           Xem chi tiết
         </button>
@@ -285,35 +267,21 @@ function AppointmentCard({
               <>
                 <button
                   onClick={() => onRescheduleRequest(appt)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: "6px",
-                    padding: "6px 14px", borderRadius: "6px", border: "1px solid #cbd5e1",
-                    background: "#fff", color: "#0ea5e9", cursor: "pointer",
-                    fontSize: "13px", fontWeight: 600, transition: "all 0.15s"
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = "#f0f9ff"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md border border-sky-500/30 bg-sky-500/10 text-sky-300 hover:bg-sky-500/20 hover:text-sky-200 cursor-pointer text-[13px] font-semibold transition-all"
                 >
                   <RefreshCw size={14} />
                   Dời lịch
                 </button>
                 <button
                   onClick={() => onCancelRequest(appt.appointmentId)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: "6px",
-                    padding: "6px 14px", borderRadius: "6px", border: "1px solid #fecaca",
-                    background: "#fff", color: "#dc2626", cursor: "pointer",
-                    fontSize: "13px", fontWeight: 600, transition: "all 0.15s"
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = "#fef2f2"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 cursor-pointer text-[13px] font-semibold transition-all"
                 >
                   <XCircle size={14} />
                   Hủy lịch
                 </button>
               </>
             ) : (
-              <span style={{ fontSize: "12px", color: "#b45309", fontStyle: "italic", display: "flex", alignItems: "center", padding: "6px 0" }}>
+              <span className="text-[12px] text-amber-500/90 italic flex items-center py-1.5">
                 Đã qua giờ khám
               </span>
             )}
@@ -321,7 +289,7 @@ function AppointmentCard({
         )}
 
         {appt.status === "COMPLETED" && appt.hasReviewed && (
-          <span style={{ fontSize: "12px", color: "#16a34a", fontWeight: 600, display: "flex", alignItems: "center", gap: "4px", padding: "6px 0" }}>
+          <span className="text-[12px] text-emerald-400 font-semibold flex items-center gap-1 py-1.5">
             ✓ Đã đánh giá
           </span>
         )}
@@ -329,14 +297,7 @@ function AppointmentCard({
         {appt.status === "COMPLETED" && appt.patientName === currentUserFullName && !appt.hasReviewed && (
           <button
             onClick={() => onReviewRequest(appt.appointmentId)}
-            style={{
-              display: "flex", alignItems: "center", gap: "6px",
-              padding: "6px 14px", borderRadius: "6px", border: "1px solid #eab308",
-              background: "#fff", color: "#ca8a04", cursor: "pointer",
-              fontSize: "13px", fontWeight: 600, transition: "all 0.15s"
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = "#fefce8"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "#fff"; }}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 hover:text-amber-200 cursor-pointer text-[13px] font-semibold transition-all"
           >
             <MessageSquarePlus size={14} />
             Viết đánh giá
@@ -349,16 +310,16 @@ function AppointmentCard({
 
 function EmptyState({ tab }) {
   const icon = tab === "upcoming"
-    ? <CalendarDays size={44} style={{ color: "#cbd5e1" }} />
-    : <Clock size={44} style={{ color: "#cbd5e1" }} />;
+    ? <CalendarDays size={44} className="text-white/30 mx-auto" />
+    : <Clock size={44} className="text-white/30 mx-auto" />;
   const msg = tab === "upcoming"
     ? "Bạn chưa có lịch hẹn sắp tới."
     : "Bạn chưa có lịch sử khám bệnh.";
 
   return (
-    <div style={{ textAlign: "center", padding: "60px 24px", color: "#94a3b8" }}>
+    <div className="text-center py-16 text-white/60">
       {icon}
-      <div style={{ marginTop: "14px", fontSize: "14px" }}>{msg}</div>
+      <div className="mt-4 text-[14px]">{msg}</div>
     </div>
   );
 }
@@ -366,6 +327,7 @@ function EmptyState({ tab }) {
 export default function MyAppointmentsPage() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const tab = searchParams.get("tab") === "history" ? "history" : "upcoming";
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -502,30 +464,39 @@ export default function MyAppointmentsPage() {
   ];
 
   return (
-    <div style={{ maxWidth: "760px" }}>
-      <div style={{ marginBottom: "24px" }}>
-        <h1 style={{ margin: "0 0 4px", fontSize: "1.5rem", fontWeight: 800, color: "#0f172a" }}>
-          Lịch hẹn của tôi
-        </h1>
-        <p style={{ margin: 0, color: "#64748b", fontSize: "14px" }}>
-          Xem lịch hẹn sắp tới và tra cứu lịch sử khám bệnh của bạn.
-        </p>
+    <div className="max-w-[1100px] mx-auto w-full flex flex-col items-center">
+      <div className="w-full mb-10 relative flex flex-col sm:flex-row justify-center items-center min-h-[80px]">
+        <div className="w-full sm:absolute sm:left-0 sm:top-4 flex justify-start mb-4 sm:mb-0 px-4 sm:px-0">
+          <button 
+            onClick={() => navigate("/dashboard", { state: { activeClusterId: "booking" } })}
+            className="bg-white/10 hover:bg-white/20 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm"
+          >
+            <ArrowLeft size={18} />
+            Quay lại
+          </button>
+        </div>
+        <div className="flex flex-col items-center text-center mt-2 px-4">
+          <h1 className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-4">
+            <CalendarDays size={32} className="text-teal-400 drop-shadow-md" />
+            <span className="drop-shadow-md">Lịch hẹn của tôi</span>
+          </h1>
+          <p className="text-white/70 font-medium drop-shadow-sm text-[16px] max-w-[600px]">
+            Xem lịch hẹn sắp tới và tra cứu lịch sử khám bệnh của bạn.
+          </p>
+        </div>
       </div>
 
-      <div style={{ display: "flex", gap: "8px", marginBottom: "24px" }}>
+      <div className="patient-glass-card p-6 md:p-8 w-full max-w-[800px] mx-auto mb-10">
+        <div className="flex flex-wrap gap-3 mb-8">
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            style={{
-              display: "flex", alignItems: "center", gap: "6px",
-              padding: "8px 18px", borderRadius: "8px", fontSize: "13px",
-              fontWeight: 600, cursor: "pointer", border: "1.5px solid",
-              transition: "all 0.15s",
-              background: tab === t.key ? "#0f766e" : "#ffffff",
-              color: tab === t.key ? "#ffffff" : "#475569",
-              borderColor: tab === t.key ? "#0f766e" : "#e2e8f0",
-            }}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-bold tracking-wide transition-all duration-200 shadow-sm ${
+              tab === t.key 
+                ? "bg-teal-700/80 backdrop-blur-md text-white border border-teal-800/40" 
+                : "bg-white/30 backdrop-blur-sm border border-white/30 text-teal-950 hover:bg-white/50 hover:text-teal-900"
+            }`}
           >
             {t.icon}
             {t.label}
@@ -611,6 +582,7 @@ export default function MyAppointmentsPage() {
           )}
         </>
       )}
+      </div>
 
       <CancelModal
         isOpen={cancelModalOpen}

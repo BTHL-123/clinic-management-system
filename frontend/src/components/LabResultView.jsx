@@ -39,21 +39,21 @@ export default function LabResultView({ consultationId }) {
             </span>
           </div>
 
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <table style={{ width: "100%", tableLayout: "fixed", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
-              <tr style={{ background: "#f3f4f6" }}>
-                <th style={thStyle}>Tên xét nghiệm</th>
-                <th style={thStyle}>Mã</th>
-                <th style={thStyle}>Kết quả</th>
-                <th style={thStyle}>Đơn vị</th>
-                <th style={thStyle}>Khoảng bình thường</th>
-                <th style={thStyle}>Kết luận</th>
-                <th style={thStyle}>File</th>
+              <tr style={{ background: "rgba(255, 255, 255, 0.3)" }}>
+                <th style={{ ...thStyle, width: "20%" }}>Tên xét nghiệm</th>
+                <th style={{ ...thStyle, width: "12%" }}>Mã</th>
+                <th style={{ ...thStyle, width: "15%" }}>Kết quả</th>
+                <th style={{ ...thStyle, width: "10%" }}>Đơn vị</th>
+                <th style={{ ...thStyle, width: "18%" }}>Khoảng bình thường</th>
+                <th style={{ ...thStyle, width: "15%" }}>Kết luận</th>
+                <th style={{ ...thStyle, width: "10%" }}>File</th>
               </tr>
             </thead>
             <tbody>
               {req.items.map((item) => (
-                <tr key={item.labRequestItemId} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                <tr key={item.labRequestItemId} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.3)" }}>
                   <td style={tdStyle}>
                     <div style={{ fontWeight: 600 }}>{item.testName}</div>
                   </td>
@@ -120,7 +120,7 @@ const thStyle = {
   padding: "6px 10px",
   textAlign: "left",
   fontWeight: 600,
-  borderBottom: "1px solid #e5e7eb",
+  borderBottom: "1px solid rgba(255, 255, 255, 0.3)",
 };
 
 const tdStyle = {

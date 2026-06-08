@@ -6,7 +6,7 @@ import PrescriptionDetailView from "./PrescriptionDetailView";
 import LabResultView from "./LabResultView";
 import { getPrescriptionByConsultationId } from "../services/prescriptionService";
 
-export default function MedicalHistory({ patientId, onClose, inline = false }) {
+export default function MedicalHistory({ patientId, onClose, inline = false, isPatientView = false }) {
   const navigate = useNavigate();
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,42 +56,44 @@ export default function MedicalHistory({ patientId, onClose, inline = false }) {
   }, [selectedRecord]);
 
   const renderList = () => (
-    <div className="table-wrapper" style={{ marginTop: 16 }}>
-      <table className="data-table">
-        <thead>
+    <div className="w-full mt-4 overflow-x-auto custom-scrollbar">
+      <table className="w-full text-left border-collapse whitespace-nowrap">
+        <thead className={isPatientView ? "bg-white/10 border-b border-white/20 text-white/80 text-sm" : "bg-white/40 border-b border-white/60 text-slate-700 text-sm"}>
           <tr>
-            <th>Ngày khám</th>
-            <th>Triệu chứng</th>
-            <th>Chẩn đoán</th>
-            <th>Bác sĩ</th>
-            <th>Chuyên khoa</th>
-            <th style={{ textAlign: "center" }}>Chi tiết</th>
+            <th className="p-4 font-semibold w-[160px]">Ngày khám</th>
+            <th className="p-4 font-semibold">Triệu chứng</th>
+            <th className="p-4 font-semibold">Chẩn đoán</th>
+            <th className="p-4 font-semibold">Bác sĩ</th>
+            <th className="p-4 font-semibold">Chuyên khoa</th>
+            <th className="p-4 font-semibold text-center w-[100px]">Chi tiết</th>
           </tr>
         </thead>
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan={6} className="empty-row">Đang tải lịch sử bệnh án...</td>
+              <td colSpan={6} className={`p-8 text-center font-medium ${isPatientView ? "text-white/50" : "text-slate-500"}`}>Đang tải lịch sử bệnh án...</td>
             </tr>
           ) : records.length === 0 ? (
             <tr>
-              <td colSpan={6} className="empty-row">Chưa có lịch sử bệnh án.</td>
+              <td colSpan={6} className={`p-8 text-center font-medium ${isPatientView ? "text-white/50" : "text-slate-500"}`}>Chưa có lịch sử bệnh án.</td>
             </tr>
           ) : (
             records.map((record) => (
-              <tr key={record.medicalRecordId}>
-                <td>{formatDate(record.createdAt)}</td>
-                <td>{record.symptoms || "—"}</td>
-                <td><strong>{record.diagnosis || "—"}</strong></td>
-                <td>{record.doctorName || "—"}</td>
-                <td>{record.departmentName || "—"}</td>
-                <td style={{ textAlign: "center" }}>
+              <tr key={record.medicalRecordId} className={`border-b transition-colors ${isPatientView ? "border-white/10 hover:bg-white/10" : "border-slate-200/50 hover:bg-white/50"}`}>
+                <td className={`p-4 ${isPatientView ? "text-white/80" : "text-slate-600"}`}>{formatDate(record.createdAt)}</td>
+                <td className={`p-4 ${isPatientView ? "text-white/90" : "text-slate-700"}`}>{record.symptoms || "—"}</td>
+                <td className={`p-4 font-bold ${isPatientView ? "text-white" : "text-slate-800"}`}>{record.diagnosis || "—"}</td>
+                <td className={`p-4 ${isPatientView ? "text-white/80" : "text-slate-600"}`}>{record.doctorName || "—"}</td>
+                <td className={`p-4 ${isPatientView ? "text-white/80" : "text-slate-600"}`}>{record.departmentName || "—"}</td>
+                <td className="p-4 text-center">
                   <button 
-                    className="icon-button" 
+                    className={isPatientView 
+                      ? "p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors shadow-sm inline-flex justify-center" 
+                      : "p-2 bg-teal-50 hover:bg-teal-100 text-teal-600 rounded-xl transition-colors shadow-sm inline-flex justify-center"} 
                     title="Xem chi tiết"
                     onClick={() => setSelectedRecord(record)}
                   >
-                    <FileText size={16} />
+                    <FileText size={18} />
                   </button>
                 </td>
               </tr>
@@ -103,79 +105,81 @@ export default function MedicalHistory({ patientId, onClose, inline = false }) {
   );
 
   const renderDetail = () => (
-    <div style={{ marginTop: 16 }}>
-      <button 
-        className="secondary-button" 
-        onClick={() => setSelectedRecord(null)}
-        style={{ marginBottom: 16 }}
-      >
-        &larr; Quay lại danh sách
-      </button>
+    <div className="mt-4 flex flex-col gap-6">
+      <div>
+        <button 
+          onClick={() => setSelectedRecord(null)}
+          className={isPatientView 
+            ? "inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-bold shadow-sm transition-all hover:shadow hover:-translate-y-0.5"
+            : "inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/70 hover:bg-white/90 backdrop-blur-md border border-white/50 text-teal-700 font-bold shadow-sm transition-all hover:shadow hover:-translate-y-0.5"}
+        >
+          &larr; Quay lại danh sách
+        </button>
+      </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        <div style={{ background: "#f9fafb", padding: 16, borderRadius: 8 }}>
-          <h4 style={{ marginBottom: 12, borderBottom: "1px solid #e5e7eb", paddingBottom: 8 }}>Thông tin khám</h4>
-          <p><strong>Ngày khám:</strong> {formatDate(selectedRecord.createdAt)}</p>
-          <p><strong>Bác sĩ:</strong> {selectedRecord.doctorName || "—"}</p>
-          <p><strong>Chuyên khoa:</strong> {selectedRecord.departmentName || "—"}</p>
-          <div style={{ marginTop: 12 }}>
-            <strong>Triệu chứng:</strong>
-            <p style={{ marginTop: 4, whiteSpace: "pre-wrap" }}>{selectedRecord.symptoms || "—"}</p>
-          </div>
-          <div style={{ marginTop: 12 }}>
-            <strong>Khám lâm sàng:</strong>
-            <p style={{ marginTop: 4, whiteSpace: "pre-wrap" }}>{selectedRecord.clinicalFindings || "—"}</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className={isPatientView ? "patient-glass-subcard p-6" : "bg-white/60 backdrop-blur-xl border border-white/60 p-6 rounded-3xl shadow-sm"}>
+          <h4 className={`text-lg font-bold mb-4 pb-2 border-b ${isPatientView ? "text-white border-white/20" : "text-slate-800 border-slate-200/60"}`}>Thông tin khám</h4>
+          <div className="flex flex-col gap-3">
+            <p className={isPatientView ? "text-white/80" : "text-slate-700"}><strong className={`mr-2 ${isPatientView ? "text-white" : "text-slate-800"}`}>Ngày khám:</strong> {formatDate(selectedRecord.createdAt)}</p>
+            <p className={isPatientView ? "text-white/80" : "text-slate-700"}><strong className={`mr-2 ${isPatientView ? "text-white" : "text-slate-800"}`}>Bác sĩ:</strong> {selectedRecord.doctorName || "—"}</p>
+            <p className={isPatientView ? "text-white/80" : "text-slate-700"}><strong className={`mr-2 ${isPatientView ? "text-white" : "text-slate-800"}`}>Chuyên khoa:</strong> {selectedRecord.departmentName || "—"}</p>
+            <div className="pt-2">
+              <strong className={isPatientView ? "text-white" : "text-slate-800"}>Triệu chứng:</strong>
+              <p className={`mt-1.5 whitespace-pre-wrap ${isPatientView ? "text-white/80" : "text-slate-700"}`}>{selectedRecord.symptoms || "—"}</p>
+            </div>
+            <div className="pt-2">
+              <strong className={isPatientView ? "text-white" : "text-slate-800"}>Khám lâm sàng:</strong>
+              <p className={`mt-1.5 whitespace-pre-wrap ${isPatientView ? "text-white/80" : "text-slate-700"}`}>{selectedRecord.clinicalFindings || "—"}</p>
+            </div>
           </div>
         </div>
 
-        <div style={{ background: "#f9fafb", padding: 16, borderRadius: 8 }}>
-          <h4 style={{ marginBottom: 12, borderBottom: "1px solid #e5e7eb", paddingBottom: 8 }}>Chẩn đoán & Điều trị</h4>
-          <div>
-            <strong>Chẩn đoán:</strong>
-            <p style={{ marginTop: 4, color: "#b91c1c", fontWeight: "bold" }}>{selectedRecord.diagnosis || "—"}</p>
-          </div>
-          <div style={{ marginTop: 12 }}>
-            <strong>Hướng điều trị:</strong>
-            <p style={{ marginTop: 4, whiteSpace: "pre-wrap" }}>{selectedRecord.treatmentPlan || "—"}</p>
-          </div>
-          <div style={{ marginTop: 12 }}>
-            <strong>Lời dặn của bác sĩ:</strong>
-            <p style={{ marginTop: 4, whiteSpace: "pre-wrap" }}>{selectedRecord.doctorNote || "—"}</p>
-          </div>
-          {(selectedRecord.followUpDate || selectedRecord.followUpNote) && (
-            <div style={{ marginTop: 12, background: "#ecfdf5", padding: 12, borderRadius: 6, border: "1px solid #d1fae5" }}>
-              <strong>Tái khám:</strong>
-              {selectedRecord.followUpDate && <p style={{ marginTop: 4 }}>Ngày: {new Date(selectedRecord.followUpDate).toLocaleDateString("vi-VN")}</p>}
-              {selectedRecord.followUpNote && <p style={{ marginTop: 4 }}>Ghi chú: {selectedRecord.followUpNote}</p>}
+        <div className={isPatientView ? "patient-glass-subcard p-6" : "bg-white/60 backdrop-blur-xl border border-white/60 p-6 rounded-3xl shadow-sm"}>
+          <h4 className={`text-lg font-bold mb-4 pb-2 border-b ${isPatientView ? "text-white border-white/20" : "text-slate-800 border-slate-200/60"}`}>Chẩn đoán & Điều trị</h4>
+          <div className="flex flex-col gap-3">
+            <div>
+              <strong className={isPatientView ? "text-white" : "text-slate-800"}>Chẩn đoán:</strong>
+              <p className={`mt-1.5 font-bold text-lg ${isPatientView ? "text-rose-400" : "text-rose-600"}`}>{selectedRecord.diagnosis || "—"}</p>
             </div>
-          )}
+            <div className="pt-2">
+              <strong className={isPatientView ? "text-white" : "text-slate-800"}>Hướng điều trị:</strong>
+              <p className={`mt-1.5 whitespace-pre-wrap ${isPatientView ? "text-white/80" : "text-slate-700"}`}>{selectedRecord.treatmentPlan || "—"}</p>
+            </div>
+            <div className="pt-2">
+              <strong className={isPatientView ? "text-white" : "text-slate-800"}>Lời dặn của bác sĩ:</strong>
+              <p className={`mt-1.5 whitespace-pre-wrap ${isPatientView ? "text-white/80" : "text-slate-700"}`}>{selectedRecord.doctorNote || "—"}</p>
+            </div>
+            {(selectedRecord.followUpDate || selectedRecord.followUpNote) && (
+              <div className={`mt-3 p-4 rounded-2xl border ${isPatientView ? "bg-emerald-500/10 border-emerald-500/20" : "bg-emerald-50/70 border-emerald-100"}`}>
+                <strong className="text-emerald-800">Tái khám:</strong>
+                {selectedRecord.followUpDate && <p className="mt-1.5 text-emerald-700">Ngày: {new Date(selectedRecord.followUpDate).toLocaleDateString("vi-VN")}</p>}
+                {selectedRecord.followUpNote && <p className="mt-1 text-emerald-700">Ghi chú: {selectedRecord.followUpNote}</p>}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════════════
        * Đơn thuốc và Kết quả xét nghiệm - Task 47 & Task 80
        * ═══════════════════════════════════════════════════════════════════════ */}
-      <div style={{ marginTop: 16 }}>
+      <div className="flex flex-col gap-6">
         {selectedRecord.hasLabResult && (
-          <div style={{ background: "#f9fafb", padding: 16, borderRadius: 8, marginBottom: 12 }}>
+          <div className="bg-white/60 backdrop-blur-xl border border-white/60 p-6 rounded-3xl shadow-sm">
             <LabResultView consultationId={selectedRecord.consultationId} />
           </div>
         )}
         {selectedRecord.hasPrescription && (
-          <div style={{ background: "#f9fafb", padding: 16, borderRadius: 8 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-              <span style={{ fontWeight: 600, fontSize: 14 }}>💊 Đơn thuốc</span>
+          <div className="bg-white/60 backdrop-blur-xl border border-white/60 p-6 rounded-3xl shadow-sm">
+            <div className="flex justify-between items-center mb-4">
+              <span className="font-bold text-lg text-slate-800">💊 Đơn thuốc</span>
               {prescriptionIdMap[selectedRecord.consultationId] && (
                 <button
                   onClick={() => navigate(`/dashboard/prescriptions/${prescriptionIdMap[selectedRecord.consultationId]}`)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 4,
-                    padding: "4px 12px", borderRadius: 6, border: "1px solid #e9d5ff",
-                    background: "#fdf4ff", color: "#7c3aed", cursor: "pointer",
-                    fontSize: 12, fontWeight: 600,
-                  }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 font-bold text-sm transition-colors"
                 >
-                  <ExternalLink size={12} /> Xem đơn thuốc đầy đủ
+                  <ExternalLink size={16} /> Xem đơn thuốc đầy đủ
                 </button>
               )}
             </div>
@@ -205,12 +209,12 @@ export default function MedicalHistory({ patientId, onClose, inline = false }) {
   );
 
   if (inline) {
-    return <div style={{ padding: "0 16px 16px 16px" }}>{content}</div>;
+    return <div className="w-full" style={{ padding: "0 16px 16px 16px", width: "100%", minWidth: "100%", display: "block" }}>{content}</div>;
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ width: "800px", maxWidth: "95vw" }}>
+    <div className="modal-overlay" onClick={onClose} style={{ backgroundColor: "rgba(13, 76, 70, 0.25)", backdropFilter: "blur(8px)" }}>
+      <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ width: "800px", maxWidth: "95vw", background: "rgba(255, 255, 255, 0.85)", backdropFilter: "blur(20px)", borderRadius: "24px", border: "1px solid rgba(255,255,255,0.5)", boxShadow: "0 10px 40px rgba(0,0,0,0.12)" }}>
         {content}
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { Clock, Search, CalendarDays, ArrowLeft, ShieldAlert, UserRound } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Clock, Search, CalendarDays, ArrowLeft, ShieldAlert, CheckCircle, UserRound, Star } from "lucide-react";
 import { getAvailableSlots, getSchedules, lockSlot, releaseLock } from "../../services/scheduleService";
 import { getDoctors } from "../../services/doctorService";
 import appointmentService from "../../services/appointmentService";
@@ -40,9 +40,16 @@ function formatTime(t: string): string {
 }
 
 export default function AvailableSlots() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const toast = useToast();
-  const [doctorId, setDoctorId] = useState("");
-  const [workDate, setWorkDate] = useState("");
+
+  const searchParams = new URLSearchParams(location.search);
+  const paramDoctorId = searchParams.get("doctorId") || "";
+  const paramWorkDate = searchParams.get("workDate") || "";
+
+  const [doctorId, setDoctorId] = useState(paramDoctorId);
+  const [workDate, setWorkDate] = useState(paramWorkDate);
   const [doctorOptions, setDoctorOptions] = useState<DoctorOption[]>([]);
   const [scheduleOptions, setScheduleOptions] = useState<DoctorSchedule[]>([]);
   const [doctorFetchState, setDoctorFetchState] = useState<FetchState>("idle");
@@ -61,8 +68,6 @@ export default function AvailableSlots() {
   const [visitReason, setVisitReason] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("CASH");
   const [bookingSuccess, setBookingSuccess] = useState(false);
-
-  const location = useLocation();
   const prefillDepartmentName = (location.state as any)?.prefillDepartmentName;
 
   const today = new Date().toISOString().split("T")[0];
@@ -112,7 +117,10 @@ export default function AvailableSlots() {
     let isActive = true;
 
     const fetchDoctorsByDate = async () => {
-      setDoctorId("");
+      const keepDoctorId = paramDoctorId && workDate === paramWorkDate;
+      if (!keepDoctorId) {
+        setDoctorId("");
+      }
       setSlots([]);
       setFetchState("idle");
       setSelectedSlot(null);
@@ -258,6 +266,18 @@ export default function AvailableSlots() {
     }
   };
 
+  // Release lock if component unmounts while holding a lock
+  useEffect(() => {
+    const slotToRelease = selectedSlot?.slotId;
+    const isSuccess = bookingSuccess;
+    
+    return () => {
+      if (slotToRelease && !isSuccess) {
+        releaseLock(slotToRelease).catch(() => {});
+      }
+    };
+  }, [selectedSlot, bookingSuccess]);
+
   const minutes = Math.floor(timer / 60);
   const seconds = timer % 60;
   const timeString = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
@@ -268,14 +288,28 @@ export default function AvailableSlots() {
   const isError = fetchState === "error";
 
   return (
-    <>
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">
-            <Search size={24} />
-            Tìm kiếm ca khám trống
+    <div className="max-w-[1100px] mx-auto w-full flex flex-col items-center">
+      <div className="w-full mb-10 relative flex flex-col sm:flex-row justify-center items-center min-h-[80px]">
+        <div className="w-full sm:absolute sm:left-0 sm:top-4 flex justify-start mb-4 sm:mb-0 px-4 sm:px-0">
+          <button 
+            onClick={() => {
+              if (selectedSlot && !bookingSuccess) {
+                releaseLock(selectedSlot.slotId).catch(() => {});
+              }
+              navigate("/dashboard", { state: { activeClusterId: "booking" } });
+            }}
+            className="bg-white/10 hover:bg-white/20 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm"
+          >
+            <ArrowLeft size={18} />
+            Quay lại
+          </button>
+        </div>
+        <div className="flex flex-col items-center text-center mt-2 px-4">
+          <h1 className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-4">
+            <Search size={32} className="text-teal-400 drop-shadow-md" />
+            <span className="drop-shadow-md">Tìm kiếm ca khám trống</span>
           </h1>
-          <p className="muted">
+          <p className="text-white/70 font-medium drop-shadow-sm text-[16px] max-w-[600px]">
             Chọn ngày khám, sau đó chọn bác sĩ có lịch làm việc trong ngày để xem các khung giờ còn trống.
           </p>
         </div>
@@ -288,32 +322,18 @@ export default function AvailableSlots() {
       )}
 
       {!bookingStep ? (
-        <>
-          <div
-            style={{
-              background: "#ffffff",
-              border: "1px solid #dfe5ec",
-              borderRadius: "12px",
-              padding: "24px 28px",
-              maxWidth: "600px",
-              boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
-              marginBottom: "32px",
-            }}
-          >
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr",
-                gap: "16px",
-              }}
-            >
-              <div className="field">
-                <label htmlFor="as-workDate">Ngày khám</label>
+        <div className="flex flex-col gap-10 w-full items-center">
+          <div className={`flex flex-col lg:flex-row justify-center gap-8 items-start w-full transition-all duration-500`}>
+            <div className="patient-glass-card p-6 md:p-8 w-full max-w-[600px] mx-auto lg:mx-0">
+            <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-2">
+                <label htmlFor="as-workDate" className="font-bold text-white/90 text-[14px]">Ngày khám</label>
                 <input
                   type="date"
                   id="as-workDate"
                   min={today}
                   value={workDate}
+                  className="w-full px-4 py-3 patient-glass-input"
                   onChange={(e) => {
                     setWorkDate(e.target.value);
                     setDoctorId("");
@@ -323,11 +343,12 @@ export default function AvailableSlots() {
                 />
               </div>
 
-              <div className="field">
-                <label htmlFor="as-doctorId">Bác sĩ có lịch trong ngày</label>
+              <div className="flex flex-col gap-2">
+                <label htmlFor="as-doctorId" className="font-bold text-white/90 text-[14px]">Bác sĩ có lịch trong ngày</label>
                 <select
                   id="as-doctorId"
                   value={doctorId}
+                  className="w-full px-4 py-3 patient-glass-input disabled:opacity-50 disabled:cursor-not-allowed"
                   onChange={(e) => setDoctorId(e.target.value)}
                   disabled={!workDate || doctorFetchState === "loading" || doctorOptions.length === 0}
                 >
@@ -410,24 +431,27 @@ export default function AvailableSlots() {
                         justifyContent: "space-between",
                         gap: "12px",
                         padding: "12px 14px",
-                        borderRadius: "10px",
-                        border: isSelected ? "1.5px solid #0f766e" : "1px solid #dfe5ec",
-                        background: isSelected ? "#f0fdfa" : "#ffffff",
-                        color: "#1e293b",
+                        borderRadius: "14px",
+                        border: isSelected ? "1.5px solid rgba(94, 234, 212, 0.6)" : "1px solid rgba(255, 255, 255, 0.15)",
+                        background: isSelected ? "rgba(94, 234, 212, 0.15)" : "rgba(255, 255, 255, 0.05)",
+                        backdropFilter: "blur(8px)",
+                        boxShadow: isSelected ? "0 4px 12px rgba(94, 234, 212, 0.15)" : "none",
+                        color: "#ffffff",
                         cursor: "pointer",
                         textAlign: "left",
+                        transition: "all 0.2s ease",
                       }}
                     >
                       <span style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
-                        <UserRound size={18} color={isSelected ? "#0f766e" : "#64748b"} />
+                        <UserRound size={18} color={isSelected ? "#5eead4" : "#94a3b8"} />
                         <span style={{ minWidth: 0 }}>
                           <strong style={{ display: "block", fontSize: "14px" }}>{getDoctorLabel(doctor)}</strong>
-                          <span style={{ display: "block", fontSize: "12px", color: "#64748b" }}>
+                          <span style={{ display: "block", fontSize: "12px", color: "#cbd5e1" }}>
                             {[doctor.departmentName, doctor.specialization].filter(Boolean).join(" - ") || "Chưa có chuyên khoa"}
                           </span>
                         </span>
                       </span>
-                      <span style={{ fontSize: "12px", color: "#0f766e", fontWeight: 700, whiteSpace: "nowrap" }}>
+                      <span style={{ fontSize: "12px", color: "#5eead4", fontWeight: 700, whiteSpace: "nowrap" }}>
                         {getDoctorScheduleText(doctor.doctorId)}
                       </span>
                     </button>
@@ -437,32 +461,45 @@ export default function AvailableSlots() {
             )}
 
             {selectedDoctor && workDate && (
-              <div
-                style={{
-                  marginTop: "16px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  fontSize: "13px",
-                  color: "#65758b",
-                }}
-              >
+              <div className="mt-4 flex items-center gap-2 text-[13px] text-slate-500 font-medium">
                 <CalendarDays size={14} />
                 Đang hiển thị ca khám của {getDoctorLabel(selectedDoctor)} vào ngày {workDate}
               </div>
             )}
           </div>
 
+          {selectedDoctor && doctorId && (
+            <div className="patient-glass-card p-6 lg:p-8 animate-[fadeIn_0.3s_ease] w-full max-w-[450px] mx-auto lg:mx-0">
+              <h3 className="text-[1.1rem] font-extrabold text-white mb-6 flex items-center gap-2">
+                 Chi tiết Bác sĩ
+              </h3>
+              <div className="flex gap-5 items-center">
+                <div className="w-20 h-20 rounded-full bg-teal-900/50 flex-shrink-0 flex items-center justify-center border-2 border-teal-400/50 shadow-sm overflow-hidden">
+                  <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${selectedDoctor.doctorId}&backgroundColor=115e59`} alt="Avatar" className="w-full h-full object-cover" />
+                </div>
+                <div className="flex flex-col">
+                  <strong className="text-lg text-white">{getDoctorLabel(selectedDoctor)}</strong>
+                  <span className="text-sm text-white/70 font-medium mb-2">{selectedDoctor.departmentName || "Khám tổng quát"}</span>
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map(star => <Star key={star} size={14} className="fill-amber-400 text-amber-400" />)}
+                  </div>
+                </div>
+              </div>
+              {getDoctorScheduleText(selectedDoctor.doctorId) && (
+                <div className="mt-6 flex justify-end">
+                  <span className="text-xs font-bold text-teal-800 bg-teal-100/50 border border-teal-200/50 px-4 py-2 rounded-full shadow-sm tracking-wide">
+                    {getDoctorScheduleText(selectedDoctor.doctorId)}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
           {fetchState === "idle" && (!workDate || (doctorOptions.length > 0 && !doctorId)) && (
-            <div
-              style={{
-                textAlign: "center",
-                padding: "60px 20px",
-                color: "#94a3b8",
-              }}
-            >
-              <Search size={40} style={{ opacity: 0.3, marginBottom: "12px" }} />
-              <p style={{ margin: 0, fontSize: "15px" }}>
+            <div className="text-center py-20 px-4 text-slate-400 max-w-[600px]">
+              <Search size={56} strokeWidth={1.5} className="mx-auto mb-4 opacity-20" />
+              <p className="text-[15px] font-medium m-0">
                 {!workDate
                   ? "Vui lòng chọn ngày khám để hệ thống đề xuất bác sĩ có lịch làm việc."
                   : "Vui lòng chọn một bác sĩ trong danh sách đề xuất để xem ca trống."}
@@ -532,36 +569,17 @@ export default function AvailableSlots() {
           )}
 
           {hasResult && slots.length > 0 && (
-            <div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginBottom: "16px",
-                }}
-              >
-                <h2
-                  style={{
-                    margin: 0,
-                    fontSize: "1.05rem",
-                    fontWeight: 700,
-                    color: "#0f172a",
-                  }}
-                >
+            <div className="animate-[fadeIn_0.3s_ease] w-full flex flex-col items-center">
+              <div className="flex items-center justify-center gap-4 mb-6">
+                <h2 className="m-0 text-[1.2rem] font-extrabold text-white flex items-center gap-2 drop-shadow-md">
+                  <Clock size={22} className="text-teal-300" />
                   Các ca khám còn trống
                 </h2>
-                <span className="status-badge badge-active">
+                <span className="bg-white/20 backdrop-blur-md text-white border border-white/30 text-[11px] font-bold px-3 py-1 rounded-full shadow-sm">
                   {slots.length} ca
                 </span>
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: "12px",
-                }}
-              >
+              <div className="flex flex-wrap justify-center gap-3 max-w-[800px]">
                 {slots.map((slot) => {
                   const isLocked = slot.status === "LOCKED" || slot.status === "BOOKED" || slot.status === "BLOCKED";
                   return (
@@ -569,38 +587,13 @@ export default function AvailableSlots() {
                       key={slot.slotId}
                       disabled={isLocked}
                       onClick={() => handleSelectSlot(slot)}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        padding: "10px 18px",
-                        borderRadius: "10px",
-                        border: isLocked ? "1.5px dashed #cbd5e1" : "1.5px solid #86efac",
-                        background: isLocked ? "#f1f5f9" : "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)",
-                        color: isLocked ? "#94a3b8" : "#166534",
-                        fontWeight: 700,
-                        fontSize: "14px",
-                        fontFamily: "monospace",
-                        boxShadow: isLocked ? "none" : "0 1px 4px rgba(22, 101, 52, 0.08)",
-                        transition: "transform 0.15s ease, box-shadow 0.15s ease",
-                        cursor: isLocked ? "not-allowed" : "pointer",
-                        animation: "fadeIn 0.2s ease",
-                        opacity: isLocked ? 0.6 : 1,
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isLocked) {
-                          (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)";
-                          (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 14px rgba(22, 101, 52, 0.15)";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isLocked) {
-                          (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
-                          (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 1px 4px rgba(22, 101, 52, 0.08)";
-                        }
-                      }}
+                      className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-full font-bold text-[13px] tracking-wide transition-all duration-200 ${
+                        isLocked 
+                          ? "bg-black/20 border border-dashed border-white/20 text-white/40 cursor-not-allowed backdrop-blur-sm" 
+                          : "bg-white/15 backdrop-blur-md border border-white/30 text-white hover:-translate-y-0.5 hover:shadow-[0_4px_15px_rgba(0,0,0,0.15)] hover:border-white/60 hover:bg-white/25 cursor-pointer shadow-sm"
+                      }`}
                     >
-                      <Clock size={13} />
+                      <Clock size={15} strokeWidth={2.5} />
                       {formatTime(slot.startTime)} – {formatTime(slot.endTime)}
                       {slot.status === "LOCKED" && " (Đang giữ)"}
                       {slot.status === "BOOKED" && " (Đã đặt)"}
@@ -611,237 +604,165 @@ export default function AvailableSlots() {
               </div>
             </div>
           )}
-        </>
+        </div>
       ) : (
-        <div
-          style={{
-            background: "#ffffff",
-            border: "1px solid #dfe5ec",
-            borderRadius: "12px",
-            padding: "32px",
-            maxWidth: "600px",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
-            position: "relative",
-            animation: "fadeIn 0.25s ease",
-          }}
-        >
+        <div className="patient-glass-card p-6 md:p-8 w-full max-w-[600px] mx-auto relative animate-[fadeIn_0.3s_ease]">
           {isExpired && (
-            <div
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: "rgba(255, 255, 255, 0.95)",
-                borderRadius: "12px",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: 10,
-                animation: "fadeIn 0.15s ease",
-              }}
-            >
-              <ShieldAlert size={48} color="#ef4444" style={{ marginBottom: "16px" }} />
-              <h3 style={{ margin: 0, color: "#1e293b", fontSize: "18px", fontWeight: 700 }}>
+            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md rounded-[2rem] flex flex-col items-center justify-center z-10 animate-[fadeIn_0.15s_ease]">
+              <ShieldAlert size={56} className="text-red-400 mb-4" strokeWidth={1.5} />
+              <h3 className="m-0 text-white text-xl font-extrabold mb-2">
                 Phiên giữ chỗ đã hết hạn
               </h3>
-              <p style={{ margin: "8px 0 0", color: "#64748b", fontSize: "14px" }}>
+              <p className="m-0 text-white/70 font-medium">
                 Đang tự động quay trở lại màn hình chọn ca khám...
               </p>
             </div>
           )}
 
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: "24px",
-              borderBottom: "1px solid #f1f5f9",
-              paddingBottom: "16px",
-            }}
-          >
+          <div className="flex items-center justify-between mb-8 border-b border-white/20 pb-5">
             <button
               onClick={handleCancelBooking}
-              className="btn btn-secondary"
-              style={{
-                padding: "6px 12px",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                fontSize: "13px",
-              }}
+              className="inline-flex items-center gap-2 text-white/70 hover:text-white font-bold text-[13px] transition-colors group"
             >
-              <ArrowLeft size={14} /> Quay lại
+              <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+              Quay lại chọn ca
             </button>
 
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                background: isWarningTime ? "#fef2f2" : "#f0fdf4",
-                border: `1px solid ${isWarningTime ? "#fee2e2" : "#bbf7d0"}`,
-                padding: "8px 14px",
-                borderRadius: "8px",
-                fontWeight: 700,
-                color: isWarningTime ? "#ef4444" : "#15803d",
-                fontSize: "15px",
-                fontFamily: "monospace",
-              }}
-            >
-              <Clock size={16} />
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-[13px] tracking-wide border transition-colors ${
+              isWarningTime ? "bg-red-500/20 text-red-300 border-red-500/30 animate-pulse" : "bg-teal-500/20 text-teal-300 border-teal-500/30"
+            }`}>
+              <Clock size={16} strokeWidth={2.5} />
               <span>Thời gian giữ chỗ: {timeString}</span>
             </div>
           </div>
 
           {bookingSuccess ? (
-            <div
-              style={{
-                textAlign: "center",
-                padding: "24px 0",
-                color: "#15803d",
-              }}
-            >
-              <h3 style={{ margin: "0 0 8px", fontSize: "18px", fontWeight: 700 }}>
+            <div className="text-center py-12">
+              <CheckCircle size={64} strokeWidth={1.5} className="mx-auto mb-5 text-emerald-400" />
+              <h3 className="m-0 text-2xl font-extrabold mb-2 text-white">
                 Đặt lịch thành công!
               </h3>
-              <p style={{ margin: 0, fontSize: "14px", color: "#475569" }}>
+              <p className="m-0 text-white/70 font-medium">
                 Hệ thống đang cập nhật trạng thái của ca khám...
               </p>
             </div>
           ) : (
             <form onSubmit={handleSubmitBooking}>
-              <h2
-                style={{
-                  margin: "0 0 16px",
-                  fontSize: "1.2rem",
-                  fontWeight: 700,
-                  color: "#0f172a",
-                }}
-              >
+              <h2 className="m-0 mb-5 text-[1.3rem] font-extrabold text-white tracking-tight">
                 Thông tin đặt lịch khám
               </h2>
 
-              <div
-                style={{
-                  background: "#f8fafc",
-                  borderRadius: "8px",
-                  padding: "14px 16px",
-                  marginBottom: "20px",
-                  fontSize: "14px",
-                  color: "#475569",
-                  border: "1px solid #e2e8f0",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-                  <span>Bác sĩ:</span>
-                  <strong style={{ color: "#0f172a" }}>{getDoctorLabel(selectedDoctor)}</strong>
+              <div className="bg-white/5 backdrop-blur-md rounded-2xl p-5 mb-6 border border-white/20 shadow-sm">
+                <div className="flex justify-between items-center mb-3.5">
+                  <span className="text-white/60 text-[13px] font-bold uppercase tracking-wider">Bác sĩ</span>
+                  <strong className="text-white">{getDoctorLabel(selectedDoctor)}</strong>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-                  <span>Ngày khám:</span>
-                  <strong style={{ color: "#0f172a" }}>{workDate}</strong>
+                <div className="flex justify-between items-center mb-3.5">
+                  <span className="text-white/60 text-[13px] font-bold uppercase tracking-wider">Ngày khám</span>
+                  <strong className="text-white">{workDate}</strong>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Khung giờ:</span>
-                  <strong style={{ color: "#1e40af" }}>
+                <div className="flex justify-between items-center">
+                  <span className="text-white/60 text-[13px] font-bold uppercase tracking-wider">Khung giờ</span>
+                  <strong className="text-teal-300 bg-teal-500/20 border border-teal-500/30 px-3.5 py-1.5 rounded-lg shadow-sm">
                     {selectedSlot ? `${formatTime(selectedSlot.startTime)} – ${formatTime(selectedSlot.endTime)}` : ""}
                   </strong>
                 </div>
               </div>
 
-              <div className="field" style={{ marginBottom: "16px" }}>
-                <label htmlFor="bk-name">Họ tên Bệnh nhân</label>
-                <input
-                  type="text"
-                  id="bk-name"
-                  required
-                  placeholder="Nhập đầy đủ họ tên bệnh nhân"
-                  value={patientName}
-                  onChange={(e) => setPatientName(e.target.value)}
-                  disabled={isExpired}
-                />
-              </div>
-
-              <div className="field" style={{ marginBottom: "16px" }}>
-                <label htmlFor="bk-phone">Số điện thoại liên hệ</label>
-                <input
-                  type="tel"
-                  id="bk-phone"
-                  required
-                  placeholder="Nhập số điện thoại liên hệ"
-                  value={patientPhone}
-                  onChange={(e) => setPatientPhone(e.target.value)}
-                  disabled={isExpired}
-                />
-              </div>
-
-              <div className="field" style={{ marginBottom: "18px" }}>
-                <label htmlFor="bk-reason">Lý do khám bệnh</label>
-                <textarea
-                  id="bk-reason"
-                  rows={3}
-                  placeholder="Mô tả ngắn gọn lý do khám bệnh"
-                  value={visitReason}
-                  onChange={(e) => setVisitReason(e.target.value)}
-                  disabled={isExpired}
-                  style={{
-                    width: "100%",
-                    padding: "10px 14px",
-                    borderRadius: "8px",
-                    border: "1px solid #dfe5ec",
-                    fontSize: "14px",
-                  }}
-                />
-              </div>
-
-              <div className="field" style={{ marginBottom: "24px" }}>
-                <label>Phương thức thanh toán</label>
-                <div style={{ display: "flex", gap: "16px", marginTop: "8px" }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 500, fontSize: "14px" }}>
-                    <input
-                      type="radio"
-                      name="payment"
-                      value="CASH"
-                      checked={paymentMethod === "CASH"}
-                      onChange={() => setPaymentMethod("CASH")}
-                      disabled={isExpired}
-                    />
-                    Tiền mặt tại quầy
+              <div className="flex flex-col gap-4 mb-8">
+                <div className="flex flex-col gap-2">
+                  <label htmlFor="bk-name" className="font-bold text-white/90 text-[13px]">
+                    Họ tên Bệnh nhân <span className="text-rose-400">*</span>
                   </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 500, fontSize: "14px" }}>
-                    <input
-                      type="radio"
-                      name="payment"
-                      value="BANK"
-                      checked={paymentMethod === "BANK"}
-                      onChange={() => setPaymentMethod("BANK")}
-                      disabled={isExpired}
-                    />
-                    Chuyển khoản qua ngân hàng
+                  <input
+                    type="text"
+                    id="bk-name"
+                    required
+                    placeholder="Nhập đầy đủ họ tên bệnh nhân"
+                    value={patientName}
+                    onChange={(e) => setPatientName(e.target.value)}
+                    disabled={isExpired}
+                    className="w-full px-4 py-3 patient-glass-input placeholder:text-white/50 disabled:opacity-50"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label htmlFor="bk-phone" className="font-bold text-white/90 text-[13px]">
+                    Số điện thoại liên hệ <span className="text-rose-400">*</span>
                   </label>
+                  <input
+                    type="tel"
+                    id="bk-phone"
+                    required
+                    placeholder="Nhập số điện thoại liên hệ"
+                    value={patientPhone}
+                    onChange={(e) => setPatientPhone(e.target.value)}
+                    disabled={isExpired}
+                    className="w-full px-4 py-3 patient-glass-input placeholder:text-white/50 disabled:opacity-50"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label htmlFor="bk-reason" className="font-bold text-white/90 text-[13px]">
+                    Lý do khám bệnh
+                  </label>
+                  <textarea
+                    id="bk-reason"
+                    rows={3}
+                    placeholder="Mô tả ngắn gọn lý do khám bệnh"
+                    value={visitReason}
+                    onChange={(e) => setVisitReason(e.target.value)}
+                    disabled={isExpired}
+                    className="w-full px-4 py-3 patient-glass-input placeholder:text-white/50 min-h-[100px] resize-y disabled:opacity-50"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2 mt-2">
+                  <label className="font-bold text-white/90 text-[13px]">Phương thức thanh toán</label>
+                  <div className="flex gap-6 mt-1">
+                    <label className="flex items-center gap-2.5 cursor-pointer group">
+                      <input
+                        type="radio"
+                        name="payment"
+                        value="CASH"
+                        checked={paymentMethod === "CASH"}
+                        onChange={() => setPaymentMethod("CASH")}
+                        disabled={isExpired}
+                        className="w-4 h-4 text-teal-400 border-white/30 focus:ring-teal-400/30 focus:ring-2 disabled:opacity-50"
+                      />
+                      <span className="text-[14px] font-medium text-white/80 group-hover:text-teal-300 transition-colors">Tiền mặt tại quầy</span>
+                    </label>
+                    <label className="flex items-center gap-2.5 cursor-pointer group">
+                      <input
+                        type="radio"
+                        name="payment"
+                        value="BANK"
+                        checked={paymentMethod === "BANK"}
+                        onChange={() => setPaymentMethod("BANK")}
+                        disabled={isExpired}
+                        className="w-4 h-4 text-teal-400 border-white/30 focus:ring-teal-400/30 focus:ring-2 disabled:opacity-50"
+                      />
+                      <span className="text-[14px] font-medium text-white/80 group-hover:text-teal-300 transition-colors">Chuyển khoản (NH)</span>
+                    </label>
+                  </div>
                 </div>
               </div>
 
-              <div style={{ display: "flex", gap: "12px" }}>
+              <div className="flex gap-3">
                 <button
                   type="submit"
-                  className="btn btn-primary"
                   disabled={isExpired}
-                  style={{ flex: 1, padding: "12px" }}
+                  className="flex-1 bg-gradient-to-r from-teal-500 to-emerald-500 text-white font-bold text-[15px] py-3.5 rounded-xl hover:shadow-[0_8px_20px_rgba(20,184,166,0.25)] hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none disabled:cursor-not-allowed"
                 >
                   Xác nhận đặt lịch
                 </button>
                 <button
                   type="button"
                   onClick={handleCancelBooking}
-                  className="btn btn-secondary"
                   disabled={isExpired}
-                  style={{ padding: "12px" }}
+                  className="px-6 bg-white/10 text-white font-bold text-[15px] py-3.5 rounded-xl hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Hủy
+                  Hủy bỏ
                 </button>
               </div>
             </form>
@@ -859,6 +780,6 @@ export default function AvailableSlots() {
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
-    </>
+    </div>
   );
 }

@@ -9,6 +9,7 @@ import {
 } from "../../services/patientService";
 import { getUsers } from "../../services/userService";
 import MedicalHistory from "../../components/MedicalHistory";
+import { useAuth } from "../../context/useAuth";
 
 const EMPTY_FORM = {
   userId: "",
@@ -29,6 +30,9 @@ const EMPTY_FORM = {
 };
 
 export default function PatientManagement() {
+  const { user } = useAuth();
+  const isDoctor = user?.roles?.some(r => r === "DOCTOR" || r.roleName === "DOCTOR");
+  
   const navigate = useNavigate();
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,10 +57,11 @@ export default function PatientManagement() {
   /* ── Load Options ──────────────────────────────────────── */
   const fetchOptions = async () => {
     try {
-      const userRes = await getUsers({ size: 100 });
+      const userRes = await getUsers({ size: 100 }, { skipErrorToast: true });
       setUsers(userRes.data?.content ?? []);
     } catch (err) {
-      console.error("Failed to load options", err);
+      // It's expected to fail for Doctors who don't have access to users.
+      // We don't need to log this as an error to avoid console clutter.
     }
   };
 
@@ -137,7 +142,7 @@ export default function PatientManagement() {
       setSubmitting(true);
       const payload = { ...formData };
       if (!payload.userId) payload.userId = null; // Clean up empty string
-      
+
       if (editingId) {
         await updatePatient(editingId, payload);
       } else {
@@ -166,238 +171,265 @@ export default function PatientManagement() {
   };
 
   return (
-    <>
+    <div className="text-white flex flex-col h-full gap-6 pb-6">
       {/* ── Page Header ────────────────────────────────── */}
-      <div className="page-header">
+      <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-6 shadow-xl flex flex-wrap justify-between items-center gap-4">
         <div>
-          <h1 className="page-title">
-            <Users size={26} />
+          <h1 className="text-2xl font-bold flex items-center gap-3">
+            <Users size={28} className="text-teal-400" />
             Hồ sơ bệnh nhân
           </h1>
-          <p className="muted">Quản lý hồ sơ bệnh nhân, tiền sử bệnh lý và thông tin liên hệ.</p>
+          <p className="text-white/60 mt-1">Quản lý hồ sơ bệnh nhân, tiền sử bệnh lý và thông tin liên hệ.</p>
         </div>
-        <button className="primary-button" onClick={openCreate}>
-          <Plus size={16} />
-          Thêm bệnh nhân
-        </button>
+        {!isDoctor && (
+          <button
+            className="bg-gradient-to-r from-teal-400 to-emerald-400 text-slate-900 font-bold px-5 py-2.5 rounded-xl hover:shadow-[0_0_20px_rgba(45,212,191,0.4)] transition-all flex items-center gap-2"
+            onClick={openCreate}
+          >
+            <Plus size={18} />
+            Thêm bệnh nhân
+          </button>
+        )}
       </div>
 
       {/* ── Filters ────────────────────────────────────── */}
-      <div className="search-bar" style={{ display: "flex", gap: "10px" }}>
-        <div style={{ position: "relative", flex: 1, maxWidth: "420px" }}>
-          <Search size={16} className="search-icon" />
+      <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[1.5rem] p-5 shadow-xl flex gap-4">
+        <div className="relative flex-1 max-w-[420px]">
+          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
           <input
             type="text"
             placeholder="Tìm theo tên, mã bệnh nhân hoặc SĐT..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-slate-900/40 border border-white/10 text-white placeholder-white/40 rounded-xl py-2.5 pl-11 pr-4 focus:outline-none focus:border-teal-400/50 transition-colors"
           />
         </div>
       </div>
 
-      {error && <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>}
+      {error && <div className="bg-rose-500/20 border border-rose-500/30 text-rose-300 p-4 rounded-xl">{error}</div>}
 
       {/* ── Table ──────────────────────────────────────── */}
-      <div className="table-wrapper">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Mã BN</th>
-              <th>Họ và tên</th>
-              <th>Giới tính</th>
-              <th>SĐT</th>
-              <th>CCCD / BHYT</th>
-              <th>Liên kết tài khoản</th>
-              <th style={{ textAlign: "center" }}>Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
+      <div className="flex-1 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] shadow-xl flex flex-col min-h-0 overflow-hidden">
+        <div className="flex-1 overflow-auto custom-scrollbar">
+          <table className="w-full text-left border-collapse whitespace-nowrap">
+            <thead className="bg-white/5 border-b border-white/10 text-white/80 text-sm sticky top-0 z-10 backdrop-blur-md">
               <tr>
-                <td colSpan={7} className="empty-row">Đang tải dữ liệu...</td>
+                <th className="p-5 font-semibold">Mã BN</th>
+                <th className="p-5 font-semibold">Họ và tên</th>
+                <th className="p-5 font-semibold">Giới tính</th>
+                <th className="p-5 font-semibold">SĐT</th>
+                <th className="p-5 font-semibold">CCCD / BHYT</th>
+                <th className="p-5 font-semibold">Tài khoản</th>
+                <th className="p-5 font-semibold text-center">Hành động</th>
               </tr>
-            ) : patients.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="empty-row">Không tìm thấy bệnh nhân nào.</td>
-              </tr>
-            ) : (
-              patients.map((patient) => (
-                <tr key={patient.patientId}>
-                  <td className="cell-name">{patient.patientCode}</td>
-                  <td><strong>{patient.fullName || "—"}</strong></td>
-                  <td>{patient.gender === "MALE" ? "Nam" : patient.gender === "FEMALE" ? "Nữ" : "Khác"}</td>
-                  <td>{patient.phone || "—"}</td>
-                  <td>
-                    {patient.identityNumber && <div style={{ fontSize: 12 }}>ID: {patient.identityNumber}</div>}
-                    {patient.insuranceNumber && <div style={{ fontSize: 12, color: '#0f766e' }}>BHYT: {patient.insuranceNumber}</div>}
-                    {!patient.identityNumber && !patient.insuranceNumber && "—"}
-                  </td>
-                  <td>
-                    {patient.userName ? (
-                      <span className="status-badge badge-active">{patient.userName}</span>
-                    ) : (
-                      <span className="muted" style={{ fontSize: 12 }}>Không có</span>
-                    )}
-                  </td>
-                  <td>
-                    <div className="action-group">
-                      <button 
-                        className="icon-button" 
-                        onClick={() => navigate(`/dashboard/patients/${patient.patientId}`)} 
-                        title="Hồ sơ chi tiết (Mở trang mới)"
-                        style={{ color: "#2563eb", background: "#eff6ff", border: "1px solid #bfdbfe" }}
-                      >
-                        <Eye size={15} />
-                      </button>
-                      <button className="icon-button" onClick={() => setShowHistoryFor(patient.patientId)} title="Lịch sử bệnh án">
-                        <ClipboardList size={15} />
-                      </button>
-                      <button className="icon-button" onClick={() => openEdit(patient)} title="Chỉnh sửa">
-                        <Edit size={15} />
-                      </button>
-                      <button className="icon-button btn-danger" onClick={() => setDeleteTarget(patient)} title="Xóa">
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  </td>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center text-white/50">Đang tải dữ liệu...</td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : patients.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center text-white/50">Không tìm thấy bệnh nhân nào.</td>
+                </tr>
+              ) : (
+                patients.map((patient) => (
+                  <tr key={patient.patientId} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                    <td className="p-4 pl-5">
+                      <span className="font-mono text-teal-300 bg-teal-400/10 px-2 py-1 rounded-md text-sm border border-teal-400/20">{patient.patientCode}</span>
+                    </td>
+                    <td className="p-4 font-bold text-white">{patient.fullName || "—"}</td>
+                    <td className="p-4 text-white/80">{patient.gender === "MALE" ? "Nam" : patient.gender === "FEMALE" ? "Nữ" : "Khác"}</td>
+                    <td className="p-4 text-white/80">{patient.phone || "—"}</td>
+                    <td className="p-4">
+                      {patient.identityNumber && <div className="text-xs text-white/60 mb-0.5">ID: <span className="text-white/90">{patient.identityNumber}</span></div>}
+                      {patient.insuranceNumber && <div className="text-xs text-teal-200/80">BHYT: <span className="text-teal-100">{patient.insuranceNumber}</span></div>}
+                      {!patient.identityNumber && !patient.insuranceNumber && <span className="text-white/40">—</span>}
+                    </td>
+                    <td className="p-4">
+                      {patient.userName ? (
+                        <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-1 rounded-full text-xs font-semibold">{patient.userName}</span>
+                      ) : (
+                        <span className="text-white/40 text-xs">Không có</span>
+                      )}
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => navigate(`/dashboard/patients/${patient.patientId}`)}
+                          title="Hồ sơ chi tiết"
+                          className="p-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border border-blue-500/20 rounded-lg transition-all"
+                        >
+                          <Eye size={16} />
+                        </button>
+                        <button
+                          onClick={() => setShowHistoryFor(patient.patientId)}
+                          title="Lịch sử bệnh án"
+                          className="p-2 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/5 hover:border-white/20 rounded-lg transition-all"
+                        >
+                          <ClipboardList size={16} />
+                        </button>
+                        {!isDoctor && (
+                          <>
+                            <button
+                              onClick={() => openEdit(patient)}
+                              title="Chỉnh sửa"
+                              className="p-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/20 rounded-lg transition-all"
+                            >
+                              <Edit size={16} />
+                            </button>
+                            <button
+                              onClick={() => setDeleteTarget(patient)}
+                              title="Xóa"
+                              className="p-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/20 rounded-lg transition-all"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* ── Modal Thêm/Sửa ─────────────────────────────── */}
       {showForm && (
-        <div className="modal-overlay" onClick={closeForm}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ width: "700px" }}>
-            <div className="modal-header">
-              <h2>{editingId ? "Cập nhật hồ sơ bệnh nhân" : "Thêm hồ sơ bệnh nhân"}</h2>
-              <button className="icon-button" onClick={closeForm}><X size={18} /></button>
+        <div className="fixed inset-0 z-[120] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={closeForm}>
+          <div className="bg-[#115e59]/95 backdrop-blur-2xl border border-white/20 rounded-[2rem] w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
+              <h2 className="text-xl font-bold text-white">{editingId ? "Cập nhật hồ sơ bệnh nhân" : "Thêm hồ sơ bệnh nhân"}</h2>
+              <button className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors" onClick={closeForm}><X size={20} /></button>
             </div>
-            
-            <form className="form-stack" onSubmit={handleSubmit} style={{ maxHeight: "70vh", overflowY: "auto", paddingRight: 10 }}>
-              {formError && <div className="error-box">{formError}</div>}
-              
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                <div className="field">
-                  <label>Mã bệnh nhân *</label>
-                  <input name="patientCode" value={formData.patientCode} onChange={handleChange} required />
+
+            <div className="p-6 overflow-y-auto custom-scrollbar text-white">
+              <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+                {formError && <div className="bg-rose-500/20 border border-rose-500/30 text-rose-300 p-4 rounded-xl">{formError}</div>}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm text-white/80 font-medium">Mã bệnh nhân *</label>
+                    <input name="patientCode" value={formData.patientCode} onChange={handleChange} required className="bg-slate-900/40 border border-white/10 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-400/50 transition-colors" />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm text-white/80 font-medium">Tài khoản User (Tùy chọn)</label>
+                    <select name="userId" value={formData.userId} onChange={handleChange} className="bg-slate-900/40 border border-white/10 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-400/50 transition-colors [&>option]:bg-slate-800">
+                      <option value="">-- Không liên kết --</option>
+                      {users.map(u => (
+                        <option key={u.userId} value={u.userId}>{u.fullName} ({u.email})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm text-white/80 font-medium">Họ và tên *</label>
+                    <input name="fullName" value={formData.fullName} onChange={handleChange} required className="bg-slate-900/40 border border-white/10 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-400/50 transition-colors" />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm text-white/80 font-medium">Giới tính</label>
+                    <select name="gender" value={formData.gender} onChange={handleChange} className="bg-slate-900/40 border border-white/10 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-400/50 transition-colors [&>option]:bg-slate-800">
+                      <option value="MALE">Nam</option>
+                      <option value="FEMALE">Nữ</option>
+                      <option value="OTHER">Khác</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm text-white/80 font-medium">Ngày sinh</label>
+                    <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} className="bg-slate-900/40 border border-white/10 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-400/50 transition-colors [color-scheme:dark]" />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm text-white/80 font-medium">Số điện thoại</label>
+                    <input name="phone" value={formData.phone} onChange={handleChange} className="bg-slate-900/40 border border-white/10 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-400/50 transition-colors" />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm text-white/80 font-medium">Email</label>
+                    <input type="email" name="email" value={formData.email} onChange={handleChange} className="bg-slate-900/40 border border-white/10 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-400/50 transition-colors" />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm text-white/80 font-medium">Nhóm máu</label>
+                    <select name="bloodType" value={formData.bloodType} onChange={handleChange} className="bg-slate-900/40 border border-white/10 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-400/50 transition-colors [&>option]:bg-slate-800">
+                      <option value="">-- Chọn nhóm máu --</option>
+                      <option value="A+">A+</option>
+                      <option value="A-">A-</option>
+                      <option value="B+">B+</option>
+                      <option value="B-">B-</option>
+                      <option value="AB+">AB+</option>
+                      <option value="AB-">AB-</option>
+                      <option value="O+">O+</option>
+                      <option value="O-">O-</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <label className="text-sm text-white/80 font-medium">Địa chỉ</label>
+                    <input name="address" value={formData.address} onChange={handleChange} className="bg-slate-900/40 border border-white/10 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-400/50 transition-colors" />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm text-white/80 font-medium">CMND / CCCD</label>
+                    <input name="identityNumber" value={formData.identityNumber} onChange={handleChange} className="bg-slate-900/40 border border-white/10 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-400/50 transition-colors" />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm text-white/80 font-medium">Mã thẻ BHYT</label>
+                    <input name="insuranceNumber" value={formData.insuranceNumber} onChange={handleChange} className="bg-slate-900/40 border border-white/10 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-400/50 transition-colors" />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm text-white/80 font-medium">Người liên hệ khẩn cấp</label>
+                    <input name="emergencyContactName" value={formData.emergencyContactName} onChange={handleChange} placeholder="Tên người thân" className="bg-slate-900/40 border border-white/10 text-white placeholder-white/30 rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-400/50 transition-colors" />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm text-white/80 font-medium">SĐT khẩn cấp</label>
+                    <input name="emergencyContactPhone" value={formData.emergencyContactPhone} onChange={handleChange} placeholder="SĐT người thân" className="bg-slate-900/40 border border-white/10 text-white placeholder-white/30 rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-400/50 transition-colors" />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <label className="text-sm text-white/80 font-medium">Dị ứng (Nếu có)</label>
+                    <textarea name="allergies" rows={2} value={formData.allergies} onChange={handleChange} placeholder="Thuốc, thực phẩm..." className="bg-slate-900/40 border border-white/10 text-white placeholder-white/30 rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-400/50 transition-colors resize-none" />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <label className="text-sm text-white/80 font-medium">Tiền sử bệnh lý</label>
+                    <textarea name="medicalHistory" rows={3} value={formData.medicalHistory} onChange={handleChange} placeholder="Các bệnh từng mắc, phẫu thuật..." className="bg-slate-900/40 border border-white/10 text-white placeholder-white/30 rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-400/50 transition-colors resize-none" />
+                  </div>
                 </div>
 
-                <div className="field">
-                  <label>Tài khoản User (Tùy chọn)</label>
-                  <select name="userId" value={formData.userId} onChange={handleChange}>
-                    <option value="">-- Không liên kết --</option>
-                    {users.map(u => (
-                      <option key={u.userId} value={u.userId}>{u.fullName} ({u.email})</option>
-                    ))}
-                  </select>
+                <div className="flex justify-end gap-3 pt-4 border-t border-white/10 mt-2">
+                  <button type="button" className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors" onClick={closeForm}>Hủy</button>
+                  <button type="submit" className="bg-gradient-to-r from-teal-400 to-emerald-400 text-slate-900 font-bold px-6 py-2.5 rounded-xl hover:shadow-[0_0_20px_rgba(45,212,191,0.4)] transition-all" disabled={submitting}>
+                    {submitting ? "Đang xử lý..." : "Lưu hồ sơ"}
+                  </button>
                 </div>
-                
-                <div className="field">
-                  <label>Họ và tên *</label>
-                  <input name="fullName" value={formData.fullName} onChange={handleChange} required />
-                </div>
-
-                <div className="field">
-                  <label>Giới tính</label>
-                  <select name="gender" value={formData.gender} onChange={handleChange}>
-                    <option value="MALE">Nam</option>
-                    <option value="FEMALE">Nữ</option>
-                    <option value="OTHER">Khác</option>
-                  </select>
-                </div>
-
-                <div className="field">
-                  <label>Ngày sinh</label>
-                  <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} />
-                </div>
-
-                <div className="field">
-                  <label>Số điện thoại</label>
-                  <input name="phone" value={formData.phone} onChange={handleChange} />
-                </div>
-                
-                <div className="field">
-                  <label>Email</label>
-                  <input type="email" name="email" value={formData.email} onChange={handleChange} />
-                </div>
-
-                <div className="field">
-                  <label>Nhóm máu</label>
-                  <select name="bloodType" value={formData.bloodType} onChange={handleChange}>
-                    <option value="">-- Chọn nhóm máu --</option>
-                    <option value="A+">A+</option>
-                    <option value="A-">A-</option>
-                    <option value="B+">B+</option>
-                    <option value="B-">B-</option>
-                    <option value="AB+">AB+</option>
-                    <option value="AB-">AB-</option>
-                    <option value="O+">O+</option>
-                    <option value="O-">O-</option>
-                  </select>
-                </div>
-
-                <div className="field" style={{ gridColumn: "1 / -1" }}>
-                  <label>Địa chỉ</label>
-                  <input name="address" value={formData.address} onChange={handleChange} />
-                </div>
-
-                <div className="field">
-                  <label>CMND / CCCD</label>
-                  <input name="identityNumber" value={formData.identityNumber} onChange={handleChange} />
-                </div>
-
-                <div className="field">
-                  <label>Mã thẻ BHYT</label>
-                  <input name="insuranceNumber" value={formData.insuranceNumber} onChange={handleChange} />
-                </div>
-
-                <div className="field">
-                  <label>Người liên hệ khẩn cấp</label>
-                  <input name="emergencyContactName" value={formData.emergencyContactName} onChange={handleChange} placeholder="Tên người thân" />
-                </div>
-
-                <div className="field">
-                  <label>SĐT khẩn cấp</label>
-                  <input name="emergencyContactPhone" value={formData.emergencyContactPhone} onChange={handleChange} placeholder="SĐT người thân" />
-                </div>
-
-                <div className="field" style={{ gridColumn: "1 / -1" }}>
-                  <label>Dị ứng (Nếu có)</label>
-                  <textarea name="allergies" rows={2} value={formData.allergies} onChange={handleChange} placeholder="Thuốc, thực phẩm..." />
-                </div>
-
-                <div className="field" style={{ gridColumn: "1 / -1" }}>
-                  <label>Tiền sử bệnh lý</label>
-                  <textarea name="medicalHistory" rows={3} value={formData.medicalHistory} onChange={handleChange} placeholder="Các bệnh từng mắc, phẫu thuật..." />
-                </div>
-              </div>
-
-              <div className="form-actions" style={{ marginTop: 24 }}>
-                <button type="button" className="secondary-button" onClick={closeForm}>Hủy</button>
-                <button type="submit" className="primary-button" disabled={submitting}>
-                  {submitting ? "Đang xử lý..." : "Lưu hồ sơ"}
-                </button>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
         </div>
       )}
 
       {/* ── Modal Xóa ──────────────────────────────────── */}
       {deleteTarget && (
-        <div className="modal-overlay" onClick={() => setDeleteTarget(null)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Xác nhận xóa</h2>
-              <button className="icon-button" onClick={() => setDeleteTarget(null)}><X size={18} /></button>
+        <div className="fixed inset-0 z-[120] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setDeleteTarget(null)}>
+          <div className="bg-[#115e59]/95 backdrop-blur-2xl border border-white/20 rounded-[2rem] w-full max-w-md shadow-2xl overflow-hidden p-6 text-white" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold flex items-center gap-2"><Trash2 className="text-rose-400" /> Xác nhận xóa</h2>
+              <button className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors" onClick={() => setDeleteTarget(null)}><X size={20} /></button>
             </div>
-            <p>Bạn có chắc chắn muốn xóa hồ sơ bệnh nhân <strong>{deleteTarget.fullName || deleteTarget.patientCode}</strong> không?</p>
-            <div className="form-actions">
-              <button className="secondary-button" onClick={() => setDeleteTarget(null)}>Hủy</button>
-              <button className="danger-button" onClick={confirmDelete}>Xóa</button>
+            <p className="text-white/80 mb-8 leading-relaxed">Bạn có chắc chắn muốn xóa hồ sơ bệnh nhân <strong className="text-white">{deleteTarget.fullName || deleteTarget.patientCode}</strong> không? Hành động này không thể hoàn tác.</p>
+            <div className="flex justify-end gap-3">
+              <button className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors" onClick={() => setDeleteTarget(null)}>Hủy</button>
+              <button className="px-6 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold shadow-[0_0_15px_rgba(244,63,94,0.4)] transition-all" onClick={confirmDelete}>Xóa</button>
             </div>
           </div>
         </div>
@@ -407,6 +439,6 @@ export default function PatientManagement() {
       {showHistoryFor && (
         <MedicalHistory patientId={showHistoryFor} onClose={() => setShowHistoryFor(null)} />
       )}
-    </>
+    </div>
   );
 }

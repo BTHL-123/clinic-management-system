@@ -1,6 +1,6 @@
 import axiosClient from "./axiosClient";
 
-export const getUsers = (params) => axiosClient.get("/users", { params });
+export const getUsers = (params, config = {}) => axiosClient.get("/users", { params, ...config });
 export const createUser = (payload) => axiosClient.post("/users", payload);
 export const updateUser = (userId, payload) => axiosClient.put(`/users/${userId}`, payload);
 export const updateCurrentUser = (payload) => axiosClient.put("/users/me", payload);
