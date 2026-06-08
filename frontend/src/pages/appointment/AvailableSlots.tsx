@@ -202,7 +202,7 @@ export default function AvailableSlots() {
   }, [isExpired, doctorId, workDate, fetchSlots]);
 
   const handleSelectSlot = async (slot: TimeSlot) => {
-    if (slot.status === "LOCKED" || slot.status === "BOOKED") return;
+    if (slot.status === "LOCKED" || slot.status === "BOOKED" || slot.status === "BLOCKED") return;
     try {
       await lockSlot(slot.slotId);
       setSelectedSlot(slot);
@@ -581,7 +581,7 @@ export default function AvailableSlots() {
               </div>
               <div className="flex flex-wrap justify-center gap-3 max-w-[800px]">
                 {slots.map((slot) => {
-                  const isLocked = slot.status === "LOCKED" || slot.status === "BOOKED";
+                  const isLocked = slot.status === "LOCKED" || slot.status === "BOOKED" || slot.status === "BLOCKED";
                   return (
                     <button
                       key={slot.slotId}
@@ -597,6 +597,7 @@ export default function AvailableSlots() {
                       {formatTime(slot.startTime)} – {formatTime(slot.endTime)}
                       {slot.status === "LOCKED" && " (Đang giữ)"}
                       {slot.status === "BOOKED" && " (Đã đặt)"}
+                      {slot.status === "BLOCKED" && " (Tạm đóng)"}
                     </button>
                   );
                 })}

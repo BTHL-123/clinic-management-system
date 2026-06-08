@@ -277,6 +277,54 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional
+    public TimeSlotResponse blockSlot(Long slotId) {
+        TimeSlot slot = timeSlotRepository.findByIdWithPessimisticLock(slotId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ca khám không tồn tại với id: " + slotId));
+
+        if ("BLOCKED".equals(slot.getStatus())) {
+            return mapSlotToResponse(slot);
+        }
+        if (!"AVAILABLE".equals(slot.getStatus())) {
+            throw new BusinessException("Chỉ có thể khóa ca khám đang trống");
+        }
+
+        slot.setStatus("BLOCKED");
+        slot.setLockedUntil(null);
+        slot.setLockedByPatientId(null);
+        return mapSlotToResponse(timeSlotRepository.save(slot));
+    }
+
+    @Override
+    @Transactional
+    public TimeSlotResponse unblockSlot(Long slotId) {
+        TimeSlot slot = timeSlotRepository.findByIdWithPessimisticLock(slotId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ca khám không tồn tại với id: " + slotId));
+
+        if ("AVAILABLE".equals(slot.getStatus())) {
+            return mapSlotToResponse(slot);
+        }
+        if (!"BLOCKED".equals(slot.getStatus())) {
+            throw new BusinessException("Chỉ có thể mở lại ca khám đã bị khóa");
+        }
+
+        slot.setStatus("AVAILABLE");
+        slot.setLockedUntil(null);
+        slot.setLockedByPatientId(null);
+        return mapSlotToResponse(timeSlotRepository.save(slot));
+    }
+
+    private TimeSlotResponse mapSlotToResponse(TimeSlot slot) {
+        return new TimeSlotResponse(
+                slot.getId(),
+                slot.getDoctorSchedule().getId(),
+                slot.getStartTime(),
+                slot.getEndTime(),
+                slot.getStatus()
+        );
+    }
+
     private DoctorScheduleResponse mapToResponse(DoctorSchedule schedule) {
         return new DoctorScheduleResponse(
                 schedule.getId(),

@@ -1,5 +1,20 @@
-import React, { useState, useCallback, useEffect } from "react";
-import { CalendarDays, Pencil, Trash2, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
+import {
+  CalendarDays,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  Clock3,
+  Filter,
+  LockKeyhole,
+  Pencil,
+  RefreshCw,
+  Stethoscope,
+  Trash2,
+  UnlockKeyhole,
+  UserRound,
+} from "lucide-react";
 import { useToast } from "../../context/useToast";
 
 interface DoctorSchedule {
@@ -30,6 +45,13 @@ const PANEL = { CREATE: "create", UPDATE: "update", CANCEL: "cancel" } as const;
 type PanelType = typeof PANEL[keyof typeof PANEL];
 
 const INIT_FORM = { doctorId: "", workDate: "", startTime: "", endTime: "" };
+const WEEK_DAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+const TIME_ROWS = Array.from({ length: 22 }, (_, index) => {
+  const totalMinutes = 7 * 60 + index * 30;
+  const hour = Math.floor(totalMinutes / 60);
+  const minute = totalMinutes % 60;
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+});
 
 const getHeaders = (): HeadersInit => {
   const token = localStorage.getItem("accessToken");
@@ -66,6 +88,70 @@ function toPayload(form: typeof INIT_FORM) {
   };
 }
 
+function formatDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function startOfWeek(date: Date) {
+  const next = new Date(date);
+  const day = next.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  next.setDate(next.getDate() + diff);
+  next.setHours(0, 0, 0, 0);
+  return next;
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function addMinutes(time: string, minutes: number) {
+  const [hour, minute] = time.split(":").map(Number);
+  const total = hour * 60 + minute + minutes;
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+}
+
+function formatTime(t: string) {
+  if (!t) return "";
+  return String(t).slice(0, 5);
+}
+
+function doctorLabel(doctors: DoctorOption[], doctorId: number) {
+  const doctor = doctors.find((item) => item.doctorId === doctorId);
+  if (!doctor) return `BS-${doctorId}`;
+  return `${doctor.doctorCode} - ${doctor.fullName}`;
+}
+
+function scheduleStatusLabel(status: string) {
+  if (status === "AVAILABLE") return "Có sẵn";
+  if (status === "FULL") return "Đầy ca";
+  if (status === "CANCELLED") return "Đã hủy";
+  if (status === "ON_LEAVE") return "Nghỉ phép";
+  return status;
+}
+
+function slotStatusLabel(status: string) {
+  if (status === "AVAILABLE") return "Trống";
+  if (status === "BOOKED") return "Đã đặt";
+  if (status === "LOCKED") return "Đang khóa";
+  if (status === "BLOCKED") return "Đã chặn";
+  if (status === "CANCELLED") return "Đã hủy";
+  return status;
+}
+
+function scheduleBadgeClass(status: string) {
+  if (status === "CANCELLED" || status === "ON_LEAVE") {
+    return "status-badge badge-inactive";
+  }
+  if (status === "FULL") return "status-badge badge-warning";
+  return "status-badge badge-active";
+}
+
 interface ToastProps {
   message: string;
   type: "success" | "error";
@@ -86,40 +172,6 @@ function ToastRelay({ message, type }: ToastProps) {
   return null;
 }
 
-interface TabBtnProps {
-  active: boolean;
-  onClick: () => void;
-  icon: React.ReactNode;
-  label: string;
-}
-
-function TabBtn({ active, onClick, icon, label }: TabBtnProps) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        padding: "10px 20px",
-        borderRadius: "8px",
-        border: "none",
-        cursor: "pointer",
-        fontWeight: 600,
-        fontSize: "13.5px",
-        transition: "all 0.18s ease-in-out",
-        background: active ? "#0f766e" : "#f1f5f9",
-        color: active ? "#ffffff" : "#475569",
-        boxShadow: active ? "0 4px 12px rgba(15, 118, 110, 0.2)" : "none",
-      }}
-    >
-      {icon}
-      {label}
-    </button>
-  );
-}
-
 interface FormFieldsProps {
   form: typeof INIT_FORM;
   doctors: DoctorOption[];
@@ -130,13 +182,8 @@ function FormFields({ form, doctors, onChange }: FormFieldsProps) {
   return (
     <>
       <div className="field">
-        <label htmlFor="f-doctorId">ID Bác sĩ *</label>
-        <select
-          id="f-doctorId"
-          name="doctorId"
-          value={form.doctorId}
-          onChange={onChange}
-        >
+        <label htmlFor="f-doctorId">Bác sĩ *</label>
+        <select id="f-doctorId" name="doctorId" value={form.doctorId} onChange={onChange}>
           <option value="">Chọn bác sĩ</option>
           {doctors.map((doctor) => (
             <option key={doctor.doctorId} value={doctor.doctorId}>
@@ -147,33 +194,17 @@ function FormFields({ form, doctors, onChange }: FormFieldsProps) {
       </div>
       <div className="field">
         <label htmlFor="f-workDate">Ngày làm việc *</label>
-        <input
-          type="date"
-          id="f-workDate"
-          name="workDate"
-          value={form.workDate}
-          onChange={onChange}
-        />
+        <input type="date" id="f-workDate" name="workDate" value={form.workDate} onChange={onChange} />
       </div>
-      <div className="field">
-        <label htmlFor="f-startTime">Giờ bắt đầu *</label>
-        <input
-          type="time"
-          id="f-startTime"
-          name="startTime"
-          value={form.startTime}
-          onChange={onChange}
-        />
-      </div>
-      <div className="field">
-        <label htmlFor="f-endTime">Giờ kết thúc *</label>
-        <input
-          type="time"
-          id="f-endTime"
-          name="endTime"
-          value={form.endTime}
-          onChange={onChange}
-        />
+      <div className="appointment-time-fields">
+        <div className="field">
+          <label htmlFor="f-startTime">Giờ bắt đầu *</label>
+          <input type="time" id="f-startTime" name="startTime" value={form.startTime} onChange={onChange} />
+        </div>
+        <div className="field">
+          <label htmlFor="f-endTime">Giờ kết thúc *</label>
+          <input type="time" id="f-endTime" name="endTime" value={form.endTime} onChange={onChange} />
+        </div>
       </div>
     </>
   );
@@ -181,14 +212,26 @@ function FormFields({ form, doctors, onChange }: FormFieldsProps) {
 
 interface CreatePanelProps {
   doctors: DoctorOption[];
+  selectedDate: string;
+  selectedTime: string;
+  selectedDoctorId: string;
   onDone: () => void;
 }
 
-function CreatePanel({ doctors, onDone }: CreatePanelProps) {
+function CreatePanel({ doctors, selectedDate, selectedTime, selectedDoctorId, onDone }: CreatePanelProps) {
   const [form, setForm] = useState(INIT_FORM);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    setForm((current) => ({
+      ...current,
+      doctorId: selectedDoctorId || current.doctorId,
+      workDate: selectedDate || current.workDate,
+      startTime: selectedTime || current.startTime,
+    }));
+  }, [selectedDate, selectedDoctorId, selectedTime]);
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
@@ -213,7 +256,7 @@ function CreatePanel({ doctors, onDone }: CreatePanelProps) {
         await handleFetchError(response);
       }
       setMsg("Tạo lịch làm việc thành công!");
-      setForm(INIT_FORM);
+      setForm({ ...INIT_FORM, doctorId: selectedDoctorId, workDate: selectedDate, startTime: selectedTime });
       onDone();
     } catch (error: any) {
       setErr(error.message);
@@ -227,25 +270,10 @@ function CreatePanel({ doctors, onDone }: CreatePanelProps) {
       <ToastRelay message={msg} type="success" />
       <ToastRelay message={err} type="error" />
       <FormFields form={form} doctors={doctors} onChange={onChange} />
-      <div className="form-actions" style={{ marginTop: "20px" }}>
-        <button
-          type="submit"
-          disabled={busy}
-          className="primary-button"
-          style={{
-            width: "100%",
-            justifyContent: "center",
-            display: "inline-flex",
-            alignItems: "center",
-            minHeight: "44px",
-            background: "#0f766e",
-            cursor: busy ? "not-allowed" : "pointer",
-            opacity: busy ? 0.7 : 1,
-          }}
-        >
-          {busy ? "Đang xử lý..." : "Tạo lịch làm việc"}
-        </button>
-      </div>
+      <button type="submit" disabled={busy} className="appointment-panel-submit">
+        <CalendarDays size={16} />
+        {busy ? "Đang xử lý..." : "Tạo lịch làm việc"}
+      </button>
     </form>
   );
 }
@@ -264,15 +292,14 @@ function UpdatePanel({ doctors, onDone, selectedData }: UpdatePanelProps) {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (selectedData) {
-      setScheduleId(String(selectedData.scheduleId));
-      setForm({
-        doctorId: String(selectedData.doctorId),
-        workDate: selectedData.workDate,
-        startTime: formatTime(selectedData.startTime),
-        endTime: formatTime(selectedData.endTime)
-      });
-    }
+    if (!selectedData) return;
+    setScheduleId(String(selectedData.scheduleId));
+    setForm({
+      doctorId: String(selectedData.doctorId),
+      workDate: selectedData.workDate,
+      startTime: formatTime(selectedData.startTime),
+      endTime: formatTime(selectedData.endTime),
+    });
   }, [selectedData]);
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -285,7 +312,7 @@ function UpdatePanel({ doctors, onDone, selectedData }: UpdatePanelProps) {
     setErr("");
     const sid = parseInt(scheduleId, 10);
     if (isNaN(sid) || sid <= 0) {
-      setErr("Vui lòng chọn lịch từ bảng bên dưới.");
+      setErr("Vui lòng chọn lịch trên cuốn lịch tuần hoặc bảng bên dưới.");
       return;
     }
     if (!form.doctorId || !form.workDate || !form.startTime || !form.endTime) {
@@ -316,44 +343,14 @@ function UpdatePanel({ doctors, onDone, selectedData }: UpdatePanelProps) {
       <ToastRelay message={msg} type="success" />
       <ToastRelay message={err} type="error" />
       <div className="field">
-        <label htmlFor="u-scheduleId">ID Lịch cần cập nhật (Chọn từ bảng)</label>
-        <input
-          type="number"
-          id="u-scheduleId"
-          value={scheduleId}
-          readOnly
-          placeholder="Nhấp vào biểu tượng sửa ở bảng bên dưới"
-          style={{
-            border: "2px solid #0f766e",
-            borderRadius: "8px",
-            padding: "10px 12px",
-            fontSize: "14px",
-            outline: "none",
-            backgroundColor: "#f8fafc"
-          }}
-        />
+        <label htmlFor="u-scheduleId">ID lịch đang chọn</label>
+        <input id="u-scheduleId" type="number" value={scheduleId} readOnly placeholder="Chọn một block lịch" />
       </div>
-      <div style={{ height: "1px", background: "#e2e8f0", margin: "8px 0" }} />
       <FormFields form={form} doctors={doctors} onChange={onChange} />
-      <div className="form-actions" style={{ marginTop: "20px" }}>
-        <button
-          type="submit"
-          disabled={busy}
-          className="primary-button"
-          style={{
-            width: "100%",
-            justifyContent: "center",
-            display: "inline-flex",
-            alignItems: "center",
-            minHeight: "44px",
-            background: "#0f766e",
-            cursor: busy ? "not-allowed" : "pointer",
-            opacity: busy ? 0.7 : 1,
-          }}
-        >
-          {busy ? "Đang xử lý..." : "Cập nhật lịch"}
-        </button>
-      </div>
+      <button type="submit" disabled={busy} className="appointment-panel-submit">
+        <Pencil size={16} />
+        {busy ? "Đang xử lý..." : "Cập nhật lịch"}
+      </button>
     </form>
   );
 }
@@ -381,7 +378,7 @@ function CancelPanel({ onDone, selectedData }: CancelPanelProps) {
     setErr("");
     const sid = parseInt(scheduleId, 10);
     if (isNaN(sid) || sid <= 0) {
-      setErr("Vui lòng chọn lịch từ bảng bên dưới.");
+      setErr("Vui lòng chọn lịch trên cuốn lịch tuần hoặc bảng bên dưới.");
       return;
     }
     setBusy(true);
@@ -408,47 +405,16 @@ function CancelPanel({ onDone, selectedData }: CancelPanelProps) {
       <ToastRelay message={msg} type="success" />
       <ToastRelay message={err} type="error" />
       <div className="field">
-        <label htmlFor="c-scheduleId">ID Lịch cần hủy (Chọn từ bảng)</label>
-        <input
-          type="number"
-          id="c-scheduleId"
-          value={scheduleId}
-          readOnly
-          placeholder="Nhấp vào biểu tượng thùng rác ở bảng bên dưới"
-          style={{ backgroundColor: "#f8fafc" }}
-        />
+        <label htmlFor="c-scheduleId">ID lịch cần hủy</label>
+        <input id="c-scheduleId" type="number" value={scheduleId} readOnly placeholder="Chọn một block lịch" />
       </div>
-      <div style={{
-        padding: "12px 14px",
-        borderRadius: "8px",
-        background: "#fff7ed",
-        border: "1px solid #fed7aa",
-        color: "#9a3412",
-        fontSize: "13px",
-        lineHeight: "1.5"
-      }}>
-        ⚠️ Lịch chỉ có thể hủy khi chưa có ca khám nào được đặt. Thao tác này không thể hoàn tác.
+      <div className="appointment-warning">
+        Lịch chỉ có thể hủy khi chưa có ca khám nào được đặt. Thao tác này không thể hoàn tác.
       </div>
-      <div className="form-actions" style={{ marginTop: "20px" }}>
-        <button
-          type="submit"
-          disabled={busy}
-          className="danger-button"
-          style={{
-            width: "100%",
-            justifyContent: "center",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "8px",
-            minHeight: "44px",
-            cursor: busy ? "not-allowed" : "pointer",
-            opacity: busy ? 0.7 : 1,
-          }}
-        >
-          <Trash2 size={15} />
-          {busy ? "Đang hủy..." : "Hủy lịch"}
-        </button>
-      </div>
+      <button type="submit" disabled={busy} className="appointment-panel-submit danger">
+        <Trash2 size={16} />
+        {busy ? "Đang hủy..." : "Hủy lịch"}
+      </button>
     </form>
   );
 }
@@ -467,62 +433,27 @@ function slotStyle(status: string) {
     transition: "all 0.15s ease",
   };
   if (status === "BOOKED") {
-    return {
-      ...base,
-      background: "#fef9c3",
-      color: "#854d0e",
-      borderColor: "#fde047",
-    };
+    return { ...base, background: "#fef9c3", color: "#854d0e", borderColor: "#fde047" };
   }
   if (status === "CANCELLED") {
-    return {
-      ...base,
-      background: "#fee2e2",
-      color: "#991b1b",
-      borderColor: "#fca5a5",
-    };
+    return { ...base, background: "#fee2e2", color: "#991b1b", borderColor: "#fca5a5" };
   }
   if (status === "LOCKED") {
-    return {
-      ...base,
-      background: "#f1f5f9",
-      color: "#475569",
-      borderColor: "#cbd5e1",
-    };
+    return { ...base, background: "#f1f5f9", color: "#475569", borderColor: "#cbd5e1" };
   }
-  return {
-    ...base,
-    background: "#dcfce7",
-    color: "#166534",
-    borderColor: "#86efac",
-  };
-}
-
-function scheduleBadgeClass(status: string) {
-  if (status === "CANCELLED" || status === "ON_LEAVE") {
-    return "status-badge badge-inactive";
+  if (status === "BLOCKED") {
+    return { ...base, background: "#fff7ed", color: "#9a3412", borderColor: "#fdba74" };
   }
-  return "status-badge badge-active";
-}
-
-function scheduleStatusLabel(status: string) {
-  if (status === "AVAILABLE") return "Có sẵn";
-  if (status === "FULL") return "Đầy ca";
-  if (status === "CANCELLED") return "Đã hủy";
-  if (status === "ON_LEAVE") return "Nghỉ phép";
-  return status;
-}
-
-function formatTime(t: string) {
-  if (!t) return "";
-  return String(t).slice(0, 5);
+  return { ...base, background: "#dcfce7", color: "#166534", borderColor: "#86efac" };
 }
 
 interface SlotRowProps {
   schedule: DoctorSchedule;
+  doctor?: DoctorOption;
+  onPick: (action: PanelType, schedule: DoctorSchedule) => void;
 }
 
-function SlotRow({ schedule }: SlotRowProps) {
+function SlotRow({ schedule, doctor, onPick }: SlotRowProps) {
   const [open, setOpen] = useState(false);
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [loading, setLoading] = useState(false);
@@ -557,38 +488,21 @@ function SlotRow({ schedule }: SlotRowProps) {
     <>
       <tr>
         <td className="cell-name">#{schedule.scheduleId}</td>
-        <td>BS-{schedule.doctorId}</td>
+        <td>
+          <strong className="appointment-table-doctor-name">{doctor?.fullName || `Bác sĩ #${schedule.doctorId}`}</strong>
+          <small className="appointment-table-doctor-code">{doctor?.doctorCode || `ID ${schedule.doctorId}`}</small>
+        </td>
         <td>{schedule.workDate}</td>
         <td>
           <span style={{ fontFamily: "monospace", fontWeight: 600, color: "#334155" }}>
-            {formatTime(schedule.startTime)} – {formatTime(schedule.endTime)}
+            {formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}
           </span>
         </td>
         <td>
-          <span className={scheduleBadgeClass(schedule.status)}>
-            {scheduleStatusLabel(schedule.status)}
-          </span>
+          <span className={scheduleBadgeClass(schedule.status)}>{scheduleStatusLabel(schedule.status)}</span>
         </td>
         <td style={{ textAlign: "center" }}>
-          <button
-            type="button"
-            onClick={toggle}
-            disabled={loading}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "6px 14px",
-              borderRadius: "8px",
-              border: "1px solid #d7dee8",
-              background: open ? "#e8f7f4" : "#ffffff",
-              color: open ? "#0f766e" : "#405064",
-              fontWeight: 650,
-              fontSize: "13px",
-              cursor: loading ? "wait" : "pointer",
-              transition: "all 0.15s ease",
-            }}
-          >
+          <button type="button" onClick={toggle} disabled={loading} className="appointment-table-slot-btn">
             {loading ? (
               "Đang tải..."
             ) : open ? (
@@ -605,11 +519,11 @@ function SlotRow({ schedule }: SlotRowProps) {
           </button>
         </td>
         <td style={{ textAlign: "center" }}>
-          <div className="action-group" style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
-            <button type="button" className="icon-button" onClick={() => (window as any).selectScheduleForAction("update", schedule)} title="Cập nhật lịch" style={{ padding: "6px", borderRadius: "6px", border: "1px solid #cbd5e1", background: "#fff", cursor: "pointer", color: "#334155" }}>
+          <div className="action-group">
+            <button type="button" className="icon-button" onClick={() => onPick(PANEL.UPDATE, schedule)} title="Cập nhật lịch">
               <Pencil size={15} />
             </button>
-            <button type="button" className="icon-button btn-danger" onClick={() => (window as any).selectScheduleForAction("cancel", schedule)} title="Hủy lịch" style={{ padding: "6px", borderRadius: "6px", border: "1px solid #fca5a5", background: "#fef2f2", cursor: "pointer", color: "#ef4444" }}>
+            <button type="button" className="icon-button btn-danger" onClick={() => onPick(PANEL.CANCEL, schedule)} title="Hủy lịch">
               <Trash2 size={15} />
             </button>
           </div>
@@ -642,18 +556,8 @@ function SlotRow({ schedule }: SlotRowProps) {
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
               {slots.map((slot, idx) => (
                 <div key={slot.slotId ?? idx} style={slotStyle(slot.status)}>
-                  <span>{formatTime(slot.startTime)} – {formatTime(slot.endTime)}</span>
-                  <span style={{
-                    fontSize: "10px",
-                    opacity: 0.85,
-                    textTransform: "lowercase",
-                    background: "rgba(0,0,0,0.05)",
-                    padding: "2px 6px",
-                    borderRadius: "10px",
-                    fontWeight: 500
-                  }}>
-                    {slot.status === "AVAILABLE" ? "trống" : slot.status === "BOOKED" ? "đã đặt" : slot.status === "LOCKED" ? "đang khóa" : "đã hủy"}
-                  </span>
+                  <span>{formatTime(slot.startTime)} - {formatTime(slot.endTime)}</span>
+                  <span className="appointment-slot-mini-status">{slotStatusLabel(slot.status)}</span>
                 </div>
               ))}
             </div>
@@ -666,70 +570,35 @@ function SlotRow({ schedule }: SlotRowProps) {
 
 interface ScheduleTableProps {
   schedules: DoctorSchedule[];
+  doctors: DoctorOption[];
   loading: boolean;
   error: string;
   onRefresh: () => void;
-  dateFilter: string;
-  onFilterChange: (val: string) => void;
+  onPick: (action: PanelType, schedule: DoctorSchedule) => void;
 }
 
-function ScheduleTable({ schedules, loading, error, onRefresh, dateFilter, onFilterChange }: ScheduleTableProps) {
+function ScheduleTable({ schedules, doctors, loading, error, onRefresh, onPick }: ScheduleTableProps) {
   return (
-    <div style={{ marginTop: "32px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "12px" }}>
-        <h2 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 700, color: "#0f172a" }}>
-          Danh sách lịch làm việc
-        </h2>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <select 
-            value={dateFilter} 
-            onChange={(e) => onFilterChange(e.target.value)}
-            style={{ padding: "7px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", outline: "none", cursor: "pointer" }}
-          >
-            <option value="upcoming">Từ hôm nay trở đi</option>
-            <option value="today">Chỉ hôm nay</option>
-            <option value="week">7 ngày tới</option>
-            <option value="all">Tất cả (Bao gồm quá khứ)</option>
-          </select>
-          <button
-          type="button"
-          onClick={onRefresh}
-          disabled={loading}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-            padding: "8px 16px",
-            borderRadius: "8px",
-            border: "1px solid #d7dee8",
-            background: "#ffffff",
-            color: "#475569",
-            fontWeight: 650,
-            fontSize: "13px",
-            cursor: loading ? "not-allowed" : "pointer",
-          }}
-        >
-          <RefreshCw
-            size={13}
-            style={{ animation: loading ? "spin 1s linear infinite" : "none" }}
-          />
-          Tải lại
-          </button>
+    <div className="appointment-table-section">
+      <div className="appointment-section-title">
+        <div>
+          <h2>Danh sách lịch làm việc trong tuần</h2>
+          <p>Vẫn giữ bảng ID để cập nhật, hủy và xem toàn bộ ca khám khi cần.</p>
         </div>
+        <button type="button" onClick={onRefresh} disabled={loading} className="calendar-ghost-btn">
+          <RefreshCw size={14} style={{ animation: loading ? "spin 1s linear infinite" : "none" }} />
+          Tải lại
+        </button>
       </div>
 
-      {error && (
-        <div className="error-box" style={{ marginBottom: "16px" }}>
-          {error}
-        </div>
-      )}
+      {error && <div className="error-box" style={{ marginBottom: "16px" }}>{error}</div>}
 
       <div className="table-wrapper">
         <table className="data-table">
           <thead>
             <tr>
               <th>ID Lịch</th>
-              <th>ID Bác sĩ</th>
+              <th>Bác sĩ</th>
               <th>Ngày làm việc</th>
               <th>Khung giờ</th>
               <th>Trạng thái</th>
@@ -740,22 +609,22 @@ function ScheduleTable({ schedules, loading, error, onRefresh, dateFilter, onFil
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={7} className="empty-row">
-                  Đang tải dữ liệu...
-                </td>
+                <td colSpan={7} className="empty-row">Đang tải dữ liệu...</td>
               </tr>
             )}
             {!loading && schedules.length === 0 && !error && (
               <tr>
-                <td colSpan={7} className="empty-row">
-                  Chưa có lịch làm việc nào.
-                </td>
+                <td colSpan={7} className="empty-row">Chưa có lịch làm việc nào trong tuần này.</td>
               </tr>
             )}
-            {!loading &&
-              schedules.map((s) => (
-                <SlotRow key={s.scheduleId} schedule={s} />
-              ))}
+            {!loading && schedules.map((s) => (
+              <SlotRow
+                key={s.scheduleId}
+                schedule={s}
+                doctor={doctors.find((doctor) => doctor.doctorId === s.doctorId)}
+                onPick={onPick}
+              />
+            ))}
           </tbody>
         </table>
       </div>
@@ -764,65 +633,209 @@ function ScheduleTable({ schedules, loading, error, onRefresh, dateFilter, onFil
   );
 }
 
+interface WeekCalendarProps {
+  weekDates: Date[];
+  schedules: DoctorSchedule[];
+  doctors: DoctorOption[];
+  selectedDate: string;
+  onPickDate: (date: string) => void;
+}
+
+function WeekCalendar({ weekDates, schedules, doctors, selectedDate, onPickDate }: WeekCalendarProps) {
+  return (
+    <div className="appointment-week-summary">
+      {weekDates.map((date, index) => {
+        const dateValue = formatDate(date);
+        const daySchedules = schedules.filter((schedule) => schedule.workDate === dateValue);
+        const doctorCount = new Set(daySchedules.map((schedule) => schedule.doctorId)).size;
+        const bookedCount = daySchedules.reduce((total, schedule) => {
+          const slots = schedule.maxPatients || 0;
+          return total + slots;
+        }, 0);
+        return (
+          <button
+            type="button"
+            className={`appointment-day-summary ${selectedDate === dateValue ? "selected" : ""}`}
+            key={dateValue}
+            onClick={() => onPickDate(dateValue)}
+          >
+            <span>{WEEK_DAYS[index]}</span>
+            <strong>{String(date.getDate()).padStart(2, "0")}</strong>
+            <small>{String(date.getMonth() + 1).padStart(2, "0")}/{date.getFullYear()}</small>
+            <em>{doctorCount} bác sĩ · {bookedCount || daySchedules.length} ca</em>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+interface DayResourceCalendarProps {
+  selectedDate: string;
+  doctors: DoctorOption[];
+  schedules: DoctorSchedule[];
+  slotsBySchedule: Record<number, TimeSlot[]>;
+  selectedScheduleId?: number;
+  onPickSchedule: (schedule: DoctorSchedule) => void;
+  onQuickCreate: (doctorId: number, date: string, startTime: string, endTime: string) => Promise<boolean>;
+  onToggleSlot: (slot: TimeSlot) => Promise<void>;
+}
+
+function DayResourceCalendar({
+  selectedDate,
+  doctors,
+  schedules,
+  slotsBySchedule,
+  selectedScheduleId,
+  onPickSchedule,
+  onQuickCreate,
+  onToggleSlot,
+}: DayResourceCalendarProps) {
+  const [dragSelection, setDragSelection] = useState<{ doctorId: number; startIndex: number; endIndex: number } | null>(null);
+  const [creating, setCreating] = useState(false);
+  const daySchedules = schedules.filter((schedule) => schedule.workDate === selectedDate);
+  const columns = doctors;
+
+  const finishSelection = async () => {
+    if (!dragSelection || creating) return;
+    const startIndex = Math.min(dragSelection.startIndex, dragSelection.endIndex);
+    const endIndex = Math.max(dragSelection.startIndex, dragSelection.endIndex);
+    setCreating(true);
+    await onQuickCreate(
+      dragSelection.doctorId,
+      selectedDate,
+      TIME_ROWS[startIndex],
+      addMinutes(TIME_ROWS[endIndex], 30),
+    );
+    setCreating(false);
+    setDragSelection(null);
+  };
+
+  return (
+    <div className="appointment-resource-board" onPointerUp={finishSelection} onPointerCancel={() => setDragSelection(null)}>
+      <div className="appointment-resource-time-axis">
+        <span />
+        {TIME_ROWS.map((time) => <span key={time}>{time}</span>)}
+      </div>
+      <div className="appointment-resource-grid" style={{ "--doctor-columns": columns.length || 1 } as React.CSSProperties}>
+        {columns.map((doctor) => {
+          const doctorSchedules = daySchedules.filter((schedule) => schedule.doctorId === doctor.doctorId);
+          return (
+            <div className="appointment-resource-column" key={doctor.doctorId}>
+              <div className="appointment-resource-head">
+                <strong>{doctor.fullName}</strong>
+                <small>{doctor.doctorCode} · {doctorSchedules.length || 0} lịch</small>
+              </div>
+              {TIME_ROWS.map((time, timeIndex) => {
+                const schedule = doctorSchedules.find((item) => formatTime(item.startTime) <= time && formatTime(item.endTime) > time);
+                if (!schedule) {
+                  const isSelecting = dragSelection?.doctorId === doctor.doctorId
+                    && timeIndex >= Math.min(dragSelection.startIndex, dragSelection.endIndex)
+                    && timeIndex <= Math.max(dragSelection.startIndex, dragSelection.endIndex);
+                  return (
+                    <button
+                      type="button"
+                      className={`appointment-resource-slot free ${isSelecting ? "drag-selecting" : ""}`}
+                      key={time}
+                      disabled={creating}
+                      onPointerDown={() => {
+                        setDragSelection({ doctorId: doctor.doctorId, startIndex: timeIndex, endIndex: timeIndex });
+                      }}
+                      onPointerEnter={() => {
+                        if (dragSelection?.doctorId === doctor.doctorId) {
+                          setDragSelection((current) => current ? { ...current, endIndex: timeIndex } : current);
+                        }
+                      }}
+                      title="Bấm để tạo ca 30 phút, hoặc giữ và kéo để tạo nhiều ca"
+                    >
+                      +
+                    </button>
+                  );
+                }
+                const slots = slotsBySchedule[schedule.scheduleId] || [];
+                const slot = slots.find((item) => formatTime(item.startTime) === time);
+                const status = slot?.status || schedule.status;
+                return (
+                  <button
+                    type="button"
+                    className={`appointment-resource-slot ${status.toLowerCase()} ${schedule.scheduleId === selectedScheduleId ? "selected" : ""}`}
+                    key={time}
+                    onClick={() => onPickSchedule(schedule)}
+                    title={`${formatTime(schedule.startTime)} - ${formatTime(schedule.endTime)} · ${doctorLabel(doctors, schedule.doctorId)}`}
+                  >
+                    <span>{slot ? slotStatusLabel(slot.status) : scheduleStatusLabel(schedule.status)}</span>
+                    {slot && (slot.status === "AVAILABLE" || slot.status === "BLOCKED") && (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        className="appointment-slot-toggle"
+                        title={slot.status === "BLOCKED" ? "Mở lại ca khám" : "Chặn riêng ca khám"}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onToggleSlot(slot);
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            onToggleSlot(slot);
+                          }
+                        }}
+                      >
+                        {slot.status === "BLOCKED" ? <UnlockKeyhole size={12} /> : <LockKeyhole size={12} />}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
+        {columns.length === 0 && (
+          <div className="appointment-resource-empty">
+            Chưa có bác sĩ để hiển thị lịch trong ngày này.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function AppointmentManagement() {
+  const toast = useToast();
   const [activePanel, setActivePanel] = useState<PanelType>(PANEL.CREATE);
   const [schedules, setSchedules] = useState<DoctorSchedule[]>([]);
   const [doctors, setDoctors] = useState<DoctorOption[]>([]);
+  const [slotsBySchedule, setSlotsBySchedule] = useState<Record<number, TimeSlot[]>>({});
   const [tableLoading, setTableLoading] = useState(false);
+  const [slotLoading, setSlotLoading] = useState(false);
   const [tableError, setTableError] = useState("");
-  const [dateFilter, setDateFilter] = useState("upcoming");
-  const [selectedScheduleForUpdate, setSelectedScheduleForUpdate] = useState<DoctorSchedule | null>(null);
-  const [selectedScheduleForCancel, setSelectedScheduleForCancel] = useState<DoctorSchedule | null>(null);
+  const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
+  const [doctorFilter, setDoctorFilter] = useState("");
+  const [selectedSchedule, setSelectedSchedule] = useState<DoctorSchedule | null>(null);
+  const [selectedDate, setSelectedDate] = useState(formatDate(new Date()));
+  const [selectedTime, setSelectedTime] = useState("07:00");
+  const [selectedEmptyDoctorId, setSelectedEmptyDoctorId] = useState("");
 
-  useEffect(() => {
-    (window as any).selectScheduleForAction = (action: string, scheduleData: DoctorSchedule) => {
-      if (action === "update") {
-        setActivePanel(PANEL.UPDATE);
-        setSelectedScheduleForUpdate(scheduleData);
-      } else if (action === "cancel") {
-        setActivePanel(PANEL.CANCEL);
-        setSelectedScheduleForCancel(scheduleData);
-      }
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-    return () => { delete (window as any).selectScheduleForAction; };
-  }, []);
+  const weekDates = useMemo(() => Array.from({ length: 7 }, (_, index) => addDays(weekStart, index)), [weekStart]);
+  const weekEnd = useMemo(() => addDays(weekStart, 6), [weekStart]);
+
+  const filteredSchedules = useMemo(() => {
+    const list = doctorFilter ? schedules.filter((schedule) => String(schedule.doctorId) === doctorFilter) : schedules;
+    return [...list].sort((a, b) => `${a.workDate} ${a.startTime}`.localeCompare(`${b.workDate} ${b.startTime}`));
+  }, [doctorFilter, schedules]);
+
+  const selectedDoctorId = selectedEmptyDoctorId || doctorFilter || (doctors[0]?.doctorId ? String(doctors[0].doctorId) : "");
 
   const loadSchedules = useCallback(async () => {
     setTableLoading(true);
     setTableError("");
     try {
-      let url = "http://localhost:8080/api/doctor-schedules";
-      
-      const today = new Date();
-      // Format as YYYY-MM-DD
-      const formatDate = (date: Date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      };
-      
-      const params = new URLSearchParams();
-      
-      if (dateFilter === "upcoming") {
-        params.append("fromDate", formatDate(today));
-      } else if (dateFilter === "today") {
-        params.append("fromDate", formatDate(today));
-        params.append("toDate", formatDate(today));
-      } else if (dateFilter === "week") {
-        const nextWeek = new Date(today);
-        nextWeek.setDate(today.getDate() + 7);
-        params.append("fromDate", formatDate(today));
-        params.append("toDate", formatDate(nextWeek));
-      }
-      
-      const qs = params.toString();
-      if (qs) {
-        url += "?" + qs;
-      }
-
-      const response = await fetch(url, {
+      const params = new URLSearchParams({
+        fromDate: formatDate(weekStart),
+        toDate: formatDate(addDays(weekStart, 6)),
+      });
+      const response = await fetch(`http://localhost:8080/api/doctor-schedules?${params.toString()}`, {
         headers: getHeaders(),
       });
       if (!response.ok) {
@@ -833,10 +846,11 @@ export default function AppointmentManagement() {
       setSchedules(Array.isArray(data) ? data : []);
     } catch (error: any) {
       setTableError(error.message || "Không thể tải danh sách lịch.");
+      setSchedules([]);
     } finally {
       setTableLoading(false);
     }
-  }, []);
+  }, [weekStart]);
 
   const loadDoctors = useCallback(async () => {
     try {
@@ -854,70 +868,260 @@ export default function AppointmentManagement() {
     }
   }, []);
 
+  const loadWeekSlots = useCallback(async (items: DoctorSchedule[]) => {
+    if (items.length === 0) {
+      setSlotsBySchedule({});
+      return;
+    }
+    setSlotLoading(true);
+    try {
+      const entries = await Promise.all(
+        items.map(async (schedule) => {
+          try {
+            const response = await fetch(`http://localhost:8080/api/doctor-schedules/${schedule.scheduleId}/slots`, {
+              headers: getHeaders(),
+            });
+            if (!response.ok) return [schedule.scheduleId, []] as const;
+            const json = await response.json();
+            return [schedule.scheduleId, Array.isArray(json.data) ? json.data : []] as const;
+          } catch {
+            return [schedule.scheduleId, []] as const;
+          }
+        })
+      );
+      setSlotsBySchedule(Object.fromEntries(entries));
+    } finally {
+      setSlotLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadSchedules();
-  }, [loadSchedules, dateFilter]);
+  }, [loadSchedules]);
 
   useEffect(() => {
     loadDoctors();
   }, [loadDoctors]);
 
+  useEffect(() => {
+    loadWeekSlots(schedules);
+  }, [loadWeekSlots, schedules]);
+
+  const pickSchedule = (panel: PanelType, schedule: DoctorSchedule) => {
+    setSelectedSchedule(schedule);
+    setSelectedDate(schedule.workDate);
+    setSelectedTime(formatTime(schedule.startTime));
+    setActivePanel(panel);
+  };
+
+  const shiftWeek = (amount: number) => {
+    const nextWeekStart = addDays(weekStart, amount * 7);
+    setWeekStart(nextWeekStart);
+    setSelectedDate(formatDate(nextWeekStart));
+    setSelectedSchedule(null);
+  };
+
+  const jumpToday = () => {
+    setWeekStart(startOfWeek(new Date()));
+    setSelectedDate(formatDate(new Date()));
+    setSelectedSchedule(null);
+  };
+
+  const quickCreateSchedule = async (doctorId: number, workDate: string, startTime: string, endTime: string) => {
+    try {
+      const response = await fetch("http://localhost:8080/api/doctor-schedules", {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify({
+          doctorId,
+          workDate,
+          startTime: `${startTime}:00`,
+          endTime: `${endTime}:00`,
+        }),
+      });
+      if (!response.ok) {
+        await handleFetchError(response);
+      }
+      toast.success(`Đã tạo lịch ${startTime} - ${endTime}.`);
+      setSelectedDate(workDate);
+      setSelectedTime(startTime);
+      setSelectedEmptyDoctorId(String(doctorId));
+      await loadSchedules();
+      return true;
+    } catch (error: any) {
+      toast.error(error.message || "Không thể tạo lịch nhanh.");
+      return false;
+    }
+  };
+
+  const toggleSlotBlocked = async (slot: TimeSlot) => {
+    const shouldUnblock = slot.status === "BLOCKED";
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/doctor-schedules/slots/${slot.slotId}/${shouldUnblock ? "unblock" : "block"}`,
+        {
+          method: "PUT",
+          headers: getHeaders(),
+        },
+      );
+      if (!response.ok) {
+        await handleFetchError(response);
+      }
+      toast.success(shouldUnblock ? "Đã mở lại ca khám." : "Đã khóa riêng ca khám.");
+      await loadWeekSlots(schedules);
+    } catch (error: any) {
+      toast.error(error.message || "Không thể cập nhật trạng thái ca khám.");
+    }
+  };
+
   return (
-    <>
+    <div className="appointment-week-page">
       <div className="page-header">
         <div>
           <h1 className="page-title">
             <CalendarDays size={26} />
             Quản lý Lịch hẹn &amp; Lịch khám
           </h1>
-          <p className="muted">
-            Tạo, cập nhật và hủy lịch làm việc. Ca khám 30 phút được tự động sinh lại sau mỗi lần cập nhật.
-          </p>
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: "10px", marginBottom: "22px", flexWrap: "wrap" }}>
-        <TabBtn
-          active={activePanel === PANEL.CREATE}
-          onClick={() => setActivePanel(PANEL.CREATE)}
-          icon={<CalendarDays size={14} />}
-          label="Tạo lịch mới"
-        />
-        <TabBtn
-          active={activePanel === PANEL.UPDATE}
-          onClick={() => setActivePanel(PANEL.UPDATE)}
-          icon={<Pencil size={14} />}
-          label="Cập nhật lịch"
-        />
-        <TabBtn
-          active={activePanel === PANEL.CANCEL}
-          onClick={() => setActivePanel(PANEL.CANCEL)}
-          icon={<Trash2 size={14} />}
-          label="Hủy lịch"
-        />
+      <div className="appointment-week-toolbar">
+        <div className="appointment-week-title">
+          <CalendarDays size={18} />
+          <div>
+            <strong>
+              {formatDate(weekStart)} - {formatDate(weekEnd)}
+            </strong>
+            <span>{slotLoading ? "Đang tải ca khám..." : `${filteredSchedules.length} lịch làm việc trong tuần`}</span>
+          </div>
+        </div>
+        <div className="appointment-week-controls">
+          <button type="button" className="calendar-ghost-btn" onClick={() => shiftWeek(-1)} aria-label="Tuần trước">
+            <ChevronLeft size={16} />
+          </button>
+          <button type="button" className="calendar-ghost-btn" onClick={jumpToday}>Hôm nay</button>
+          <button type="button" className="calendar-ghost-btn" onClick={() => shiftWeek(1)} aria-label="Tuần sau">
+            <ChevronRight size={16} />
+          </button>
+          <label className="appointment-filter-control">
+            <Filter size={15} />
+            <select value={doctorFilter} onChange={(event) => setDoctorFilter(event.target.value)}>
+              <option value="">Tất cả bác sĩ</option>
+              {doctors.map((doctor) => (
+                <option key={doctor.doctorId} value={doctor.doctorId}>
+                  {doctor.doctorCode} - {doctor.fullName}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button type="button" className="calendar-primary-btn" onClick={() => setActivePanel(PANEL.CREATE)}>
+            <CalendarDays size={16} />
+            Tạo lịch
+          </button>
+        </div>
       </div>
 
-      <div style={{
-        maxWidth: "480px",
-        background: "#ffffff",
-        padding: "26px",
-        borderRadius: "12px",
-        border: "1px solid #dfe5ec",
-        boxShadow: "0 2px 12px rgba(0,0,0,0.05)",
-      }}>
-        {activePanel === PANEL.CREATE && <CreatePanel doctors={doctors} onDone={loadSchedules} />}
-        {activePanel === PANEL.UPDATE && <UpdatePanel doctors={doctors} onDone={loadSchedules} selectedData={selectedScheduleForUpdate} />}
-        {activePanel === PANEL.CANCEL && <CancelPanel onDone={loadSchedules} selectedData={selectedScheduleForCancel} />}
+      <div className="appointment-main-grid">
+        <section className="appointment-calendar-panel">
+          <WeekCalendar
+            weekDates={weekDates}
+            schedules={filteredSchedules}
+            doctors={doctors}
+            selectedDate={selectedDate}
+            onPickDate={(date) => {
+              setSelectedDate(date);
+              setSelectedSchedule(null);
+            }}
+          />
+          <div className="appointment-legend">
+            <span><i className="free" /> Trống</span>
+            <span><i className="available" /> Có lịch</span>
+            <span><i className="booked" /> Đã đặt</span>
+            <span><i className="locked" /> Đang khóa</span>
+            <span><i className="blocked" /> Đã chặn</span>
+            <span><i className="cancelled" /> Đã hủy</span>
+          </div>
+          <DayResourceCalendar
+            selectedDate={selectedDate}
+            schedules={filteredSchedules}
+            slotsBySchedule={slotsBySchedule}
+            doctors={doctorFilter ? doctors.filter((doctor) => String(doctor.doctorId) === doctorFilter) : doctors}
+            selectedScheduleId={selectedSchedule?.scheduleId}
+            onPickSchedule={(schedule) => pickSchedule(PANEL.UPDATE, schedule)}
+            onQuickCreate={quickCreateSchedule}
+            onToggleSlot={toggleSlotBlocked}
+          />
+        </section>
+
+        <aside className="appointment-side-panel">
+          <div className="appointment-panel-tabs" role="tablist" aria-label="Tác vụ lịch">
+            <button type="button" className={activePanel === PANEL.CREATE ? "active" : ""} onClick={() => setActivePanel(PANEL.CREATE)}>
+              <CalendarDays size={15} />
+              Tạo
+            </button>
+            <button type="button" className={activePanel === PANEL.UPDATE ? "active" : ""} onClick={() => setActivePanel(PANEL.UPDATE)}>
+              <Pencil size={15} />
+              Sửa
+            </button>
+            <button type="button" className={activePanel === PANEL.CANCEL ? "active" : ""} onClick={() => setActivePanel(PANEL.CANCEL)}>
+              <Trash2 size={15} />
+              Hủy
+            </button>
+          </div>
+
+          <div className="appointment-selected-card">
+            <div className="appointment-selected-icon">
+              {selectedSchedule ? <Stethoscope size={18} /> : <Clock3 size={18} />}
+            </div>
+            <div>
+              <strong>{selectedSchedule ? `Lịch #${selectedSchedule.scheduleId}` : "Ô lịch đang chọn"}</strong>
+              <span>{selectedSchedule ? doctorLabel(doctors, selectedSchedule.doctorId) : `${selectedDate} · ${selectedTime}`}</span>
+            </div>
+          </div>
+
+          {activePanel === PANEL.CREATE && (
+            <CreatePanel
+              doctors={doctors}
+              selectedDate={selectedDate}
+              selectedTime={selectedTime}
+              selectedDoctorId={selectedDoctorId}
+              onDone={loadSchedules}
+            />
+          )}
+          {activePanel === PANEL.UPDATE && (
+            <UpdatePanel doctors={doctors} onDone={loadSchedules} selectedData={selectedSchedule} />
+          )}
+          {activePanel === PANEL.CANCEL && (
+            <CancelPanel onDone={loadSchedules} selectedData={selectedSchedule} />
+          )}
+        </aside>
+      </div>
+
+      <div className="appointment-doctor-strip">
+        {doctors.slice(0, 4).map((doctor) => {
+          const load = schedules.filter((schedule) => schedule.doctorId === doctor.doctorId).length;
+          return (
+            <button type="button" className="appointment-doctor-card" key={doctor.doctorId} onClick={() => setDoctorFilter(String(doctor.doctorId))}>
+              <span className="doctor-avatar">
+                <UserRound size={16} />
+              </span>
+              <span>
+                <strong>{doctor.fullName}</strong>
+                <small>{doctor.doctorCode} · {load} lịch tuần này</small>
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       <ScheduleTable
-        schedules={schedules}
+        schedules={filteredSchedules}
+        doctors={doctors}
         loading={tableLoading}
         error={tableError}
         onRefresh={loadSchedules}
-        dateFilter={dateFilter}
-        onFilterChange={setDateFilter}
+        onPick={pickSchedule}
       />
-    </>
+    </div>
   );
 }
