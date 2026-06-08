@@ -79,7 +79,8 @@
 }
 
 .appointment-week-title strong {
-  color: #0f172a;
+  color: #0f766e;
+  font-weight: 800;
 }
 
 .appointment-week-title span {
@@ -289,15 +290,16 @@
 }
 
 .appointment-resource-head strong {
-  color: #0f172a;
+  color: #0f766e;
   font-size: 0.88rem;
+  font-weight: 800;
 }
 
 .appointment-resource-head small {
   margin-top: 2px;
-  color: #65758b;
+  color: #0891b2;
   font-size: 0.74rem;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .appointment-resource-slot {
@@ -485,10 +487,11 @@
   grid-template-columns: 40px minmax(0, 1fr);
   gap: 10px;
   align-items: center;
-  border: 1px solid #e7ecf2;
+  border: 1.5px solid #99f6e4;
   border-radius: 8px;
   padding: 11px;
-  background: #fbfcfe;
+  background: linear-gradient(135deg, #f0fdfa 0%, #ecfeff 100%);
+  box-shadow: 0 2px 8px rgba(15, 118, 110, 0.10);
 }
 
 .appointment-selected-card strong,
@@ -499,10 +502,17 @@
   white-space: nowrap;
 }
 
+.appointment-selected-card strong {
+  color: #0f766e;
+  font-weight: 800;
+  font-size: 0.92rem;
+}
+
 .appointment-selected-card span {
   margin-top: 2px;
-  color: #65758b;
+  color: #0891b2;
   font-size: 0.84rem;
+  font-weight: 600;
 }
 
 .appointment-selected-icon {
@@ -637,13 +647,14 @@
 }
 
 .appointment-table-doctor-name {
-  color: #0f172a;
+  color: #0f766e;
   font-size: 0.9rem;
+  font-weight: 700;
 }
 
 .appointment-table-doctor-code {
   margin-top: 3px;
-  color: #65758b;
+  color: #0891b2;
   font-size: 0.76rem;
   font-weight: 700;
 }
@@ -654,6 +665,38 @@
   padding: 2px 6px;
   font-size: 10px;
   font-weight: 600;
+}
+
+/* ── Doctor Management Table ───────────────────────────── */
+.doctor-table-wrapper {
+  overflow-x: auto;
+}
+
+.doctor-data-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.doctor-data-table th,
+.doctor-data-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-shell .doctor-table-wrapper {
+  border-radius: 1rem !important;
+  overflow: hidden;
+}
+
+.admin-shell .doctor-data-table thead tr,
+.admin-shell .doctor-data-table th {
+  background: rgba(255, 255, 255, 0.18) !important;
+}
+
+.admin-shell .doctor-data-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
 }
 
 @media (max-width: 1150px) {
@@ -2334,6 +2377,18 @@ a {
   box-shadow: 0 0 30px rgba(45, 212, 191, 0.22) !important;
 }
 
+.admin-shell .page-title-text {
+  background: linear-gradient(90deg, #ccfbf1 0%, #a5f3fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.admin-shell .page-title-icon {
+  background: rgba(255, 255, 255, 0.22) !important;
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.45), 0 4px 12px rgba(0,0,0,0.15) !important;
+}
+
 .admin-shell .ghost-button,
 .admin-shell .icon-button {
   border-color: rgba(255, 255, 255, 0.45) !important;
@@ -2378,11 +2433,18 @@ a {
 .admin-shell .appointment-week-title span,
 .admin-shell .appointment-legend,
 .admin-shell .appointment-section-title p,
-.admin-shell .appointment-resource-time-axis,
-.admin-shell .appointment-resource-head small,
-.admin-shell .appointment-doctor-card small,
-.admin-shell .appointment-selected-card span {
+.admin-shell .appointment-resource-time-axis {
   color: rgba(204, 251, 241, 0.9) !important;
+}
+
+.admin-shell .appointment-resource-head small,
+.admin-shell .appointment-doctor-card small {
+  color: #0e7490 !important;
+}
+
+.admin-shell .appointment-selected-card span {
+  color: #0e7490 !important;
+  font-weight: 700 !important;
 }
 
 .admin-shell .appointment-filter-control,
@@ -2402,7 +2464,7 @@ a {
 .admin-shell .appointment-resource-head strong,
 .admin-shell .appointment-doctor-card strong,
 .admin-shell .appointment-selected-card strong {
-  color: #071827 !important;
+  color: #0f766e !important;
 }
 
 .admin-shell .appointment-panel-tabs button.active {
@@ -2693,9 +2755,30 @@ a {
 .page-title {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   margin: 0 0 4px;
   font-size: 1.5rem;
+}
+
+.page-title-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #0f766e 0%, #0891b2 100%);
+  color: #ffffff;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.30);
+}
+
+.page-title-text {
+  background: linear-gradient(90deg, #0f766e 0%, #0891b2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
 .primary-button {

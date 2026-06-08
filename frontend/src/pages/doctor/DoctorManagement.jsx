@@ -159,8 +159,8 @@ export default function DoctorManagement() {
       <div className="page-header">
         <div>
           <h1 className="page-title">
-            <UserRound size={26} />
-            Quản lý Bác sĩ
+            <span className="page-title-icon"><UserRound size={26} /></span>
+            <span className="page-title-text">Quản lý Bác sĩ</span>
           </h1>
           <p className="muted">Quản lý hồ sơ bác sĩ và phân công chuyên khoa.</p>
         </div>
@@ -198,8 +198,18 @@ export default function DoctorManagement() {
       {error && <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>}
 
       {/* ── Table ──────────────────────────────────────── */}
-      <div className="table-wrapper">
-        <table className="data-table">
+      <div className="table-wrapper doctor-table-wrapper">
+        <table className="data-table doctor-data-table">
+          <colgroup>
+            <col style={{ width: "10%" }} />
+            <col style={{ width: "17%" }} />
+            <col style={{ width: "17%" }} />
+            <col style={{ width: "8%" }} />
+            <col style={{ width: "12%" }} />
+            <col style={{ width: "13%" }} />
+            <col style={{ width: "14%" }} />
+            <col style={{ width: "9%" }} />
+          </colgroup>
           <thead>
             <tr>
               <th>Mã BS</th>
@@ -235,7 +245,7 @@ export default function DoctorManagement() {
                       {doctor.status === "ACTIVE" ? "Đang làm việc" : doctor.status === "ON_LEAVE" ? "Nghỉ phép" : "Đã nghỉ"}
                     </span>
                   </td>
-                  <td>
+                  <td style={{ textAlign: "center" }}>
                     <div className="action-group">
                       <button className="icon-button" onClick={() => openEdit(doctor)} title="Chỉnh sửa">
                         <Edit size={15} />

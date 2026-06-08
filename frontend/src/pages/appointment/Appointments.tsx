@@ -979,8 +979,8 @@ export default function AppointmentManagement() {
       <div className="page-header">
         <div>
           <h1 className="page-title">
-            <CalendarDays size={26} />
-            Quản lý Lịch hẹn &amp; Lịch khám
+            <span className="page-title-icon"><CalendarDays size={26} /></span>
+            <span className="page-title-text">Quản lý Lịch hẹn &amp; Lịch khám</span>
           </h1>
         </div>
       </div>
