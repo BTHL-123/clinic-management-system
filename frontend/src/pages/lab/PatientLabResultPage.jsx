@@ -23,50 +23,50 @@ function StatusBadge({ status }) {
 }
 
 function ResultValueCell({ value }) {
-  if (!value) return <span className="text-white/40">—</span>;
-  return <strong className="text-white">{value}</strong>;
+  if (!value) return <span className="text-slate-500">—</span>;
+  return <strong className="text-slate-950 font-bold">{value}</strong>;
 }
 
 function LabRequestRow({ req }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="border border-white/20 rounded-2xl mb-3 bg-white/10 backdrop-blur-md overflow-hidden shadow-sm hover:shadow-md transition-all">
+    <div className="patient-glass-subcard mb-3 overflow-hidden shadow-sm hover:shadow-md transition-all">
       {/* Header row */}
       <div
         onClick={() => setExpanded((v) => !v)}
-        className="flex items-center gap-3 px-4 py-3.5 bg-white/5 cursor-pointer select-none hover:bg-white/10 transition-colors"
+        className="flex items-center gap-3 px-4 py-3.5 bg-black/5 cursor-pointer select-none hover:bg-black/10 transition-colors"
       >
-        <FlaskConical size={16} className="text-teal-400" />
+        <FlaskConical size={16} className="text-teal-700" />
         <div className="flex-1">
-          <span className="font-bold text-white">{req.requestCode}</span>
-          <span className="text-[12px] text-white/60 ml-2.5">
+          <span className="font-extrabold text-slate-900">{req.requestCode}</span>
+          <span className="text-[12px] text-slate-600 font-semibold ml-2.5">
             {new Date(req.requestedAt).toLocaleDateString("vi-VN", {
               day: "2-digit", month: "2-digit", year: "numeric",
             })}
           </span>
         </div>
         <StatusBadge status={req.status} />
-        <span className="text-[12px] text-white/60 ml-2">
+        <span className="text-[12px] text-slate-600 font-semibold ml-2">
           {req.items?.length || 0} xét nghiệm
         </span>
-        {expanded ? <ChevronUp size={16} className="text-white/60 ml-2" /> : <ChevronDown size={16} className="text-white/60 ml-2" />}
+        {expanded ? <ChevronUp size={16} className="text-slate-600 ml-2" /> : <ChevronDown size={16} className="text-slate-600 ml-2" />}
       </div>
 
       {/* Expanded detail */}
       {expanded && (
         <div className="px-4 pb-4">
           {req.note && (
-            <p className="text-[13px] text-white/70 my-2.5">
-              <strong className="text-white">Ghi chú:</strong> {req.note}
+            <p className="text-[13px] text-slate-700 my-2.5">
+              <strong className="text-slate-900">Ghi chú:</strong> {req.note}
             </p>
           )}
           <div className="overflow-x-auto mt-2">
             <table className="w-full border-collapse text-[13px] text-left">
               <thead>
-                <tr className="bg-white/10 border-b border-white/20">
+                <tr className="bg-black/5 border-b border-slate-300">
                   {["Tên xét nghiệm", "Mã XN", "Kết quả", "Đơn vị", "Khoảng bình thường", "Kết luận", "Trạng thái"].map((h) => (
-                    <th key={h} className="p-2.5 font-semibold text-white/80 whitespace-nowrap">
+                    <th key={h} className="p-2.5 font-bold text-teal-800 whitespace-nowrap">
                       {h}
                     </th>
                   ))}
@@ -74,24 +74,24 @@ function LabRequestRow({ req }) {
               </thead>
               <tbody>
                 {req.items?.map((item) => (
-                  <tr key={item.labRequestItemId} className="border-b border-white/10 hover:bg-white/5 transition-colors">
-                    <td className="p-2.5 font-semibold text-white">{item.testName}</td>
-                    <td className="p-2.5 text-white/60">{item.testCode}</td>
+                  <tr key={item.labRequestItemId} className="border-b border-slate-200/60 hover:bg-black/5 transition-colors">
+                    <td className="p-2.5 font-bold text-slate-900">{item.testName}</td>
+                    <td className="p-2.5 text-slate-600 font-medium">{item.testCode}</td>
                     {item.labResult ? (
                       <>
                         <td className="p-2.5">
                           <ResultValueCell value={item.labResult.resultValue} />
                         </td>
-                        <td className="p-2.5 text-white/80">{item.labResult.resultUnit || "—"}</td>
-                        <td className="p-2.5 text-white/80">{item.labResult.normalRange || "—"}</td>
-                        <td className="p-2.5 text-white/80">{item.labResult.conclusion || "—"}</td>
+                        <td className="p-2.5 text-slate-700 font-medium">{item.labResult.resultUnit || "—"}</td>
+                        <td className="p-2.5 text-slate-700 font-medium">{item.labResult.normalRange || "—"}</td>
+                        <td className="p-2.5 text-slate-700 font-medium">{item.labResult.conclusion || "—"}</td>
                         <td className="p-2.5">
                           <StatusBadge status={item.status} />
                         </td>
                       </>
                     ) : (
                       <>
-                        <td colSpan={4} className="p-2.5 text-white/40 italic">
+                        <td colSpan={4} className="p-2.5 text-slate-500 italic">
                           Chưa có kết quả
                         </td>
                         <td className="p-2.5">
@@ -160,7 +160,7 @@ export default function PatientLabResultPage() {
       <div className="patient-glass-card p-6 md:p-8 w-full max-w-[800px] mx-auto mb-10">
         <div className="flex justify-end mb-5">
           <button
-            className="flex items-center gap-1.5 px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl transition-colors border border-white/20"
+            className="flex items-center gap-1.5 px-4 py-2 bg-black/5 hover:bg-black/10 text-slate-900 font-bold rounded-xl transition-colors border border-slate-300"
             onClick={fetchData}
           >
             <RefreshCw size={14} /> Làm mới
@@ -170,13 +170,13 @@ export default function PatientLabResultPage() {
       {error && <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>}
 
       {loading ? (
-        <div className="p-8 text-white/50 text-center font-medium">
+        <div className="p-8 text-slate-600 text-center font-bold">
           Đang tải kết quả xét nghiệm...
         </div>
       ) : labRequests.length === 0 ? (
-        <div className="text-center py-16 px-6 text-white/50 bg-white/5 rounded-2xl border border-dashed border-white/20">
-          <FlaskConical size={40} className="mx-auto mb-3 opacity-40 text-white" />
-          <p className="m-0 font-medium">Bạn chưa có phiếu xét nghiệm nào.</p>
+        <div className="text-center py-16 px-6 text-slate-700 bg-black/5 rounded-2xl border border-dashed border-slate-300">
+          <FlaskConical size={40} className="mx-auto mb-3 opacity-40 text-slate-900" />
+          <p className="m-0 font-bold">Bạn chưa có phiếu xét nghiệm nào.</p>
         </div>
       ) : (
         <>
@@ -189,17 +189,17 @@ export default function PatientLabResultPage() {
               <button
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-white/20 bg-white/5 text-white/80 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-300 bg-black/5 text-slate-800 hover:bg-black/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronLeft size={15} /> Trước
               </button>
-              <span className="px-3 py-1.5 text-[13px] text-white/60 font-medium">
+              <span className="px-3 py-1.5 text-[13px] text-slate-600 font-bold">
                 Trang {page + 1} / {totalPages}
               </span>
               <button
                 onClick={() => setPage((p) => p + 1)}
                 disabled={page >= totalPages - 1}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-white/20 bg-white/5 text-white/80 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-300 bg-black/5 text-slate-800 hover:bg-black/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 Tiếp <ChevronRight size={15} />
               </button>

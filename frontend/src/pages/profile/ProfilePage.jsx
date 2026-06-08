@@ -61,15 +61,15 @@ function AccountProfileCard({ isPatientMode }) {
   };
 
   return (
-    <section className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-6 md:p-8 w-full shadow-2xl">
+    <section className="patient-glass-card p-6 md:p-8 w-full shadow-2xl">
       <div className="flex flex-col md:flex-row items-center gap-6 mb-8">
-        <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/20 shrink-0 bg-white/5 flex items-center justify-center text-3xl font-bold text-white shadow-lg">
+        <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/20 shrink-0 bg-black/5 flex items-center justify-center text-3xl font-extrabold text-slate-900 shadow-lg">
           {avatarUrl ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" /> : <span>{initials}</span>}
         </div>
         <div className="flex-1 text-center md:text-left">
-          <h2 className="text-2xl font-bold text-white mb-1">Thông tin tài khoản</h2>
-          <p className="text-white/60 mb-4 text-sm">Thông tin này áp dụng cho mọi vai trò đăng nhập.</p>
-          <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 text-white transition-colors cursor-pointer text-sm font-medium w-fit mx-auto md:mx-0">
+          <h2 className="text-2xl font-bold text-slate-900 mb-1">Thông tin tài khoản</h2>
+          <p className="text-slate-700 mb-4 text-sm font-semibold">Thông tin này áp dụng cho mọi vai trò đăng nhập.</p>
+          <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-300 bg-black/5 hover:bg-black/10 text-slate-900 transition-colors cursor-pointer text-sm font-bold w-fit mx-auto md:mx-0">
             <Camera size={16} />
             {uploadingAvatar ? "Đang tải ảnh..." : "Chọn avatar"}
             <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleAvatarChange} disabled={uploadingAvatar} className="hidden" />
@@ -78,36 +78,36 @@ function AccountProfileCard({ isPatientMode }) {
       </div>
 
       <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
-        {error && <div className="bg-rose-500/20 border border-rose-500/50 text-rose-200 p-3 rounded-xl text-sm">{error}</div>}
-        {notice && <div className="bg-emerald-500/20 border border-emerald-500/50 text-emerald-200 p-3 rounded-xl text-sm">{notice}</div>}
+        {error && <div className="bg-rose-500/20 border border-rose-500/50 text-rose-800 p-3 rounded-xl text-sm font-bold">{error}</div>}
+        {notice && <div className="bg-emerald-500/20 border border-emerald-500/50 text-emerald-800 p-3 rounded-xl text-sm font-bold">{notice}</div>}
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="accountFullName" className="text-sm font-medium text-white/80">Họ và tên</label>
+            <label htmlFor="accountFullName" className="text-sm font-bold text-slate-800">Họ và tên</label>
             <input
               id="accountFullName"
-              className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-teal-400 focus:outline-none"
+              className="patient-glass-input px-4 py-2.5 focus:border-teal-400"
               value={form.fullName}
               onChange={(event) => setForm({ ...form, fullName: event.target.value })}
               required
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="accountPhone" className="text-sm font-medium text-white/80">Số điện thoại</label>
+            <label htmlFor="accountPhone" className="text-sm font-bold text-slate-800">Số điện thoại</label>
             <input
               id="accountPhone"
-              className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-teal-400 focus:outline-none"
+              className="patient-glass-input px-4 py-2.5 focus:border-teal-400"
               value={form.phone}
               onChange={(event) => setForm({ ...form, phone: event.target.value })}
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="accountEmail" className="text-sm font-medium text-white/80">Email</label>
-            <input id="accountEmail" className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white/50 focus:outline-none disabled:opacity-60" value={user?.email || ""} disabled />
+            <label htmlFor="accountEmail" className="text-sm font-bold text-slate-800">Email</label>
+            <input id="accountEmail" className="patient-glass-input px-4 py-2.5 disabled:opacity-60" value={user?.email || ""} disabled />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="accountRoles" className="text-sm font-medium text-white/80">Vai trò</label>
-            <input id="accountRoles" className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white/50 focus:outline-none disabled:opacity-60" value={user?.roles?.join(", ") || ""} disabled />
+            <label htmlFor="accountRoles" className="text-sm font-bold text-slate-800">Vai trò</label>
+            <input id="accountRoles" className="patient-glass-input px-4 py-2.5 disabled:opacity-60" value={user?.roles?.join(", ") || ""} disabled />
           </div>
         </div>
         <div className="flex justify-end mt-2">
