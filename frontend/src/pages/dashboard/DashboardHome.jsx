@@ -100,7 +100,7 @@ export default function DashboardHome() {
   }
 
   return (
-    <div>
+    <div className="admin-dashboard">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
         <div>
           <h1 style={{ margin: "0 0 4px", fontSize: "1.5rem", fontWeight: 800, color: "#0f172a" }}>
