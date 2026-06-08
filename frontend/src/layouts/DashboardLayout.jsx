@@ -123,6 +123,9 @@ export default function DashboardLayout() {
                 <strong className={`text-[14px] font-extrabold leading-tight ${usePatientVisualShell ? "text-white" : "text-slate-800"}`}>{user?.fullName || "Clinic Admin"}</strong>
                 <span className={`text-[10px] font-bold uppercase tracking-wider ${usePatientVisualShell ? "text-teal-200" : "text-teal-600"}`}>{rolesText}</span>
               </div>
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 text-white flex items-center justify-center font-extrabold shadow-md border-2 border-white overflow-hidden relative">
+                {user?.avatarUrl ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" /> : <span>{initials}</span>}
+              </div>
               {isAdminShell ? (
                 <div className="admin-account-menu">
                   <button

@@ -58,37 +58,37 @@ export default function MedicalHistory({ patientId, onClose, inline = false, isP
   const renderList = () => (
     <div className="w-full mt-4 overflow-x-auto custom-scrollbar">
       <table className="w-full text-left border-collapse whitespace-nowrap">
-        <thead className={isPatientView ? "bg-white/10 border-b border-white/20 text-white/80 text-sm" : "bg-white/40 border-b border-white/60 text-slate-700 text-sm"}>
+        <thead className={isPatientView ? "bg-white/15 border-b border-slate-300 text-teal-800 text-sm" : "bg-white/40 border-b border-white/60 text-slate-700 text-sm"}>
           <tr>
-            <th className="p-4 font-semibold w-[160px]">Ngày khám</th>
-            <th className="p-4 font-semibold">Triệu chứng</th>
-            <th className="p-4 font-semibold">Chẩn đoán</th>
-            <th className="p-4 font-semibold">Bác sĩ</th>
-            <th className="p-4 font-semibold">Chuyên khoa</th>
-            <th className="p-4 font-semibold text-center w-[100px]">Chi tiết</th>
+            <th className="p-4 font-bold w-[160px]">Ngày khám</th>
+            <th className="p-4 font-bold">Triệu chứng</th>
+            <th className="p-4 font-bold">Chẩn đoán</th>
+            <th className="p-4 font-bold">Bác sĩ</th>
+            <th className="p-4 font-bold">Chuyên khoa</th>
+            <th className="p-4 font-bold text-center w-[100px]">Chi tiết</th>
           </tr>
         </thead>
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan={6} className={`p-8 text-center font-medium ${isPatientView ? "text-white/50" : "text-slate-500"}`}>Đang tải lịch sử bệnh án...</td>
+              <td colSpan={6} className={`p-8 text-center font-bold ${isPatientView ? "text-slate-600" : "text-slate-500"}`}>Đang tải lịch sử bệnh án...</td>
             </tr>
           ) : records.length === 0 ? (
             <tr>
-              <td colSpan={6} className={`p-8 text-center font-medium ${isPatientView ? "text-white/50" : "text-slate-500"}`}>Chưa có lịch sử bệnh án.</td>
+              <td colSpan={6} className={`p-8 text-center font-bold ${isPatientView ? "text-slate-600" : "text-slate-500"}`}>Chưa có lịch sử bệnh án.</td>
             </tr>
           ) : (
             records.map((record) => (
-              <tr key={record.medicalRecordId} className={`border-b transition-colors ${isPatientView ? "border-white/10 hover:bg-white/10" : "border-slate-200/50 hover:bg-white/50"}`}>
-                <td className={`p-4 ${isPatientView ? "text-white/80" : "text-slate-600"}`}>{formatDate(record.createdAt)}</td>
-                <td className={`p-4 ${isPatientView ? "text-white/90" : "text-slate-700"}`}>{record.symptoms || "—"}</td>
-                <td className={`p-4 font-bold ${isPatientView ? "text-white" : "text-slate-800"}`}>{record.diagnosis || "—"}</td>
-                <td className={`p-4 ${isPatientView ? "text-white/80" : "text-slate-600"}`}>{record.doctorName || "—"}</td>
-                <td className={`p-4 ${isPatientView ? "text-white/80" : "text-slate-600"}`}>{record.departmentName || "—"}</td>
+              <tr key={record.medicalRecordId} className={`border-b transition-colors ${isPatientView ? "border-slate-200/60 hover:bg-black/5" : "border-slate-200/50 hover:bg-white/50"}`}>
+                <td className={`p-4 ${isPatientView ? "text-slate-700 font-semibold" : "text-slate-600"}`}>{formatDate(record.createdAt)}</td>
+                <td className={`p-4 ${isPatientView ? "text-slate-800 font-medium" : "text-slate-700"}`}>{record.symptoms || "—"}</td>
+                <td className={`p-4 font-bold ${isPatientView ? "text-slate-900" : "text-slate-800"}`}>{record.diagnosis || "—"}</td>
+                <td className={`p-4 ${isPatientView ? "text-slate-700 font-medium" : "text-slate-600"}`}>{record.doctorName || "—"}</td>
+                <td className={`p-4 ${isPatientView ? "text-slate-700 font-medium" : "text-slate-600"}`}>{record.departmentName || "—"}</td>
                 <td className="p-4 text-center">
                   <button 
                     className={isPatientView 
-                      ? "p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors shadow-sm inline-flex justify-center" 
+                      ? "p-2 bg-black/5 hover:bg-black/10 text-slate-800 border border-slate-300 rounded-xl transition-colors shadow-sm inline-flex justify-center" 
                       : "p-2 bg-teal-50 hover:bg-teal-100 text-teal-600 rounded-xl transition-colors shadow-sm inline-flex justify-center"} 
                     title="Xem chi tiết"
                     onClick={() => setSelectedRecord(record)}
@@ -110,7 +110,7 @@ export default function MedicalHistory({ patientId, onClose, inline = false, isP
         <button 
           onClick={() => setSelectedRecord(null)}
           className={isPatientView 
-            ? "inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-bold shadow-sm transition-all hover:shadow hover:-translate-y-0.5"
+            ? "inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-black/5 hover:bg-black/10 backdrop-blur-md border border-slate-300 text-slate-900 font-bold shadow-sm transition-all hover:shadow hover:-translate-y-0.5"
             : "inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/70 hover:bg-white/90 backdrop-blur-md border border-white/50 text-teal-700 font-bold shadow-sm transition-all hover:shadow hover:-translate-y-0.5"}
         >
           &larr; Quay lại danh sách
@@ -119,42 +119,42 @@ export default function MedicalHistory({ patientId, onClose, inline = false, isP
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className={isPatientView ? "patient-glass-subcard p-6" : "bg-white/60 backdrop-blur-xl border border-white/60 p-6 rounded-3xl shadow-sm"}>
-          <h4 className={`text-lg font-bold mb-4 pb-2 border-b ${isPatientView ? "text-white border-white/20" : "text-slate-800 border-slate-200/60"}`}>Thông tin khám</h4>
+          <h4 className={`text-lg font-bold mb-4 pb-2 border-b ${isPatientView ? "text-slate-900 border-slate-300" : "text-slate-800 border-slate-200/60"}`}>Thông tin khám</h4>
           <div className="flex flex-col gap-3">
-            <p className={isPatientView ? "text-white/80" : "text-slate-700"}><strong className={`mr-2 ${isPatientView ? "text-white" : "text-slate-800"}`}>Ngày khám:</strong> {formatDate(selectedRecord.createdAt)}</p>
-            <p className={isPatientView ? "text-white/80" : "text-slate-700"}><strong className={`mr-2 ${isPatientView ? "text-white" : "text-slate-800"}`}>Bác sĩ:</strong> {selectedRecord.doctorName || "—"}</p>
-            <p className={isPatientView ? "text-white/80" : "text-slate-700"}><strong className={`mr-2 ${isPatientView ? "text-white" : "text-slate-800"}`}>Chuyên khoa:</strong> {selectedRecord.departmentName || "—"}</p>
+            <p className={isPatientView ? "text-slate-700" : "text-slate-700"}><strong className={`mr-2 ${isPatientView ? "text-slate-900" : "text-slate-800"}`}>Ngày khám:</strong> {formatDate(selectedRecord.createdAt)}</p>
+            <p className={isPatientView ? "text-slate-700" : "text-slate-700"}><strong className={`mr-2 ${isPatientView ? "text-slate-900" : "text-slate-800"}`}>Bác sĩ:</strong> {selectedRecord.doctorName || "—"}</p>
+            <p className={isPatientView ? "text-slate-700" : "text-slate-700"}><strong className={`mr-2 ${isPatientView ? "text-slate-900" : "text-slate-800"}`}>Chuyên khoa:</strong> {selectedRecord.departmentName || "—"}</p>
             <div className="pt-2">
-              <strong className={isPatientView ? "text-white" : "text-slate-800"}>Triệu chứng:</strong>
-              <p className={`mt-1.5 whitespace-pre-wrap ${isPatientView ? "text-white/80" : "text-slate-700"}`}>{selectedRecord.symptoms || "—"}</p>
+              <strong className={isPatientView ? "text-slate-900" : "text-slate-800"}>Triệu chứng:</strong>
+              <p className={`mt-1.5 whitespace-pre-wrap ${isPatientView ? "text-slate-700 font-medium" : "text-slate-700"}`}>{selectedRecord.symptoms || "—"}</p>
             </div>
             <div className="pt-2">
-              <strong className={isPatientView ? "text-white" : "text-slate-800"}>Khám lâm sàng:</strong>
-              <p className={`mt-1.5 whitespace-pre-wrap ${isPatientView ? "text-white/80" : "text-slate-700"}`}>{selectedRecord.clinicalFindings || "—"}</p>
+              <strong className={isPatientView ? "text-slate-900" : "text-slate-800"}>Khám lâm sàng:</strong>
+              <p className={`mt-1.5 whitespace-pre-wrap ${isPatientView ? "text-slate-700 font-medium" : "text-slate-700"}`}>{selectedRecord.clinicalFindings || "—"}</p>
             </div>
           </div>
         </div>
 
         <div className={isPatientView ? "patient-glass-subcard p-6" : "bg-white/60 backdrop-blur-xl border border-white/60 p-6 rounded-3xl shadow-sm"}>
-          <h4 className={`text-lg font-bold mb-4 pb-2 border-b ${isPatientView ? "text-white border-white/20" : "text-slate-800 border-slate-200/60"}`}>Chẩn đoán & Điều trị</h4>
+          <h4 className={`text-lg font-bold mb-4 pb-2 border-b ${isPatientView ? "text-slate-900 border-slate-300" : "text-slate-800 border-slate-200/60"}`}>Chẩn đoán & Điều trị</h4>
           <div className="flex flex-col gap-3">
             <div>
-              <strong className={isPatientView ? "text-white" : "text-slate-800"}>Chẩn đoán:</strong>
-              <p className={`mt-1.5 font-bold text-lg ${isPatientView ? "text-rose-400" : "text-rose-600"}`}>{selectedRecord.diagnosis || "—"}</p>
+              <strong className={isPatientView ? "text-slate-900" : "text-slate-800"}>Chẩn đoán:</strong>
+              <p className={`mt-1.5 font-extrabold text-lg ${isPatientView ? "text-rose-700" : "text-rose-600"}`}>{selectedRecord.diagnosis || "—"}</p>
             </div>
             <div className="pt-2">
-              <strong className={isPatientView ? "text-white" : "text-slate-800"}>Hướng điều trị:</strong>
-              <p className={`mt-1.5 whitespace-pre-wrap ${isPatientView ? "text-white/80" : "text-slate-700"}`}>{selectedRecord.treatmentPlan || "—"}</p>
+              <strong className={isPatientView ? "text-slate-900" : "text-slate-800"}>Hướng điều trị:</strong>
+              <p className={`mt-1.5 whitespace-pre-wrap ${isPatientView ? "text-slate-700 font-medium" : "text-slate-700"}`}>{selectedRecord.treatmentPlan || "—"}</p>
             </div>
             <div className="pt-2">
-              <strong className={isPatientView ? "text-white" : "text-slate-800"}>Lời dặn của bác sĩ:</strong>
-              <p className={`mt-1.5 whitespace-pre-wrap ${isPatientView ? "text-white/80" : "text-slate-700"}`}>{selectedRecord.doctorNote || "—"}</p>
+              <strong className={isPatientView ? "text-slate-900" : "text-slate-800"}>Lời dặn của bác sĩ:</strong>
+              <p className={`mt-1.5 whitespace-pre-wrap ${isPatientView ? "text-slate-700 font-medium" : "text-slate-700"}`}>{selectedRecord.doctorNote || "—"}</p>
             </div>
             {(selectedRecord.followUpDate || selectedRecord.followUpNote) && (
-              <div className={`mt-3 p-4 rounded-2xl border ${isPatientView ? "bg-emerald-500/10 border-emerald-500/20" : "bg-emerald-50/70 border-emerald-100"}`}>
-                <strong className="text-emerald-800">Tái khám:</strong>
-                {selectedRecord.followUpDate && <p className="mt-1.5 text-emerald-700">Ngày: {new Date(selectedRecord.followUpDate).toLocaleDateString("vi-VN")}</p>}
-                {selectedRecord.followUpNote && <p className="mt-1 text-emerald-700">Ghi chú: {selectedRecord.followUpNote}</p>}
+              <div className={`mt-3 p-4 rounded-2xl border ${isPatientView ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-800" : "bg-emerald-50/70 border-emerald-100"}`}>
+                <strong className={isPatientView ? "text-emerald-900 font-extrabold" : "text-emerald-800"}>Tái khám:</strong>
+                {selectedRecord.followUpDate && <p className={`mt-1.5 ${isPatientView ? "text-emerald-800 font-semibold" : "text-emerald-700"}`}>Ngày: {new Date(selectedRecord.followUpDate).toLocaleDateString("vi-VN")}</p>}
+                {selectedRecord.followUpNote && <p className={`mt-1 ${isPatientView ? "text-emerald-800 font-semibold" : "text-emerald-700"}`}>Ghi chú: {selectedRecord.followUpNote}</p>}
               </div>
             )}
           </div>

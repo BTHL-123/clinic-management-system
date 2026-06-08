@@ -60,7 +60,7 @@ export default function PatientSidebar() {
         {/* Expand Toggle Button */}
         <button 
           onClick={() => setIsExpanded(!isExpanded)}
-          className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white/80 hover:bg-white/20 hover:text-white transition-all shrink-0 drop-shadow-sm ${isExpanded ? "self-end mr-1" : "mx-auto"}`}
+          className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white hover:bg-white/20 hover:text-white transition-all shrink-0 drop-shadow-md ${isExpanded ? "self-end mr-1" : "mx-auto"}`}
         >
           <ChevronRight size={22} className={`transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
         </button>
@@ -72,8 +72,8 @@ export default function PatientSidebar() {
               onClick={() => navigate(item.path)}
               className={`relative flex items-center h-12 rounded-2xl transition-all duration-300 group overflow-hidden shrink-0 ${
                 activeNav === item.id 
-                  ? "text-white font-bold shadow-[0_0_20px_rgba(255,255,255,0.15)]" 
-                  : "text-white/90 font-semibold hover:text-white hover:bg-white/15"
+                  ? "text-white font-extrabold drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]" 
+                  : "text-white/95 font-extrabold hover:text-white hover:bg-white/20 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]"
               } ${isExpanded ? "px-4" : "justify-center"}`}
               title={!isExpanded ? item.label : ""}
             >
@@ -88,7 +88,7 @@ export default function PatientSidebar() {
               )}
               
               <div className={`relative z-10 flex items-center ${isExpanded ? "gap-4" : ""}`}>
-                <div className={`${activeNav === item.id ? "drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)]" : "drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)] group-hover:scale-110"} transition-all duration-300`}>
+                <div className={`group-hover:scale-110 transition-transform duration-300`}>
                   {item.icon}
                 </div>
                 {isExpanded && (
@@ -96,7 +96,7 @@ export default function PatientSidebar() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -10 }}
-                    className="whitespace-nowrap text-[15px] patient-nav-label"
+                    className="whitespace-nowrap text-[15px] tracking-wide"
                   >
                     {item.label}
                   </motion.span>
@@ -110,11 +110,11 @@ export default function PatientSidebar() {
         <div className="w-full mt-auto pt-4 border-t border-white/25">
           <button
             onClick={handleLogout}
-            className={`w-full flex items-center h-12 rounded-2xl text-rose-200 font-semibold hover:text-white hover:bg-rose-500/20 transition-all duration-300 group patient-nav-label ${isExpanded ? "px-4 gap-4" : "justify-center"}`}
+            className={`w-full flex items-center h-12 rounded-2xl text-rose-100 font-extrabold hover:text-white hover:bg-rose-500/20 drop-shadow-md transition-all duration-300 group ${isExpanded ? "px-4 gap-4" : "justify-center"}`}
             title={!isExpanded ? "Đăng xuất" : ""}
           >
             <LogOut size={22} className="group-hover:-translate-x-1 transition-transform" />
-            {isExpanded && <span className="whitespace-nowrap font-medium text-[15px]">Đăng xuất</span>}
+            {isExpanded && <span className="whitespace-nowrap tracking-wide text-[15px]">Đăng xuất</span>}
           </button>
         </div>
       </div>

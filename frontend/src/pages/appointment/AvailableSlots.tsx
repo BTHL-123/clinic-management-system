@@ -309,7 +309,7 @@ export default function AvailableSlots() {
             <Search size={32} className="text-teal-400 drop-shadow-md" />
             <span className="drop-shadow-md">Tìm kiếm ca khám trống</span>
           </h1>
-          <p className="text-white/70 font-medium drop-shadow-sm text-[16px] max-w-[600px]">
+          <p className="text-white/80 font-medium drop-shadow-sm text-[16px] max-w-[600px]">
             Chọn ngày khám, sau đó chọn bác sĩ có lịch làm việc trong ngày để xem các khung giờ còn trống.
           </p>
         </div>
@@ -327,7 +327,7 @@ export default function AvailableSlots() {
             <div className="patient-glass-card p-6 md:p-8 w-full max-w-[600px] mx-auto lg:mx-0">
             <div className="flex flex-col gap-5">
               <div className="flex flex-col gap-2">
-                <label htmlFor="as-workDate" className="font-bold text-white/90 text-[14px]">Ngày khám</label>
+                <label htmlFor="as-workDate" className="font-bold text-slate-800 text-[14px]">Ngày khám</label>
                 <input
                   type="date"
                   id="as-workDate"
@@ -344,7 +344,7 @@ export default function AvailableSlots() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <label htmlFor="as-doctorId" className="font-bold text-white/90 text-[14px]">Bác sĩ có lịch trong ngày</label>
+                <label htmlFor="as-doctorId" className="font-bold text-slate-800 text-[14px]">Bác sĩ có lịch trong ngày</label>
                 <select
                   id="as-doctorId"
                   value={doctorId}
@@ -380,7 +380,8 @@ export default function AvailableSlots() {
                   alignItems: "center",
                   gap: "8px",
                   fontSize: "13px",
-                  color: "#65758b",
+                  color: "#334155",
+                  fontWeight: "bold"
                 }}
               >
                 <CalendarDays size={14} />
@@ -399,11 +400,12 @@ export default function AvailableSlots() {
                 style={{
                   marginTop: "16px",
                   padding: "12px 14px",
-                  border: "1px solid #e2e8f0",
+                  border: "1px solid #cbd5e1",
                   borderRadius: "8px",
-                  background: "#f8fafc",
-                  color: "#64748b",
+                  background: "rgba(0,0,0,0.05)",
+                  color: "#1e293b",
                   fontSize: "13px",
+                  fontWeight: "bold"
                 }}
               >
                 Không có bác sĩ nào có lịch làm việc trong ngày này. Hãy chọn ngày khác.
@@ -432,26 +434,26 @@ export default function AvailableSlots() {
                         gap: "12px",
                         padding: "12px 14px",
                         borderRadius: "14px",
-                        border: isSelected ? "1.5px solid rgba(94, 234, 212, 0.6)" : "1px solid rgba(255, 255, 255, 0.15)",
-                        background: isSelected ? "rgba(94, 234, 212, 0.15)" : "rgba(255, 255, 255, 0.05)",
+                        border: isSelected ? "1.5px solid #0f766e" : "1px solid rgba(0, 0, 0, 0.15)",
+                        background: isSelected ? "rgba(15, 118, 110, 0.15)" : "rgba(0, 0, 0, 0.05)",
                         backdropFilter: "blur(8px)",
-                        boxShadow: isSelected ? "0 4px 12px rgba(94, 234, 212, 0.15)" : "none",
-                        color: "#ffffff",
+                        boxShadow: isSelected ? "0 4px 12px rgba(15, 118, 110, 0.15)" : "none",
+                        color: "#0f172a",
                         cursor: "pointer",
                         textAlign: "left",
                         transition: "all 0.2s ease",
                       }}
                     >
                       <span style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
-                        <UserRound size={18} color={isSelected ? "#5eead4" : "#94a3b8"} />
+                        <UserRound size={18} color={isSelected ? "#0f766e" : "#475569"} />
                         <span style={{ minWidth: 0 }}>
-                          <strong style={{ display: "block", fontSize: "14px" }}>{getDoctorLabel(doctor)}</strong>
-                          <span style={{ display: "block", fontSize: "12px", color: "#cbd5e1" }}>
+                          <strong style={{ display: "block", fontSize: "14px", fontWeight: 800 }}>{getDoctorLabel(doctor)}</strong>
+                          <span style={{ display: "block", fontSize: "12px", color: "#475569", fontWeight: 600 }}>
                             {[doctor.departmentName, doctor.specialization].filter(Boolean).join(" - ") || "Chưa có chuyên khoa"}
                           </span>
                         </span>
                       </span>
-                      <span style={{ fontSize: "12px", color: "#5eead4", fontWeight: 700, whiteSpace: "nowrap" }}>
+                      <span style={{ fontSize: "12px", color: "#0f766e", fontWeight: 800, whiteSpace: "nowrap" }}>
                         {getDoctorScheduleText(doctor.doctorId)}
                       </span>
                     </button>
@@ -461,7 +463,7 @@ export default function AvailableSlots() {
             )}
 
             {selectedDoctor && workDate && (
-              <div className="mt-4 flex items-center gap-2 text-[13px] text-slate-500 font-medium">
+              <div className="mt-4 flex items-center gap-2 text-[13px] text-slate-700 font-bold">
                 <CalendarDays size={14} />
                 Đang hiển thị ca khám của {getDoctorLabel(selectedDoctor)} vào ngày {workDate}
               </div>
@@ -470,7 +472,7 @@ export default function AvailableSlots() {
 
           {selectedDoctor && doctorId && (
             <div className="patient-glass-card p-6 lg:p-8 animate-[fadeIn_0.3s_ease] w-full max-w-[450px] mx-auto lg:mx-0">
-              <h3 className="text-[1.1rem] font-extrabold text-white mb-6 flex items-center gap-2">
+              <h3 className="text-[1.1rem] font-extrabold text-slate-950 mb-6 flex items-center gap-2">
                  Chi tiết Bác sĩ
               </h3>
               <div className="flex gap-5 items-center">
@@ -478,8 +480,8 @@ export default function AvailableSlots() {
                   <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${selectedDoctor.doctorId}&backgroundColor=115e59`} alt="Avatar" className="w-full h-full object-cover" />
                 </div>
                 <div className="flex flex-col">
-                  <strong className="text-lg text-white">{getDoctorLabel(selectedDoctor)}</strong>
-                  <span className="text-sm text-white/70 font-medium mb-2">{selectedDoctor.departmentName || "Khám tổng quát"}</span>
+                  <strong className="text-lg text-slate-900 font-extrabold">{getDoctorLabel(selectedDoctor)}</strong>
+                  <span className="text-sm text-slate-700 font-bold mb-2">{selectedDoctor.departmentName || "Khám tổng quát"}</span>
                   <div className="flex items-center gap-1">
                     {[1, 2, 3, 4, 5].map(star => <Star key={star} size={14} className="fill-amber-400 text-amber-400" />)}
                   </div>
@@ -487,7 +489,7 @@ export default function AvailableSlots() {
               </div>
               {getDoctorScheduleText(selectedDoctor.doctorId) && (
                 <div className="mt-6 flex justify-end">
-                  <span className="text-xs font-bold text-teal-800 bg-teal-100/50 border border-teal-200/50 px-4 py-2 rounded-full shadow-sm tracking-wide">
+                  <span className="text-xs font-bold text-teal-900 bg-teal-100 border border-teal-300 px-4 py-2 rounded-full shadow-sm tracking-wide">
                     {getDoctorScheduleText(selectedDoctor.doctorId)}
                   </span>
                 </div>
@@ -497,9 +499,9 @@ export default function AvailableSlots() {
         </div>
 
           {fetchState === "idle" && (!workDate || (doctorOptions.length > 0 && !doctorId)) && (
-            <div className="text-center py-20 px-4 text-slate-400 max-w-[600px]">
+            <div className="text-center py-20 px-4 text-slate-800 max-w-[600px] font-bold">
               <Search size={56} strokeWidth={1.5} className="mx-auto mb-4 opacity-20" />
-              <p className="text-[15px] font-medium m-0">
+              <p className="text-[15px] m-0">
                 {!workDate
                   ? "Vui lòng chọn ngày khám để hệ thống đề xuất bác sĩ có lịch làm việc."
                   : "Vui lòng chọn một bác sĩ trong danh sách đề xuất để xem ca trống."}
@@ -514,14 +516,15 @@ export default function AvailableSlots() {
                 alignItems: "center",
                 gap: "12px",
                 padding: "24px 0",
-                color: "#65758b",
+                color: "#1e293b",
+                fontWeight: "bold"
               }}
             >
               <div
                 style={{
                   width: "20px",
                   height: "20px",
-                  border: "2.5px solid #dfe5ec",
+                  border: "2.5px solid #cbd5e1",
                   borderTopColor: "#0f766e",
                   borderRadius: "50%",
                   animation: "spin 0.8s linear infinite",
@@ -545,24 +548,24 @@ export default function AvailableSlots() {
                 alignItems: "center",
                 gap: "10px",
                 padding: "56px 20px",
-                background: "#ffffff",
-                border: "1px solid #dfe5ec",
+                background: "rgba(255, 255, 255, 0.2)",
+                border: "1px solid rgba(0, 0, 0, 0.15)",
                 borderRadius: "12px",
                 maxWidth: "600px",
               }}
             >
-              <CalendarDays size={36} style={{ color: "#cbd5e1" }} />
+              <CalendarDays size={36} style={{ color: "#475569" }} />
               <p
                 style={{
                   margin: 0,
-                  fontWeight: 600,
+                  fontWeight: 700,
                   fontSize: "15px",
-                  color: "#475569",
+                  color: "#0f172a",
                 }}
               >
                 Hiện không có ca khám nào trống trong ngày này.
               </p>
-              <p style={{ margin: 0, fontSize: "13px", color: "#94a3b8" }}>
+              <p style={{ margin: 0, fontSize: "13px", color: "#334155", fontWeight: 600 }}>
                 Bác sĩ đã hết ca trống trong ngày này hoặc lịch đang được giữ chỗ tạm thời.
               </p>
             </div>
@@ -608,8 +611,8 @@ export default function AvailableSlots() {
       ) : (
         <div className="patient-glass-card p-6 md:p-8 w-full max-w-[600px] mx-auto relative animate-[fadeIn_0.3s_ease]">
           {isExpired && (
-            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md rounded-[2rem] flex flex-col items-center justify-center z-10 animate-[fadeIn_0.15s_ease]">
-              <ShieldAlert size={56} className="text-red-400 mb-4" strokeWidth={1.5} />
+            <div className="absolute inset-0 bg-slate-900/85 backdrop-blur-md rounded-[2rem] flex flex-col items-center justify-center z-10 animate-[fadeIn_0.15s_ease]">
+              <ShieldAlert size={56} className="text-rose-450 mb-4" strokeWidth={1.5} />
               <h3 className="m-0 text-white text-xl font-extrabold mb-2">
                 Phiên giữ chỗ đã hết hạn
               </h3>
@@ -619,17 +622,17 @@ export default function AvailableSlots() {
             </div>
           )}
 
-          <div className="flex items-center justify-between mb-8 border-b border-white/20 pb-5">
+          <div className="flex items-center justify-between mb-8 border-b border-slate-300 pb-5">
             <button
               onClick={handleCancelBooking}
-              className="inline-flex items-center gap-2 text-white/70 hover:text-white font-bold text-[13px] transition-colors group"
+              className="inline-flex items-center gap-2 text-slate-700 hover:text-slate-950 font-bold text-[13px] transition-colors group"
             >
               <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
               Quay lại chọn ca
             </button>
 
             <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-[13px] tracking-wide border transition-colors ${
-              isWarningTime ? "bg-red-500/20 text-red-300 border-red-500/30 animate-pulse" : "bg-teal-500/20 text-teal-300 border-teal-500/30"
+              isWarningTime ? "bg-red-100 text-red-700 border-red-350 animate-pulse" : "bg-teal-100 text-teal-900 border-teal-300"
             }`}>
               <Clock size={16} strokeWidth={2.5} />
               <span>Thời gian giữ chỗ: {timeString}</span>
@@ -638,32 +641,32 @@ export default function AvailableSlots() {
 
           {bookingSuccess ? (
             <div className="text-center py-12">
-              <CheckCircle size={64} strokeWidth={1.5} className="mx-auto mb-5 text-emerald-400" />
-              <h3 className="m-0 text-2xl font-extrabold mb-2 text-white">
+              <CheckCircle size={64} strokeWidth={1.5} className="mx-auto mb-5 text-emerald-600" />
+              <h3 className="m-0 text-2xl font-extrabold mb-2 text-slate-900">
                 Đặt lịch thành công!
               </h3>
-              <p className="m-0 text-white/70 font-medium">
+              <p className="m-0 text-slate-700 font-bold">
                 Hệ thống đang cập nhật trạng thái của ca khám...
               </p>
             </div>
           ) : (
             <form onSubmit={handleSubmitBooking}>
-              <h2 className="m-0 mb-5 text-[1.3rem] font-extrabold text-white tracking-tight">
+              <h2 className="m-0 mb-5 text-[1.3rem] font-extrabold text-slate-950 tracking-tight">
                 Thông tin đặt lịch khám
               </h2>
 
-              <div className="bg-white/5 backdrop-blur-md rounded-2xl p-5 mb-6 border border-white/20 shadow-sm">
+              <div className="bg-black/5 rounded-2xl p-5 mb-6 border border-slate-300 shadow-sm">
                 <div className="flex justify-between items-center mb-3.5">
-                  <span className="text-white/60 text-[13px] font-bold uppercase tracking-wider">Bác sĩ</span>
-                  <strong className="text-white">{getDoctorLabel(selectedDoctor)}</strong>
+                  <span className="text-slate-600 text-[13px] font-extrabold uppercase tracking-wider">Bác sĩ</span>
+                  <strong className="text-slate-950 font-extrabold">{getDoctorLabel(selectedDoctor)}</strong>
                 </div>
                 <div className="flex justify-between items-center mb-3.5">
-                  <span className="text-white/60 text-[13px] font-bold uppercase tracking-wider">Ngày khám</span>
-                  <strong className="text-white">{workDate}</strong>
+                  <span className="text-slate-600 text-[13px] font-extrabold uppercase tracking-wider">Ngày khám</span>
+                  <strong className="text-slate-950 font-extrabold">{workDate}</strong>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-white/60 text-[13px] font-bold uppercase tracking-wider">Khung giờ</span>
-                  <strong className="text-teal-300 bg-teal-500/20 border border-teal-500/30 px-3.5 py-1.5 rounded-lg shadow-sm">
+                  <span className="text-slate-600 text-[13px] font-extrabold uppercase tracking-wider">Khung giờ</span>
+                  <strong className="text-teal-900 bg-teal-100 border border-teal-300 px-3.5 py-1.5 rounded-lg shadow-sm font-extrabold">
                     {selectedSlot ? `${formatTime(selectedSlot.startTime)} – ${formatTime(selectedSlot.endTime)}` : ""}
                   </strong>
                 </div>
@@ -671,8 +674,8 @@ export default function AvailableSlots() {
 
               <div className="flex flex-col gap-4 mb-8">
                 <div className="flex flex-col gap-2">
-                  <label htmlFor="bk-name" className="font-bold text-white/90 text-[13px]">
-                    Họ tên Bệnh nhân <span className="text-rose-400">*</span>
+                  <label htmlFor="bk-name" className="font-bold text-slate-800 text-[13px]">
+                    Họ tên Bệnh nhân <span className="text-rose-600 font-bold">*</span>
                   </label>
                   <input
                     type="text"
@@ -682,13 +685,13 @@ export default function AvailableSlots() {
                     value={patientName}
                     onChange={(e) => setPatientName(e.target.value)}
                     disabled={isExpired}
-                    className="w-full px-4 py-3 patient-glass-input placeholder:text-white/50 disabled:opacity-50"
+                    className="w-full px-4 py-3 patient-glass-input placeholder:text-slate-500 disabled:opacity-50"
                   />
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <label htmlFor="bk-phone" className="font-bold text-white/90 text-[13px]">
-                    Số điện thoại liên hệ <span className="text-rose-400">*</span>
+                  <label htmlFor="bk-phone" className="font-bold text-slate-800 text-[13px]">
+                    Số điện thoại liên hệ <span className="text-rose-600 font-bold">*</span>
                   </label>
                   <input
                     type="tel"
@@ -698,12 +701,12 @@ export default function AvailableSlots() {
                     value={patientPhone}
                     onChange={(e) => setPatientPhone(e.target.value)}
                     disabled={isExpired}
-                    className="w-full px-4 py-3 patient-glass-input placeholder:text-white/50 disabled:opacity-50"
+                    className="w-full px-4 py-3 patient-glass-input placeholder:text-slate-500 disabled:opacity-50"
                   />
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <label htmlFor="bk-reason" className="font-bold text-white/90 text-[13px]">
+                  <label htmlFor="bk-reason" className="font-bold text-slate-800 text-[13px]">
                     Lý do khám bệnh
                   </label>
                   <textarea
@@ -713,12 +716,12 @@ export default function AvailableSlots() {
                     value={visitReason}
                     onChange={(e) => setVisitReason(e.target.value)}
                     disabled={isExpired}
-                    className="w-full px-4 py-3 patient-glass-input placeholder:text-white/50 min-h-[100px] resize-y disabled:opacity-50"
+                    className="w-full px-4 py-3 patient-glass-input placeholder:text-slate-500 min-h-[100px] resize-y disabled:opacity-50"
                   />
                 </div>
 
                 <div className="flex flex-col gap-2 mt-2">
-                  <label className="font-bold text-white/90 text-[13px]">Phương thức thanh toán</label>
+                  <label className="font-bold text-slate-800 text-[13px]">Phương thức thanh toán</label>
                   <div className="flex gap-6 mt-1">
                     <label className="flex items-center gap-2.5 cursor-pointer group">
                       <input
@@ -728,9 +731,9 @@ export default function AvailableSlots() {
                         checked={paymentMethod === "CASH"}
                         onChange={() => setPaymentMethod("CASH")}
                         disabled={isExpired}
-                        className="w-4 h-4 text-teal-400 border-white/30 focus:ring-teal-400/30 focus:ring-2 disabled:opacity-50"
+                        className="w-4 h-4 text-teal-600 border-slate-350 focus:ring-teal-500/30 focus:ring-2 disabled:opacity-50"
                       />
-                      <span className="text-[14px] font-medium text-white/80 group-hover:text-teal-300 transition-colors">Tiền mặt tại quầy</span>
+                      <span className="text-[14px] font-bold text-slate-800 group-hover:text-teal-700 transition-colors">Tiền mặt tại quầy</span>
                     </label>
                     <label className="flex items-center gap-2.5 cursor-pointer group">
                       <input
@@ -740,9 +743,9 @@ export default function AvailableSlots() {
                         checked={paymentMethod === "BANK"}
                         onChange={() => setPaymentMethod("BANK")}
                         disabled={isExpired}
-                        className="w-4 h-4 text-teal-400 border-white/30 focus:ring-teal-400/30 focus:ring-2 disabled:opacity-50"
+                        className="w-4 h-4 text-teal-600 border-slate-350 focus:ring-teal-500/30 focus:ring-2 disabled:opacity-50"
                       />
-                      <span className="text-[14px] font-medium text-white/80 group-hover:text-teal-300 transition-colors">Chuyển khoản (NH)</span>
+                      <span className="text-[14px] font-bold text-slate-800 group-hover:text-teal-700 transition-colors">Chuyển khoản (NH)</span>
                     </label>
                   </div>
                 </div>
@@ -760,7 +763,7 @@ export default function AvailableSlots() {
                   type="button"
                   onClick={handleCancelBooking}
                   disabled={isExpired}
-                  className="px-6 bg-white/10 text-white font-bold text-[15px] py-3.5 rounded-xl hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 bg-black/5 text-slate-800 border border-slate-300 font-bold text-[15px] py-3.5 rounded-xl hover:bg-black/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Hủy bỏ
                 </button>

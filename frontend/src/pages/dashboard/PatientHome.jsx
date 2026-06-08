@@ -170,7 +170,7 @@ export default function PatientHome() {
           </AnimatePresence>
 
           {/* AI ENERGY ORB WIDGET */}
-          <div className="patient-glass-panel rounded-[3rem] p-8 md:p-10 relative overflow-hidden group hover:shadow-[0_12px_40px_rgba(0,0,0,0.22)] transition-all">
+          <div className="patient-glass-panel patient-glass-panel-clear rounded-[3rem] p-8 md:p-10 relative overflow-hidden group hover:shadow-[0_12px_40px_rgba(0,0,0,0.22)] transition-all">
             <div className="absolute right-0 top-1/2 w-64 h-64 bg-violet-200/30 rounded-full blur-[60px] translate-x-1/3 -translate-y-1/2 pointer-events-none group-hover:bg-violet-200/50 transition-colors duration-1000"></div>
             
             <div className="flex flex-col md:flex-row items-start md:items-center gap-8 relative z-10">
@@ -181,8 +181,8 @@ export default function PatientHome() {
               </div>
 
               <div className="flex-1 w-full">
-                <h3 className="text-2xl font-black text-slate-900 mb-2 drop-shadow-sm">Trợ lý Sức khỏe AI</h3>
-                <p className="text-slate-700 font-medium mb-5 drop-shadow-sm">Hệ thống AI sẽ phân tích triệu chứng và đề xuất chuyên khoa phù hợp nhất cho bạn.</p>
+                <h3 className="text-2xl font-black text-white mb-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]">Trợ lý Sức khỏe AI</h3>
+                <p className="text-white/95 font-extrabold mb-5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.3)]">Hệ thống AI sẽ phân tích triệu chứng và đề xuất chuyên khoa phù hợp nhất cho bạn.</p>
                 
                 <form 
                   onSubmit={(e) => {
@@ -191,7 +191,7 @@ export default function PatientHome() {
                   }} 
                   className="relative group w-full"
                 >
-                  <div className="relative flex items-center patient-input-field rounded-2xl p-2 transition-all">
+                  <div className="relative flex items-center patient-glass-input-clear rounded-2xl p-2 transition-all">
                     <input
                       type="text"
                       placeholder="Mô tả triệu chứng (VD: Tôi hay bị đau đầu, buồn nôn...)"
@@ -218,9 +218,9 @@ export default function PatientHome() {
         <div className="xl:col-span-4 flex flex-col gap-6 h-full">
           
           {/* WELLNESS SCORE WIDGET */}
-          <div className="patient-glass-panel rounded-[3rem] p-8 flex flex-col relative overflow-hidden flex-shrink-0 hover:shadow-[0_12px_40px_rgba(0,0,0,0.22)] transition-all">
-            <h3 className="text-slate-900 font-black text-xl mb-8 flex items-center gap-2">
-              <ActivitySquare className="text-teal-600" /> Điểm Sức Khỏe
+          <div className="patient-glass-panel patient-glass-panel-clear rounded-[3rem] p-8 flex flex-col relative overflow-hidden flex-shrink-0 hover:shadow-[0_12px_40px_rgba(0,0,0,0.22)] transition-all">
+            <h3 className="text-white font-black text-xl mb-8 flex items-center gap-2 drop-shadow-[0_1px_3px_rgba(0,0,0,0.3)]">
+              <ActivitySquare className="text-teal-200" /> Điểm Sức Khỏe
             </h3>
             
             <div className="flex justify-center mb-6">
@@ -241,8 +241,8 @@ export default function PatientHome() {
                   </defs>
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-5xl font-black text-slate-900 tracking-tighter">85</span>
-                  <span className="text-teal-600 font-bold text-sm uppercase tracking-widest mt-1">Tốt</span>
+                  <span className="text-5xl font-black text-white tracking-tighter drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]">85</span>
+                  <span className="text-teal-200 font-extrabold text-sm uppercase tracking-widest mt-1 drop-shadow-sm">Tốt</span>
                 </div>
               </div>
             </div>
@@ -274,24 +274,24 @@ export default function PatientHome() {
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => navigate("/dashboard/my-medical-history")}
-              className="patient-glass-panel-sm rounded-[2.5rem] p-6 cursor-pointer transition-all flex flex-col justify-between group hover:-translate-y-0.5 hover:shadow-[0_8px_28px_rgba(0,0,0,0.18)]"
+              className="patient-glass-panel-sm patient-glass-panel-sm-clear rounded-[2.5rem] p-6 cursor-pointer transition-all flex flex-col justify-between group hover:-translate-y-0.5 hover:shadow-[0_8px_28px_rgba(0,0,0,0.18)]"
             >
               <div className="w-14 h-14 rounded-2xl bg-fuchsia-400/25 text-fuchsia-200 flex items-center justify-center mb-6 shadow-sm group-hover:-translate-y-1 transition-transform border border-fuchsia-300/20">
                 <FileText size={26} />
               </div>
-              <div className="text-slate-900 font-black text-xl leading-tight">Hồ sơ<br/>Bệnh án</div>
+              <div className="text-white font-black text-xl leading-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.3)]">Hồ sơ<br/>Bệnh án</div>
             </motion.div>
 
             <motion.div
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => navigate("/dashboard/my-lab-results")}
-              className="patient-glass-panel-sm rounded-[2.5rem] p-6 cursor-pointer transition-all flex flex-col justify-between group hover:-translate-y-0.5 hover:shadow-[0_8px_28px_rgba(0,0,0,0.18)]"
+              className="patient-glass-panel-sm patient-glass-panel-sm-clear rounded-[2.5rem] p-6 cursor-pointer transition-all flex flex-col justify-between group hover:-translate-y-0.5 hover:shadow-[0_8px_28px_rgba(0,0,0,0.18)]"
             >
               <div className="w-14 h-14 rounded-2xl bg-sky-400/25 text-sky-200 flex items-center justify-center mb-6 shadow-sm group-hover:-translate-y-1 transition-transform border border-sky-300/20">
                 <ActivitySquare size={26} />
               </div>
-              <div className="text-slate-900 font-black text-xl leading-tight">Kết quả<br/>Xét nghiệm</div>
+              <div className="text-white font-black text-xl leading-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.3)]">Kết quả<br/>Xét nghiệm</div>
             </motion.div>
           </div>
 

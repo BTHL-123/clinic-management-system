@@ -92,12 +92,12 @@ export default function PatientProfile() {
 
   if (notFound) {
     return (
-      <div className="mb-6 px-2">
-        <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-1">
-          <UserSquare size={26} className="text-teal-400" />
-          Hồ sơ cá nhân
+      <div className="mb-10 mt-6 flex flex-col items-center text-center px-4">
+        <h2 className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-4">
+          <UserSquare size={32} className="text-teal-400 drop-shadow-md" />
+          <span className="drop-shadow-md">Hồ sơ cá nhân</span>
         </h2>
-        <p className="text-red-400 font-medium mt-2">
+        <p className="text-red-400 font-bold drop-shadow-sm text-[16px] max-w-[600px] mt-2">
           Tài khoản của bạn chưa được liên kết với bất kỳ hồ sơ bệnh nhân nào. Vui lòng liên hệ với lễ tân để được hỗ trợ.
         </p>
       </div>
@@ -106,12 +106,14 @@ export default function PatientProfile() {
 
   return (
     <>
-      <div className="mb-6 px-2 mt-4">
-        <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-1">
-          <UserSquare size={26} className="text-teal-400" />
-          Hồ sơ cá nhân
+      <div className="mb-10 mt-6 flex flex-col items-center text-center px-4">
+        <h2 className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-4">
+          <UserSquare size={32} className="text-teal-400 drop-shadow-md" />
+          <span className="drop-shadow-md">Hồ sơ cá nhân</span>
         </h2>
-        <p className="text-white/70 font-medium">Quản lý và cập nhật thông tin sức khỏe của bạn.</p>
+        <p className="text-white/70 font-medium drop-shadow-sm text-[16px] max-w-[600px]">
+          Quản lý và cập nhật thông tin sức khỏe của bạn.
+        </p>
       </div>
 
       {error && <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>}
