@@ -38,26 +38,27 @@ export default function DashboardLayout() {
   const roles = (user?.roles || []).map(normalizeRole).filter(Boolean);
   const rolesText = roles.join(", ") || "User";
 
-  const isDoctorOrPharmacist = roles.includes("DOCTOR") || roles.includes("PHARMACIST");
-  const isPatientOnly = roles.includes("PATIENT") && !isDoctorOrPharmacist;
-  const isAdminShell = roles.includes("ADMIN") && !isDoctorOrPharmacist && !isPatientOnly;
-  const usePatientVisualShell = isPatientOnly || isAdminShell;
+  const isDoctor = roles.includes("DOCTOR");
+  const isPharmacist = roles.includes("PHARMACIST");
+  const isPatientOnly = roles.includes("PATIENT") && !isDoctor && !isPharmacist;
+  const isAdminShell = roles.includes("ADMIN") && !isDoctor && !isPharmacist && !isPatientOnly;
+  const usePatientVisualShell = isPatientOnly || isAdminShell || isPharmacist;
 
   return (
     <div className={`flex flex-col min-h-screen w-full relative selection:bg-teal-200 selection:text-teal-900 font-sans overflow-y-auto overflow-x-hidden ${usePatientVisualShell ? "patient-shell" : ""} ${isAdminShell ? "admin-shell" : ""}`}>
       {/* Global Background */}
-      {isDoctorOrPharmacist ? (
+      {isDoctor ? (
         <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#020617]">
           <div className="absolute inset-0 bg-gradient-to-br from-[#0f172a] via-[#0d9488] to-[#042f2e] opacity-80"></div>
-          
+
           <div className="absolute -top-[20%] -left-[10%] w-[70vw] h-[70vw] bg-teal-500/30 rounded-full blur-[160px] mix-blend-screen animate-pulse" style={{ animationDuration: '8s' }}></div>
           <div className="absolute -bottom-[20%] -right-[10%] w-[80vw] h-[80vw] bg-emerald-600/20 rounded-full blur-[180px] mix-blend-screen animate-pulse" style={{ animationDuration: '12s', animationDelay: '2s' }}></div>
           <div className="absolute top-[20%] left-[40%] w-[50vw] h-[50vw] bg-cyan-700/20 rounded-full blur-[140px] mix-blend-screen animate-pulse" style={{ animationDuration: '10s', animationDelay: '4s' }}></div>
 
-          <div 
+          <div
             className="absolute inset-0 opacity-[0.15] mix-blend-overlay"
-            style={{ 
-              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` 
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
             }}
           ></div>
           <div className="absolute inset-0 bg-slate-900/30"></div>
@@ -93,7 +94,7 @@ export default function DashboardLayout() {
           ></div>
         </div>
       ) : (
-        <div 
+        <div
           className="fixed inset-0 z-0 pointer-events-none bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: `url(${bgImage})` }}
         >
@@ -162,7 +163,7 @@ export default function DashboardLayout() {
 
             {!isAdminShell && (
               <button
-                className={`w-10 h-10 flex items-center justify-center rounded-full transition-all group ${isPatientOnly ? "patient-header-icon-btn patient-header-icon-btn-danger" : "bg-white/80 border border-white hover:bg-rose-50 hover:border-rose-100 text-slate-400 hover:text-rose-500 shadow-sm"}`}
+                className={`w-10 h-10 flex items-center justify-center rounded-full transition-all group ${usePatientVisualShell ? "patient-header-icon-btn patient-header-icon-btn-danger" : "bg-white/80 border border-white hover:bg-rose-50 hover:border-rose-100 text-slate-400 hover:text-rose-500 shadow-sm"}`}
                 aria-label="Logout"
                 onClick={handleLogout}
               >
