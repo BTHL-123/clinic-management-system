@@ -107,9 +107,13 @@ export default function LabRequestPage() {
 
   return (
     <div style={{ padding: "0 4px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-        <FlaskConical size={22} />
-        <h2 style={{ margin: 0, fontSize: 20 }}>Phòng xét nghiệm</h2>
+      <div className="relative flex flex-col items-start mb-6">
+        <div className="flex flex-col items-start">
+          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
+            <span className="text-white"><FlaskConical size={26} /></span>
+            <span className="text-white text-2xl font-bold tracking-wide">Phòng xét nghiệm</span>
+          </h1>
+        </div>
       </div>
 
       {error && <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>}

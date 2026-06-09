@@ -124,13 +124,15 @@ export default function QueueManagementPage() {
 
   return (
     <div className="content">
-      <div className="page-header">
-        <h1 className="page-title">
-          <Users size={24} style={{ color: "#0f766e" }} />
-          Quản lý hàng đợi
-        </h1>
+      <div className="relative flex flex-col items-start mb-6">
+        <div className="flex flex-col items-start">
+          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
+            <span className="text-white"><Users size={26} /></span>
+            <span className="text-white text-2xl font-bold tracking-wide">Quản lý hàng đợi</span>
+          </h1>
+        </div>
         <button
-          className="ghost-button"
+          className="ghost-button absolute right-0 top-1/2 -translate-y-1/2"
           onClick={fetchQueue}
           style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
         >

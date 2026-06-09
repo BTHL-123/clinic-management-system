@@ -165,12 +165,17 @@ export default function SystemSettingsPage() {
 
   return (
     <div className="page-stack">
-      <section className="page-heading">
-        <div>
-          <h1>Cấu hình hệ thống</h1>
-          <p className="muted">Quản lý các thiết lập vận hành dùng chung trong hệ thống.</p>
+      <div className="relative flex flex-col items-start mb-6">
+        <div className="flex flex-col items-start">
+          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
+            <span className="text-white"><Settings size={26} /></span>
+            <span className="text-white text-2xl font-bold tracking-wide">Cấu hình hệ thống</span>
+          </h1>
+          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
+            Quản lý các thiết lập vận hành dùng chung trong hệ thống.
+          </p>
         </div>
-        <div className="heading-actions">
+        <div className="heading-actions absolute right-0 top-1/2 -translate-y-1/2">
           <button className="ghost-button" type="button" onClick={loadSettings} disabled={loading}>
             <RefreshCw size={17} />
             Làm mới
@@ -180,7 +185,7 @@ export default function SystemSettingsPage() {
             Thêm cấu hình
           </button>
         </div>
-      </section>
+      </div>
 
       <section className="panel">
         <div className="table-header" style={{ alignItems: "flex-start" }}>

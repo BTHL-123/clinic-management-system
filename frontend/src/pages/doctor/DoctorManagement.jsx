@@ -156,19 +156,25 @@ export default function DoctorManagement() {
   return (
     <>
       {/* ── Page Header ────────────────────────────────── */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">
-            <span className="page-title-icon"><UserRound size={26} /></span>
-            <span className="page-title-text">Quản lý Bác sĩ</span>
+      <div className="relative flex flex-col items-start mb-6">
+        <div className="flex flex-col items-start">
+          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
+            <span className="text-white"><UserRound size={26} /></span>
+            <span className="text-white text-2xl font-bold tracking-wide">Quản lý Bác sĩ</span>
           </h1>
-          <p className="muted">Quản lý hồ sơ bác sĩ và phân công chuyên khoa.</p>
+          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
+            Quản lý hồ sơ bác sĩ và phân công chuyên khoa.
+          </p>
         </div>
-        <button className="primary-button" onClick={openCreate}>
+        <button
+          className="primary-button absolute right-0 top-1/2 -translate-y-1/2"
+          onClick={openCreate}
+        >
           <Plus size={16} />
           Thêm bác sĩ
         </button>
       </div>
+
 
       {/* ── Filters ────────────────────────────────────── */}
       <div className="search-bar" style={{ display: "flex", gap: "10px" }}>
@@ -199,7 +205,7 @@ export default function DoctorManagement() {
 
       {/* ── Table ──────────────────────────────────────── */}
       <div className="table-wrapper doctor-table-wrapper">
-        <table className="data-table doctor-data-table">
+        <table className="doctor-data-table">
           <colgroup>
             <col style={{ width: "10%" }} />
             <col style={{ width: "17%" }} />
@@ -212,14 +218,14 @@ export default function DoctorManagement() {
           </colgroup>
           <thead>
             <tr>
-              <th>Mã BS</th>
-              <th>Họ và tên</th>
-              <th>Chuyên khoa</th>
-              <th>Học vị</th>
-              <th>Kinh nghiệm</th>
-              <th>Phí khám</th>
-              <th>Trạng thái</th>
-              <th style={{ textAlign: "center" }}>Hành động</th>
+              <th style={{ color: "#0f766e" }}>Mã BS</th>
+              <th style={{ color: "#0f766e" }}>Họ và tên</th>
+              <th style={{ color: "#0f766e" }}>Chuyên khoa</th>
+              <th style={{ color: "#0f766e" }}>Học vị</th>
+              <th style={{ color: "#0f766e" }}>Kinh nghiệm</th>
+              <th style={{ color: "#0f766e" }}>Phí khám</th>
+              <th style={{ color: "#0f766e" }}>Trạng thái</th>
+              <th style={{ textAlign: "center", color: "#0f766e" }}>Hành động</th>
             </tr>
           </thead>
           <tbody>

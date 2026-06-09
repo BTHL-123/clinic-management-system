@@ -157,17 +157,17 @@ export default function MedicalServiceManagement() {
   return (
     <>
       {/* ── Page Header ────────────────────────────────── */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">
-            <HeartPulse size={26} />
-            Quản lý Dịch vụ y tế
+      <div className="relative flex flex-col items-start mb-6">
+        <div className="flex flex-col items-start">
+          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
+            <span className="text-white"><HeartPulse size={26} /></span>
+            <span className="text-white text-2xl font-bold tracking-wide">Quản lý Dịch vụ y tế</span>
           </h1>
-          <p className="muted">
+          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
             Quản lý danh sách các dịch vụ y tế trong phòng khám.
           </p>
         </div>
-        <button className="primary-button" onClick={openCreate}>
+        <button className="primary-button absolute right-0 top-1/2 -translate-y-1/2" onClick={openCreate}>
           <Plus size={16} />
           Thêm dịch vụ
         </button>

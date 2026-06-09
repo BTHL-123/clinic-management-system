@@ -163,16 +163,21 @@ export default function UsersPage() {
 
   return (
     <div className="page-stack">
-      <section className="page-heading">
-        <div>
-          <h1>Quản lý Tài khoản</h1>
-          <p className="muted">Tạo tài khoản nhân viên, tìm kiếm và quản lý quyền truy cập.</p>
+      <div className="relative flex flex-col items-start mb-6">
+        <div className="flex flex-col items-start">
+          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
+            <span className="text-white"><UserRoundPlus size={26} /></span>
+            <span className="text-white text-2xl font-bold tracking-wide">Quản lý Tài khoản</span>
+          </h1>
+          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
+            Tạo tài khoản nhân viên, tìm kiếm và quản lý quyền truy cập.
+          </p>
         </div>
-        <button className="primary-button compact" onClick={resetForm}>
+        <button className="primary-button absolute right-0 top-1/2 -translate-y-1/2 compact" onClick={resetForm}>
           <Plus size={17} />
           Tạo tài khoản
         </button>
-      </section>
+      </div>
 
       <section className="panel">
         <form className="toolbar" onSubmit={(event) => event.preventDefault()}>

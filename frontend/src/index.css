@@ -673,21 +673,58 @@
 }
 
 .doctor-data-table {
-  width: 100%;
-  table-layout: fixed;
-  border-collapse: collapse;
+  width: 100% !important;
+  display: table !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+  border: none !important;
+  border-radius: 0 !important;
+  font-size: 0.92rem;
+}
+
+.doctor-data-table thead,
+.doctor-data-table tbody {
+  display: table-row-group !important;
+}
+
+.doctor-data-table tr {
+  display: table-row !important;
 }
 
 .doctor-data-table th,
 .doctor-data-table td {
+  display: table-cell !important;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  padding: 14px 16px;
+  text-align: left;
+}
+
+.doctor-data-table th {
+  font-weight: 700;
+  color: #0f766e;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.doctor-data-table td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  color: #1e293b;
+}
+
+.doctor-data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.doctor-data-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .admin-shell .doctor-table-wrapper {
   border-radius: 1rem !important;
   overflow: hidden;
+  overflow-x: auto;
 }
 
 .admin-shell .doctor-data-table thead tr,
@@ -2611,7 +2648,7 @@ a {
 .admin-shell [style*="background: #f1f5f9"],
 .admin-shell [style*='background: "#f1f5f9"'] {
   background: rgba(255, 255, 255, 0.18) !important;
-  color: rgba(7, 24, 39, 0.82) !important;
+  color: #0f766e !important;
 }
 
 .admin-shell .data-table td,
