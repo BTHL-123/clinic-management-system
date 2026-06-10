@@ -282,7 +282,7 @@ export default function ArticleManagement() {
         {loading ? (
           <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "40px", color: "#94a3b8" }}>Đang tải dữ liệu...</div>
         ) : !data || data.content.length === 0 ? (
-          <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "40px", color: "#94a3b8" }}>Không có bài viết nào.</div>
+          <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "40px", color: "#ffffff", fontWeight: 600, textShadow: "0 1px 3px rgba(0,0,0,0.3)" }}>Không có bài viết nào.</div>
         ) : (
           data.content.map((article) => (
             <div key={article.articleId} style={{

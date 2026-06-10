@@ -173,10 +173,6 @@ export default function UsersPage() {
             Tạo tài khoản nhân viên, tìm kiếm và quản lý quyền truy cập.
           </p>
         </div>
-        <button className="primary-button absolute right-0 top-1/2 -translate-y-1/2 compact" onClick={resetForm}>
-          <Plus size={17} />
-          Tạo tài khoản
-        </button>
       </div>
 
       <section className="panel">

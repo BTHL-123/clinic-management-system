@@ -148,24 +148,26 @@ export default function MedicineManagement() {
           </h1>
           <p className="text-white/70 font-medium mt-3 drop-shadow-sm">Quản lý danh sách các loại thuốc.</p>
         </div>
-        <button className="bg-gradient-to-r from-teal-400 to-emerald-400 hover:from-teal-300 hover:to-emerald-300 text-slate-900 font-bold px-5 py-2.5 rounded-xl shadow-lg hover:shadow-teal-400/30 transition-all flex items-center gap-2 absolute right-0 top-1/2 -translate-y-1/2" onClick={openCreate}>
-          <Plus size={18} strokeWidth={2.5} />
-          Thêm thuốc mới
-        </button>
       </div>
 
         <div className="patient-glass-panel patient-glass-panel-clear rounded-[3rem] p-8 md:p-10 shadow-[0_12px_40px_rgba(0,0,0,0.22)] border-0 w-full">
-          <div className="relative mb-6">
-            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-500">
-              <Search size={18} />
+          <div className="relative mb-6 flex items-center gap-3">
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-500">
+                <Search size={18} />
+              </div>
+              <input
+                type="text"
+                placeholder="Tìm kiếm theo mã hoặc tên thuốc..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-slate-900/5 border border-slate-900/10 text-slate-900 placeholder-slate-500 text-sm rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:border-teal-500/50 transition-colors backdrop-blur-sm font-bold"
+              />
             </div>
-            <input
-              type="text"
-              placeholder="Tìm kiếm theo mã hoặc tên thuốc..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-900/5 border border-slate-900/10 text-slate-900 placeholder-slate-500 text-sm rounded-xl py-3 pl-11 pr-4 focus:outline-none focus:border-teal-500/50 transition-colors backdrop-blur-sm font-bold"
-            />
+            <button className="bg-gradient-to-r from-teal-400 to-emerald-400 hover:from-teal-300 hover:to-emerald-300 text-slate-900 font-bold px-5 py-2.5 rounded-xl shadow-lg hover:shadow-teal-400/30 transition-all flex items-center gap-2 flex-shrink-0" onClick={openCreate}>
+              <Plus size={18} strokeWidth={2.5} />
+              Thêm thuốc mới
+            </button>
           </div>
 
           {error && <div className="bg-rose-500/20 border border-rose-500/50 text-rose-200 p-4 rounded-xl mb-6">{error}</div>}

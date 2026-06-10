@@ -101,26 +101,27 @@ export default function DashboardHome() {
 
   return (
     <div className="admin-dashboard">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-        <div className="flex flex-col items-center w-full">
-          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
-            <span className="text-white"><LayoutDashboard size={26} /></span>
-            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Tổng quan Hệ thống</span>
+      {/* ── Page Header ────────────────────────────────── */}
+      <div className="relative flex flex-col items-center mb-6" style={{ fontFamily: "inherit" }}>
+        <div className="flex flex-col items-center">
+          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg" style={{ background: "rgba(255,255,255,0.25)", fontSize: "unset", fontWeight: "unset", color: "unset", letterSpacing: "unset" }}>
+            <span style={{ color: "#ffffff", display: "flex", flexShrink: 0 }}><LayoutDashboard size={26} color="#ffffff" /></span>
+            <span style={{ color: "#0f766e", fontSize: "1.5rem", fontWeight: 700, letterSpacing: "0.025em", whiteSpace: "nowrap" }}>Tổng quan Hệ thống</span>
           </h1>
-          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
+          <p style={{ color: "rgba(255,255,255,0.7)", fontWeight: 500, marginTop: "12px", textShadow: "0 1px 2px rgba(0,0,0,0.1)", textAlign: "center" }}>
             Thống kê hoạt động và hiệu suất của phòng khám.
           </p>
         </div>
-        <div style={{ display: "flex", gap: "8px", background: "#f1f5f9", padding: "4px", borderRadius: "8px" }}>
+        <div style={{ position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)", display: "flex", gap: "8px", background: "rgba(255,255,255,0.2)", backdropFilter: "blur(8px)", padding: "4px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.3)" }}>
           {[7, 30, 90].map(days => (
             <button
               key={days}
               onClick={() => setTimeRange(days)}
               style={{
                 border: "none", padding: "6px 16px", borderRadius: "6px", cursor: "pointer",
-                background: timeRange === days ? "#fff" : "transparent",
-                color: timeRange === days ? "#0f172a" : "#64748b",
-                fontWeight: timeRange === days ? 600 : 500,
+                background: timeRange === days ? "rgba(255,255,255,0.9)" : "transparent",
+                color: timeRange === days ? "#0f766e" : "rgba(255,255,255,0.7)",
+                fontWeight: timeRange === days ? 700 : 500,
                 boxShadow: timeRange === days ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
                 fontSize: "13px"
               }}

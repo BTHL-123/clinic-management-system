@@ -130,21 +130,22 @@ export default function DepartmentManagement() {
             Quản lý danh sách các chuyên khoa trong phòng khám.
           </p>
         </div>
-        <button className="primary-button absolute right-0 top-1/2 -translate-y-1/2" onClick={openCreate}>
-          <Plus size={16} />
-          Thêm chuyên khoa
-        </button>
       </div>
 
       {/* ── Search Bar ─────────────────────────────────── */}
-      <div className="search-bar">
+      <div className="search-bar" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
         <Search size={16} className="search-icon" />
         <input
           type="text"
           placeholder="Tìm kiếm theo tên hoặc mô tả..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ flex: 1 }}
         />
+        <button className="primary-button" style={{ flexShrink: 0 }} onClick={openCreate}>
+          <Plus size={16} />
+          Thêm chuyên khoa
+        </button>
       </div>
 
       {/* ── Error ──────────────────────────────────────── */}

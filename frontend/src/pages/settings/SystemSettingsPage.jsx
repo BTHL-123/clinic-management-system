@@ -175,16 +175,6 @@ export default function SystemSettingsPage() {
             Quản lý các thiết lập vận hành dùng chung trong hệ thống.
           </p>
         </div>
-        <div className="heading-actions absolute right-0 top-1/2 -translate-y-1/2">
-          <button className="ghost-button" type="button" onClick={loadSettings} disabled={loading}>
-            <RefreshCw size={17} />
-            Làm mới
-          </button>
-          <button className="primary-button" type="button" onClick={openCreateModal}>
-            <Plus size={17} />
-            Thêm cấu hình
-          </button>
-        </div>
       </div>
 
       <section className="panel">
@@ -217,7 +207,17 @@ export default function SystemSettingsPage() {
       <section className="panel table-panel">
         <div className="table-header">
           <h2>Danh sách cấu hình</h2>
-          <span className="muted">{pagination.totalElements} cấu hình</span>
+          <div className="row-actions">
+            <span className="muted">{pagination.totalElements} cấu hình</span>
+            <button className="ghost-button" type="button" onClick={loadSettings} disabled={loading}>
+              <RefreshCw size={16} />
+              Làm mới
+            </button>
+            <button className="primary-button compact" type="button" onClick={openCreateModal}>
+              <Plus size={16} />
+              Thêm cấu hình
+            </button>
+          </div>
         </div>
         <div className="table-wrapper">
           <table className="data-table fixed-table">

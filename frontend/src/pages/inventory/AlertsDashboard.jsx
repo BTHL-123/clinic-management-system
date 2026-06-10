@@ -41,24 +41,18 @@ export default function AlertsDashboard() {
   return (
     <>
     <div className="w-full flex flex-col items-center">
-      <div className="w-full flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => navigate("/dashboard")}
-            className="bg-white/10 hover:bg-white/20 active:scale-95 text-white p-2 rounded-xl backdrop-blur-md border border-white/20 transition-all shadow-sm group"
-          >
-            <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-          </button>
-          <div>
-            <h1 className="text-3xl font-extrabold text-white flex items-center gap-3 drop-shadow-md">
-              <div className="bg-amber-500/25 p-2.5 rounded-xl border border-amber-300/20 text-amber-200">
-                <AlertTriangle size={28} />
-              </div>
-              Cảnh Báo Tồn Kho
-            </h1>
-            <p className="text-white font-bold mt-1 drop-shadow-sm">Danh sách thuốc sắp hết hạn hoặc hết số lượng.</p>
-          </div>
-        </div>
+      <div className="relative flex flex-col items-center w-full mb-8">
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 active:scale-95 text-white p-2 rounded-xl backdrop-blur-md border border-white/20 transition-all shadow-sm group"
+        >
+          <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+        </button>
+        <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
+          <span className="text-white"><AlertTriangle size={26} /></span>
+          <span className="text-white text-2xl font-bold tracking-wide">Cảnh Báo Tồn Kho</span>
+        </h1>
+        <p className="text-white/70 font-medium mt-3 text-center drop-shadow-sm">Danh sách thuốc sắp hết hạn hoặc hết số lượng.</p>
       </div>
 
       <div className="patient-glass-panel patient-glass-panel-clear rounded-[3rem] p-8 md:p-10 shadow-[0_12px_40px_rgba(0,0,0,0.22)] border-0 w-full">

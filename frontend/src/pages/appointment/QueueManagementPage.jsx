@@ -131,14 +131,6 @@ export default function QueueManagementPage() {
             <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Quản lý hàng đợi</span>
           </h1>
         </div>
-        <button
-          className="ghost-button absolute right-0 top-1/2 -translate-y-1/2"
-          onClick={fetchQueue}
-          style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
-        >
-          <RefreshCw size={16} className={loading ? "spin-animation" : ""} />
-          Làm mới
-        </button>
       </div>
 
       {/* Grid of stats overview */}
@@ -171,7 +163,7 @@ export default function QueueManagementPage() {
 
       {/* Filters Toolbar */}
       <div className="panel" style={{ marginBottom: "20px" }}>
-        <div className="toolbar" style={{ gridTemplateColumns: "1fr 1fr 1fr", gap: "16px" }}>
+        <div className="toolbar" style={{ gridTemplateColumns: "1fr 1fr 1fr auto", gap: "16px", alignItems: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <Calendar size={18} style={{ color: "#64748b" }} />
             <input
@@ -210,6 +202,15 @@ export default function QueueManagementPage() {
               <option value="COMPLETED">Hoàn tất (Completed)</option>
             </select>
           </div>
+
+          <button
+            className="ghost-button"
+            onClick={fetchQueue}
+            style={{ display: "inline-flex", alignItems: "center", gap: "6px", whiteSpace: "nowrap" }}
+          >
+            <RefreshCw size={16} className={loading ? "spin-animation" : ""} />
+            Làm mới
+          </button>
         </div>
       </div>
 
