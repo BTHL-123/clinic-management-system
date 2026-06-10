@@ -327,7 +327,7 @@ export default function AvailableSlots() {
             <div className="patient-glass-card p-6 md:p-8 w-full max-w-[600px] mx-auto lg:mx-0">
             <div className="flex flex-col gap-5">
               <div className="flex flex-col gap-2">
-                <label htmlFor="as-workDate" className="font-bold text-slate-800 text-[14px]">Ngày khám</label>
+                <label htmlFor="as-workDate" className="patient-label text-[14px]">Ngày khám</label>
                 <input
                   type="date"
                   id="as-workDate"
@@ -344,7 +344,7 @@ export default function AvailableSlots() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <label htmlFor="as-doctorId" className="font-bold text-slate-800 text-[14px]">Bác sĩ có lịch trong ngày</label>
+                <label htmlFor="as-doctorId" className="patient-label text-[14px]">Bác sĩ có lịch trong ngày</label>
                 <select
                   id="as-doctorId"
                   value={doctorId}
@@ -472,7 +472,7 @@ export default function AvailableSlots() {
 
           {selectedDoctor && doctorId && (
             <div className="patient-glass-card p-6 lg:p-8 animate-[fadeIn_0.3s_ease] w-full max-w-[450px] mx-auto lg:mx-0">
-              <h3 className="text-[1.1rem] font-extrabold text-slate-950 mb-6 flex items-center gap-2">
+              <h3 className="text-[1.1rem] patient-section-title mb-6 flex items-center gap-2">
                  Chi tiết Bác sĩ
               </h3>
               <div className="flex gap-5 items-center">
@@ -480,8 +480,8 @@ export default function AvailableSlots() {
                   <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${selectedDoctor.doctorId}&backgroundColor=115e59`} alt="Avatar" className="w-full h-full object-cover" />
                 </div>
                 <div className="flex flex-col">
-                  <strong className="text-lg text-slate-900 font-extrabold">{getDoctorLabel(selectedDoctor)}</strong>
-                  <span className="text-sm text-slate-700 font-bold mb-2">{selectedDoctor.departmentName || "Khám tổng quát"}</span>
+                  <strong className="text-lg patient-data font-extrabold">{getDoctorLabel(selectedDoctor)}</strong>
+                  <span className="text-sm patient-data font-bold mb-2">{selectedDoctor.departmentName || "Khám tổng quát"}</span>
                   <div className="flex items-center gap-1">
                     {[1, 2, 3, 4, 5].map(star => <Star key={star} size={14} className="fill-amber-400 text-amber-400" />)}
                   </div>
@@ -651,22 +651,22 @@ export default function AvailableSlots() {
             </div>
           ) : (
             <form onSubmit={handleSubmitBooking}>
-              <h2 className="m-0 mb-5 text-[1.3rem] font-extrabold text-slate-950 tracking-tight">
+              <h2 className="m-0 mb-5 text-[1.3rem] patient-section-title tracking-tight">
                 Thông tin đặt lịch khám
               </h2>
 
               <div className="bg-black/5 rounded-2xl p-5 mb-6 border border-slate-300 shadow-sm">
                 <div className="flex justify-between items-center mb-3.5">
-                  <span className="text-slate-600 text-[13px] font-extrabold uppercase tracking-wider">Bác sĩ</span>
-                  <strong className="text-slate-950 font-extrabold">{getDoctorLabel(selectedDoctor)}</strong>
+                  <span className="patient-label text-[13px] uppercase tracking-wider">Bác sĩ</span>
+                  <strong className="patient-data font-extrabold">{getDoctorLabel(selectedDoctor)}</strong>
                 </div>
                 <div className="flex justify-between items-center mb-3.5">
-                  <span className="text-slate-600 text-[13px] font-extrabold uppercase tracking-wider">Ngày khám</span>
-                  <strong className="text-slate-950 font-extrabold">{workDate}</strong>
+                  <span className="patient-label text-[13px] uppercase tracking-wider">Ngày khám</span>
+                  <strong className="patient-data font-extrabold">{workDate}</strong>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600 text-[13px] font-extrabold uppercase tracking-wider">Khung giờ</span>
-                  <strong className="text-teal-900 bg-teal-100 border border-teal-300 px-3.5 py-1.5 rounded-lg shadow-sm font-extrabold">
+                  <span className="patient-label text-[13px] uppercase tracking-wider">Khung giờ</span>
+                  <strong className="patient-data bg-teal-100 border border-teal-300 px-3.5 py-1.5 rounded-lg shadow-sm font-extrabold">
                     {selectedSlot ? `${formatTime(selectedSlot.startTime)} – ${formatTime(selectedSlot.endTime)}` : ""}
                   </strong>
                 </div>
@@ -674,7 +674,7 @@ export default function AvailableSlots() {
 
               <div className="flex flex-col gap-4 mb-8">
                 <div className="flex flex-col gap-2">
-                  <label htmlFor="bk-name" className="font-bold text-slate-800 text-[13px]">
+                  <label htmlFor="bk-name" className="patient-label text-[13px]">
                     Họ tên Bệnh nhân <span className="text-rose-600 font-bold">*</span>
                   </label>
                   <input
@@ -690,7 +690,7 @@ export default function AvailableSlots() {
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <label htmlFor="bk-phone" className="font-bold text-slate-800 text-[13px]">
+                  <label htmlFor="bk-phone" className="patient-label text-[13px]">
                     Số điện thoại liên hệ <span className="text-rose-600 font-bold">*</span>
                   </label>
                   <input
@@ -706,7 +706,7 @@ export default function AvailableSlots() {
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <label htmlFor="bk-reason" className="font-bold text-slate-800 text-[13px]">
+                  <label htmlFor="bk-reason" className="patient-label text-[13px]">
                     Lý do khám bệnh
                   </label>
                   <textarea
@@ -721,7 +721,7 @@ export default function AvailableSlots() {
                 </div>
 
                 <div className="flex flex-col gap-2 mt-2">
-                  <label className="font-bold text-slate-800 text-[13px]">Phương thức thanh toán</label>
+                  <label className="patient-label text-[13px]">Phương thức thanh toán</label>
                   <div className="flex gap-6 mt-1">
                     <label className="flex items-center gap-2.5 cursor-pointer group">
                       <input
@@ -733,7 +733,7 @@ export default function AvailableSlots() {
                         disabled={isExpired}
                         className="w-4 h-4 text-teal-600 border-slate-350 focus:ring-teal-500/30 focus:ring-2 disabled:opacity-50"
                       />
-                      <span className="text-[14px] font-bold text-slate-800 group-hover:text-teal-700 transition-colors">Tiền mặt tại quầy</span>
+                      <span className="text-[14px] font-bold patient-data group-hover:text-teal-700 transition-colors">Tiền mặt tại quầy</span>
                     </label>
                     <label className="flex items-center gap-2.5 cursor-pointer group">
                       <input
@@ -745,7 +745,7 @@ export default function AvailableSlots() {
                         disabled={isExpired}
                         className="w-4 h-4 text-teal-600 border-slate-350 focus:ring-teal-500/30 focus:ring-2 disabled:opacity-50"
                       />
-                      <span className="text-[14px] font-bold text-slate-800 group-hover:text-teal-700 transition-colors">Chuyển khoản (NH)</span>
+                      <span className="text-[14px] font-bold patient-data group-hover:text-teal-700 transition-colors">Chuyển khoản (NH)</span>
                     </label>
                   </div>
                 </div>

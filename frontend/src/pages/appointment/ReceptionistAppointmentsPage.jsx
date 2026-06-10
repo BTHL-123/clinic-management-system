@@ -172,7 +172,18 @@ export default function ReceptionistAppointmentsPage() {
 
       {/* Data Table */}
       <div className="table-wrapper">
-        <table className="data-table">
+        <table className="data-table fixed-table">
+          <colgroup>
+            <col style={{ width: "12%" }} />
+            <col style={{ width: "15%" }} />
+            <col style={{ width: "13%" }} />
+            <col style={{ width: "14%" }} />
+            <col style={{ width: "11%" }} />
+            <col style={{ width: "9%" }} />
+            <col style={{ width: "12%" }} />
+            <col style={{ width: "8%" }} />
+            <col style={{ width: "9%" }} />
+          </colgroup>
           <thead>
             <tr>
               <th>Mã Lịch Hẹn</th>

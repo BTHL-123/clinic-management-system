@@ -33,6 +33,7 @@ import {
   Settings,
   ChevronDown,
   ChevronRight,
+  TrendingUp,
 } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
@@ -131,7 +132,7 @@ const adminMenuGroups = [
   {
     key: "reports",
     label: "Báo cáo",
-    icon: CreditCard,
+    icon: TrendingUp,
     items: [
       { to: "/dashboard/payments", label: "Doanh thu" },
       { to: "/dashboard/invoices", label: "Hóa đơn" },

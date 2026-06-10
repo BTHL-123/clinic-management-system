@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Edit, HeartPulse, Plus, Search, Trash2, X } from "lucide-react";
 import {
   createMedicalService,
@@ -157,17 +157,17 @@ export default function MedicalServiceManagement() {
   return (
     <>
       {/* ── Page Header ────────────────────────────────── */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">
-            <HeartPulse size={26} />
-            Quản lý Dịch vụ y tế
+      <div className="flex flex-col items-center w-full mb-6">
+        <div className="flex flex-col items-center">
+          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
+            <span className="text-white"><HeartPulse size={26} /></span>
+            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Quản lý Dịch vụ y tế</span>
           </h1>
-          <p className="muted">
+          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
             Quản lý danh sách các dịch vụ y tế trong phòng khám.
           </p>
         </div>
-        <button className="primary-button" onClick={openCreate}>
+        <button className="primary-button absolute right-0 top-1/2 -translate-y-1/2" onClick={openCreate}>
           <Plus size={16} />
           Thêm dịch vụ
         </button>
@@ -189,7 +189,17 @@ export default function MedicalServiceManagement() {
 
       {/* ── Table ──────────────────────────────────────── */}
       <div className="table-wrapper">
-        <table className="data-table">
+        <table className="data-table fixed-table">
+          <colgroup>
+            <col style={{ width: "4%" }} />
+            <col style={{ width: "11%" }} />
+            <col style={{ width: "22%" }} />
+            <col style={{ width: "11%" }} />
+            <col style={{ width: "11%" }} />
+            <col style={{ width: "12%" }} />
+            <col style={{ width: "11%" }} />
+            <col style={{ width: "10%" }} />
+          </colgroup>
           <thead>
             <tr>
               <th>#</th>

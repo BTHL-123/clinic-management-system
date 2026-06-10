@@ -5,7 +5,7 @@ import {
 } from "recharts";
 import { 
   DollarSign, CalendarDays, Pill, AlertTriangle, 
-  TrendingUp, Users, Activity, ChevronRight
+  TrendingUp, Users, Activity, ChevronRight, LayoutDashboard
 } from "lucide-react";
 import { 
   getRevenueSummary, getRevenueReport, getAppointmentReport, 
@@ -102,11 +102,12 @@ export default function DashboardHome() {
   return (
     <div className="admin-dashboard">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-        <div>
-          <h1 style={{ margin: "0 0 4px", fontSize: "1.5rem", fontWeight: 800, color: "#0f172a" }}>
-            Tổng quan Hệ thống
+        <div className="flex flex-col items-center w-full">
+          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
+            <span className="text-white"><LayoutDashboard size={26} /></span>
+            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Tổng quan Hệ thống</span>
           </h1>
-          <p style={{ margin: 0, color: "#64748b", fontSize: "14px" }}>
+          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
             Thống kê hoạt động và hiệu suất của phòng khám.
           </p>
         </div>
@@ -139,7 +140,7 @@ export default function DashboardHome() {
       {/* Summary Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "20px", marginBottom: "24px" }}>
         <div style={{ background: "#fff", padding: "20px", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
             <div>
               <p style={{ margin: 0, fontSize: "13px", color: "#64748b", fontWeight: 600 }}>TỔNG DOANH THU</p>
               <h3 style={{ margin: "8px 0 0", fontSize: "1.5rem", color: "#0f172a" }}>
@@ -157,7 +158,7 @@ export default function DashboardHome() {
         </div>
 
         <div style={{ background: "#fff", padding: "20px", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
             <div>
               <p style={{ margin: 0, fontSize: "13px", color: "#64748b", fontWeight: 600 }}>TỔNG LỊCH KHÁM</p>
               <h3 style={{ margin: "8px 0 0", fontSize: "1.5rem", color: "#0f172a" }}>
@@ -175,7 +176,7 @@ export default function DashboardHome() {
         </div>
 
         <div style={{ background: "#fff", padding: "20px", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
             <div>
               <p style={{ margin: 0, fontSize: "13px", color: "#64748b", fontWeight: 600 }}>GIÁ TRỊ TỒN KHO</p>
               <h3 style={{ margin: "8px 0 0", fontSize: "1.5rem", color: "#0f172a" }}>
@@ -192,7 +193,7 @@ export default function DashboardHome() {
         </div>
 
         <div style={{ background: "#fff", padding: "20px", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
             <div>
               <p style={{ margin: 0, fontSize: "13px", color: "#64748b", fontWeight: 600 }}>CẢNH BÁO HẠN DÙNG</p>
               <h3 style={{ margin: "8px 0 0", fontSize: "1.5rem", color: expiringBatches.length > 0 ? "#dc2626" : "#16a34a" }}>

@@ -31,6 +31,15 @@ public class AiChatController {
 
     private final AiChatService aiChatService;
 
+    @GetMapping
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<List<AiChatSessionResponse>>> getAllSessions(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        List<AiChatSessionResponse> response = aiChatService.getAllSessions(userDetails.getUser());
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<ApiResponse<AiChatSessionResponse>> createSession(
@@ -68,15 +77,7 @@ public class AiChatController {
             @PathVariable Long sessionId,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        AiSpecialtySuggestion suggestion = aiChatService.generateSuggestion(sessionId, userDetails.getUser());
-        
-        AiSpecialtySuggestionResponse response = new AiSpecialtySuggestionResponse(
-                suggestion.getSuggestionId(),
-                suggestion.getDepartment().getDepartmentId(),
-                suggestion.getDepartment().getDepartmentName(),
-                suggestion.getConfidenceScore().doubleValue(),
-                suggestion.getExplanation()
-        );
+        AiSpecialtySuggestionResponse response = aiChatService.generateSuggestion(sessionId, userDetails.getUser());
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

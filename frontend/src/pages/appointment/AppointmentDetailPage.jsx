@@ -152,7 +152,7 @@ export default function AppointmentDetailPage() {
 
       <div className={`${isPatientMode ? "patient-glass-card" : "light-glass-card"} p-6 md:p-8 w-full max-w-[600px] mx-auto`}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-          <h2 style={{ margin: 0, fontSize: "1.25rem", color: "#0f172a", fontWeight: 800 }}>Chi tiết lịch hẹn</h2>
+          <h2 className={isPatientMode ? "patient-section-title" : ""} style={{ margin: 0, fontSize: "1.25rem", color: isPatientMode ? undefined : "#0f172a", fontWeight: 800 }}>Chi tiết lịch hẹn</h2>
           <span style={{ padding: "4px 12px", borderRadius: "20px", background: appt.status === "CANCELLED" ? "#fee2e2" : "#e0f2fe", color: appt.status === "CANCELLED" ? "#991b1b" : "#0284c7", fontSize: "12px", fontWeight: 600 }}>
             {appt.status}
           </span>
@@ -160,30 +160,30 @@ export default function AppointmentDetailPage() {
 
         <div style={{ display: "grid", gap: "16px" }}>
           <div>
-            <div style={{ fontSize: "12px", color: "#475569", fontWeight: 600 }}>MÃ LỊCH HẸN</div>
-            <div style={{ fontSize: "15px", color: "#0f172a", fontWeight: 600 }}>{appt.appointmentCode}</div>
+            <div className={isPatientMode ? "patient-label" : ""} style={{ fontSize: "12px", color: isPatientMode ? undefined : "#475569", fontWeight: 600 }}>MÃ LỊCH HẸN</div>
+            <div className={isPatientMode ? "patient-data" : ""} style={{ fontSize: "15px", color: isPatientMode ? undefined : "#0f172a", fontWeight: 600 }}>{appt.appointmentCode}</div>
           </div>
           <div>
-            <div style={{ fontSize: "12px", color: "#475569", fontWeight: 600 }}>BỆNH NHÂN</div>
-            <div style={{ fontSize: "15px", color: "#0f172a", fontWeight: 600 }}>{appt.patientName}</div>
+            <div className={isPatientMode ? "patient-label" : ""} style={{ fontSize: "12px", color: isPatientMode ? undefined : "#475569", fontWeight: 600 }}>BỆNH NHÂN</div>
+            <div className={isPatientMode ? "patient-data" : ""} style={{ fontSize: "15px", color: isPatientMode ? undefined : "#0f172a", fontWeight: 600 }}>{appt.patientName}</div>
           </div>
           <div>
-            <div style={{ fontSize: "12px", color: "#475569", fontWeight: 600 }}>BÁC SĨ</div>
-            <div style={{ fontSize: "15px", color: "#0f172a", fontWeight: 600 }}>{appt.doctorName} - {appt.departmentName}</div>
+            <div className={isPatientMode ? "patient-label" : ""} style={{ fontSize: "12px", color: isPatientMode ? undefined : "#475569", fontWeight: 600 }}>BÁC SĨ</div>
+            <div className={isPatientMode ? "patient-data" : ""} style={{ fontSize: "15px", color: isPatientMode ? undefined : "#0f172a", fontWeight: 600 }}>{appt.doctorName} - {appt.departmentName}</div>
           </div>
           <div style={{ display: "flex", gap: "32px" }}>
             <div>
-              <div style={{ fontSize: "12px", color: "#475569", fontWeight: 600 }}>NGÀY KHÁM</div>
-              <div style={{ fontSize: "15px", color: "#0f172a", display: "flex", alignItems: "center", gap: "6px", fontWeight: 600 }}><CalendarDays size={16}/> {appt.appointmentDate}</div>
+              <div className={isPatientMode ? "patient-label" : ""} style={{ fontSize: "12px", color: isPatientMode ? undefined : "#475569", fontWeight: 600 }}>NGÀY KHÁM</div>
+              <div className={isPatientMode ? "patient-data" : ""} style={{ fontSize: "15px", color: isPatientMode ? undefined : "#0f172a", display: "flex", alignItems: "center", gap: "6px", fontWeight: 600 }}><CalendarDays size={16}/> {appt.appointmentDate}</div>
             </div>
             <div>
-              <div style={{ fontSize: "12px", color: "#475569", fontWeight: 600 }}>GIỜ KHÁM</div>
-              <div style={{ fontSize: "15px", color: "#0f172a", display: "flex", alignItems: "center", gap: "6px", fontWeight: 600 }}><Clock size={16}/> {appt.startTime?.substring(0,5)} - {appt.endTime?.substring(0,5)}</div>
+              <div className={isPatientMode ? "patient-label" : ""} style={{ fontSize: "12px", color: isPatientMode ? undefined : "#475569", fontWeight: 600 }}>GIỜ KHÁM</div>
+              <div className={isPatientMode ? "patient-data" : ""} style={{ fontSize: "15px", color: isPatientMode ? undefined : "#0f172a", display: "flex", alignItems: "center", gap: "6px", fontWeight: 600 }}><Clock size={16}/> {appt.startTime?.substring(0,5)} - {appt.endTime?.substring(0,5)}</div>
             </div>
           </div>
           <div>
-            <div style={{ fontSize: "12px", color: "#475569", fontWeight: 600 }}>LÝ DO KHÁM</div>
-            <div style={{ fontSize: "15px", color: "#0f172a", fontWeight: 600 }}>{appt.reasonForVisit || "—"}</div>
+            <div className={isPatientMode ? "patient-label" : ""} style={{ fontSize: "12px", color: isPatientMode ? undefined : "#475569", fontWeight: 600 }}>LÝ DO KHÁM</div>
+            <div className={isPatientMode ? "patient-data" : ""} style={{ fontSize: "15px", color: isPatientMode ? undefined : "#0f172a", fontWeight: 600 }}>{appt.reasonForVisit || "—"}</div>
           </div>
           {appt.status === "CANCELLED" && (
             <div style={{ background: "rgba(254, 242, 242, 0.5)", backdropFilter: "blur(4px)", padding: "12px", borderRadius: "12px", border: "1px solid rgba(254, 202, 202, 0.6)" }}>

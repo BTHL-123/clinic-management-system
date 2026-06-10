@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { Edit2, Plus, RefreshCw, Settings, Trash2, X } from "lucide-react";
 import {
   deleteSystemSetting,
@@ -165,12 +165,17 @@ export default function SystemSettingsPage() {
 
   return (
     <div className="page-stack">
-      <section className="page-heading">
-        <div>
-          <h1>Cấu hình hệ thống</h1>
-          <p className="muted">Quản lý các thiết lập vận hành dùng chung trong hệ thống.</p>
+      <div className="flex flex-col items-center w-full mb-6">
+        <div className="flex flex-col items-center">
+          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
+            <span className="text-white"><Settings size={26} /></span>
+            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Cấu hình hệ thống</span>
+          </h1>
+          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
+            Quản lý các thiết lập vận hành dùng chung trong hệ thống.
+          </p>
         </div>
-        <div className="heading-actions">
+        <div className="heading-actions absolute right-0 top-1/2 -translate-y-1/2">
           <button className="ghost-button" type="button" onClick={loadSettings} disabled={loading}>
             <RefreshCw size={17} />
             Làm mới
@@ -180,7 +185,7 @@ export default function SystemSettingsPage() {
             Thêm cấu hình
           </button>
         </div>
-      </section>
+      </div>
 
       <section className="panel">
         <div className="table-header" style={{ alignItems: "flex-start" }}>
@@ -215,7 +220,14 @@ export default function SystemSettingsPage() {
           <span className="muted">{pagination.totalElements} cấu hình</span>
         </div>
         <div className="table-wrapper">
-          <table className="data-table">
+          <table className="data-table fixed-table">
+            <colgroup>
+              <col style={{ width: "22%" }} />
+              <col style={{ width: "28%" }} />
+              <col style={{ width: "28%" }} />
+              <col style={{ width: "13%" }} />
+              <col style={{ width: "9%" }} />
+            </colgroup>
             <thead>
               <tr>
                 <th>Key</th>
