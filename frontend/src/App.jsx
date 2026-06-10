@@ -58,7 +58,7 @@ import LandingPage from "./pages/LandingPage.jsx";
 
 import DoctorHome from "./pages/dashboard/DoctorHome.jsx";
 import PharmacistHome from "./pages/dashboard/PharmacistHome.jsx";
-
+import LabTechnicianHome from "./pages/dashboard/LabTechnicianHome.jsx";
 function DashboardIndex() {
   const { user } = useAuth();
   const roles = user?.roles?.map((role) => role.roleName || role) || [];
@@ -75,7 +75,10 @@ function DashboardIndex() {
   if (roles.includes("PHARMACIST")) {
     return <PharmacistHome />;
   }
-  
+  if (roles.includes("LAB_TECHNICIAN")) {
+    return <LabTechnicianHome />;
+  }
+
   return <DashboardHome />;
 }
 

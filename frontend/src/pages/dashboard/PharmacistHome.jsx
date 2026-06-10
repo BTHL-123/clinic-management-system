@@ -106,10 +106,16 @@ export default function PharmacistHome() {
   return (
     <div className="w-full flex flex-col gap-8 pb-8">
       <div className="flex flex-col gap-1 mb-2 shrink-0 mt-4">
-        <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight drop-shadow-md">
+        <div className="flex items-center gap-2 text-teal-200 mb-2 font-medium">
+          <Pill size={18} className="animate-pulse" />
+          <span>Hệ thống Quản lý Dược phẩm</span>
+        </div>
+        <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-white tracking-tight drop-shadow-md">
           Tổng quan Kho & Cấp phát
         </h1>
-        <p className="text-slate-800 font-bold drop-shadow-sm">Theo dõi lượng tồn kho, lô thuốc và các đơn thuốc chờ xử lý.</p>
+        <p className="text-white/80 font-bold drop-shadow-sm text-[16px]">
+          Theo dõi lượng tồn kho, lô thuốc và các đơn thuốc chờ xử lý.
+        </p>
       </div>
 
       {error && (

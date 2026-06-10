@@ -8,6 +8,7 @@ import Sidebar from "../components/Sidebar.jsx";
 import DoctorSidebar from "./DoctorSidebar.jsx";
 import PharmacistSidebar from "./PharmacistSidebar.jsx";
 import PatientSidebar from "./PatientSidebar.jsx";
+import LabTechnicianSidebar from "./LabTechnicianSidebar.jsx";
 import bgImage from "../assets/images/background_2k.png";
 import patientBgImage from "../assets/images/patient_bg.png";
 
@@ -40,9 +41,10 @@ export default function DashboardLayout() {
 
   const isDoctor = roles.includes("DOCTOR");
   const isPharmacist = roles.includes("PHARMACIST");
-  const isPatientOnly = roles.includes("PATIENT") && !isDoctor && !isPharmacist;
-  const isAdminShell = roles.includes("ADMIN") && !isDoctor && !isPharmacist && !isPatientOnly;
-  const usePatientVisualShell = isPatientOnly || isAdminShell || isPharmacist;
+  const isLabTechnician = roles.includes("LAB_TECHNICIAN");
+  const isPatientOnly = roles.includes("PATIENT") && !isDoctor && !isPharmacist && !isLabTechnician;
+  const isAdminShell = roles.includes("ADMIN") && !isDoctor && !isPharmacist && !isPatientOnly && !isLabTechnician;
+  const usePatientVisualShell = isPatientOnly || isAdminShell || isPharmacist || isLabTechnician;
 
   return (
     <div className={`flex flex-col min-h-screen w-full relative selection:bg-teal-200 selection:text-teal-900 font-sans overflow-y-auto overflow-x-hidden ${usePatientVisualShell ? "patient-shell" : ""} ${isAdminShell ? "admin-shell" : ""}`}>
@@ -189,6 +191,8 @@ export default function DashboardLayout() {
             <PharmacistSidebar />
           ) : roles.includes("PATIENT") ? (
             <PatientSidebar />
+          ) : roles.includes("LAB_TECHNICIAN") ? (
+            <LabTechnicianSidebar />
           ) : (
             <Sidebar />
           )}
