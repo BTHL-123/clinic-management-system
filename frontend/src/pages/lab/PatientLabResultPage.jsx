@@ -23,8 +23,8 @@ function StatusBadge({ status }) {
 }
 
 function ResultValueCell({ value }) {
-  if (!value) return <span className="text-slate-500">—</span>;
-  return <strong className="text-slate-950 font-bold">{value}</strong>;
+  if (!value) return <span className="patient-data opacity-60">—</span>;
+  return <strong className="patient-data font-bold">{value}</strong>;
 }
 
 function LabRequestRow({ req }) {
@@ -39,8 +39,8 @@ function LabRequestRow({ req }) {
       >
         <FlaskConical size={16} className="text-teal-700" />
         <div className="flex-1">
-          <span className="font-extrabold text-slate-900">{req.requestCode}</span>
-          <span className="text-[12px] text-slate-600 font-semibold ml-2.5">
+          <span className="font-extrabold patient-data">{req.requestCode}</span>
+          <span className="text-[12px] patient-data font-semibold ml-2.5">
             {new Date(req.requestedAt).toLocaleDateString("vi-VN", {
               day: "2-digit", month: "2-digit", year: "numeric",
             })}
@@ -66,7 +66,7 @@ function LabRequestRow({ req }) {
               <thead>
                 <tr className="bg-black/5 border-b border-slate-300">
                   {["Tên xét nghiệm", "Mã XN", "Kết quả", "Đơn vị", "Khoảng bình thường", "Kết luận", "Trạng thái"].map((h) => (
-                    <th key={h} className="p-2.5 font-bold text-teal-800 whitespace-nowrap">
+                    <th key={h} className="p-2.5 font-bold patient-label whitespace-nowrap">
                       {h}
                     </th>
                   ))}
@@ -75,8 +75,8 @@ function LabRequestRow({ req }) {
               <tbody>
                 {req.items?.map((item) => (
                   <tr key={item.labRequestItemId} className="border-b border-slate-200/60 hover:bg-black/5 transition-colors">
-                    <td className="p-2.5 font-bold text-slate-900">{item.testName}</td>
-                    <td className="p-2.5 text-slate-600 font-medium">{item.testCode}</td>
+                    <td className="p-2.5 font-bold patient-data">{item.testName}</td>
+                    <td className="p-2.5 patient-data font-medium">{item.testCode}</td>
                     {item.labResult ? (
                       <>
                         <td className="p-2.5">

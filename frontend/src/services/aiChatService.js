@@ -1,5 +1,9 @@
 import axiosClient from "./axiosClient";
 
+export const getAllSessions = () => {
+  return axiosClient.get("/ai/chat-sessions");
+};
+
 export const createSession = (data) => {
   return axiosClient.post("/ai/chat-sessions", data);
 };

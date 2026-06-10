@@ -34,6 +34,18 @@ public class AiChatServiceImpl implements AiChatService {
     private final GeminiService geminiService;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
+    @Transactional(readOnly = true)
+    @Override
+    public List<AiChatSessionResponse> getAllSessions(User currentUser) {
+        Patient patient = patientRepository.findByUser_UserId(currentUser.getUserId())
+                .orElseThrow(() -> new BusinessException("Chỉ bệnh nhân mới có thể xem phiên tư vấn AI."));
+
+        return sessionRepository.findByPatientPatientIdOrderByCreatedAtDesc(patient.getPatientId())
+                .stream()
+                .map(s -> new AiChatSessionResponse(s.getAiChatSessionId(), s.getSessionType(), patient.getPatientId()))
+                .toList();
+    }
+
     @Transactional
     @Override
     public AiChatSessionResponse createSession(CreateAiChatSessionRequest request, User currentUser) {
@@ -76,8 +88,8 @@ public class AiChatServiceImpl implements AiChatService {
 
         // 4. Build response
         return new SendChatMessageResponse(
-                new SendChatMessageResponse.MessageDetail(savedPatientMsg.getAiChatMessageId(), savedPatientMsg.getMessageText()),
-                new SendChatMessageResponse.MessageDetail(savedAiMsg.getAiChatMessageId(), savedAiMsg.getMessageText())
+                new SendChatMessageResponse.MessageDetail(savedPatientMsg.getAiChatMessageId(), savedPatientMsg.getMessageText(), savedPatientMsg.getSenderType(), savedPatientMsg.getCreatedAt()),
+                new SendChatMessageResponse.MessageDetail(savedAiMsg.getAiChatMessageId(), savedAiMsg.getMessageText(), savedAiMsg.getSenderType(), savedAiMsg.getCreatedAt())
         );
     }
 
@@ -89,13 +101,13 @@ public class AiChatServiceImpl implements AiChatService {
         validateSessionOwner(session, currentUser);
 
         return session.getMessages().stream()
-                .map(msg -> new SendChatMessageResponse.MessageDetail(msg.getAiChatMessageId(), msg.getMessageText()))
+                .map(msg -> new SendChatMessageResponse.MessageDetail(msg.getAiChatMessageId(), msg.getMessageText(), msg.getSenderType(), msg.getCreatedAt()))
                 .toList();
     }
 
     @Transactional
     @Override
-    public AiSpecialtySuggestion generateSuggestion(Long sessionId, User currentUser) {
+    public AiSpecialtySuggestionResponse generateSuggestion(Long sessionId, User currentUser) {
         AiChatSession session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session not found"));
         validateSessionOwner(session, currentUser);
@@ -109,8 +121,10 @@ public class AiChatServiceImpl implements AiChatService {
         String jsonResult = geminiService.analyzeSymptoms(session.getMessages());
         
         String departmentName = "Khám tổng quát";
-        java.math.BigDecimal score = java.math.BigDecimal.valueOf(80.0);
-        String explanation = "Dựa trên các triệu chứng cơ bản, chúng tôi đề xuất bạn khám tổng quát để được chẩn đoán chính xác hơn.";
+        java.math.BigDecimal score = java.math.BigDecimal.valueOf(75.0);
+        String explanation = "Hệ thống chưa đủ thông tin để định hướng. Vui lòng cung cấp thêm triệu chứng.";
+        String message = "";
+        List<AiSpecialtySuggestionResponse.Recommendation> recommendations = new java.util.ArrayList<>();
 
         try {
             // Strip markdown backticks if any (e.g. ```json ... ```)
@@ -125,20 +139,44 @@ public class AiChatServiceImpl implements AiChatService {
             }
 
             com.fasterxml.jackson.databind.JsonNode root = objectMapper.readTree(jsonResult.trim());
-            if (root.has("departmentName")) {
-                departmentName = root.get("departmentName").asText();
+            if (root.has("message")) {
+                message = root.get("message").asText();
             }
-            if (root.has("confidenceScore")) {
-                score = java.math.BigDecimal.valueOf(root.get("confidenceScore").asDouble());
-            }
-            if (root.has("explanation")) {
-                explanation = root.get("explanation").asText();
+            
+            if (root.has("recommendations") && root.get("recommendations").isArray()) {
+                for (com.fasterxml.jackson.databind.JsonNode recNode : root.get("recommendations")) {
+                    String dName = recNode.has("departmentName") ? recNode.get("departmentName").asText() : "";
+                    Double confScore = recNode.has("confidenceScore") ? recNode.get("confidenceScore").asDouble() : 0.0;
+                    String expl = recNode.has("explanation") ? recNode.get("explanation").asText() : "";
+                    if (!dName.isEmpty()) {
+                        recommendations.add(new AiSpecialtySuggestionResponse.Recommendation(dName, confScore, expl));
+                    }
+                }
+            } else if (root.has("departmentName")) {
+                // Fallback for old single-object response
+                String dName = root.get("departmentName").asText();
+                Double confScore = root.has("confidenceScore") ? root.get("confidenceScore").asDouble() : 80.0;
+                String expl = root.has("explanation") ? root.get("explanation").asText() : "";
+                recommendations.add(new AiSpecialtySuggestionResponse.Recommendation(dName, confScore, expl));
             }
         } catch (Exception e) {
             // Fallback if parsing fails
         }
 
+        if (!recommendations.isEmpty()) {
+            AiSpecialtySuggestionResponse.Recommendation topRec = recommendations.get(0);
+            departmentName = topRec.departmentName();
+            score = java.math.BigDecimal.valueOf(topRec.confidenceScore());
+            explanation = topRec.explanation();
+        } else {
+            if (message.isEmpty()) message = explanation;
+        }
+
         Department matchedDept = findMatchingDepartment(departments, departmentName);
+        if (matchedDept == null) {
+            matchedDept = departments.get(0);
+        }
+        
         if (!normalizeDepartmentName(matchedDept.getDepartmentName()).equals(normalizeDepartmentName(departmentName))) {
             explanation = "AI gợi ý " + departmentName + " nhưng chuyên khoa này chưa có trong danh mục hiện tại. "
                     + "Tạm thời hệ thống đề xuất " + matchedDept.getDepartmentName()
@@ -150,14 +188,24 @@ public class AiChatServiceImpl implements AiChatService {
         suggestion.setPatient(session.getPatient());
         suggestion.setDepartment(matchedDept);
         suggestion.setSymptomsText(session.getMessages().stream()
-                .filter(message -> "PATIENT".equalsIgnoreCase(message.getSenderType()))
+                .filter(msg -> "PATIENT".equalsIgnoreCase(msg.getSenderType()))
                 .map(AiChatMessage::getMessageText)
                 .reduce((left, right) -> left + "\n" + right)
                 .orElse(""));
         suggestion.setConfidenceScore(score);
         suggestion.setExplanation(explanation);
 
-        return suggestionRepository.save(suggestion);
+        suggestion = suggestionRepository.save(suggestion);
+        
+        return new AiSpecialtySuggestionResponse(
+            suggestion.getSuggestionId(),
+            suggestion.getDepartment().getDepartmentId(),
+            suggestion.getDepartment().getDepartmentName(),
+            suggestion.getConfidenceScore().doubleValue(),
+            suggestion.getExplanation(),
+            message,
+            recommendations
+        );
     }
 
     @Transactional
@@ -166,20 +214,19 @@ public class AiChatServiceImpl implements AiChatService {
         AiSpecialtySuggestion suggestion = suggestionRepository.findById(suggestionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy kết quả gợi ý chuyên khoa"));
 
-        if (suggestion.getPatient() == null || suggestion.getPatient().getUser() == null ||
-                !suggestion.getPatient().getUser().getUserId().equals(currentUser.getUserId())) {
-            throw new AccessDeniedException("Bạn không có quyền thao tác trên gợi ý này");
-        }
+        validateSessionOwner(suggestion.getSession(), currentUser);
 
         suggestion.setAcceptedByPatient(true);
-        AiSpecialtySuggestion saved = suggestionRepository.save(suggestion);
+        suggestionRepository.save(suggestion);
 
         return new AiSpecialtySuggestionResponse(
-                saved.getSuggestionId(),
-                saved.getDepartment().getDepartmentId(),
-                saved.getDepartment().getDepartmentName(),
-                saved.getConfidenceScore().doubleValue(),
-                saved.getExplanation()
+                suggestion.getSuggestionId(),
+                suggestion.getDepartment().getDepartmentId(),
+                suggestion.getDepartment().getDepartmentName(),
+                suggestion.getConfidenceScore().doubleValue(),
+                suggestion.getExplanation(),
+                "",
+                new java.util.ArrayList<>()
         );
     }
 

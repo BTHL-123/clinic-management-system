@@ -67,7 +67,7 @@ function AccountProfileCard({ isPatientMode }) {
           {avatarUrl ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" /> : <span>{initials}</span>}
         </div>
         <div className="flex-1 text-center md:text-left">
-          <h2 className="text-2xl font-bold text-[#0f766e] mb-1">Thông tin tài khoản</h2>
+          <h2 className="text-2xl font-bold patient-section-title mb-1">Thông tin tài khoản</h2>
           <p className="text-slate-700 mb-4 text-sm font-semibold">Thông tin này áp dụng cho mọi vai trò đăng nhập.</p>
           <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-300 bg-black/5 hover:bg-black/10 text-slate-900 transition-colors cursor-pointer text-sm font-bold w-fit mx-auto md:mx-0">
             <Camera size={16} />
@@ -83,7 +83,7 @@ function AccountProfileCard({ isPatientMode }) {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="accountFullName" className="text-sm font-bold text-[#0f766e]">Họ và tên</label>
+            <label htmlFor="accountFullName" className="text-sm font-bold patient-label">Họ và tên</label>
             <input
               id="accountFullName"
               className="patient-glass-input px-4 py-2.5 focus:border-teal-400 !text-black"
@@ -93,7 +93,7 @@ function AccountProfileCard({ isPatientMode }) {
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="accountPhone" className="text-sm font-bold text-[#0f766e]">Số điện thoại</label>
+            <label htmlFor="accountPhone" className="text-sm font-bold patient-label">Số điện thoại</label>
             <input
               id="accountPhone"
               className="patient-glass-input px-4 py-2.5 focus:border-teal-400 !text-black"
@@ -102,12 +102,12 @@ function AccountProfileCard({ isPatientMode }) {
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="accountEmail" className="text-sm font-bold text-[#0f766e]">Email</label>
-            <input id="accountEmail" className="patient-glass-input px-4 py-2.5 disabled:opacity-60 !text-black" value={user?.email || ""} disabled />
+            <label htmlFor="accountEmail" className="text-sm font-bold patient-label">Email</label>
+            <input id="accountEmail" className="patient-glass-input px-4 py-2.5 disabled:opacity-60" value={user?.email || ""} disabled />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="accountRoles" className="text-sm font-bold text-[#0f766e]">Vai trò</label>
-            <input id="accountRoles" className="patient-glass-input px-4 py-2.5 disabled:opacity-60 !text-black" value={user?.roles?.join(", ") || ""} disabled />
+            <label htmlFor="accountRoles" className="text-sm font-bold patient-label">Vai trò</label>
+            <input id="accountRoles" className="patient-glass-input px-4 py-2.5 disabled:opacity-60" value={user?.roles?.join(", ") || ""} disabled />
           </div>
         </div>
         <div className="flex justify-end mt-2">
@@ -149,17 +149,15 @@ export default function ProfilePage() {
           color: #0f766e !important;
         }
       `}</style>
-      <div className={usePatientVisualShell ? "w-full mb-10 relative flex flex-col sm:flex-row justify-center items-center min-h-[80px] mt-4" : "w-full mb-10 flex flex-col items-center"}>
-        <div className={usePatientVisualShell ? "w-full sm:absolute sm:left-0 sm:top-4 flex justify-start mb-4 sm:mb-0 px-4 sm:px-0" : ""}>
+      <div className="w-full mb-10 relative flex flex-col sm:flex-row justify-center items-center min-h-[80px] mt-4">
+        <div className="w-full sm:absolute sm:left-0 sm:top-4 flex justify-start mb-4 sm:mb-0 px-4 sm:px-0">
           <button
             onClick={() => navigate("/dashboard", { state: { activeClusterId: "settings" } })}
-            className={usePatientVisualShell
-              ? "w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md border border-white/20 flex items-center justify-center shadow-sm transition-all"
-              : "bg-white/10 hover:bg-white/20 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm self-start mb-6"}
+            className="bg-white/10 hover:bg-white/20 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm"
             title="Quay lại"
           >
-            <ArrowLeft size={usePatientVisualShell ? 18 : 18} />
-            {!usePatientVisualShell && "Quay lại Màn hình chính"}
+            <ArrowLeft size={18} />
+            Quay lại
           </button>
         </div>
         <div className="flex flex-col items-center text-center mt-2 w-full px-4">

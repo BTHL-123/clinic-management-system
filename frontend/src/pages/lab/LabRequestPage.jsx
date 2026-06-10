@@ -235,15 +235,15 @@ export default function LabRequestPage() {
                     </td>
                     <td className="p-4 pr-6 text-center">
                       {req.status === "REQUESTED" && (
-                        <button
-                          disabled={actionLoading === req.labRequestId}
-                          onClick={() => handleAccept(req.labRequestId)}
-                          className={`bg-blue-100 hover:bg-blue-200 text-blue-700 border border-blue-200 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-colors shadow-sm mx-auto ${actionLoading === req.labRequestId ? "opacity-50 cursor-not-allowed" : ""
-                            }`}
-                        >
-                          <CheckCircle size={14} />
-                          {actionLoading === req.labRequestId ? "Đang xử lý..." : "Tiếp nhận"}
-                        </button>
+                         <button
+                           disabled={actionLoading === req.labRequestId}
+                           onClick={() => handleAccept(req.labRequestId)}
+                           className={`bg-blue-100 hover:bg-blue-200 text-blue-700 border border-blue-200 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-colors shadow-sm mx-auto ${actionLoading === req.labRequestId ? "opacity-50 cursor-not-allowed" : ""
+                             }`}
+                         >
+                           <CheckCircle size={14} />
+                           {actionLoading === req.labRequestId ? "Đang xử lý..." : "Tiếp nhận"}
+                         </button>
                       )}
                     </td>
                   </tr>

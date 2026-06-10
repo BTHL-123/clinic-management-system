@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Stethoscope, RefreshCw, Play, PhoneCall, SkipForward, CheckCircle } from "lucide-react";
+import { Stethoscope, RefreshCw, Play, PhoneCall, SkipForward, CheckCircle, ArrowLeft } from "lucide-react";
 import { useAuth } from "../../context/useAuth";
 import { getMyDoctorProfile } from "../../services/doctorService";
 import queueTicketService from "../../services/queueTicketService";
@@ -7,23 +7,23 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "../../context/useToast.js";
 
 const STATUS_LABEL = {
-  WAITING: { label: "Chờ khám", color: "text-amber-300", bg: "bg-amber-500/20", border: "border-amber-500/30" },
-  CALLED: { label: "Đã gọi", color: "text-blue-300", bg: "bg-blue-500/20", border: "border-blue-500/30" },
-  IN_EXAMINATION: { label: "Đang khám", color: "text-purple-300", bg: "bg-purple-500/20", border: "border-purple-500/30" },
-  WAITING_LAB: { label: "Chờ XN", color: "text-cyan-300", bg: "bg-cyan-500/20", border: "border-cyan-500/30" },
-  DONE: { label: "Hoàn thành", color: "text-emerald-300", bg: "bg-emerald-500/20", border: "border-emerald-500/30" },
-  SKIPPED: { label: "Bỏ qua", color: "text-slate-300", bg: "bg-slate-500/20", border: "border-slate-500/30" },
-  CANCELLED: { label: "Đã hủy", color: "text-rose-300", bg: "bg-rose-500/20", border: "border-rose-500/30" },
+  WAITING: { label: "Chờ khám", color: "text-amber-800", bg: "bg-amber-500/20", border: "border-amber-500/30" },
+  CALLED: { label: "Đã gọi", color: "text-blue-800", bg: "bg-blue-500/20", border: "border-blue-500/30" },
+  IN_EXAMINATION: { label: "Đang khám", color: "text-purple-800", bg: "bg-purple-500/20", border: "border-purple-500/30" },
+  WAITING_LAB: { label: "Chờ XN", color: "text-cyan-800", bg: "bg-cyan-500/20", border: "border-cyan-500/30" },
+  DONE: { label: "Hoàn thành", color: "text-emerald-800", bg: "bg-emerald-500/20", border: "border-emerald-500/30" },
+  SKIPPED: { label: "Bỏ qua", color: "text-slate-800", bg: "bg-slate-500/20", border: "border-slate-500/30" },
+  CANCELLED: { label: "Đã hủy", color: "text-rose-800", bg: "bg-rose-500/20", border: "border-rose-500/30" },
 };
 
 const PRIORITY_LABEL = {
-  NORMAL: { label: "Thường", color: "text-slate-300" },
-  PRIORITY: { label: "Ưu tiên", color: "text-amber-400" },
-  EMERGENCY: { label: "Cấp cứu", color: "text-rose-400" },
+  NORMAL: { label: "Thường", color: "text-slate-700" },
+  PRIORITY: { label: "Ưu tiên", color: "text-amber-700 font-extrabold" },
+  EMERGENCY: { label: "Cấp cứu", color: "text-rose-700 font-black" },
 };
 
 function StatusBadge({ status }) {
-  const s = STATUS_LABEL[status] || { label: status, color: "text-slate-300", bg: "bg-slate-500/20", border: "border-slate-500/30" };
+  const s = STATUS_LABEL[status] || { label: status, color: "text-slate-800", bg: "bg-slate-500/20", border: "border-slate-500/30" };
   return (
     <span className={`${s.bg} ${s.color} border ${s.border} px-2.5 py-1 rounded-full text-xs font-bold whitespace-nowrap`}>
       {s.label}
@@ -112,11 +112,25 @@ export default function ConsultationPage() {
   return (
     <div className="text-white flex flex-col h-full gap-6 pb-6">
       {/* Header */}
-      <div className="flex flex-col gap-2">
-        <h2 className="text-2xl font-bold flex items-center gap-3">
-          <Stethoscope size={28} className="text-teal-400" />
-          Phòng khám — Hàng đợi bệnh nhân
-        </h2>
+      <div className="w-full relative flex flex-col items-center mb-6">
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 active:scale-95 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm group"
+        >
+          <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
+          Quay lại
+        </button>
+        <div className="flex flex-col items-center">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-white flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg text-center">
+            <span className="text-white"><Stethoscope size={28} /></span>
+            Phòng khám — Hàng đợi bệnh nhân
+          </h2>
+          {doctor && (
+            <p className="text-white/70 font-medium mt-3 text-center drop-shadow-sm">
+              Bác sĩ phụ trách: {doctor.fullName || doctor.user?.fullName}
+            </p>
+          )}
+        </div>
       </div>
 
       {error && (
@@ -128,12 +142,12 @@ export default function ConsultationPage() {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: "Đang chờ / Đã gọi", value: waitingCount, color: "text-amber-300", bg: "bg-amber-500/10 border border-amber-500/20" },
-          { label: "Đang khám", value: inExamCount, color: "text-purple-300", bg: "bg-purple-500/10 border border-purple-500/20" },
-          { label: "Hoàn thành hôm nay", value: doneCount, color: "text-emerald-300", bg: "bg-emerald-500/10 border border-emerald-500/20" },
+          { label: "Đang chờ / Đã gọi", value: waitingCount, color: "text-amber-800", bg: "patient-glass-panel border-amber-500/20" },
+          { label: "Đang khám", value: inExamCount, color: "text-purple-800", bg: "patient-glass-panel border-purple-500/20" },
+          { label: "Hoàn thành hôm nay", value: doneCount, color: "text-emerald-800", bg: "patient-glass-panel border-emerald-500/20" },
         ].map((s) => (
           <div key={s.label} className={`${s.bg} rounded-[1.5rem] p-5 backdrop-blur-xl flex justify-between items-center shadow-lg transition-transform hover:-translate-y-1`}>
-            <span className="text-sm font-semibold text-white/70">{s.label}</span>
+            <span className="text-sm font-semibold text-teal-700">{s.label}</span>
             <span className={`text-3xl font-extrabold ${s.color}`}>{s.value}</span>
           </div>
         ))}
@@ -145,22 +159,22 @@ export default function ConsultationPage() {
           type="date"
           value={selectedDate}
           onChange={(e) => setSelectedDate(e.target.value)}
-          className="bg-white/5 border border-white/10 text-white rounded-xl px-4 py-2.5 outline-none focus:border-teal-500/50 focus:bg-white/10 transition-all font-medium [color-scheme:dark]"
+          className="patient-glass-input text-slate-900 placeholder-teal-700/50 text-sm rounded-xl py-2.5 px-4 focus:outline-none focus:border-teal-500/50 font-semibold shadow-inner [color-scheme:light]"
         />
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="bg-white/5 border border-white/10 text-white rounded-xl px-4 py-2.5 outline-none focus:border-teal-500/50 focus:bg-white/10 transition-all font-medium appearance-none min-w-[160px]"
+          className="patient-glass-input text-slate-900 text-sm rounded-xl py-2.5 px-4 focus:outline-none focus:border-teal-500/50 font-semibold shadow-inner min-w-[160px] [&>option]:bg-white [&>option]:text-slate-900"
         >
-          <option value="" className="bg-slate-800">Tất cả trạng thái</option>
-          <option value="WAITING" className="bg-slate-800">Chờ khám</option>
-          <option value="CALLED" className="bg-slate-800">Đã gọi</option>
-          <option value="IN_EXAMINATION" className="bg-slate-800">Đang khám</option>
-          <option value="DONE" className="bg-slate-800">Hoàn thành</option>
-          <option value="SKIPPED" className="bg-slate-800">Bỏ qua</option>
+          <option value="">Tất cả trạng thái</option>
+          <option value="WAITING">Chờ khám</option>
+          <option value="CALLED">Đã gọi</option>
+          <option value="IN_EXAMINATION">Đang khám</option>
+          <option value="DONE">Hoàn thành</option>
+          <option value="SKIPPED">Bỏ qua</option>
         </select>
         <button
-          className="bg-white/10 hover:bg-white/20 text-white font-bold px-5 py-2.5 rounded-xl transition-all flex items-center gap-2"
+          className="patient-glass-panel-sm text-teal-700 hover:text-teal-900 font-bold px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 border border-teal-600/20"
           onClick={fetchQueue}
         >
           <RefreshCw size={16} className={loading ? "animate-spin" : ""} /> Làm mới
@@ -168,10 +182,10 @@ export default function ConsultationPage() {
       </div>
 
       {/* Queue Table */}
-      <div className="flex-1 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] shadow-xl flex flex-col min-h-0 overflow-hidden">
+      <div className="flex-1 patient-glass-panel rounded-[3rem] p-8 md:p-10 shadow-[0_12px_40px_rgba(0,0,0,0.22)] border-0 w-full flex flex-col min-h-0 overflow-hidden">
         <div className="flex-1 overflow-auto custom-scrollbar">
           <table className="w-full text-left border-collapse whitespace-nowrap">
-            <thead className="bg-white/5 border-b border-white/10 text-white/80 text-sm sticky top-0 z-10 backdrop-blur-md">
+            <thead className="bg-white/5 border-b border-slate-900/10 text-[#0f766e] text-sm sticky top-0 z-10 backdrop-blur-md">
               <tr>
                 <th className="p-4 font-semibold text-center w-20">STT</th>
                 <th className="p-4 font-semibold">Bệnh nhân</th>
@@ -184,25 +198,25 @@ export default function ConsultationPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="p-8 text-center text-white/50">Đang tải hàng đợi...</td>
+                  <td colSpan={6} className="p-8 text-center text-slate-500 font-bold">Đang tải hàng đợi...</td>
                 </tr>
               ) : queue.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-8 text-center text-white/50">Không có bệnh nhân trong hàng đợi.</td>
+                  <td colSpan={6} className="p-8 text-center text-slate-500 font-bold">Không có bệnh nhân trong hàng đợi.</td>
                 </tr>
               ) : (
                 queue.map((ticket) => {
                   const isActing = actionLoading === ticket.queueTicketId;
                   const priority = PRIORITY_LABEL[ticket.priorityLevel] || PRIORITY_LABEL.NORMAL;
                   return (
-                    <tr key={ticket.queueTicketId} className={`border-b border-white/5 transition-colors ${ticket.queueStatus === "IN_EXAMINATION" ? "bg-purple-500/10 hover:bg-purple-500/20" : "hover:bg-white/5"
+                    <tr key={ticket.queueTicketId} className={`border-b border-slate-900/10 transition-colors ${ticket.queueStatus === "IN_EXAMINATION" ? "bg-purple-500/15 hover:bg-purple-500/25" : "hover:bg-white/30"
                       }`}>
-                      <td className="p-4 text-center font-extrabold text-xl text-teal-400">
+                      <td className="p-4 text-center font-extrabold text-xl text-teal-800">
                         {ticket.queueNumber}
                       </td>
                       <td className="p-4">
-                        <div className="font-bold text-white">{ticket.patientName || `Bệnh nhân #${ticket.patientId}`}</div>
-                        <div className="text-xs text-white/60 font-mono mt-0.5">ID: {ticket.patientId}</div>
+                        <div className="font-bold text-slate-900">{ticket.patientName || `Bệnh nhân #${ticket.patientId}`}</div>
+                        <div className="text-xs text-slate-500 font-mono mt-0.5">ID: {ticket.patientId}</div>
                       </td>
                       <td className="p-4">
                         <span className={`${priority.color} font-bold text-sm`}>
@@ -212,7 +226,7 @@ export default function ConsultationPage() {
                       <td className="p-4">
                         <StatusBadge status={ticket.queueStatus} />
                       </td>
-                      <td className="p-4 text-center text-white/70 text-sm font-medium">
+                      <td className="p-4 text-center text-slate-800 text-sm font-medium">
                         {ticket.estimatedWaitMinutes ?? "—"}
                       </td>
                       <td className="p-4">

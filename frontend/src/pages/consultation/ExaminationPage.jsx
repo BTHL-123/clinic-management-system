@@ -388,11 +388,13 @@ export default function ExaminationPage() {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
         <button
-          className="icon-button"
+          className="secondary-button"
           onClick={() => navigate("/dashboard/consultation")}
+          style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, padding: "6px 12px" }}
           title="Quay lại hàng đợi"
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={16} />
+          Quay lại
         </button>
         <Stethoscope size={20} />
         <h2 style={{ margin: 0, fontSize: 20 }}>
