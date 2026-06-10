@@ -166,6 +166,13 @@ export default function DoctorManagement() {
             Quản lý hồ sơ bác sĩ và phân công chuyên khoa.
           </p>
         </div>
+        <button
+          className="primary-button absolute right-0 top-1/2 -translate-y-1/2"
+          onClick={openCreate}
+        >
+          <Plus size={16} />
+          Thêm bác sĩ
+        </button>
       </div>
 
 

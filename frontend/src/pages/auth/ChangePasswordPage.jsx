@@ -7,7 +7,13 @@ import { changePassword } from "../../services/authService";
 export default function ChangePasswordPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isPatientMode = user?.roles?.includes("PATIENT");
+  const roles = user?.roles?.map((r) => r.roleName || r) || [];
+  const isDoctor = roles.includes("DOCTOR");
+  const isPharmacist = roles.includes("PHARMACIST");
+  const isLabTechnician = roles.includes("LAB_TECHNICIAN");
+  const isPatientOnly = roles.includes("PATIENT") && !isDoctor && !isPharmacist && !isLabTechnician;
+  const isAdminShell = roles.includes("ADMIN") && !isDoctor && !isPharmacist && !isPatientOnly && !isLabTechnician;
+  const usePatientVisualShell = isPatientOnly || isAdminShell || isPharmacist || isLabTechnician;
   const [form, setForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -42,38 +48,41 @@ export default function ChangePasswordPage() {
   };
 
   return (
-    <div className="max-w-[1100px] mx-auto w-full flex flex-col items-center">
-      <div className="w-full mb-10 flex flex-col items-center">
-        <button
-          onClick={() => navigate("/dashboard", { state: { activeClusterId: "settings" } })}
-          className={isPatientMode
-            ? "bg-white/10 hover:bg-white/20 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm self-start"
-            : "self-start inline-flex items-center gap-3 px-5 py-2.5 bg-white/90 hover:bg-white text-teal-900 font-extrabold border border-white shadow-md rounded-full hover:shadow-lg hover:-translate-x-0.5 transition-all duration-300 group"}
-        >
-          {isPatientMode ? (
-            <ArrowLeft size={18} />
-          ) : (
-            <div className="bg-teal-100/80 p-1.5 rounded-full text-teal-700 group-hover:bg-teal-200 transition-colors">
-              <ArrowLeft size={16} strokeWidth={2.5} className="group-hover:-translate-x-0.5 transition-transform" />
-            </div>
-          )}
-          Quay lại Màn hình chính
-        </button>
-        <div className="flex flex-col items-center text-center mt-2">
-          <h1 className={isPatientMode
+    <div className={usePatientVisualShell ? "max-w-[1100px] mx-auto w-full flex flex-col items-center pb-10" : "max-w-[1100px] mx-auto w-full flex flex-col items-center"}>
+      <div className={usePatientVisualShell ? "w-full mb-10 relative flex flex-col sm:flex-row justify-center items-center min-h-[80px] mt-4" : "w-full mb-10 flex flex-col items-center"}>
+        <div className={usePatientVisualShell ? "w-full sm:absolute sm:left-0 sm:top-4 flex justify-start mb-4 sm:mb-0 px-4 sm:px-0" : ""}>
+          <button
+            onClick={() => navigate("/dashboard", { state: { activeClusterId: "settings" } })}
+            className={usePatientVisualShell
+              ? "w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md border border-white/20 flex items-center justify-center shadow-sm transition-all"
+              : "self-start inline-flex items-center gap-3 px-5 py-2.5 bg-white/90 hover:bg-white text-teal-900 font-extrabold border border-white shadow-md rounded-full hover:shadow-lg hover:-translate-x-0.5 transition-all duration-300 group mb-6"}
+            title="Quay lại"
+          >
+            {usePatientVisualShell ? (
+              <ArrowLeft size={18} />
+            ) : (
+              <div className="bg-teal-100/80 p-1.5 rounded-full text-teal-700 group-hover:bg-teal-200 transition-colors flex items-center justify-center">
+                <ArrowLeft size={16} strokeWidth={2.5} className="group-hover:-translate-x-0.5 transition-transform" />
+              </div>
+            )}
+            {!usePatientVisualShell && "Quay lại Màn hình chính"}
+          </button>
+        </div>
+        <div className="flex flex-col items-center text-center mt-2 w-full px-4">
+          <h1 className={usePatientVisualShell
             ? "inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-4"
             : "inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/20 backdrop-blur-xl border border-white/40 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-4"}
           >
-            <KeyRound size={32} className={isPatientMode ? "text-teal-400 drop-shadow-md" : "text-teal-300 drop-shadow-md"} />
+            <KeyRound size={32} className={usePatientVisualShell ? "text-teal-400 drop-shadow-md" : "text-teal-300 drop-shadow-md"} />
             <span className="drop-shadow-md">Đổi mật khẩu</span>
           </h1>
-          <p className={isPatientMode ? "text-white/70 font-medium drop-shadow-sm text-[16px] max-w-[600px]" : "text-teal-50/90 font-medium drop-shadow-sm text-[16px] max-w-[600px]"}>
+          <p className={usePatientVisualShell ? "text-white/80 font-bold drop-shadow-sm text-[16px] max-w-[600px]" : "text-teal-50/90 font-medium drop-shadow-sm text-[16px] max-w-[600px]"}>
             Cập nhật mật khẩu tài khoản local của bạn để bảo mật tốt hơn.
           </p>
         </div>
       </div>
 
-      <div className={`${isPatientMode ? "patient-glass-card" : "light-glass-card"} p-6 md:p-8 w-full max-w-[500px] mx-auto mb-10`}>
+      <div className={`${usePatientVisualShell ? "patient-glass-panel rounded-[2rem]" : "light-glass-card"} p-6 md:p-8 w-full max-w-[600px] mb-10`}>
         <form className="form-stack" onSubmit={handleSubmit}>
           {error && <div className="error-box">{error}</div>}
           {notice && <div className="success-box">{notice}</div>}
@@ -82,7 +91,7 @@ export default function ChangePasswordPage() {
             <input
               id="currentPassword"
               type="password"
-              className={isPatientMode ? "patient-glass-input" : "light-glass-input"}
+              className={usePatientVisualShell ? "patient-glass-input" : "light-glass-input"}
               value={form.currentPassword}
               onChange={(event) => setForm({ ...form, currentPassword: event.target.value })}
               required
@@ -93,7 +102,7 @@ export default function ChangePasswordPage() {
             <input
               id="changeNewPassword"
               type="password"
-              className={isPatientMode ? "patient-glass-input" : "light-glass-input"}
+              className={usePatientVisualShell ? "patient-glass-input" : "light-glass-input"}
               minLength={6}
               value={form.newPassword}
               onChange={(event) => setForm({ ...form, newPassword: event.target.value })}
@@ -105,7 +114,7 @@ export default function ChangePasswordPage() {
             <input
               id="confirmPassword"
               type="password"
-              className={isPatientMode ? "patient-glass-input" : "light-glass-input"}
+              className={usePatientVisualShell ? "patient-glass-input" : "light-glass-input"}
               minLength={6}
               value={form.confirmPassword}
               onChange={(event) => setForm({ ...form, confirmPassword: event.target.value })}

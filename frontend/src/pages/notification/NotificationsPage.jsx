@@ -7,7 +7,13 @@ import { useAuth } from "../../context/useAuth";
 export default function NotificationsPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isPatientMode = user?.roles?.includes("PATIENT");
+  const roles = user?.roles?.map((r) => r.roleName || r) || [];
+  const isDoctor = roles.includes("DOCTOR");
+  const isPharmacist = roles.includes("PHARMACIST");
+  const isLabTechnician = roles.includes("LAB_TECHNICIAN");
+  const isPatientOnly = roles.includes("PATIENT") && !isDoctor && !isPharmacist && !isLabTechnician;
+  const isAdminShell = roles.includes("ADMIN") && !isDoctor && !isPharmacist && !isPatientOnly && !isLabTechnician;
+  const usePatientVisualShell = isPatientOnly || isAdminShell || isPharmacist || isLabTechnician;
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -94,38 +100,41 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="max-w-[1100px] mx-auto w-full flex flex-col items-center">
-      <div className="w-full mb-10 flex flex-col items-center">
-        <button
-          onClick={() => navigate("/dashboard", { state: { activeClusterId: "settings" } })}
-          className={isPatientMode
-            ? "bg-white/10 hover:bg-white/20 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm self-start"
-            : "self-start inline-flex items-center gap-3 px-5 py-2.5 bg-white/90 hover:bg-white text-teal-900 font-extrabold border border-white shadow-md rounded-full hover:shadow-lg hover:-translate-x-0.5 transition-all duration-300 group"}
-        >
-          {isPatientMode ? (
-            <ArrowLeft size={18} />
-          ) : (
-            <div className="bg-teal-100/80 p-1.5 rounded-full text-teal-700 group-hover:bg-teal-200 transition-colors">
-              <ArrowLeft size={16} strokeWidth={2.5} className="group-hover:-translate-x-0.5 transition-transform" />
-            </div>
-          )}
-          Quay lại Màn hình chính
-        </button>
-        <div className="flex flex-col items-center text-center mt-2">
-          <h1 className={isPatientMode
+    <div className={usePatientVisualShell ? "max-w-[1100px] mx-auto w-full flex flex-col items-center pb-10" : "max-w-[1100px] mx-auto w-full flex flex-col items-center pb-10"}>
+      <div className={usePatientVisualShell ? "w-full mb-10 relative flex flex-col sm:flex-row justify-center items-center min-h-[80px] mt-4" : "w-full mb-10 flex flex-col items-center"}>
+        <div className={usePatientVisualShell ? "w-full sm:absolute sm:left-0 sm:top-4 flex justify-start mb-4 sm:mb-0 px-4 sm:px-0" : ""}>
+          <button
+            onClick={() => navigate("/dashboard", { state: { activeClusterId: "settings" } })}
+            className={usePatientVisualShell
+              ? "w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md border border-white/20 flex items-center justify-center shadow-sm transition-all"
+              : "self-start inline-flex items-center gap-3 px-5 py-2.5 bg-white/90 hover:bg-white text-teal-900 font-extrabold border border-white shadow-md rounded-full hover:shadow-lg hover:-translate-x-0.5 transition-all duration-300 group mb-6"}
+            title="Quay lại"
+          >
+            {usePatientVisualShell ? (
+              <ArrowLeft size={18} />
+            ) : (
+              <div className="bg-teal-100/80 p-1.5 rounded-full text-teal-700 group-hover:bg-teal-200 transition-colors flex items-center justify-center">
+                <ArrowLeft size={16} strokeWidth={2.5} className="group-hover:-translate-x-0.5 transition-transform" />
+              </div>
+            )}
+            {!usePatientVisualShell && "Quay lại Màn hình chính"}
+          </button>
+        </div>
+        <div className="flex flex-col items-center text-center mt-2 w-full px-4">
+          <h1 className={usePatientVisualShell
             ? "inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-4"
             : "inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/20 backdrop-blur-xl border border-white/40 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-4"}
           >
-            <Bell size={32} className={isPatientMode ? "text-teal-400 drop-shadow-md" : "text-teal-300 drop-shadow-md"} />
+            <Bell size={32} className={usePatientVisualShell ? "text-teal-400 drop-shadow-md" : "text-teal-300 drop-shadow-md"} />
             <span className="drop-shadow-md">Thông báo của tôi</span>
           </h1>
-          <p className={isPatientMode ? "text-white/70 font-medium drop-shadow-sm text-[16px] max-w-[600px]" : "text-teal-50/90 font-medium drop-shadow-sm text-[16px] max-w-[600px]"}>
+          <p className={usePatientVisualShell ? "text-white/80 font-bold drop-shadow-sm text-[16px] max-w-[600px]" : "text-teal-50/90 font-medium drop-shadow-sm text-[16px] max-w-[600px]"}>
             Nhận và xem các cập nhật về lịch khám hoặc thông báo từ hệ thống.
           </p>
         </div>
       </div>
 
-      <div className={`${isPatientMode ? "patient-glass-card" : "light-glass-card"} p-6 md:p-8 w-full max-w-[800px] mx-auto mb-10`}>
+      <div className={`${usePatientVisualShell ? "patient-glass-panel rounded-[2rem]" : "light-glass-card"} p-6 md:p-8 w-full max-w-[800px] mx-auto mb-10`}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", gap: "12px", width: "100%" }}>
           <div>
             {unreadCount > 0 && (
@@ -148,7 +157,7 @@ export default function NotificationsPage() {
           </div>
         </div>
 
-        <div className={isPatientMode ? "patient-glass-subcard" : "light-glass-subcard"} style={{ padding: 0, overflow: "hidden", border: "1px solid rgba(255, 255, 255, 0.45)" }}>
+        <div className={usePatientVisualShell ? "patient-glass-subcard" : "light-glass-subcard"} style={{ padding: 0, overflow: "hidden", border: "1px solid rgba(255, 255, 255, 0.45)" }}>
           <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(255, 255, 255, 0.25)", display: "flex", gap: "12px", background: "rgba(255, 255, 255, 0.2)" }}>
             <button
               onClick={() => setFilterUnread(false)}
@@ -187,13 +196,13 @@ export default function NotificationsPage() {
           {loading && notifications.length === 0 ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "60px 20px" }}>
               <Loader2 className="animate-spin" size={32} style={{ color: "#00b5f1", marginBottom: 12 }} />
-              <span className={isPatientMode ? "text-white/60" : "muted"}>Đang tải thông báo...</span>
+              <span className={usePatientVisualShell ? "text-white/60" : "muted"}>Đang tải thông báo...</span>
             </div>
           ) : notifications.length === 0 ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "80px 20px", textAlign: "center" }}>
               <div style={{ fontSize: "3rem", marginBottom: 16 }}>🔔</div>
-              <h3 style={{ margin: "0 0 8px", color: isPatientMode ? "white" : "#1e293b", fontWeight: 700 }}>Hộp thư của bạn đang trống</h3>
-              <p className={isPatientMode ? "text-white/60" : "muted"} style={{ maxWidth: 360, margin: 0 }}>
+              <h3 style={{ margin: "0 0 8px", color: usePatientVisualShell ? "white" : "#1e293b", fontWeight: 700 }}>Hộp thư của bạn đang trống</h3>
+              <p className={usePatientVisualShell ? "text-white/60" : "muted"} style={{ maxWidth: 360, margin: 0 }}>
                 {filterUnread ? "Không tìm thấy thông báo chưa đọc nào." : "Bạn không có thông báo nào vào lúc này."}
               </p>
             </div>
@@ -220,11 +229,11 @@ export default function NotificationsPage() {
                   {getNotificationIcon(item.type)}
                   <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 12 }}>
-                      <h3 style={{ margin: "0 0 6px", fontSize: "1.05rem", fontWeight: !item.isRead ? "750" : "600", color: isPatientMode ? "white" : "#0f172a" }}>
+                      <h3 style={{ margin: "0 0 6px", fontSize: "1.05rem", fontWeight: !item.isRead ? "750" : "600", color: usePatientVisualShell ? "white" : "#0f172a" }}>
                         {item.title}
                       </h3>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span className={isPatientMode ? "text-white/50" : "muted"} style={{ fontSize: "0.8rem", marginBottom: 0 }}>{formatDate(item.createdAt)}</span>
+                        <span className={usePatientVisualShell ? "text-white/50" : "muted"} style={{ fontSize: "0.8rem", marginBottom: 0 }}>{formatDate(item.createdAt)}</span>
                         {!item.isRead && (
                           <button
                             onClick={(e) => {
@@ -240,7 +249,7 @@ export default function NotificationsPage() {
                         )}
                       </div>
                     </div>
-                    <p style={{ margin: 0, fontSize: "0.92rem", color: isPatientMode ? "rgba(255,255,255,0.8)" : "#475569", lineHeight: 1.5 }}>
+                    <p style={{ margin: 0, fontSize: "0.92rem", color: usePatientVisualShell ? "rgba(255,255,255,0.8)" : "#475569", lineHeight: 1.5 }}>
                       {item.message}
                     </p>
                   </div>

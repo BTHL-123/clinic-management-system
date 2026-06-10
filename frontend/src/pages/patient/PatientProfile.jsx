@@ -123,7 +123,7 @@ export default function PatientProfile() {
         <form className="form-stack" onSubmit={handleSubmit}>
           
           <div style={{ marginBottom: 20 }}>
-            <h3 style={{ borderBottom: "1px solid rgba(255,255,255,0.3)", paddingBottom: 8, marginBottom: 16, fontWeight: 700, color: "#1e293b" }}>Thông tin cơ bản</h3>
+            <h3 className="patient-section-title" style={{ borderBottom: "1px solid rgba(255,255,255,0.3)", paddingBottom: 8, marginBottom: 16 }}>Thông tin cơ bản</h3>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               
               <div className="field">
@@ -179,7 +179,7 @@ export default function PatientProfile() {
           </div>
           
           <div style={{ marginBottom: 20 }}>
-            <h3 style={{ borderBottom: "1px solid rgba(255,255,255,0.3)", paddingBottom: 8, marginBottom: 16, fontWeight: 700, color: "#1e293b" }}>Liên hệ khẩn cấp</h3>
+            <h3 className="patient-section-title" style={{ borderBottom: "1px solid rgba(255,255,255,0.3)", paddingBottom: 8, marginBottom: 16 }}>Liên hệ khẩn cấp</h3>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <div className="field">
                 <label>Tên người liên hệ</label>
@@ -193,7 +193,7 @@ export default function PatientProfile() {
           </div>
           
           <div style={{ marginBottom: 20 }}>
-            <h3 style={{ borderBottom: "1px solid rgba(255,255,255,0.3)", paddingBottom: 8, marginBottom: 16, fontWeight: 700, color: "#1e293b" }}>Thông tin y tế</h3>
+            <h3 className="patient-section-title" style={{ borderBottom: "1px solid rgba(255,255,255,0.3)", paddingBottom: 8, marginBottom: 16 }}>Thông tin y tế</h3>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <div className="field">
                 <label>Nhóm máu</label>

@@ -175,6 +175,16 @@ export default function SystemSettingsPage() {
             Quản lý các thiết lập vận hành dùng chung trong hệ thống.
           </p>
         </div>
+        <div className="heading-actions absolute right-0 top-1/2 -translate-y-1/2">
+          <button className="ghost-button" type="button" onClick={loadSettings} disabled={loading}>
+            <RefreshCw size={17} />
+            Làm mới
+          </button>
+          <button className="primary-button" type="button" onClick={openCreateModal}>
+            <Plus size={17} />
+            Thêm cấu hình
+          </button>
+        </div>
       </div>
 
       <section className="panel">

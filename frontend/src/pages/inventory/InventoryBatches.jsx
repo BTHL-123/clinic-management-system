@@ -146,19 +146,22 @@ export default function InventoryBatches() {
   return (
     <>
       <div className="w-full flex flex-col items-center">
-        <div className="relative flex flex-col items-center w-full mb-8">
+        <div className="w-full relative flex flex-col items-center mb-8">
           <button
             onClick={() => navigate("/dashboard")}
-            className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 active:scale-95 text-white p-2 rounded-xl backdrop-blur-md border border-white/20 transition-all shadow-sm group"
+            className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 active:scale-95 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm group"
           >
-            <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+            <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
+            Quay lại
           </button>
-          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
-            <span className="text-white"><PackageOpen size={26} /></span>
-            <span className="text-white text-2xl font-bold tracking-wide">Lô Thuốc &amp; Nhập Kho</span>
-          </h1>
-          <p className="text-white/70 font-medium mt-3 text-center drop-shadow-sm">Quản lý lô thuốc hiện tại và thực hiện nhập kho mới.</p>
-          <button className="bg-gradient-to-r from-indigo-400 to-purple-400 hover:from-indigo-300 hover:to-purple-300 text-slate-900 font-bold px-5 py-2.5 rounded-xl shadow-lg hover:shadow-indigo-400/30 transition-all flex items-center gap-2 absolute right-0 top-1/2 -translate-y-1/2" onClick={openImport}>
+          <div className="flex flex-col items-center">
+            <h1 className="text-3xl font-extrabold text-white flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
+              <span className="text-white"><PackageOpen size={28} /></span>
+              Lô Thuốc &amp; Nhập Kho
+            </h1>
+            <p className="text-white/70 font-medium mt-3 text-center drop-shadow-sm">Quản lý lô thuốc hiện tại và thực hiện nhập kho mới.</p>
+          </div>
+          <button className="absolute right-0 top-1/2 -translate-y-1/2 bg-gradient-to-r from-indigo-400 to-purple-400 hover:from-indigo-300 hover:to-purple-300 text-slate-900 font-bold px-5 py-2.5 rounded-xl shadow-lg hover:shadow-indigo-400/30 transition-all flex items-center gap-2" onClick={openImport}>
             <Plus size={18} strokeWidth={2.5} />
             Nhập kho
           </button>
@@ -183,7 +186,7 @@ export default function InventoryBatches() {
           <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-slate-900/10 text-slate-900 text-sm">
+                <tr className="border-b border-slate-900/10 text-[#0f766e] text-sm">
                   <th className="p-4 font-bold pb-3">Thuốc</th>
                   <th className="p-4 font-bold pb-3">Số lô</th>
                   <th className="p-4 font-bold pb-3">Ngày hết hạn</th>

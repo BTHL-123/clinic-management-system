@@ -198,10 +198,10 @@ function AppointmentCard({
     <div className="patient-glass-subcard p-5 flex flex-col gap-3 hover:bg-white/10 transition-all">
       <div className="flex justify-between items-start">
         <div>
-          <div className="font-bold text-[0.95rem] text-white">
+          <div className="font-bold text-[0.95rem] patient-data">
             {appt.appointmentCode}
           </div>
-          <div className="text-[12px] text-white/60 mt-0.5">
+          <div className="text-[12px] patient-label mt-0.5">
             Mã lịch hẹn
           </div>
         </div>
@@ -212,35 +212,35 @@ function AppointmentCard({
 
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <div className="text-[11px] text-white/50 font-semibold mb-0.5">NGÀY KHÁM</div>
-          <div className="text-[13px] font-semibold text-white/90">{date}</div>
+          <div className="text-[11px] patient-label uppercase tracking-wide mb-0.5">Ngày khám</div>
+          <div className="text-[13px] patient-data">{date}</div>
         </div>
         <div>
-          <div className="text-[11px] text-white/50 font-semibold mb-0.5">GIỜ KHÁM</div>
-          <div className="text-[13px] font-semibold text-white/90">{time} – {endTime}</div>
+          <div className="text-[11px] patient-label uppercase tracking-wide mb-0.5">Giờ khám</div>
+          <div className="text-[13px] patient-data">{time} – {endTime}</div>
         </div>
         <div>
-          <div className="text-[11px] text-white/50 font-semibold mb-0.5">LÝ DO KHÁM</div>
-          <div className="text-[13px] text-white/80">{appt.reasonForVisit || "—"}</div>
+          <div className="text-[11px] patient-label uppercase tracking-wide mb-0.5">Lý do khám</div>
+          <div className="text-[13px] patient-data">{appt.reasonForVisit || "—"}</div>
         </div>
         <div>
-          <div className="text-[11px] text-white/50 font-semibold mb-0.5">HÌNH THỨC</div>
-          <div className="text-[13px] text-white/80">{appt.bookingType === "ONLINE" ? "Trực tuyến" : "Trực tiếp"}</div>
+          <div className="text-[11px] patient-label uppercase tracking-wide mb-0.5">Hình thức</div>
+          <div className="text-[13px] patient-data">{appt.bookingType === "ONLINE" ? "Trực tuyến" : "Trực tiếp"}</div>
         </div>
         <div className="col-span-2 grid grid-cols-2 gap-2 mt-1">
           <div>
-            <div className="text-[11px] text-white/50 font-semibold mb-0.5">BỆNH NHÂN</div>
-            <div className="text-[13px] font-semibold text-white/90">{appt.patientName || "—"}</div>
+            <div className="text-[11px] patient-label uppercase tracking-wide mb-0.5">Bệnh nhân</div>
+            <div className="text-[13px] patient-data">{appt.patientName || "—"}</div>
           </div>
           <div>
-            <div className="text-[11px] text-white/50 font-semibold mb-0.5">BÁC SĨ</div>
-            <div className="text-[13px] font-semibold text-white/90">{appt.doctorName || "—"}</div>
+            <div className="text-[11px] patient-label uppercase tracking-wide mb-0.5">Bác sĩ</div>
+            <div className="text-[13px] patient-data">{appt.doctorName || "—"}</div>
           </div>
         </div>
         {appt.status === "CANCELLED" && appt.cancellationReason && (
           <div className="col-span-2 mt-1">
-            <div className="text-[11px] text-white/50 font-semibold mb-0.5">LÝ DO HỦY</div>
-            <div className="text-[13px] text-red-400">{appt.cancellationReason}</div>
+            <div className="text-[11px] patient-label uppercase tracking-wide mb-0.5">Lý do hủy</div>
+            <div className="text-[13px] text-red-600 font-semibold">{appt.cancellationReason}</div>
           </div>
         )}
       </div>

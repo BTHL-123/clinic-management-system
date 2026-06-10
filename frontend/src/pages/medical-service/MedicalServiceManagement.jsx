@@ -167,6 +167,10 @@ export default function MedicalServiceManagement() {
             Quản lý danh sách các dịch vụ y tế trong phòng khám.
           </p>
         </div>
+        <button className="primary-button absolute right-0 top-1/2 -translate-y-1/2" onClick={openCreate}>
+          <Plus size={16} />
+          Thêm dịch vụ
+        </button>
       </div>
 
       {/* ── Search Bar ─────────────────────────────────── */}

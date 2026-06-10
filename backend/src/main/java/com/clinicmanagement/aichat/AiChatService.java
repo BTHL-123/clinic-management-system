@@ -18,13 +18,15 @@ import java.util.List;
 
 public interface AiChatService {
 
+    List<AiChatSessionResponse> getAllSessions(User currentUser);
+
     AiChatSessionResponse createSession(CreateAiChatSessionRequest request, User currentUser);
 
     SendChatMessageResponse sendMessage(Long sessionId, AiChatMessageRequest request, User currentUser);
 
     List<SendChatMessageResponse.MessageDetail> getMessages(Long sessionId, User currentUser);
 
-    AiSpecialtySuggestion generateSuggestion(Long sessionId, User currentUser);
+    AiSpecialtySuggestionResponse generateSuggestion(Long sessionId, User currentUser);
 
     AiSpecialtySuggestionResponse acceptSuggestion(Long suggestionId, User currentUser);
 

@@ -101,14 +101,13 @@ export default function DashboardHome() {
 
   return (
     <div className="admin-dashboard">
-      {/* ── Page Header ────────────────────────────────── */}
-      <div className="relative flex flex-col items-center mb-6" style={{ fontFamily: "inherit" }}>
-        <div className="flex flex-col items-center">
-          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg" style={{ background: "rgba(255,255,255,0.25)", fontSize: "unset", fontWeight: "unset", color: "unset", letterSpacing: "unset" }}>
-            <span style={{ color: "#ffffff", display: "flex", flexShrink: 0 }}><LayoutDashboard size={26} color="#ffffff" /></span>
-            <span style={{ color: "#0f766e", fontSize: "1.5rem", fontWeight: 700, letterSpacing: "0.025em", whiteSpace: "nowrap" }}>Tổng quan Hệ thống</span>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+        <div className="flex flex-col items-center w-full">
+          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
+            <span className="text-white"><LayoutDashboard size={26} /></span>
+            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Tổng quan Hệ thống</span>
           </h1>
-          <p style={{ color: "rgba(255,255,255,0.7)", fontWeight: 500, marginTop: "12px", textShadow: "0 1px 2px rgba(0,0,0,0.1)", textAlign: "center" }}>
+          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
             Thống kê hoạt động và hiệu suất của phòng khám.
           </p>
         </div>

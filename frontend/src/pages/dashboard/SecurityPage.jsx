@@ -138,14 +138,24 @@ export default function SecurityPage() {
   return (
     <div className="page-stack">
       <div className="flex flex-col items-center w-full mb-6">
-        <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
-          <span className="text-white"><ShieldCheck size={26} /></span>
-          <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Bảo mật &amp; Phân quyền</span>
-        </h1>
-        <div className="flex items-center gap-3 mt-3">
-          <p className="text-white/70 font-medium drop-shadow-sm">
+        <div className="flex flex-col items-center">
+          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
+            <span className="text-white"><ShieldCheck size={26} /></span>
+            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Bảo mật &amp; Phân quyền</span>
+          </h1>
+          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
             Quản lý vai trò và phân quyền truy cập cho các module hệ thống.
           </p>
+        </div>
+        <div className="heading-actions absolute right-0 top-1/2 -translate-y-1/2">
+          <button className="ghost-button" type="button" onClick={loadSecurity}>
+            <RefreshCw size={17} />
+            Làm mới
+          </button>
+          <button className="primary-button compact" type="button" onClick={resetRoleForm}>
+            <Plus size={17} />
+            Thêm vai trò
+          </button>
         </div>
       </div>
 

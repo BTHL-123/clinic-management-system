@@ -3801,6 +3801,70 @@ a {
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 }
 
+/* Patient typography hierarchy — labels/teal vs data/black */
+.patient-shell {
+  --patient-label-color: #0f766e;
+  --patient-section-color: #115e59;
+  --patient-data-color: #0f172a;
+}
+
+.patient-label {
+  color: var(--patient-label-color, #0f766e);
+  font-weight: 650;
+}
+
+.patient-data {
+  color: var(--patient-data-color, #0f172a);
+  font-weight: 600;
+}
+
+.patient-section-title {
+  color: var(--patient-section-color, #115e59);
+  font-weight: 700;
+}
+
+.patient-card-title {
+  color: var(--patient-section-color, #115e59);
+  font-weight: 800;
+}
+
+.patient-shell .patient-glass-card .field > label,
+.patient-shell .patient-glass-card label.patient-label {
+  color: var(--patient-label-color);
+  font-weight: 650;
+}
+
+.patient-shell .patient-glass-card h3.patient-section-title,
+.patient-shell .patient-glass-card .patient-section-title {
+  color: var(--patient-section-color);
+}
+
+.patient-shell .patient-glass-subcard .patient-label {
+  color: var(--patient-label-color);
+  font-weight: 650;
+}
+
+.patient-shell .patient-glass-subcard .patient-data {
+  color: var(--patient-data-color);
+  font-weight: 600;
+}
+
+.patient-shell .patient-glass-subcard h4 {
+  color: var(--patient-section-color);
+}
+
+.patient-shell .patient-glass-subcard p strong {
+  color: var(--patient-label-color);
+  font-weight: 650;
+}
+
+.patient-shell .patient-glass-card .patient-glass-input,
+.patient-shell .patient-glass-card input.patient-glass-input,
+.patient-shell .patient-glass-card select.patient-glass-input,
+.patient-shell .patient-glass-card textarea.patient-glass-input {
+  color: var(--patient-data-color) !important;
+}
+
 /* Header icon buttons — glass style */
 .patient-shell .patient-header-icon-btn {
   background: rgba(255, 255, 255, 0.4);
@@ -3934,14 +3998,6 @@ a {
 
 .patient-shell .bg-white\/10.hover\:bg-white\/20:hover {
   background: rgba(255, 255, 255, 0.3) !important;
-}
-
-.patient-shell .patient-glass-subcard .text-white,
-.patient-shell .patient-glass-subcard .text-white\/60,
-.patient-shell .patient-glass-subcard .text-white\/50,
-.patient-shell .patient-glass-subcard .text-white\/80,
-.patient-shell .patient-glass-subcard .text-white\/90 {
-  color: inherit !important;
 }
 
 /* Legacy dark-theme patient glass (fallback for non-shell contexts) */

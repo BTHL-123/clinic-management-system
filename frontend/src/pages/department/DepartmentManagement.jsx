@@ -130,6 +130,10 @@ export default function DepartmentManagement() {
             Quản lý danh sách các chuyên khoa trong phòng khám.
           </p>
         </div>
+        <button className="primary-button absolute right-0 top-1/2 -translate-y-1/2" onClick={openCreate}>
+          <Plus size={16} />
+          Thêm chuyên khoa
+        </button>
       </div>
 
       {/* ── Search Bar ─────────────────────────────────── */}

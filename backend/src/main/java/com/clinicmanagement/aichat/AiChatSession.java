@@ -45,5 +45,6 @@ public class AiChatSession {
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
+    @jakarta.persistence.OrderBy("createdAt ASC")
     private List<AiChatMessage> messages = new ArrayList<>();
 }

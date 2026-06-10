@@ -113,13 +113,21 @@ export default function AuditLogPage() {
 
   return (
     <div className="page-stack">
-      <div className="flex flex-col items-center w-full mb-6">
-        <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
-          <span className="text-white"><FileClock size={26} /></span>
-          <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Nhật ký hệ thống</span>
-        </h1>
-        <p className="text-white/70 font-medium mt-3 drop-shadow-sm">Theo dõi các hoạt động đã được ghi nhận trong hệ thống.</p>
-      </div>
+      <section className="page-heading">
+        <div className="flex flex-col items-center w-full">
+          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
+            <span className="text-white"><FileClock size={26} /></span>
+            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Nhật ký hệ thống</span>
+          </h1>
+          <p className="muted mt-3">Theo dõi các hoạt động đã được ghi nhận trong hệ thống.</p>
+        </div>
+        <div className="heading-actions">
+          <button className="ghost-button" type="button" onClick={loadAuditLogs}>
+            <RefreshCw size={17} />
+            Làm mới
+          </button>
+        </div>
+      </section>
 
       <section className="panel">
         <form className="toolbar" onSubmit={(event) => event.preventDefault()} style={{ gridTemplateColumns: "1fr 1fr 1fr auto" }}>
