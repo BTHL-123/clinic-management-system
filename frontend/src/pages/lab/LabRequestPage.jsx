@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+﻿import { useEffect, useState, useCallback } from "react";
 import { FlaskConical, RefreshCw, CheckCircle, ClipboardEdit, X } from "lucide-react";
 import { getAllLabRequests, acceptLabRequest } from "../../services/labRequestService";
 import { createLabResult } from "../../services/labResultService";
@@ -107,11 +107,11 @@ export default function LabRequestPage() {
 
   return (
     <div style={{ padding: "0 4px" }}>
-      <div className="relative flex flex-col items-start mb-6">
-        <div className="flex flex-col items-start">
+      <div className="flex flex-col items-center w-full mb-6">
+        <div className="flex flex-col items-center">
           <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
             <span className="text-white"><FlaskConical size={26} /></span>
-            <span className="text-white text-2xl font-bold tracking-wide">Phòng xét nghiệm</span>
+            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Phòng xét nghiệm</span>
           </h1>
         </div>
       </div>
@@ -151,14 +151,22 @@ export default function LabRequestPage() {
       </div>
 
       <div className="table-wrapper">
-        <table className="data-table">
+        <table className="data-table fixed-table">
+          <colgroup>
+            <col style={{ width: "12%" }} />
+            <col style={{ width: "14%" }} />
+            <col style={{ width: "38%" }} />
+            <col style={{ width: "14%" }} />
+            <col style={{ width: "12%" }} />
+            <col style={{ width: "10%" }} />
+          </colgroup>
           <thead>
             <tr>
               <th>Mã phiếu</th>
               <th>Bệnh nhân</th>
               <th>Các xét nghiệm</th>
               <th>Thời gian</th>
-              <th style={{ width: 120 }}>Trạng thái</th>
+              <th>Trạng thái</th>
               <th style={{ textAlign: "center" }}>Thao tác</th>
             </tr>
           </thead>

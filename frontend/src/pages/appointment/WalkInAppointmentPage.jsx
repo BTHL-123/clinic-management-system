@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+﻿import { useState, useEffect, useCallback } from "react";
 import {
   UserPlus,
   CalendarDays,
@@ -257,11 +257,11 @@ export default function WalkInAppointmentPage() {
       `}</style>
 
       {/* Page Header */}
-      <div className="relative flex flex-col items-start mb-6">
-        <div className="flex flex-col items-start">
+      <div className="flex flex-col items-center w-full mb-6">
+        <div className="flex flex-col items-center">
           <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
             <span className="text-white"><UserPlus size={26} /></span>
-            <span className="text-white text-2xl font-bold tracking-wide">Tạo lịch khám trực tiếp</span>
+            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Tạo lịch khám trực tiếp</span>
           </h1>
           <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
             Dành cho bệnh nhân đến trực tiếp tại phòng khám mà không có lịch đặt trước.

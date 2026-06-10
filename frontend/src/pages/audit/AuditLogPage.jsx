@@ -114,9 +114,12 @@ export default function AuditLogPage() {
   return (
     <div className="page-stack">
       <section className="page-heading">
-        <div>
-          <h1>Nhật ký hệ thống</h1>
-          <p className="muted">Theo dõi các hoạt động đã được ghi nhận trong hệ thống.</p>
+        <div className="flex flex-col items-center w-full">
+          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
+            <span className="text-white"><FileClock size={26} /></span>
+            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Nhật ký hệ thống</span>
+          </h1>
+          <p className="muted mt-3">Theo dõi các hoạt động đã được ghi nhận trong hệ thống.</p>
         </div>
         <div className="heading-actions">
           <button className="ghost-button" type="button" onClick={loadAuditLogs}>
@@ -162,7 +165,16 @@ export default function AuditLogPage() {
           <span className="muted">{pagination.totalElements} bản ghi</span>
         </div>
         <div className="table-wrapper">
-          <table className="data-table">
+          <table className="data-table fixed-table">
+            <colgroup>
+              <col style={{ width: "14%" }} />
+              <col style={{ width: "16%" }} />
+              <col style={{ width: "16%" }} />
+              <col style={{ width: "16%" }} />
+              <col style={{ width: "10%" }} />
+              <col style={{ width: "10%" }} />
+              <col style={{ width: "9%" }} />
+            </colgroup>
             <thead>
               <tr>
                 <th>Thời gian</th>

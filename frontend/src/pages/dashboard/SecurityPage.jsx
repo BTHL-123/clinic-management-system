@@ -1,4 +1,4 @@
-import { KeyRound, Plus, RefreshCw, Save, ShieldCheck, Trash2 } from "lucide-react";
+﻿import { KeyRound, Plus, RefreshCw, Save, ShieldCheck, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   assignPermissions,
@@ -137,11 +137,11 @@ export default function SecurityPage() {
 
   return (
     <div className="page-stack">
-      <div className="relative flex flex-col items-start mb-6">
-        <div className="flex flex-col items-start">
+      <div className="flex flex-col items-center w-full mb-6">
+        <div className="flex flex-col items-center">
           <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
             <span className="text-white"><ShieldCheck size={26} /></span>
-            <span className="text-white text-2xl font-bold tracking-wide">Bảo mật &amp; Phân quyền</span>
+            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Bảo mật &amp; Phân quyền</span>
           </h1>
           <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
             Quản lý vai trò và phân quyền truy cập cho các module hệ thống.

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+﻿import { useState, useEffect, useCallback } from "react";
 import {
   Users,
   Search,
@@ -124,11 +124,11 @@ export default function QueueManagementPage() {
 
   return (
     <div className="content">
-      <div className="relative flex flex-col items-start mb-6">
-        <div className="flex flex-col items-start">
+      <div className="flex flex-col items-center w-full mb-6">
+        <div className="flex flex-col items-center">
           <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
             <span className="text-white"><Users size={26} /></span>
-            <span className="text-white text-2xl font-bold tracking-wide">Quản lý hàng đợi</span>
+            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Quản lý hàng đợi</span>
           </h1>
         </div>
         <button
@@ -215,10 +215,21 @@ export default function QueueManagementPage() {
 
       {/* Table container */}
       <div className="table-wrapper">
-        <table className="data-table">
+        <table className="data-table fixed-table">
+          <colgroup>
+            <col style={{ width: "7%" }} />
+            <col style={{ width: "12%" }} />
+            <col style={{ width: "15%" }} />
+            <col style={{ width: "13%" }} />
+            <col style={{ width: "15%" }} />
+            <col style={{ width: "10%" }} />
+            <col style={{ width: "11%" }} />
+            <col style={{ width: "12%" }} />
+            <col style={{ width: "14%" }} />
+          </colgroup>
           <thead>
             <tr>
-              <th style={{ width: "80px", textAlign: "center" }}>STT</th>
+              <th style={{ textAlign: "center" }}>STT</th>
               <th>Mã Lịch Hẹn</th>
               <th>Bệnh Nhân</th>
               <th>Số Điện Thoại</th>
@@ -226,7 +237,7 @@ export default function QueueManagementPage() {
               <th style={{ textAlign: "center" }}>Giờ Hẹn</th>
               <th>Check-in</th>
               <th>Trạng Thái</th>
-              <th style={{ textAlign: "center", width: "240px" }}>Thao Tác</th>
+              <th style={{ textAlign: "center" }}>Thao Tác</th>
             </tr>
           </thead>
           <tbody>

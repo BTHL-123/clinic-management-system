@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Building2, Edit, Plus, Search, Trash2, X } from "lucide-react";
 import {
   createDepartment,
@@ -120,11 +120,11 @@ export default function DepartmentManagement() {
   return (
     <>
       {/* ── Page Header ────────────────────────────────── */}
-      <div className="relative flex flex-col items-start mb-6">
-        <div className="flex flex-col items-start">
+      <div className="flex flex-col items-center w-full mb-6">
+        <div className="flex flex-col items-center">
           <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
             <span className="text-white"><Building2 size={26} /></span>
-            <span className="text-white text-2xl font-bold tracking-wide">Quản lý Chuyên khoa</span>
+            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Quản lý Chuyên khoa</span>
           </h1>
           <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
             Quản lý danh sách các chuyên khoa trong phòng khám.
@@ -152,7 +152,15 @@ export default function DepartmentManagement() {
 
       {/* ── Table ──────────────────────────────────────── */}
       <div className="table-wrapper">
-        <table className="data-table">
+        <table className="data-table fixed-table">
+          <colgroup>
+            <col style={{ width: "5%" }} />
+            <col style={{ width: "22%" }} />
+            <col style={{ width: "38%" }} />
+            <col style={{ width: "13%" }} />
+            <col style={{ width: "12%" }} />
+            <col style={{ width: "10%" }} />
+          </colgroup>
           <thead>
             <tr>
               <th>#</th>

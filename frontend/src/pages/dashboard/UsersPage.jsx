@@ -1,4 +1,4 @@
-import { Lock, Plus, RefreshCw, Search, Trash2, Unlock, UserRoundPlus } from "lucide-react";
+﻿import { Lock, Plus, RefreshCw, Search, Trash2, Unlock, UserRoundPlus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { getActiveDepartments } from "../../services/departmentService";
 import {
@@ -163,11 +163,11 @@ export default function UsersPage() {
 
   return (
     <div className="page-stack">
-      <div className="relative flex flex-col items-start mb-6">
-        <div className="flex flex-col items-start">
+      <div className="flex flex-col items-center w-full mb-6">
+        <div className="flex flex-col items-center">
           <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
             <span className="text-white"><UserRoundPlus size={26} /></span>
-            <span className="text-white text-2xl font-bold tracking-wide">Quản lý Tài khoản</span>
+            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Quản lý Tài khoản</span>
           </h1>
           <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
             Tạo tài khoản nhân viên, tìm kiếm và quản lý quyền truy cập.

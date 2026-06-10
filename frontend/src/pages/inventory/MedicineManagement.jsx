@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Pill, Edit, Plus, Search, X, Trash2, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -134,17 +134,17 @@ export default function MedicineManagement() {
   return (
     <>
     <div className="w-full flex flex-col items-center">
-      <div className="relative flex flex-col items-start w-full mb-8">
+      <div className="flex flex-col items-center w-full w-full mb-8">
         <button
           onClick={() => navigate("/dashboard")}
           className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 active:scale-95 text-white p-2 rounded-xl backdrop-blur-md border border-white/20 transition-all shadow-sm group"
         >
           <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
         </button>
-        <div className="flex flex-col items-start pl-14">
+        <div className="flex flex-col items-center pl-14">
           <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
             <span className="text-white"><Pill size={26} /></span>
-            <span className="text-white text-2xl font-bold tracking-wide">Danh mục Thuốc</span>
+            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Danh mục Thuốc</span>
           </h1>
           <p className="text-white/70 font-medium mt-3 drop-shadow-sm">Quản lý danh sách các loại thuốc.</p>
         </div>

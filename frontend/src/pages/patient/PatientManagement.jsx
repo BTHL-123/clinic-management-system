@@ -171,29 +171,29 @@ export default function PatientManagement() {
   };
 
   return (
-    <div className="text-white flex flex-col h-full gap-6 pb-6">
+    <div className="text-white flex flex-col h-full gap-6 pb-6 pt-4">
       {/* ── Page Header ────────────────────────────────── */}
-      <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-6 shadow-xl flex flex-wrap justify-between items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-3">
-            <Users size={28} className="text-teal-400" />
-            Hồ sơ bệnh nhân
+      <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] px-6 py-8 shadow-xl relative">
+        <div className="flex flex-col items-center w-full">
+          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
+            <span className="text-white"><Users size={26} /></span>
+            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Hồ sơ bệnh nhân</span>
           </h1>
-          <p className="text-white/60 mt-1">Quản lý hồ sơ bệnh nhân, tiền sử bệnh lý và thông tin liên hệ.</p>
+          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">Quản lý hồ sơ bệnh nhân, tiền sử bệnh lý và thông tin liên hệ.</p>
         </div>
         {!isDoctor && (
           <button
-            className="bg-gradient-to-r from-teal-400 to-emerald-400 text-slate-900 font-bold px-5 py-2.5 rounded-xl hover:shadow-[0_0_20px_rgba(45,212,191,0.4)] transition-all flex items-center gap-2"
+            className="primary-button absolute right-6 top-1/2 -translate-y-1/2"
             onClick={openCreate}
           >
-            <Plus size={18} />
+            <Plus size={16} />
             Thêm bệnh nhân
           </button>
         )}
       </div>
 
       {/* ── Filters ────────────────────────────────────── */}
-      <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[1.5rem] p-5 shadow-xl flex gap-4">
+      <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[1.5rem] px-5 py-3 shadow-xl flex gap-4">
         <div className="relative flex-1 max-w-[420px]">
           <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
           <input
