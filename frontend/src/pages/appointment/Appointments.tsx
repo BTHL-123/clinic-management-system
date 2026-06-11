@@ -1,4 +1,4 @@
-﻿import React, { useState, useCallback, useEffect, useMemo } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import {
   CalendarDays,
   ChevronDown,
@@ -41,17 +41,40 @@ interface DoctorOption {
   fullName: string;
 }
 
-const PANEL = { CREATE: "create", UPDATE: "update", CANCEL: "cancel" } as const;
+const PANEL = { CREATE: "create", BULK_CREATE: "bulk_create", UPDATE: "update", CANCEL: "cancel" } as const;
 type PanelType = typeof PANEL[keyof typeof PANEL];
 
 const INIT_FORM = { doctorId: "", workDate: "", startTime: "", endTime: "" };
 const WEEK_DAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
-const TIME_ROWS = Array.from({ length: 22 }, (_, index) => {
-  const totalMinutes = 7 * 60 + index * 30;
-  const hour = Math.floor(totalMinutes / 60);
-  const minute = totalMinutes % 60;
-  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-});
+function getDynamicTimeRows(schedules: DoctorSchedule[]) {
+  let minMinutes = 7 * 60;
+  let maxMinutes = 21 * 60;
+
+  if (schedules && schedules.length > 0) {
+    const startTimes = schedules.map(s => {
+      const [h, m] = (s.startTime || "").split(':').map(Number);
+      return (h || 0) * 60 + (m || 0);
+    });
+    const endTimes = schedules.map(s => {
+      const [h, m] = (s.endTime || "").split(':').map(Number);
+      return (h || 0) * 60 + (m || 0);
+    });
+    const actMin = Math.min(...startTimes.filter(t => t > 0));
+    const actMax = Math.max(...endTimes.filter(t => t > 0));
+    
+    if (actMin < minMinutes && actMin > 0) minMinutes = Math.floor(actMin / 30) * 30;
+    if (actMax > maxMinutes) maxMinutes = Math.ceil(actMax / 30) * 30;
+  }
+
+  const rows = [];
+  const limit = Math.min(maxMinutes, 1440 - 30);
+  for (let t = minMinutes; t <= limit; t += 30) {
+    const h = Math.floor(t / 60);
+    const m = t % 60;
+    rows.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+  }
+  return rows;
+}
 
 const getHeaders = (): HeadersInit => {
   const token = localStorage.getItem("accessToken");
@@ -273,6 +296,146 @@ function CreatePanel({ doctors, selectedDate, selectedTime, selectedDoctorId, on
       <button type="submit" disabled={busy} className="appointment-panel-submit">
         <CalendarDays size={16} />
         {busy ? "Đang xử lý..." : "Tạo lịch làm việc"}
+      </button>
+    </form>
+  );
+}
+
+interface BulkCreatePanelProps {
+  doctors: DoctorOption[];
+  onDone: () => void;
+}
+
+function BulkCreatePanel({ doctors, onDone }: BulkCreatePanelProps) {
+  const todayStr = formatDate(new Date());
+  const [form, setForm] = useState({
+    doctorId: "",
+    fromDate: todayStr,
+    toDate: todayStr,
+    startTime: "07:00",
+    endTime: "11:30",
+    slotDurationMinutes: 30,
+  });
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  const [msg, setMsg] = useState("");
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+  };
+
+  const toggleDay = (dayValue: string) => {
+    setSelectedDays(prev => 
+      prev.includes(dayValue) ? prev.filter(d => d !== dayValue) : [...prev, dayValue]
+    );
+  };
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMsg("");
+    setErr("");
+    if (!form.doctorId || !form.fromDate || !form.toDate || !form.startTime || !form.endTime) {
+      setErr("Vui lòng điền đầy đủ các trường bắt buộc.");
+      return;
+    }
+    if (selectedDays.length === 0) {
+      setErr("Vui lòng chọn ít nhất 1 thứ trong tuần.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const payload = {
+        doctorId: parseInt(form.doctorId, 10),
+        fromDate: form.fromDate,
+        toDate: form.toDate,
+        startTime: form.startTime.length === 5 ? `${form.startTime}:00` : form.startTime,
+        endTime: form.endTime.length === 5 ? `${form.endTime}:00` : form.endTime,
+        daysOfWeek: selectedDays,
+        slotDurationMinutes: Number(form.slotDurationMinutes) || 30
+      };
+      const response = await fetch("http://localhost:8080/api/doctor-schedules/bulk", {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        await handleFetchError(response);
+      }
+      setMsg("Tạo lịch hàng loạt thành công!");
+      onDone();
+    } catch (error: any) {
+      setErr(error.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <form className="form-stack" style={{ marginTop: 0 }} onSubmit={onSubmit}>
+      <ToastRelay message={msg} type="success" />
+      <ToastRelay message={err} type="error" />
+      <div className="field">
+        <label>Bác sĩ *</label>
+        <select name="doctorId" value={form.doctorId} onChange={onChange}>
+          <option value="" disabled>-- Chọn bác sĩ --</option>
+          {doctors.map((d) => (
+            <option key={d.doctorId} value={d.doctorId}>{d.doctorCode} - {d.fullName}</option>
+          ))}
+        </select>
+      </div>
+      <div className="field-row">
+        <div className="field">
+          <label>Từ ngày *</label>
+          <input type="date" name="fromDate" value={form.fromDate} onChange={onChange} />
+        </div>
+        <div className="field">
+          <label>Đến ngày *</label>
+          <input type="date" name="toDate" value={form.toDate} onChange={onChange} />
+        </div>
+      </div>
+      <div className="field">
+        <label>Lặp lại vào (Thứ) *</label>
+        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "4px" }}>
+          {[{l: "T2", v: "MONDAY"}, {l: "T3", v: "TUESDAY"}, {l: "T4", v: "WEDNESDAY"}, {l: "T5", v: "THURSDAY"}, {l: "T6", v: "FRIDAY"}, {l: "T7", v: "SATURDAY"}, {l: "CN", v: "SUNDAY"}].map(day => (
+            <button 
+              type="button" 
+              key={day.v}
+              onClick={() => toggleDay(day.v)}
+              style={{
+                padding: "4px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: 600, border: "1px solid", cursor: "pointer",
+                background: selectedDays.includes(day.v) ? "#0f766e" : "#f8fafc",
+                color: selectedDays.includes(day.v) ? "#fff" : "#475569",
+                borderColor: selectedDays.includes(day.v) ? "#0f766e" : "#cbd5e1"
+              }}
+            >
+              {day.l}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="field-row">
+        <div className="field">
+          <label>Giờ bắt đầu *</label>
+          <input type="time" name="startTime" value={form.startTime} onChange={onChange} />
+        </div>
+        <div className="field">
+          <label>Giờ kết thúc *</label>
+          <input type="time" name="endTime" value={form.endTime} onChange={onChange} />
+        </div>
+      </div>
+      <div className="field">
+        <label>Thời lượng ca khám (phút)</label>
+        <select name="slotDurationMinutes" value={form.slotDurationMinutes} onChange={onChange}>
+          <option value="15">15 phút</option>
+          <option value="30">30 phút (Mặc định)</option>
+          <option value="45">45 phút</option>
+          <option value="60">60 phút</option>
+        </select>
+      </div>
+      <button type="submit" disabled={busy} className="appointment-panel-submit" style={{ background: "linear-gradient(to right, #0f766e, #0d9488)", color: "white" }}>
+        <CalendarDays size={16} />
+        {busy ? "Đang xử lý..." : "Tạo lịch hàng loạt"}
       </button>
     </form>
   );
@@ -695,6 +858,12 @@ function DayResourceCalendar({
   const [creating, setCreating] = useState(false);
   const daySchedules = schedules.filter((schedule) => schedule.workDate === selectedDate);
   const columns = doctors;
+  const TIME_ROWS = useMemo(() => getDynamicTimeRows(daySchedules), [daySchedules]);
+
+  const boardRef = React.useRef<HTMLDivElement>(null);
+  const isDraggingBoard = React.useRef(false);
+  const startX = React.useRef(0);
+  const scrollLeft = React.useRef(0);
 
   const finishSelection = async () => {
     if (!dragSelection || creating) return;
@@ -711,8 +880,48 @@ function DayResourceCalendar({
     setDragSelection(null);
   };
 
+  const handleMouseDown = (e: React.MouseEvent) => {
+    isDraggingBoard.current = true;
+    if (boardRef.current) {
+      startX.current = e.pageX - boardRef.current.offsetLeft;
+      scrollLeft.current = boardRef.current.scrollLeft;
+      boardRef.current.style.cursor = 'grabbing';
+    }
+  };
+
+  const handleMouseLeave = () => {
+    isDraggingBoard.current = false;
+    if (boardRef.current) boardRef.current.style.cursor = 'grab';
+  };
+
+  const handleMouseUpBoard = () => {
+    isDraggingBoard.current = false;
+    if (boardRef.current) boardRef.current.style.cursor = 'grab';
+    finishSelection(); // Important: keep the original finishSelection here!
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDraggingBoard.current) return;
+    if (dragSelection) return; // Prevent horizontal board scrolling if user is dragging to select slots vertically
+    e.preventDefault();
+    if (boardRef.current) {
+      const x = e.pageX - boardRef.current.offsetLeft;
+      const walk = (x - startX.current) * 1.5;
+      boardRef.current.scrollLeft = scrollLeft.current - walk;
+    }
+  };
+
   return (
-    <div className="appointment-resource-board" onPointerUp={finishSelection} onPointerCancel={() => setDragSelection(null)}>
+    <div 
+      className="appointment-resource-board" 
+      ref={boardRef}
+      onMouseDown={handleMouseDown}
+      onMouseLeave={handleMouseLeave}
+      onMouseUp={handleMouseUpBoard}
+      onMouseMove={handleMouseMove}
+      onPointerCancel={() => setDragSelection(null)}
+      style={{ cursor: "grab" }}
+    >
       <div className="appointment-resource-time-axis">
         <span />
         {TIME_ROWS.map((time) => <span key={time}>{time}</span>)}
@@ -1057,10 +1266,14 @@ export default function AppointmentManagement() {
         </section>
 
         <aside className="appointment-side-panel">
-          <div className="appointment-panel-tabs" role="tablist" aria-label="Tác vụ lịch">
+          <div className="appointment-panel-tabs" role="tablist" aria-label="Tác vụ lịch" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
             <button type="button" className={activePanel === PANEL.CREATE ? "active" : ""} onClick={() => setActivePanel(PANEL.CREATE)}>
               <CalendarDays size={15} />
               Tạo
+            </button>
+            <button type="button" className={activePanel === PANEL.BULK_CREATE ? "active" : ""} onClick={() => setActivePanel(PANEL.BULK_CREATE)} style={{ fontSize: "11px" }}>
+              <RefreshCw size={14} />
+              Hàng loạt
             </button>
             <button type="button" className={activePanel === PANEL.UPDATE ? "active" : ""} onClick={() => setActivePanel(PANEL.UPDATE)}>
               <Pencil size={15} />
@@ -1090,6 +1303,9 @@ export default function AppointmentManagement() {
               selectedDoctorId={selectedDoctorId}
               onDone={loadSchedules}
             />
+          )}
+          {activePanel === PANEL.BULK_CREATE && (
+            <BulkCreatePanel doctors={doctors} onDone={loadSchedules} />
           )}
           {activePanel === PANEL.UPDATE && (
             <UpdatePanel doctors={doctors} onDone={loadSchedules} selectedData={selectedSchedule} />

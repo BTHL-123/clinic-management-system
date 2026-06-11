@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Stethoscope, Save, ArrowLeft, CheckCircle, Activity, FlaskConical, Pill, ExternalLink } from "lucide-react";
+import { Stethoscope, Save, ArrowLeft, CheckCircle, Activity, FlaskConical, Pill, ExternalLink, User, Clock, AlertCircle } from "lucide-react";
 import consultationService from "../../services/consultationService";
 import {
   createMedicalRecord,
@@ -384,60 +384,62 @@ export default function ExaminationPage() {
   }
 
   return (
-    <div style={{ maxWidth: 860, margin: "0 auto", padding: "0 4px" }}>
+    <div className="w-full h-full flex flex-col items-center pb-24">
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+      <div className="w-full relative flex flex-col items-center mb-8 mt-2">
         <button
-          className="secondary-button"
           onClick={() => navigate("/dashboard/consultation")}
-          style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, padding: "6px 12px" }}
-          title="Quay lại hàng đợi"
+          className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 active:scale-95 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm group"
         >
-          <ArrowLeft size={16} />
+          <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
           Quay lại
         </button>
-        <Stethoscope size={20} />
-        <h2 style={{ margin: 0, fontSize: 20 }}>
-          Khám bệnh — Phiên #{consultationId}
-        </h2>
-        {consultation && (
-          <span style={{
-            marginLeft: "auto", fontSize: 13, fontWeight: 600,
-            color: consultation.status === "IN_PROGRESS" ? "#7c3aed" : "#16a34a",
-            background: consultation.status === "IN_PROGRESS" ? "#ede9fe" : "#dcfce7",
-            padding: "2px 10px", borderRadius: 12,
-          }}>
-            {consultation.status === "IN_PROGRESS" ? "Đang khám" : consultation.status}
-          </span>
-        )}
+        <div className="flex flex-col items-center">
+          <h1 className="text-3xl font-extrabold text-white flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
+            <span className="text-white"><Stethoscope size={28} /></span>
+            Khám bệnh — Phiên #{consultationId}
+          </h1>
+          {consultation && (
+            <div className="mt-4 flex items-center gap-4 text-white/90 bg-white/10 backdrop-blur-md px-5 py-2 rounded-2xl border border-white/20 text-sm font-medium shadow-sm">
+              <span className="flex items-center gap-2">
+                <User size={16} className="text-emerald-300" /> Bệnh nhân ID: <strong className="text-white">{consultation.patientId}</strong>
+              </span>
+              <span className="opacity-50">•</span>
+              <span className="flex items-center gap-2">
+                <Stethoscope size={16} className="text-emerald-300" /> Bác sĩ ID: <strong className="text-white">{consultation.doctorId}</strong>
+              </span>
+              <span className="opacity-50">•</span>
+              <span className="flex items-center gap-2">
+                <Clock size={16} className="text-emerald-300" /> Bắt đầu: <strong className="text-white">{consultation.startedAt ? new Date(consultation.startedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : "—"}</strong>
+              </span>
+              <span className="opacity-50">•</span>
+              <span className={`px-2.5 py-1 rounded-full text-xs font-black shadow-sm ${consultation.status === "IN_PROGRESS" ? "bg-teal-500/20 text-teal-100 border border-teal-500/30" : "bg-emerald-500/20 text-emerald-100 border border-emerald-500/30"}`}>
+                {consultation.status === "IN_PROGRESS" ? "ĐANG KHÁM" : consultation.status}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
       {error && (
-        <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>
-      )}
-
-      {/* Thông tin phiên khám */}
-      {consultation && (
-        <div style={{
-          background: "#f9fafb", borderRadius: 8, padding: "12px 16px",
-          marginBottom: 20, fontSize: 13, display: "flex", gap: 24, flexWrap: "wrap",
-        }}>
-          <span><strong>Bệnh nhân ID:</strong> {consultation.patientId}</span>
-          <span><strong>Bác sĩ ID:</strong> {consultation.doctorId}</span>
-          <span><strong>Bắt đầu:</strong> {consultation.startedAt
-            ? new Date(consultation.startedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })
-            : "—"}</span>
+        <div className="w-full bg-rose-500/20 border border-rose-500/30 text-rose-100 p-4 rounded-2xl mb-6 flex items-center gap-3 backdrop-blur-md">
+          <AlertCircle size={20} className="text-rose-400" />
+          {error}
         </div>
       )}
+
+      <div className="w-full flex flex-col gap-6 max-w-[960px]">
 
       {/* Vital Signs Section */}
-      <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: 16, marginBottom: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-          <Activity size={16} color="#16a34a" />
-          <strong style={{ fontSize: 14, color: "#15803d" }}>Chỉ số sinh tồn</strong>
+      <div className="patient-glass-panel rounded-[2rem] p-8 shadow-xl border-0 w-full mb-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white shadow-lg">
+            <Activity size={20} />
+          </div>
+          <h3 className="text-xl font-extrabold text-teal-900">Chỉ số sinh tồn</h3>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 10 }}>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
           {[
             { name: "heightCm", label: "Chiều cao (cm)", placeholder: "170" },
             { name: "weightKg", label: "Cân nặng (kg)", placeholder: "65" },
@@ -448,63 +450,63 @@ export default function ExaminationPage() {
             { name: "respiratoryRate", label: "Nhịp thở (lần/phút)", placeholder: "18" },
             { name: "spo2", label: "SpO2 (%)", placeholder: "98" },
           ].map((field) => (
-            <div key={field.name}>
-              <label style={{ ...labelStyle, fontSize: 12 }}>{field.label}</label>
+            <div key={field.name} className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-teal-800 ml-1">{field.label}</label>
               <input
                 type="number"
                 name={field.name}
                 value={vitals[field.name]}
                 onChange={handleVitalsChange}
                 placeholder={field.placeholder}
-                style={{ ...inputStyle, fontSize: 13 }}
+                className="w-full bg-white/60 border border-teal-200/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 font-medium focus:bg-white focus:border-teal-400 focus:ring-2 focus:ring-teal-400/20 transition-all outline-none"
               />
             </div>
           ))}
         </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <div className="flex justify-end mb-4">
           <button
-            className="secondary-button"
+            type="button"
+            className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-5 py-2 rounded-xl font-bold text-sm shadow-md transition-all active:scale-95 disabled:opacity-70"
             onClick={handleSaveVitals}
             disabled={savingVitals}
-            style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}
           >
-            <Save size={13} />
+            <Save size={16} />
             {savingVitals ? "Đang lưu..." : "Lưu chỉ số"}
           </button>
         </div>
 
         {/* Lịch sử đo */}
         {savedVitals.length > 0 && (
-          <div style={{ marginTop: 12, borderTop: "1px solid #bbf7d0", paddingTop: 10 }}>
-            <p style={{ fontSize: 12, color: "#15803d", fontWeight: 600, marginBottom: 6 }}>
+          <div className="mt-4 pt-4 border-t border-teal-900/10">
+            <p className="text-xs font-bold text-teal-800 mb-3">
               Lịch sử đo ({savedVitals.length} lần)
             </p>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr style={{ background: "#dcfce7" }}>
+                  <tr className="bg-emerald-50 text-teal-900">
                     {["Thời gian", "Cao (cm)", "Nặng (kg)", "Nhiệt độ", "HA", "Nhịp tim", "SpO2"].map((h) => (
-                      <th key={h} style={{ padding: "4px 8px", textAlign: "left", fontWeight: 600 }}>{h}</th>
+                      <th key={h} className="px-3 py-2 font-bold rounded-t-lg">{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="text-teal-800 font-medium">
                   {savedVitals.map((v) => (
-                    <tr key={v.vitalSignId} style={{ borderBottom: "1px solid #bbf7d0" }}>
-                      <td style={{ padding: "4px 8px" }}>
+                    <tr key={v.vitalSignId} className="border-b border-teal-100 last:border-0 hover:bg-emerald-50/50">
+                      <td className="px-3 py-2">
                         {new Date(v.measuredAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
                       </td>
-                      <td style={{ padding: "4px 8px" }}>{v.heightCm ?? "—"}</td>
-                      <td style={{ padding: "4px 8px" }}>{v.weightKg ?? "—"}</td>
-                      <td style={{ padding: "4px 8px" }}>{v.temperatureC ?? "—"}</td>
-                      <td style={{ padding: "4px 8px" }}>
+                      <td className="px-3 py-2">{v.heightCm ?? "—"}</td>
+                      <td className="px-3 py-2">{v.weightKg ?? "—"}</td>
+                      <td className="px-3 py-2">{v.temperatureC ?? "—"}</td>
+                      <td className="px-3 py-2">
                         {v.bloodPressureSystolic && v.bloodPressureDiastolic
                           ? `${v.bloodPressureSystolic}/${v.bloodPressureDiastolic}`
                           : "—"}
                       </td>
-                      <td style={{ padding: "4px 8px" }}>{v.heartRate ?? "—"}</td>
-                      <td style={{ padding: "4px 8px" }}>{v.spo2 != null ? `${v.spo2}%` : "—"}</td>
+                      <td className="px-3 py-2">{v.heartRate ?? "—"}</td>
+                      <td className="px-3 py-2">{v.spo2 != null ? `${v.spo2}%` : "—"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -515,12 +517,15 @@ export default function ExaminationPage() {
       </div>
 
       {/* AI Smart Notes Section */}
-      <div style={{ background: "#fdf4ff", border: "1px solid #f0abfc", borderRadius: 12, padding: 24, marginBottom: 24 }}>
-        <h3 style={{ margin: "0 0 12px", display: "flex", alignItems: "center", gap: 8, color: "#86198f" }}>
-          <Bot size={20} /> Ghi chú nhanh AI
-        </h3>
-        <p style={{ margin: "0 0 12px", fontSize: 13, color: "#a21caf" }}>
-          Nhập ghi chú thô của bạn (tốc ký, không cần đúng cấu trúc). AI sẽ tự động phân tích và điền vào các ô tương ứng bên dưới.
+      <div className="patient-glass-panel rounded-[2rem] p-8 shadow-xl border-0 w-full mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-fuchsia-400 to-purple-500 flex items-center justify-center text-white shadow-lg">
+            <Bot size={20} />
+          </div>
+          <h3 className="text-xl font-extrabold text-purple-900">Ghi chú nhanh AI</h3>
+        </div>
+        <p className="text-sm font-semibold text-purple-700/80 mb-4 ml-1">
+          Nhập ghi chú thô của bạn (tốc ký, không cần đúng cấu trúc). AI sẽ tự động phân tích và điền vào form Bệnh án.
         </p>
         <textarea
           rows={3}
@@ -552,147 +557,128 @@ export default function ExaminationPage() {
       </div>
 
       {/* Lab Request Section */}
-      <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: 16, marginBottom: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-          <FlaskConical size={16} color="#2563eb" />
-          <strong style={{ fontSize: 14, color: "#1d4ed8" }}>Yêu cầu xét nghiệm</strong>
+      <div className="patient-glass-panel rounded-[2rem] p-8 shadow-xl border-0 w-full mb-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white shadow-lg">
+            <FlaskConical size={20} />
+          </div>
+          <h3 className="text-xl font-extrabold text-blue-900">Yêu cầu xét nghiệm</h3>
         </div>
 
         {/* Danh sách loại xét nghiệm */}
         {labTests.length > 0 ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, marginBottom: 10 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-5">
             {labTests.map((t) => (
-              <label key={t.labTestId} style={{
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "6px 10px", borderRadius: 6, cursor: "pointer",
-                background: selectedLabTests.includes(t.labTestId) ? "#dbeafe" : "#fff",
-                border: `1px solid ${selectedLabTests.includes(t.labTestId) ? "#93c5fd" : "#e5e7eb"}`,
-                fontSize: 13,
-              }}>
+              <label key={t.labTestId} className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-all shadow-sm ${selectedLabTests.includes(t.labTestId) ? 'bg-blue-50 border-blue-300' : 'bg-white/60 hover:bg-white/90 border-sky-200/50'}`}>
                 <input
                   type="checkbox"
                   checked={selectedLabTests.includes(t.labTestId)}
                   onChange={() => toggleLabTest(t.labTestId)}
-                  style={{ accentColor: "#2563eb" }}
+                  className="mt-1 w-4 h-4 text-sky-600 rounded border-sky-300 focus:ring-sky-500"
                 />
-                <span>
-                  <div style={{ fontWeight: 600 }}>{t.testName}</div>
-                  <div style={{ fontSize: 11, color: "#6b7280" }}>{t.testCode}</div>
-                </span>
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold text-slate-800 leading-tight">{t.testName}</span>
+                  <span className="text-[11px] font-semibold text-slate-500">{t.testCode}</span>
+                </div>
               </label>
             ))}
           </div>
         ) : (
-          <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 10 }}>Không có loại xét nghiệm nào.</p>
+          <p className="text-sm font-semibold text-slate-500 mb-5">Không có loại xét nghiệm nào.</p>
         )}
 
-        <div style={{ marginBottom: 10 }}>
-          <label style={{ ...labelStyle, fontSize: 12 }}>Ghi chú</label>
+        <div className="flex flex-col gap-1.5 mb-5">
+          <label className="text-xs font-bold text-sky-800 ml-1">Ghi chú</label>
           <input
             type="text"
             value={labNote}
             onChange={(e) => setLabNote(e.target.value)}
             placeholder="Ghi chú cho phiếu xét nghiệm..."
-            style={{ ...inputStyle, fontSize: 13 }}
+            className="w-full bg-white/60 border border-sky-200/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 font-medium focus:bg-white focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 transition-all outline-none"
           />
         </div>
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: 12, color: "#2563eb" }}>
+        <div className="flex justify-between items-center">
+          <span className="text-sm font-bold text-blue-600">
             Đã chọn: {selectedLabTests.length} xét nghiệm
           </span>
           <button
-            className="secondary-button"
+            type="button"
+            className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all active:scale-95 disabled:opacity-70"
             onClick={handleCreateLabRequest}
             disabled={savingLab || selectedLabTests.length === 0}
-            style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}
           >
-            <FlaskConical size={13} />
+            <FlaskConical size={16} />
             {savingLab ? "Đang tạo..." : "Tạo phiếu xét nghiệm"}
           </button>
         </div>
 
         {/* Phiếu đã tạo */}
         {savedLabRequests.length > 0 && (
-          <div style={{ marginTop: 12, borderTop: "1px solid #bfdbfe", paddingTop: 10 }}>
-            <p style={{ fontSize: 12, color: "#1d4ed8", fontWeight: 600, marginBottom: 6 }}>
+          <div className="mt-6 pt-5 border-t border-sky-900/10">
+            <p className="text-xs font-bold text-blue-800 mb-3">
               Phiếu đã tạo ({savedLabRequests.length})
             </p>
-            {savedLabRequests.map((req) => (
-              <div key={req.labRequestId} style={{
-                background: "#fff", border: "1px solid #bfdbfe",
-                borderRadius: 6, padding: "8px 12px", marginBottom: 6, fontSize: 12,
-              }}>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <strong>{req.requestCode}</strong>
-                  <span style={{ color: "#6b7280" }}>
-                    {new Date(req.requestedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
-                  </span>
+            <div className="flex flex-col gap-3">
+              {savedLabRequests.map((req) => (
+                <div key={req.labRequestId} className="bg-white/80 border border-blue-200 rounded-xl p-3 shadow-sm">
+                  <div className="flex justify-between items-center mb-1">
+                    <strong className="text-sm font-extrabold text-blue-900">{req.requestCode}</strong>
+                    <span className="text-xs font-semibold text-slate-500">
+                      {new Date(req.requestedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
+                  <div className="text-xs font-medium text-slate-700">
+                    {req.items?.map((item) => item.testName).join(", ")}
+                  </div>
                 </div>
-                <div style={{ marginTop: 4, color: "#374151" }}>
-                  {req.items?.map((item) => item.testName).join(", ")}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </div>
 
       {/* Prescription Section */}
-      <div style={{ background: "#fdf4ff", border: "1px solid #e9d5ff", borderRadius: 8, padding: 16, marginBottom: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Pill size={16} color="#7c3aed" />
-            <strong style={{ fontSize: 14, color: "#6d28d9" }}>Kê đơn thuốc</strong>
+      <div className="patient-glass-panel rounded-[2rem] p-8 shadow-xl border-0 w-full mb-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-fuchsia-400 to-pink-500 flex items-center justify-center text-white shadow-lg">
+              <Pill size={20} />
+            </div>
+            <h3 className="text-xl font-extrabold text-pink-900">Kê đơn thuốc</h3>
           </div>
           {savedPrescription && (
             <button
               onClick={() => navigate(`/dashboard/prescriptions/${savedPrescription.prescriptionId}`)}
-              style={{
-                display: "flex", alignItems: "center", gap: 4,
-                padding: "4px 12px", borderRadius: 6, border: "1px solid #e9d5ff",
-                background: "#f5f3ff", color: "#7c3aed", cursor: "pointer",
-                fontSize: 12, fontWeight: 600,
-              }}
+              className="flex items-center gap-2 bg-pink-50 hover:bg-pink-100 text-pink-700 px-4 py-2 rounded-xl font-bold text-xs shadow-sm border border-pink-200 transition-all active:scale-95"
             >
-              <ExternalLink size={12} /> Xem chi tiết đơn thuốc
+              <ExternalLink size={14} /> Xem chi tiết
             </button>
           )}
         </div>
 
         {/* Đơn thuốc đã tạo */}
         {savedPrescription ? (
-          <div>
-            <div style={{
-              background: "#fff", border: "1px solid #e9d5ff", borderRadius: 6,
-              padding: "10px 14px", marginBottom: 10, fontSize: 13,
-            }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                <strong style={{ color: "#7c3aed" }}>{savedPrescription.prescriptionCode}</strong>
-                <span style={{
-                  fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 10,
-                  background: savedPrescription.status === "DISPENSED" ? "#dcfce7" : "#fef3c7",
-                  color: savedPrescription.status === "DISPENSED" ? "#16a34a" : "#d97706",
-                }}>
-                  {savedPrescription.status === "CREATED" ? "Mới tạo"
-                    : savedPrescription.status === "CHECKED" ? "Đã kiểm tra"
-                    : savedPrescription.status === "DISPENSED" ? "Đã cấp phát"
+          <div className="flex flex-col gap-4">
+            <div className="bg-white/80 border border-pink-200 rounded-2xl p-5 shadow-sm">
+              <div className="flex justify-between items-center mb-3">
+                <strong className="text-lg font-extrabold text-pink-700">{savedPrescription.prescriptionCode}</strong>
+                <span className={`px-3 py-1 rounded-full text-xs font-black shadow-sm ${savedPrescription.status === "DISPENSED" ? "bg-emerald-500/20 text-emerald-700 border border-emerald-500/30" : "bg-amber-500/20 text-amber-700 border border-amber-500/30"}`}>
+                  {savedPrescription.status === "CREATED" ? "MỚI TẠO"
+                    : savedPrescription.status === "CHECKED" ? "ĐÃ KIỂM TRA"
+                    : savedPrescription.status === "DISPENSED" ? "ĐÃ CẤP PHÁT"
                     : savedPrescription.status}
                 </span>
               </div>
-              <div style={{ fontSize: 12, color: "#6b7280" }}>
-                {savedPrescription.items?.length || 0} loại thuốc ·{" "}
+              <div className="text-sm font-semibold text-slate-500 flex items-center gap-2">
+                <span>{savedPrescription.items?.length || 0} loại thuốc</span>
+                <span className="opacity-50">•</span>
                 {savedPrescription.drugInteractionChecked
-                  ? <span style={{ color: "#16a34a" }}>✓ Đã kiểm tra tương tác</span>
-                  : <span style={{ color: "#9ca3af" }}>Chưa kiểm tra tương tác</span>}
+                  ? <span className="text-emerald-600 flex items-center gap-1"><CheckCircle size={14}/> Đã kiểm tra tương tác</span>
+                  : <span className="text-slate-400">Chưa kiểm tra tương tác</span>}
               </div>
               {savedPrescription.interactionWarning && (
-                <div style={{
-                  marginTop: 8, padding: "8px 10px", borderRadius: 6, fontSize: 12,
-                  background: savedPrescription.interactionWarning.includes("No dangerous") ? "#f0fdf4" : "#fef3c7",
-                  border: `1px solid ${savedPrescription.interactionWarning.includes("No dangerous") ? "#86efac" : "#fcd34d"}`,
-                  color: savedPrescription.interactionWarning.includes("No dangerous") ? "#166534" : "#92400e",
-                }}>
+                <div className={`mt-4 p-3 rounded-xl text-sm font-medium border flex items-start gap-2 ${savedPrescription.interactionWarning.includes("No dangerous") ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-amber-50 border-amber-200 text-amber-800"}`}>
                   {savedPrescription.interactionWarning.includes("No dangerous")
                     ? "✓ Không phát hiện tương tác nguy hiểm"
                     : "⚠ " + savedPrescription.interactionWarning}
@@ -701,14 +687,14 @@ export default function ExaminationPage() {
             </div>
 
             {!savedPrescription.drugInteractionChecked && (
-              <div style={{ display: "flex", gap: 8 }}>
+              <div className="flex gap-2 mt-2">
                 <button
-                  className="secondary-button"
+                  type="button"
+                  className="flex items-center gap-2 bg-pink-100 hover:bg-pink-200 text-pink-800 px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm border border-pink-200 transition-all active:scale-95 disabled:opacity-70"
                   onClick={handleCheckInteractions}
                   disabled={checkingInteractions}
-                  style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}
                 >
-                  <Pill size={13} />
+                  <Pill size={16} />
                   {checkingInteractions ? "Đang kiểm tra..." : "Kiểm tra tương tác thuốc"}
                 </button>
               </div>
@@ -716,19 +702,16 @@ export default function ExaminationPage() {
           </div>
         ) : (
           /* Form kê đơn mới */
-          <div>
+          <div className="flex flex-col gap-4">
             {rxItems.map((item, index) => (
-              <div key={index} style={{
-                background: "#fff", border: "1px solid #e9d5ff",
-                borderRadius: 6, padding: 12, marginBottom: 8,
-              }}>
-                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 8, marginBottom: 8 }}>
-                  <div>
-                    <label style={{ ...labelStyle, fontSize: 12 }}>Thuốc <span style={{ color: "#dc2626" }}>*</span></label>
+              <div key={index} className="bg-white/60 border border-pink-200/60 rounded-2xl p-5 shadow-sm relative group">
+                <div className="grid grid-cols-12 gap-4 mb-4">
+                  <div className="col-span-12 md:col-span-4 flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-pink-800 ml-1">Thuốc <span className="text-rose-500">*</span></label>
                     <select
                       value={item.medicineId}
                       onChange={(e) => handleRxItemChange(index, "medicineId", e.target.value)}
-                      style={{ ...inputStyle, fontSize: 13 }}
+                      className="w-full bg-white border border-pink-200/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 font-medium focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20 transition-all outline-none"
                     >
                       <option value="">-- Chọn thuốc --</option>
                       {medicines.map((m) => (
@@ -738,118 +721,84 @@ export default function ExaminationPage() {
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <label style={{ ...labelStyle, fontSize: 12 }}>Số lượng <span style={{ color: "#dc2626" }}>*</span></label>
-                    <input type="number" min="1"
-                      value={item.quantity}
-                      onChange={(e) => handleRxItemChange(index, "quantity", e.target.value)}
-                      placeholder="10" style={{ ...inputStyle, fontSize: 13 }}
-                    />
+                  <div className="col-span-4 md:col-span-2 flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-pink-800 ml-1">Số lượng <span className="text-rose-500">*</span></label>
+                    <input type="number" min="1" value={item.quantity} onChange={(e) => handleRxItemChange(index, "quantity", e.target.value)}
+                      placeholder="10" className="w-full bg-white border border-pink-200/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 font-medium focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20 transition-all outline-none" />
                   </div>
-                  <div>
-                    <label style={{ ...labelStyle, fontSize: 12 }}>Liều dùng</label>
-                    <input type="text"
-                      value={item.dosage}
-                      onChange={(e) => handleRxItemChange(index, "dosage", e.target.value)}
-                      placeholder="1 viên/lần" style={{ ...inputStyle, fontSize: 13 }}
-                    />
+                  <div className="col-span-4 md:col-span-3 flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-pink-800 ml-1">Liều dùng</label>
+                    <input type="text" value={item.dosage} onChange={(e) => handleRxItemChange(index, "dosage", e.target.value)}
+                      placeholder="1 viên/lần" className="w-full bg-white border border-pink-200/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 font-medium focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20 transition-all outline-none" />
                   </div>
-                  <div>
-                    <label style={{ ...labelStyle, fontSize: 12 }}>Tần suất</label>
-                    <input type="text"
-                      value={item.frequency}
-                      onChange={(e) => handleRxItemChange(index, "frequency", e.target.value)}
-                      placeholder="2 lần/ngày" style={{ ...inputStyle, fontSize: 13 }}
-                    />
+                  <div className="col-span-4 md:col-span-3 flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-pink-800 ml-1">Tần suất</label>
+                    <input type="text" value={item.frequency} onChange={(e) => handleRxItemChange(index, "frequency", e.target.value)}
+                      placeholder="2 lần/ngày" className="w-full bg-white border border-pink-200/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 font-medium focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20 transition-all outline-none" />
                   </div>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 8 }}>
-                  <div>
-                    <label style={{ ...labelStyle, fontSize: 11 }}>Thời gian dùng</label>
-                    <input type="text"
-                      value={item.duration}
-                      onChange={(e) => handleRxItemChange(index, "duration", e.target.value)}
-                      placeholder="7 ngày" style={{ ...inputStyle, fontSize: 12 }}
-                    />
+                <div className="grid grid-cols-10 gap-3">
+                  <div className="col-span-5 md:col-span-2 flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-pink-800 ml-1">Thời gian dùng</label>
+                    <input type="text" value={item.duration} onChange={(e) => handleRxItemChange(index, "duration", e.target.value)}
+                      placeholder="7 ngày" className="w-full bg-white border border-pink-200/50 rounded-xl px-3 py-2 text-xs text-slate-700 font-medium focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20 transition-all outline-none" />
                   </div>
-                  <div>
-                    <label style={{ ...labelStyle, fontSize: 11 }}>Sáng</label>
-                    <input type="text"
-                      value={item.morningDose}
-                      onChange={(e) => handleRxItemChange(index, "morningDose", e.target.value)}
-                      placeholder="1" style={{ ...inputStyle, fontSize: 12 }}
-                    />
+                  <div className="col-span-5 md:col-span-2 flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-pink-800 ml-1">Sáng</label>
+                    <input type="text" value={item.morningDose} onChange={(e) => handleRxItemChange(index, "morningDose", e.target.value)}
+                      placeholder="1" className="w-full bg-white border border-pink-200/50 rounded-xl px-3 py-2 text-xs text-slate-700 font-medium focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20 transition-all outline-none" />
                   </div>
-                  <div>
-                    <label style={{ ...labelStyle, fontSize: 11 }}>Trưa</label>
-                    <input type="text"
-                      value={item.noonDose}
-                      onChange={(e) => handleRxItemChange(index, "noonDose", e.target.value)}
-                      placeholder="0" style={{ ...inputStyle, fontSize: 12 }}
-                    />
+                  <div className="col-span-5 md:col-span-2 flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-pink-800 ml-1">Trưa</label>
+                    <input type="text" value={item.noonDose} onChange={(e) => handleRxItemChange(index, "noonDose", e.target.value)}
+                      placeholder="0" className="w-full bg-white border border-pink-200/50 rounded-xl px-3 py-2 text-xs text-slate-700 font-medium focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20 transition-all outline-none" />
                   </div>
-                  <div>
-                    <label style={{ ...labelStyle, fontSize: 11 }}>Chiều</label>
-                    <input type="text"
-                      value={item.eveningDose}
-                      onChange={(e) => handleRxItemChange(index, "eveningDose", e.target.value)}
-                      placeholder="0" style={{ ...inputStyle, fontSize: 12 }}
-                    />
+                  <div className="col-span-5 md:col-span-2 flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-pink-800 ml-1">Chiều</label>
+                    <input type="text" value={item.eveningDose} onChange={(e) => handleRxItemChange(index, "eveningDose", e.target.value)}
+                      placeholder="0" className="w-full bg-white border border-pink-200/50 rounded-xl px-3 py-2 text-xs text-slate-700 font-medium focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20 transition-all outline-none" />
                   </div>
-                  <div>
-                    <label style={{ ...labelStyle, fontSize: 11 }}>Tối</label>
-                    <input type="text"
-                      value={item.nightDose}
-                      onChange={(e) => handleRxItemChange(index, "nightDose", e.target.value)}
-                      placeholder="1" style={{ ...inputStyle, fontSize: 12 }}
-                    />
+                  <div className="col-span-5 md:col-span-2 flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-pink-800 ml-1">Tối</label>
+                    <input type="text" value={item.nightDose} onChange={(e) => handleRxItemChange(index, "nightDose", e.target.value)}
+                      placeholder="1" className="w-full bg-white border border-pink-200/50 rounded-xl px-3 py-2 text-xs text-slate-700 font-medium focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20 transition-all outline-none" />
                   </div>
                 </div>
                 {rxItems.length > 1 && (
-                  <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
-                    <button
-                      onClick={() => removeRxItem(index)}
-                      style={{
-                        fontSize: 12, color: "#dc2626", background: "none",
-                        border: "none", cursor: "pointer", padding: "2px 6px",
-                      }}
-                    >
-                      ✕ Xóa thuốc này
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeRxItem(index)}
+                    className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-rose-100 text-rose-600 hover:bg-rose-200 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-sm"
+                  >
+                    ✕
+                  </button>
                 )}
               </div>
             ))}
 
             {/* Ghi chú đơn thuốc */}
-            <div style={{ marginBottom: 10 }}>
-              <label style={{ ...labelStyle, fontSize: 12 }}>Lời dặn đơn thuốc</label>
-              <input type="text"
-                value={rxNote}
-                onChange={(e) => setRxNote(e.target.value)}
+            <div className="flex flex-col gap-1.5 mt-2">
+              <label className="text-xs font-bold text-pink-800 ml-1">Lời dặn đơn thuốc</label>
+              <input type="text" value={rxNote} onChange={(e) => setRxNote(e.target.value)}
                 placeholder="Uống sau khi ăn, không dùng với rượu..."
-                style={{ ...inputStyle, fontSize: 13 }}
-              />
+                className="w-full bg-white/60 border border-pink-200/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 font-medium focus:bg-white focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20 transition-all outline-none" />
             </div>
 
-            <div style={{ display: "flex", gap: 8, justifyContent: "space-between", alignItems: "center" }}>
+            <div className="flex justify-between items-center mt-4">
               <button
+                type="button"
                 onClick={addRxItem}
-                style={{
-                  fontSize: 13, color: "#7c3aed", background: "#fdf4ff",
-                  border: "1px solid #e9d5ff", borderRadius: 6,
-                  cursor: "pointer", padding: "4px 12px", fontWeight: 600,
-                }}
+                className="text-sm font-bold text-pink-600 hover:text-pink-800 transition-all"
               >
                 + Thêm thuốc
               </button>
               <button
-                className="secondary-button"
+                type="button"
+                className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all active:scale-95 disabled:opacity-70"
                 onClick={handleCreatePrescription}
                 disabled={savingRx}
-                style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}
               >
-                <Pill size={13} />
+                <Pill size={16} />
                 {savingRx ? "Đang tạo..." : "Tạo đơn thuốc"}
               </button>
             </div>
@@ -858,131 +807,105 @@ export default function ExaminationPage() {
       </div>
 
       {/* Form bệnh án */}
-      <div style={{ display: "grid", gap: 16 }}>
-
-        {/* Triệu chứng */}
-        <div>
-          <label style={labelStyle}>Triệu chứng</label>
-          <textarea
-            name="symptoms"
-            value={form.symptoms}
-            onChange={handleChange}
-            rows={3}
-            placeholder="Mô tả triệu chứng bệnh nhân..."
-            style={textareaStyle}
-          />
-        </div>
-
-        {/* Kết quả khám lâm sàng */}
-        <div>
-          <label style={labelStyle}>Kết quả khám lâm sàng</label>
-          <textarea
-            name="clinicalFindings"
-            value={form.clinicalFindings}
-            onChange={handleChange}
-            rows={3}
-            placeholder="Kết quả thăm khám thực thể..."
-            style={textareaStyle}
-          />
-        </div>
-
-        {/* Chẩn đoán — bắt buộc */}
-        <div>
-          <label style={{ ...labelStyle, color: "#dc2626" }}>
-            Chẩn đoán <span style={{ color: "#dc2626" }}>*</span>
-          </label>
-          <textarea
-            name="diagnosis"
-            value={form.diagnosis}
-            onChange={handleChange}
-            rows={2}
-            placeholder="Chẩn đoán bệnh..."
-            style={{ ...textareaStyle, borderColor: !form.diagnosis.trim() ? "#fca5a5" : "#d1d5db" }}
-          />
-        </div>
-
-        {/* Kế hoạch điều trị */}
-        <div>
-          <label style={labelStyle}>Kế hoạch điều trị</label>
-          <textarea
-            name="treatmentPlan"
-            value={form.treatmentPlan}
-            onChange={handleChange}
-            rows={3}
-            placeholder="Phác đồ điều trị, thuốc, thủ thuật..."
-            style={textareaStyle}
-          />
-        </div>
-
-        {/* Lời dặn */}
-        <div>
-          <label style={labelStyle}>Lời dặn bệnh nhân</label>
-          <textarea
-            name="doctorNote"
-            value={form.doctorNote}
-            onChange={handleChange}
-            rows={2}
-            placeholder="Hướng dẫn chăm sóc, lưu ý..."
-            style={textareaStyle}
-          />
-        </div>
-
-        {/* Tái khám */}
-        <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: 12 }}>
-          <div>
-            <label style={labelStyle}>Ngày tái khám</label>
-            <input
-              type="date"
-              name="followUpDate"
-              value={form.followUpDate}
-              onChange={handleChange}
-              style={inputStyle}
-            />
+      <div className="patient-glass-panel rounded-[2rem] p-8 shadow-xl border-0 w-full mb-6 relative overflow-hidden">
+        {/* Lớp nền gradient để nhấn mạnh phần quan trọng nhất */}
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 to-blue-50/50 pointer-events-none"></div>
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-400 to-blue-600 flex items-center justify-center text-white shadow-lg">
+              <Save size={20} />
+            </div>
+            <h3 className="text-xl font-extrabold text-indigo-900">Chi tiết Bệnh án</h3>
           </div>
-          <div>
-            <label style={labelStyle}>Ghi chú tái khám</label>
-            <input
-              type="text"
-              name="followUpNote"
-              value={form.followUpNote}
-              onChange={handleChange}
-              placeholder="Ghi chú về lần tái khám..."
-              style={inputStyle}
-            />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="flex flex-col gap-1.5 md:col-span-2">
+              <label className="text-xs font-bold text-indigo-800 ml-1">Triệu chứng <span className="text-rose-500">*</span></label>
+              <textarea name="symptoms" value={form.symptoms} onChange={handleChange} rows={2}
+                placeholder="Mô tả triệu chứng bệnh nhân..."
+                className="w-full bg-white/70 border border-indigo-200/50 rounded-xl px-4 py-3 text-sm text-slate-700 font-medium focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 transition-all outline-none" />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-indigo-800 ml-1">Khám lâm sàng</label>
+              <textarea name="clinicalFindings" value={form.clinicalFindings} onChange={handleChange} rows={2}
+                placeholder="Kết quả thăm khám thực thể..."
+                className="w-full bg-white/70 border border-indigo-200/50 rounded-xl px-4 py-3 text-sm text-slate-700 font-medium focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 transition-all outline-none" />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-indigo-800 ml-1">Chẩn đoán sơ bộ <span className="text-rose-500">*</span></label>
+              <textarea name="diagnosis" value={form.diagnosis} onChange={handleChange} rows={2}
+                placeholder="Chẩn đoán bệnh..."
+                className={`w-full bg-white/70 border ${!form.diagnosis.trim() ? 'border-rose-300' : 'border-indigo-200/50'} rounded-xl px-4 py-3 text-sm text-slate-700 font-medium focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 transition-all outline-none`} />
+            </div>
+
+            <div className="flex flex-col gap-1.5 md:col-span-2">
+              <label className="text-xs font-bold text-indigo-800 ml-1">Kế hoạch điều trị</label>
+              <textarea name="treatmentPlan" value={form.treatmentPlan} onChange={handleChange} rows={2}
+                placeholder="Phác đồ điều trị, thuốc, thủ thuật..."
+                className="w-full bg-white/70 border border-indigo-200/50 rounded-xl px-4 py-3 text-sm text-slate-700 font-medium focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 transition-all outline-none" />
+            </div>
+
+            <div className="flex flex-col gap-1.5 md:col-span-2">
+              <label className="text-xs font-bold text-indigo-800 ml-1">Lời dặn của bác sĩ</label>
+              <textarea name="doctorNote" value={form.doctorNote} onChange={handleChange} rows={2}
+                placeholder="Hướng dẫn chăm sóc, lưu ý..."
+                className="w-full bg-white/70 border border-indigo-200/50 rounded-xl px-4 py-3 text-sm text-slate-700 font-medium focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 transition-all outline-none" />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-indigo-800 ml-1">Ngày tái khám</label>
+              <input type="date" name="followUpDate" value={form.followUpDate} onChange={handleChange}
+                className="w-full bg-white/70 border border-indigo-200/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 font-medium focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 transition-all outline-none" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-indigo-800 ml-1">Ghi chú tái khám</label>
+              <input type="text" name="followUpNote" value={form.followUpNote} onChange={handleChange}
+                placeholder="Ghi chú về lần tái khám..."
+                className="w-full bg-white/70 border border-indigo-200/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 font-medium focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 transition-all outline-none" />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Actions */}
-      <div style={{ display: "flex", gap: 10, marginTop: 24, justifyContent: "flex-end" }}>
+      {/* Footer Actions */}
+      <div className="w-full flex justify-between items-center bg-white/40 backdrop-blur-xl border border-white/40 p-5 rounded-2xl shadow-xl fixed bottom-4 max-w-[960px] mx-auto z-40">
         <button
-          className="secondary-button"
-          onClick={handleSave}
-          disabled={saving || completing || consultation?.status === "COMPLETED"}
-          style={{ display: "flex", alignItems: "center", gap: 6 }}
+          type="button"
+          onClick={() => navigate("/dashboard/consultation")}
+          className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-2.5 rounded-xl font-bold text-sm shadow-sm transition-all"
         >
-          <Save size={15} />
-          {saving ? "Đang lưu..." : existingRecordId ? "Cập nhật bệnh án" : "Lưu bệnh án"}
+          Trở về hàng đợi
         </button>
-        {consultation?.status === "COMPLETED" ? (
-          <div style={{
-            display: "flex", alignItems: "center", gap: 6,
-            padding: "8px 16px", borderRadius: 6, fontSize: 14, fontWeight: 600,
-            background: "#dcfce7", color: "#16a34a", border: "1px solid #86efac",
-          }}>
-            <CheckCircle size={15} /> Phiên khám đã hoàn thành
-          </div>
-        ) : (
+        <div className="flex gap-3">
           <button
-            className="primary-button"
-            onClick={handleComplete}
-            disabled={saving || completing || !form.diagnosis.trim()}
-            style={{ display: "flex", alignItems: "center", gap: 6 }}
+            type="button"
+            className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all active:scale-95 disabled:opacity-70"
+            onClick={handleSave}
+            disabled={saving || completing || consultation?.status === "COMPLETED"}
           >
-            <CheckCircle size={15} />
-            {completing ? "Đang hoàn thành..." : "Hoàn thành phiên khám"}
+            <Save size={18} />
+            {saving ? "Đang lưu..." : existingRecordId ? "Cập nhật bệnh án" : "Lưu Bệnh Án"}
           </button>
-        )}
+          
+          {consultation?.status === "COMPLETED" ? (
+            <div className="flex items-center gap-2 bg-emerald-100 text-emerald-800 px-8 py-2.5 rounded-xl font-black text-sm shadow-sm border border-emerald-200">
+              <CheckCircle size={18} /> PHIÊN KHÁM ĐÃ HOÀN THÀNH
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-8 py-2.5 rounded-xl font-black text-sm shadow-lg transition-all active:scale-95 disabled:opacity-70 border border-emerald-400"
+              onClick={handleComplete}
+              disabled={completing || saving || !form.diagnosis.trim()}
+            >
+              <CheckCircle size={18} />
+              {completing ? "Đang hoàn tất..." : "HOÀN TẤT CA KHÁM"}
+            </button>
+          )}
+        </div>
+      </div>
       </div>
     </div>
   );

@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import com.clinicmanagement.notification.NotificationService;
 import com.clinicmanagement.review.ReviewRepository;
 import com.clinicmanagement.payment.Payment;
@@ -151,6 +152,13 @@ public class AppointmentServiceImpl implements AppointmentService {
         // Issue #3: Dùng pessimistic write lock để tránh race condition
         TimeSlot slot = timeSlotRepository.findByIdWithPessimisticLock(request.slotId())
                 .orElseThrow(() -> new ResourceNotFoundException("Ca khám không tồn tại với id: " + request.slotId()));
+
+        // Issue #4: Expired slot protection
+        LocalDate workDate = slot.getDoctorSchedule().getWorkDate();
+        LocalDate today = LocalDate.now();
+        if (workDate.isBefore(today) || (workDate.equals(today) && slot.getEndTime().isBefore(LocalTime.now()))) {
+            throw new BusinessException("Ca khám này đã qua thời gian, không thể đặt.");
+        }
 
         // Issue #2: Kiểm tra slot hợp lệ để book
         String slotStatus = slot.getStatus();

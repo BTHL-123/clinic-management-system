@@ -196,22 +196,33 @@
   min-height: 96px;
   align-content: center;
   justify-items: center;
-  border: 1px solid #e7ecf2;
-  border-radius: 8px;
-  background: #f8fafc;
+  border: 1px solid rgba(15, 118, 110, 0.15);
+  border-radius: 12px;
+  background: rgba(204, 251, 241, 0.45);
+  backdrop-filter: blur(8px);
   color: #405064;
   padding: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.appointment-day-summary:hover {
+  background: rgba(204, 251, 241, 0.7);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.08);
 }
 
 .appointment-day-summary span {
   color: #65758b;
   font-size: 0.78rem;
   font-weight: 850;
+  transition: color 0.2s;
 }
 
 .appointment-day-summary strong {
   color: #0f172a;
   font-size: 1.35rem;
+  transition: color 0.2s;
 }
 
 .appointment-day-summary small,
@@ -220,19 +231,34 @@
   font-size: 0.74rem;
   font-style: normal;
   font-weight: 750;
+  transition: all 0.2s;
 }
 
 .appointment-day-summary em {
   margin-top: 5px;
   border-radius: 999px;
-  background: #eef2f7;
+  background: rgba(15, 118, 110, 0.1);
   padding: 3px 8px;
 }
 
 .appointment-day-summary.selected {
-  border-color: #0f766e;
-  background: #f0fdfa;
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+  border-color: rgba(20, 184, 166, 0.8) !important;
+  background: rgba(204, 251, 241, 0.85) !important;
+  box-shadow:
+    0 0 0 3px rgba(20, 184, 166, 0.25),
+    0 8px 24px rgba(15, 118, 110, 0.15) !important;
+  transform: translateY(-3px);
+}
+
+.appointment-day-summary.selected span,
+.appointment-day-summary.selected strong,
+.appointment-day-summary.selected small,
+.appointment-day-summary.selected em {
+  color: #0f766e !important;
+}
+
+.appointment-day-summary.selected em {
+  background: rgba(15, 118, 110, 0.15) !important;
 }
 
 .appointment-resource-board {
@@ -247,6 +273,7 @@
   display: grid;
   grid-template-rows: 62px;
   grid-auto-rows: 42px;
+  gap: 8px;
   color: #65758b;
   font-size: 0.8rem;
   font-weight: 800;
@@ -2620,19 +2647,31 @@ a {
 }
 
 .admin-shell .appointment-day-summary.selected {
-  border-color: rgba(94, 234, 212, 0.95) !important;
-  background: rgba(204, 251, 241, 0.38) !important;
+  border-color: rgba(20, 184, 166, 0.8) !important;
+  background: rgba(204, 251, 241, 0.85) !important;
   box-shadow:
-    0 0 0 3px rgba(94, 234, 212, 0.22),
-    0 8px 32px rgba(0, 0, 0, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
+    0 0 0 3px rgba(20, 184, 166, 0.25),
+    0 8px 24px rgba(15, 118, 110, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+  transform: translateY(-3px);
 }
 
-.admin-shell .appointment-day-summary strong,
-.admin-shell .appointment-day-summary span,
-.admin-shell .appointment-day-summary small,
-.admin-shell .appointment-day-summary em {
+.admin-shell .appointment-day-summary:not(.selected) strong,
+.admin-shell .appointment-day-summary:not(.selected) span,
+.admin-shell .appointment-day-summary:not(.selected) small,
+.admin-shell .appointment-day-summary:not(.selected) em {
   color: #071827 !important;
+}
+
+.admin-shell .appointment-day-summary.selected strong,
+.admin-shell .appointment-day-summary.selected span,
+.admin-shell .appointment-day-summary.selected small,
+.admin-shell .appointment-day-summary.selected em {
+  color: #0f766e !important;
+}
+
+.admin-shell .appointment-day-summary.selected em {
+  background: rgba(15, 118, 110, 0.15) !important;
 }
 
 .admin-shell .appointment-day-summary em {

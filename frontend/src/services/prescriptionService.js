@@ -1,7 +1,7 @@
 import api from "./axiosClient";
 
 export const getPrescriptionByConsultationId = (consultationId) =>
-  api.get(`/prescriptions/by-consultation/${consultationId}`);
+  api.get(`/prescriptions/by-consultation/${consultationId}`, { skipErrorToast: true });
 
 export const getPrescriptionById = (prescriptionId) =>
   api.get(`/prescriptions/${prescriptionId}`);
