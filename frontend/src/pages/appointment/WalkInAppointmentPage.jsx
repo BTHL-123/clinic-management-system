@@ -1,17 +1,20 @@
-﻿import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   UserPlus,
   CalendarDays,
   Clock,
   CheckCircle,
   AlertCircle,
-  ArrowLeft,
-  Loader2,
   Hash,
+  X,
+  RefreshCw,
 } from "lucide-react";
 import { getDoctors } from "../../services/doctorService";
-import { getAvailableSlots, getSchedules } from "../../services/scheduleService";
+import { getSchedules, getSlotsByScheduleId, blockSlot, unblockSlot } from "../../services/scheduleService";
 import walkInService from "../../services/walkInService";
+import { getPatients } from "../../services/patientService";
+import QueueGrid from "./QueueGrid";
+import { useToast } from "../../context/useToast";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const GENDER_OPTIONS = [
@@ -130,54 +133,145 @@ function SuccessCard({ result, onReset }) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function WalkInAppointmentPage() {
-  const [form, setForm]           = useState(EMPTY_FORM);
-  const [errors, setErrors]       = useState({});
-  const [submitting, setSubmitting] = useState(false);
-  const [apiError, setApiError]   = useState("");
-  const [result, setResult]       = useState(null);
-
-  // Doctor + slot state
-  const [doctors, setDoctors]             = useState([]);
-  const [slots, setSlots]                 = useState([]);
-  const [doctorsLoading, setDoctorsLoading] = useState(false);
-  const [slotsLoading, setSlotsLoading]   = useState(false);
-
+  const toast = useToast();
   const today = new Date().toISOString().split("T")[0];
+  const [selectedDate, setSelectedDate] = useState(today);
 
-  // ── Load doctors on mount ────────────────────────────────────────────────
+  // Doctor + schedule state
+  const [doctors, setDoctors] = useState([]);
+  const [schedules, setSchedules] = useState([]);
+  const [slotsBySchedule, setSlotsBySchedule] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  // Modal State
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const [apiError, setApiError] = useState("");
+  const [result, setResult] = useState(null);
+  
+  const [selectedDoctorObj, setSelectedDoctorObj] = useState(null);
+  const [selectedSlotObj, setSelectedSlotObj] = useState(null);
+
+  // Patient Autocomplete State
+  const [patientSearch, setPatientSearch] = useState("");
+  const [patientOptions, setPatientOptions] = useState([]);
+  const [showPatientDropdown, setShowPatientDropdown] = useState(false);
+  const [searchingPatient, setSearchingPatient] = useState(false);
+  const [selectedExistingPatient, setSelectedExistingPatient] = useState(null);
+
+  // ── Debounced Search ─────────────────────────────────────────
   useEffect(() => {
-    setDoctorsLoading(true);
-    getDoctors({ page: 0, size: 200, status: "ACTIVE", sortBy: "doctorId", direction: "asc" })
-      .then((res) => {
-        const content = Array.isArray(res?.data?.content) ? res.data.content : [];
-        setDoctors(content);
-      })
-      .catch(() => setDoctors([]))
-      .finally(() => setDoctorsLoading(false));
-  }, []);
-
-  // ── Load available slots when doctor + date change ───────────────────────
-  const fetchSlots = useCallback(async (doctorId, date) => {
-    if (!doctorId || !date) { setSlots([]); return; }
-    setSlotsLoading(true);
-    setForm((prev) => ({ ...prev, slotId: "" }));
-    try {
-      const res = await getAvailableSlots(Number(doctorId), date);
-      const available = (Array.isArray(res?.data) ? res.data : [])
-        .filter((s) => s.status === "AVAILABLE");
-      setSlots(available);
-    } catch {
-      setSlots([]);
-    } finally {
-      setSlotsLoading(false);
+    if (!patientSearch.trim()) {
+      setPatientOptions([]);
+      setShowPatientDropdown(false);
+      return;
     }
-  }, []);
+    
+    const timeoutId = setTimeout(async () => {
+      setSearchingPatient(true);
+      try {
+        const res = await getPatients({ keyword: patientSearch, size: 5 });
+        const data = res?.data?.content || [];
+        setPatientOptions(data);
+        setShowPatientDropdown(true);
+      } catch (err) {
+        console.error("Lỗi tìm kiếm bệnh nhân:", err);
+      } finally {
+        setSearchingPatient(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [patientSearch]);
+
+  const handleSelectExistingPatient = (p) => {
+    setSelectedExistingPatient(p);
+    setPatientSearch(""); // Clear search bar
+    setShowPatientDropdown(false);
+    setForm(prev => ({
+      ...prev,
+      fullName: p.fullName || "",
+      phone: p.phone || "",
+      dateOfBirth: p.dateOfBirth || "",
+      gender: p.gender || "OTHER",
+    }));
+    setErrors({});
+  };
+
+  // ── Load data ────────────────────────────────────────────────
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const docRes = await getDoctors({ page: 0, size: 200, status: "ACTIVE" });
+      const docs = Array.isArray(docRes?.data?.content) ? docRes.data.content : [];
+      setDoctors(docs);
+
+      const schedRes = await getSchedules({ fromDate: selectedDate, toDate: selectedDate, size: 500 });
+      const scheds = Array.isArray(schedRes?.data) ? schedRes.data : [];
+      
+      // Filter out cancelled/on_leave schedules
+      const activeScheds = scheds.filter(s => !["CANCELLED", "ON_LEAVE"].includes(s.status));
+      setSchedules(activeScheds);
+
+      // Fetch slots for each schedule concurrently
+      const slotsMap = {};
+      const slotPromises = activeScheds.map(async (schedule) => {
+        try {
+          const slotRes = await getSlotsByScheduleId(schedule.scheduleId);
+          slotsMap[schedule.scheduleId] = Array.isArray(slotRes?.data) ? slotRes.data : [];
+        } catch (e) {
+          slotsMap[schedule.scheduleId] = [];
+        }
+      });
+      await Promise.all(slotPromises);
+      setSlotsBySchedule(slotsMap);
+
+    } catch (err) {
+      toast.error(err, "Không thể tải dữ liệu.");
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedDate, toast]);
 
   useEffect(() => {
-    fetchSlots(form.doctorId, form.appointmentDate);
-  }, [form.doctorId, form.appointmentDate, fetchSlots]);
+    fetchData();
+  }, [fetchData]);
 
-  // ── Field change handler ──────────────────────────────────────────────────
+  // ── Handlers ──────────────────────────────────────────────────
+  const handleSlotClick = (doctor, schedule, slot) => {
+    setSelectedDoctorObj(doctor);
+    setSelectedSlotObj(slot);
+    setForm({
+      ...EMPTY_FORM,
+      doctorId: doctor.doctorId,
+      appointmentDate: selectedDate,
+      slotId: slot.slotId || slot.id,
+    });
+    setErrors({});
+    setApiError("");
+    setPatientSearch("");
+    setSelectedExistingPatient(null);
+    setShowPatientDropdown(false);
+    setShowModal(true);
+  };
+
+  const handleSlotRightClick = async (slot) => {
+    try {
+      if (slot.status === "AVAILABLE") {
+        await blockSlot(slot.slotId || slot.id);
+        toast.success("Đã chặn slot thành công");
+      } else if (slot.status === "BLOCKED") {
+        await unblockSlot(slot.slotId || slot.id);
+        toast.success("Đã mở lại slot thành công");
+      }
+      fetchData(); // reload
+    } catch (err) {
+      toast.error(err, "Thao tác thất bại");
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -185,21 +279,14 @@ export default function WalkInAppointmentPage() {
     setApiError("");
   };
 
-  // ── Client-side validation ────────────────────────────────────────────────
   const validate = () => {
     const errs = {};
-    if (!form.fullName.trim())        errs.fullName = "Họ tên không được để trống";
-    if (!form.phone.trim())           errs.phone    = "Số điện thoại không được để trống";
-    else if (!/^(0|\+84)[0-9]{8,10}$/.test(form.phone.trim()))
-                                      errs.phone    = "Số điện thoại không hợp lệ";
-    if (!form.doctorId)               errs.doctorId = "Vui lòng chọn bác sĩ";
-    if (!form.appointmentDate)        errs.appointmentDate = "Vui lòng chọn ngày khám";
-    else if (form.appointmentDate < today) errs.appointmentDate = "Ngày khám không được là ngày trong quá khứ";
-    if (!form.slotId)                 errs.slotId   = "Vui lòng chọn ca khám";
+    if (!form.fullName.trim()) errs.fullName = "Họ tên không được để trống";
+    if (!form.phone.trim()) errs.phone = "Số điện thoại không được để trống";
+    else if (!/^(0|\+84)[0-9]{8,10}$/.test(form.phone.trim())) errs.phone = "Số điện thoại không hợp lệ";
     return errs;
   };
 
-  // ── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errs = validate();
@@ -209,18 +296,20 @@ export default function WalkInAppointmentPage() {
     setApiError("");
     try {
       const payload = {
-        fullName:        form.fullName.trim(),
-        phone:           form.phone.trim(),
-        dateOfBirth:     form.dateOfBirth || null,
-        gender:          form.gender,
-        doctorId:        Number(form.doctorId),
+        fullName: form.fullName.trim(),
+        phone: form.phone.trim(),
+        dateOfBirth: form.dateOfBirth || null,
+        gender: form.gender,
+        doctorId: Number(form.doctorId),
         appointmentDate: form.appointmentDate,
-        slotId:          Number(form.slotId),
-        reasonForVisit:  form.reasonForVisit.trim() || null,
+        slotId: Number(form.slotId),
+        reasonForVisit: form.reasonForVisit.trim() || null,
         initialSymptoms: form.initialSymptoms.trim() || null,
       };
       const res = await walkInService.createWalkIn(payload);
       setResult(res.data ?? res);
+      setShowModal(false);
+      fetchData(); // Refresh grid behind
     } catch (err) {
       setApiError(err.message || "Tạo lịch thất bại. Vui lòng thử lại.");
     } finally {
@@ -229,333 +318,248 @@ export default function WalkInAppointmentPage() {
   };
 
   const handleReset = () => {
-    setForm(EMPTY_FORM);
-    setErrors({});
-    setApiError("");
     setResult(null);
-    setSlots([]);
   };
 
   // ─── Render ────────────────────────────────────────────────────────────────
   if (result) {
     return (
-      <div style={{ padding: "32px 0" }}>
+      <div className="walk-in-page walk-in-success" style={{ padding: "32px 0" }}>
         <SuccessCard result={result} onReset={handleReset} />
       </div>
     );
   }
 
-  const selectedDoctor = doctors.find((d) => String(d.doctorId) === form.doctorId);
-
   return (
-    <>
+    <div className="walk-in-page" style={{ padding: "0 20px 40px" }}>
       <style>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes spin   { to { transform: rotate(360deg); } }
         .wi-input:focus { border-color: #0f766e !important; outline: none; box-shadow: 0 0 0 3px rgba(15,118,110,0.12); }
-        .wi-slot-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(22,101,52,0.18) !important; }
       `}</style>
 
       {/* Page Header */}
-      <div className="flex flex-col items-center w-full mb-6">
+      <div className="flex flex-col items-center w-full mb-8 mt-4">
         <div className="flex flex-col items-center">
-          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
-            <span className="text-white"><UserPlus size={26} /></span>
-            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Tạo lịch khám trực tiếp</span>
+          <h1 className="flex items-center gap-3 bg-white/60 backdrop-blur-md px-8 py-4 rounded-full border border-white/50 shadow-md">
+            <span style={{ color: "#0f766e" }}><UserPlus size={28} strokeWidth={2.5} /></span>
+            <span style={{ color: "#0f766e", fontSize: "1.5rem", fontWeight: 800, letterSpacing: "-0.02em" }}>Tạo lịch khám trực tiếp</span>
           </h1>
-          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
-            Dành cho bệnh nhân đến trực tiếp tại phòng khám mà không có lịch đặt trước.
+          <p style={{ color: "#1e293b", fontWeight: 600, marginTop: "12px", background: "rgba(255,255,255,0.5)", padding: "4px 16px", borderRadius: "20px", backdropFilter: "blur(4px)" }}>
+            Lễ tân: Chọn ngày và bấm vào một ô trống (màu xanh lục) để đặt lịch nhanh.
           </p>
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "28px", alignItems: "start" }}>
-
-        {/* ── Main Form ─────────────────────────────────────────────────────── */}
-        <form onSubmit={handleSubmit} noValidate>
-
-          {/* API Error Banner */}
-          {apiError && (
-            <div style={{
-              display: "flex", alignItems: "center", gap: "10px",
-              background: "#fef2f2", border: "1px solid #fecaca",
-              borderRadius: "10px", padding: "14px 18px",
-              color: "#dc2626", fontSize: "14px", marginBottom: "20px",
-              animation: "fadeIn 0.2s ease",
-            }}>
-              <AlertCircle size={18} />
-              {apiError}
-            </div>
-          )}
-
-          {/* ── Section 1: Patient Info ──────────────────────────────────── */}
-          <div style={sectionStyle}>
-            <SectionTitle icon={<UserPlus size={16} />} title="Thông tin bệnh nhân" />
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-              <div className="field" style={{ gridColumn: "1 / -1" }}>
-                <label htmlFor="wi-fullName">Họ và tên <Required /></label>
-                <input
-                  id="wi-fullName" name="fullName" type="text"
-                  className="wi-input"
-                  placeholder="Nguyễn Văn A"
-                  value={form.fullName}
-                  onChange={handleChange}
-                  style={inputStyle(!!errors.fullName)}
-                />
-                <FieldError msg={errors.fullName} />
-              </div>
-
-              <div className="field">
-                <label htmlFor="wi-phone">Số điện thoại <Required /></label>
-                <input
-                  id="wi-phone" name="phone" type="tel"
-                  className="wi-input"
-                  placeholder="0901234567"
-                  value={form.phone}
-                  onChange={handleChange}
-                  style={inputStyle(!!errors.phone)}
-                />
-                <FieldError msg={errors.phone} />
-              </div>
-
-              <div className="field">
-                <label htmlFor="wi-dob">Ngày sinh</label>
-                <input
-                  id="wi-dob" name="dateOfBirth" type="date"
-                  className="wi-input"
-                  max={today}
-                  value={form.dateOfBirth}
-                  onChange={handleChange}
-                  style={inputStyle(false)}
-                />
-              </div>
-
-              <div className="field">
-                <label htmlFor="wi-gender">Giới tính</label>
-                <select
-                  id="wi-gender" name="gender"
-                  className="wi-input"
-                  value={form.gender}
-                  onChange={handleChange}
-                  style={inputStyle(false)}
-                >
-                  {GENDER_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* ── Section 2: Appointment Info ──────────────────────────────── */}
-          <div style={sectionStyle}>
-            <SectionTitle icon={<CalendarDays size={16} />} title="Thông tin lịch khám" />
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
-              <div className="field">
-                <label htmlFor="wi-doctor">Bác sĩ <Required /></label>
-                <select
-                  id="wi-doctor" name="doctorId"
-                  className="wi-input"
-                  value={form.doctorId}
-                  onChange={handleChange}
-                  disabled={doctorsLoading}
-                  style={inputStyle(!!errors.doctorId)}
-                >
-                  <option value="">{doctorsLoading ? "Đang tải..." : "Chọn bác sĩ"}</option>
-                  {doctors.map((d) => (
-                    <option key={d.doctorId} value={d.doctorId}>
-                      {d.doctorCode} – {d.fullName}
-                      {d.specialization ? ` (${d.specialization})` : ""}
-                    </option>
-                  ))}
-                </select>
-                <FieldError msg={errors.doctorId} />
-              </div>
-
-              <div className="field">
-                <label htmlFor="wi-date">Ngày khám <Required /></label>
-                <input
-                  id="wi-date" name="appointmentDate" type="date"
-                  className="wi-input"
-                  min={today}
-                  value={form.appointmentDate}
-                  onChange={handleChange}
-                  style={inputStyle(!!errors.appointmentDate)}
-                />
-                <FieldError msg={errors.appointmentDate} />
-              </div>
-            </div>
-
-            {/* Slot picker */}
-            <div className="field">
-              <label style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
-                <Clock size={14} /> Ca khám còn trống <Required />
-              </label>
-
-              {!form.doctorId || !form.appointmentDate ? (
-                <div style={hintBoxStyle}>
-                  Vui lòng chọn bác sĩ và ngày khám để xem ca trống.
-                </div>
-              ) : slotsLoading ? (
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#64748b", fontSize: "13px" }}>
-                  <div style={spinnerStyle} /> Đang tải ca khám...
-                </div>
-              ) : slots.length === 0 ? (
-                <div style={{ ...hintBoxStyle, background: "#fef9c3", borderColor: "#fde047", color: "#854d0e" }}>
-                  Không có ca khám trống. Vui lòng chọn ngày hoặc bác sĩ khác.
-                </div>
-              ) : (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                  {slots.map((s) => {
-                    const selected = String(s.slotId) === form.slotId;
-                    return (
-                      <button
-                        key={s.slotId}
-                        type="button"
-                        className="wi-slot-btn"
-                        onClick={() => {
-                          setForm((p) => ({ ...p, slotId: String(s.slotId) }));
-                          setErrors((p) => ({ ...p, slotId: "" }));
-                        }}
-                        style={{
-                          display: "inline-flex", alignItems: "center", gap: "6px",
-                          padding: "9px 16px", borderRadius: "10px",
-                          border: selected ? "2px solid #0f766e" : "1.5px solid #86efac",
-                          background: selected
-                            ? "linear-gradient(135deg,#0f766e,#0d9488)"
-                            : "linear-gradient(135deg,#f0fdf4,#dcfce7)",
-                          color: selected ? "#ffffff" : "#166534",
-                          fontWeight: 700, fontSize: "14px",
-                          fontFamily: "monospace", cursor: "pointer",
-                          transition: "all 0.15s ease",
-                          boxShadow: selected ? "0 2px 10px rgba(15,118,110,0.3)" : "0 1px 4px rgba(22,101,52,0.08)",
-                        }}
-                      >
-                        <Clock size={12} />
-                        {formatTime(s.startTime)} – {formatTime(s.endTime)}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-              <FieldError msg={errors.slotId} />
-            </div>
-          </div>
-
-          {/* ── Section 3: Symptoms ──────────────────────────────────────── */}
-          <div style={sectionStyle}>
-            <SectionTitle icon={<AlertCircle size={16} />} title="Triệu chứng & Lý do khám" />
-
-            <div className="field" style={{ marginBottom: "16px" }}>
-              <label htmlFor="wi-reason">Lý do khám</label>
-              <input
-                id="wi-reason" name="reasonForVisit" type="text"
-                className="wi-input"
-                placeholder="VD: Khám sức khỏe định kỳ"
-                value={form.reasonForVisit}
-                onChange={handleChange}
-                style={inputStyle(false)}
-              />
-            </div>
-
-            <div className="field">
-              <label htmlFor="wi-symptoms">Triệu chứng ban đầu</label>
-              <textarea
-                id="wi-symptoms" name="initialSymptoms"
-                className="wi-input"
-                rows={3}
-                placeholder="Mô tả ngắn gọn triệu chứng của bệnh nhân..."
-                value={form.initialSymptoms}
-                onChange={handleChange}
-                style={{ ...inputStyle(false), resize: "vertical" }}
+      <div className="patient-glass-panel" style={{ padding: "24px", borderRadius: "20px", marginBottom: "24px", border: "1px solid rgba(255,255,255,0.4)" }}>
+        <div style={{ display: "flex", alignItems: "flex-end", gap: "24px" }}>
+          <div className="field" style={{ margin: 0, width: "280px" }}>
+            <label style={{ fontWeight: 700, color: "#1e293b", marginBottom: "8px", display: "block", fontSize: "14px" }}>Ngày khám</label>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", background: "#fff", border: "1px solid #cbd5e1", borderRadius: "10px", padding: "10px 14px", boxShadow: "inset 0 1px 3px rgba(0,0,0,0.05)" }}>
+              <CalendarDays size={20} color="#0f766e" />
+              <input 
+                type="date" 
+                value={selectedDate} 
+                onChange={(e) => setSelectedDate(e.target.value)} 
+                min={today}
+                style={{ border: "none", background: "transparent", outline: "none", fontSize: "15px", color: "#0f172a", width: "100%", fontWeight: 500 }}
               />
             </div>
           </div>
-
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={submitting}
-            style={{
-              width: "100%", padding: "14px 24px",
-              background: submitting ? "#94a3b8" : "linear-gradient(135deg, #0f766e, #0d9488)",
-              color: "#ffffff", border: "none", borderRadius: "12px",
-              fontSize: "15px", fontWeight: 800, cursor: submitting ? "not-allowed" : "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
-              boxShadow: submitting ? "none" : "0 4px 16px rgba(15,118,110,0.3)",
-              transition: "all 0.2s ease",
+          <button 
+            onClick={fetchData} 
+            disabled={loading}
+            className="hover:bg-slate-50 transition-all"
+            style={{ 
+              padding: "11px 20px", borderRadius: "10px", border: "1px solid #cbd5e1", 
+              background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px",
+              fontWeight: 600, color: "#0f766e", boxShadow: "0 2px 4px rgba(0,0,0,0.05)"
             }}
           >
-            {submitting
-              ? <><div style={spinnerStyle} /> Đang tạo lịch...</>
-              : <><UserPlus size={18} /> Tạo lịch khám trực tiếp</>
-            }
+            <RefreshCw size={18} className={loading ? "spin-animation" : ""} />
+            Tải lại lưới
           </button>
-        </form>
+        </div>
+      </div>
 
-        {/* ── Side Summary Panel ─────────────────────────────────────────── */}
+      {loading ? (
+        <div style={{ textAlign: "center", padding: "60px", color: "#64748b" }}>
+          <div style={spinnerStyle} className="mb-4"></div>
+          <div>Đang tải sơ đồ lịch khám...</div>
+        </div>
+      ) : (
+        <QueueGrid 
+          doctors={doctors.filter(d => schedules.some(s => s.doctorId === d.doctorId))}
+          schedules={schedules}
+          slotsBySchedule={slotsBySchedule}
+          onSlotClick={handleSlotClick}
+          onSlotRightClick={handleSlotRightClick}
+        />
+      )}
+
+      {/* Modal Form */}
+      {showModal && (
         <div style={{
-          background: "#ffffff", border: "1px solid #e2e8f0",
-          borderRadius: "14px", padding: "24px",
-          boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
-          position: "sticky", top: "20px",
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: "rgba(0,0,0,0.6)", zIndex: 9999,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          backdropFilter: "blur(4px)"
         }}>
-          <h3 style={{ margin: "0 0 18px", fontSize: "0.95rem", fontWeight: 700, color: "#0f172a" }}>
-            Tóm tắt lịch khám
-          </h3>
-
-          {[ 
-            { label: "Bệnh nhân",    value: form.fullName || "—" },
-            { label: "Điện thoại",   value: form.phone || "—" },
-            {
-              label: "Giới tính",
-              value: GENDER_OPTIONS.find((o) => o.value === form.gender)?.label || "—",
-            },
-            {
-              label: "Bác sĩ",
-              value: selectedDoctor
-                ? `${selectedDoctor.doctorCode} – ${selectedDoctor.fullName}`
-                : "—",
-            },
-            { label: "Ngày khám",    value: form.appointmentDate || "—" },
-            {
-              label: "Ca khám",
-              value: form.slotId
-                ? (() => {
-                    const s = slots.find((sl) => String(sl.slotId) === form.slotId);
-                    return s ? `${formatTime(s.startTime)} – ${formatTime(s.endTime)}` : "—";
-                  })()
-                : "—",
-            },
-            { label: "Loại lịch",    value: "Khám trực tiếp" },
-          ].map(({ label, value }) => (
-            <div key={label} style={{
-              display: "flex", justifyContent: "space-between",
-              padding: "8px 0", borderBottom: "1px solid #f1f5f9", fontSize: "13px",
-            }}>
-              <span style={{ color: "#64748b" }}>{label}</span>
-              <span style={{ fontWeight: 600, color: "#0f172a", textAlign: "right", maxWidth: "170px" }}>
-                {value}
-              </span>
-            </div>
-          ))}
-
           <div style={{
-            marginTop: "18px", background: "#f0fdf4",
-            borderRadius: "10px", padding: "14px 16px",
-            border: "1px solid #bbf7d0",
+            background: "#fff", width: "90%", maxWidth: "600px",
+            borderRadius: "16px", boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
+            maxHeight: "90vh", overflowY: "auto", animation: "fadeIn 0.2s ease"
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#15803d", fontSize: "12px", fontWeight: 600 }}>
-              <Hash size={13} />
-              Số thứ tự sẽ được tạo tự động sau khi đặt lịch thành công.
+            <div style={{
+              padding: "20px 24px", borderBottom: "1px solid #f1f5f9",
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              background: "linear-gradient(to right, #f8fafc, #ffffff)",
+              borderTopLeftRadius: "16px", borderTopRightRadius: "16px"
+            }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: "1.25rem", color: "#0f766e", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <UserPlus size={20} /> Tạo Walk-in Appointment
+                </h2>
+                <div style={{ marginTop: "4px", fontSize: "13px", color: "#64748b", display: "flex", alignItems: "center", gap: "10px" }}>
+                  <span>Bác sĩ: <strong>{selectedDoctorObj?.fullName}</strong></span>
+                  <span>•</span>
+                  <span>Ca khám: <strong>{formatTime(selectedSlotObj?.startTime)} - {formatTime(selectedSlotObj?.endTime)}</strong></span>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowModal(false)}
+                style={{ background: "transparent", border: "none", cursor: "pointer", color: "#94a3b8", padding: "4px" }}
+              >
+                <X size={24} />
+              </button>
             </div>
+
+            <form onSubmit={handleSubmit} style={{ padding: "24px" }} noValidate>
+              {apiError && (
+                <div style={{
+                  display: "flex", alignItems: "center", gap: "10px",
+                  background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "10px", padding: "14px",
+                  color: "#dc2626", fontSize: "14px", marginBottom: "20px"
+                }}>
+                  <AlertCircle size={18} /> {apiError}
+                </div>
+              )}
+
+              {/* Autocomplete Search Field */}
+              <div className="field" style={{ marginBottom: "20px", position: "relative" }}>
+                <label style={{ fontWeight: 600, color: "#334155", marginBottom: "6px", display: "block", fontSize: "13px" }}>Tìm kiếm bệnh nhân (SĐT hoặc Tên)</label>
+                <div style={{ display: "flex", alignItems: "center", position: "relative" }}>
+                  <input 
+                    type="text" 
+                    className="wi-input"
+                    placeholder="Nhập số điện thoại hoặc tên để tìm..." 
+                    value={patientSearch}
+                    onChange={(e) => {
+                      setPatientSearch(e.target.value);
+                      if (selectedExistingPatient) {
+                         setSelectedExistingPatient(null);
+                      }
+                    }}
+                    onFocus={() => { if(patientOptions.length > 0) setShowPatientDropdown(true); }}
+                    onBlur={() => setTimeout(() => setShowPatientDropdown(false), 200)}
+                    style={{ ...inputStyle(false), paddingRight: "30px", background: "#f8fafc" }}
+                  />
+                  {searchingPatient && <div style={{ position: "absolute", right: 10, ...spinnerStyle, width: 14, height: 14, borderWidth: 2 }} />}
+                </div>
+
+                {/* Dropdown */}
+                {showPatientDropdown && patientOptions.length > 0 && (
+                  <div style={{
+                    position: "absolute", top: "100%", left: 0, right: 0, 
+                    background: "#fff", border: "1px solid #cbd5e1", borderRadius: "8px", 
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)", zIndex: 10, marginTop: "4px",
+                    maxHeight: "200px", overflowY: "auto"
+                  }}>
+                    {patientOptions.map(p => (
+                      <div 
+                        key={p.patientId}
+                        onClick={() => handleSelectExistingPatient(p)}
+                        style={{
+                          padding: "10px 14px", borderBottom: "1px solid #f1f5f9",
+                          cursor: "pointer", transition: "background 0.2s"
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = "#f8fafc"}
+                        onMouseLeave={(e) => e.currentTarget.style.background = "#fff"}
+                      >
+                        <div style={{ fontWeight: 600, color: "#0f766e", fontSize: "14px" }}>{p.fullName}</div>
+                        <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
+                          SĐT: {p.phone} • {p.gender === "MALE" ? "Nam" : p.gender === "FEMALE" ? "Nữ" : "Khác"} 
+                          {p.dateOfBirth ? ` • Sinh: ${p.dateOfBirth}` : ""}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Patient Info Form */}
+              <div style={{ padding: "16px", background: selectedExistingPatient ? "#f0fdf4" : "#f8fafc", borderRadius: "12px", border: `1px solid ${selectedExistingPatient ? "#bbf7d0" : "#e2e8f0"}`, marginBottom: "20px" }}>
+                <div style={{ marginBottom: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                   <span style={{ fontSize: "13px", fontWeight: 700, color: selectedExistingPatient ? "#166534" : "#475569" }}>
+                     {selectedExistingPatient ? "✅ Thông tin bệnh nhân đã lưu" : "📝 Thông tin bệnh nhân (Mới)"}
+                   </span>
+                   {selectedExistingPatient && (
+                     <button type="button" onClick={() => { setSelectedExistingPatient(null); setForm({...form, fullName: "", phone: "", dateOfBirth: "", gender: "OTHER"}); setPatientSearch(""); }} style={{ background: "transparent", border: "none", color: "#dc2626", fontSize: "12px", cursor: "pointer", fontWeight: 600, padding: 0 }}>✕ Hủy chọn</button>
+                   )}
+                </div>
+                
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                  <div className="field" style={{ gridColumn: "1 / -1", margin: 0 }}>
+                    <label htmlFor="wi-fullName">Họ và tên <Required /></label>
+                    <input id="wi-fullName" name="fullName" type="text" className="wi-input" autoFocus={!selectedExistingPatient}
+                           value={form.fullName} onChange={handleChange} style={{...inputStyle(!!errors.fullName), opacity: selectedExistingPatient ? 0.7 : 1}} disabled={!!selectedExistingPatient} />
+                    <FieldError msg={errors.fullName} />
+                  </div>
+                  <div className="field" style={{ margin: 0 }}>
+                    <label htmlFor="wi-phone">Số điện thoại <Required /></label>
+                    <input id="wi-phone" name="phone" type="tel" className="wi-input"
+                           value={form.phone} onChange={handleChange} style={{...inputStyle(!!errors.phone), opacity: selectedExistingPatient ? 0.7 : 1}} disabled={!!selectedExistingPatient} />
+                    <FieldError msg={errors.phone} />
+                  </div>
+                  <div className="field" style={{ margin: 0 }}>
+                    <label htmlFor="wi-dateOfBirth">Ngày sinh</label>
+                    <input id="wi-dateOfBirth" name="dateOfBirth" type="date" className="wi-input"
+                           value={form.dateOfBirth || ""} onChange={handleChange} style={{...inputStyle(false), opacity: selectedExistingPatient ? 0.7 : 1}} disabled={!!selectedExistingPatient} />
+                  </div>
+                  <div className="field" style={{ margin: 0 }}>
+                    <label htmlFor="wi-gender">Giới tính</label>
+                    <select id="wi-gender" name="gender" className="wi-input"
+                            value={form.gender} onChange={handleChange} style={{...inputStyle(false), opacity: selectedExistingPatient ? 0.7 : 1}} disabled={!!selectedExistingPatient}>
+                      {GENDER_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Consultation Info */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "16px", marginBottom: "20px" }}>
+                <div className="field" style={{ margin: 0 }}>
+                  <label htmlFor="wi-reason">Lý do khám / Triệu chứng</label>
+                  <textarea id="wi-reason" name="reasonForVisit" className="wi-input" rows={2}
+                            value={form.reasonForVisit} onChange={handleChange} style={{...inputStyle(false), resize: "vertical"}} />
+                </div>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", borderTop: "1px solid #f1f5f9", paddingTop: "20px" }}>
+                <button type="button" onClick={() => setShowModal(false)}
+                        style={{ padding: "10px 20px", borderRadius: "8px", border: "1px solid #cbd5e1", background: "#fff", fontWeight: 600, color: "#475569", cursor: "pointer" }}>
+                  Hủy bỏ
+                </button>
+                <button type="submit" disabled={submitting}
+                        style={{ padding: "10px 24px", background: "#0f766e", color: "#fff", border: "none", borderRadius: "8px", fontWeight: 600, cursor: submitting ? "not-allowed" : "pointer" }}>
+                  {submitting ? "Đang xử lý..." : "Xác nhận đặt lịch"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
+      )}
 
-      </div>
-    </>
+    </div>
   );
 }
 
@@ -564,55 +568,23 @@ function Required() {
   return <span style={{ color: "#dc2626", marginLeft: "2px" }}>*</span>;
 }
 
-function SectionTitle({ icon, title }) {
-  return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: "8px",
-      marginBottom: "18px", paddingBottom: "10px",
-      borderBottom: "1px solid #f1f5f9",
-      color: "#0f766e", fontWeight: 700, fontSize: "0.9rem",
-    }}>
-      {icon}{title}
-    </div>
-  );
-}
-
-const sectionStyle = {
-  background: "#ffffff",
-  border: "1px solid #e2e8f0",
-  borderRadius: "14px",
-  padding: "22px 24px",
-  marginBottom: "20px",
-  boxShadow: "0 1px 6px rgba(0,0,0,0.04)",
-};
-
-const hintBoxStyle = {
-  padding: "12px 14px",
-  background: "#f8fafc",
-  border: "1px solid #e2e8f0",
-  borderRadius: "8px",
-  color: "#64748b",
-  fontSize: "13px",
-};
-
 const spinnerStyle = {
-  width: "16px", height: "16px",
-  border: "2.5px solid rgba(255,255,255,0.4)",
-  borderTopColor: "#ffffff",
+  width: "20px", height: "20px",
+  border: "3px solid rgba(15,118,110,0.2)",
+  borderTopColor: "#0f766e",
   borderRadius: "50%",
-  animation: "spin 0.7s linear infinite",
-  display: "inline-block",
+  animation: "spin 0.8s linear infinite",
 };
 
 function inputStyle(hasError) {
   return {
     width: "100%",
-    padding: "10px 13px",
+    padding: "10px 14px",
     borderRadius: "8px",
-    border: `1.5px solid ${hasError ? "#fca5a5" : "#dfe5ec"}`,
+    border: `1.5px solid ${hasError ? "#fca5a5" : "#cbd5e1"}`,
     fontSize: "14px",
     background: hasError ? "#fff5f5" : "#ffffff",
-    transition: "border-color 0.15s, box-shadow 0.15s",
+    transition: "all 0.15s ease",
     boxSizing: "border-box",
   };
 }

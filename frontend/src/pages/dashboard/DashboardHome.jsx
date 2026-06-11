@@ -111,16 +111,16 @@ export default function DashboardHome() {
             Thống kê hoạt động và hiệu suất của phòng khám.
           </p>
         </div>
-        <div style={{ display: "flex", gap: "8px", background: "#f1f5f9", padding: "4px", borderRadius: "8px" }}>
+        <div style={{ position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)", display: "flex", gap: "8px", background: "rgba(255,255,255,0.2)", backdropFilter: "blur(8px)", padding: "4px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.3)" }}>
           {[7, 30, 90].map(days => (
             <button
               key={days}
               onClick={() => setTimeRange(days)}
               style={{
                 border: "none", padding: "6px 16px", borderRadius: "6px", cursor: "pointer",
-                background: timeRange === days ? "#fff" : "transparent",
-                color: timeRange === days ? "#0f172a" : "#64748b",
-                fontWeight: timeRange === days ? 600 : 500,
+                background: timeRange === days ? "rgba(255,255,255,0.9)" : "transparent",
+                color: timeRange === days ? "#0f766e" : "rgba(255,255,255,0.7)",
+                fontWeight: timeRange === days ? 700 : 500,
                 boxShadow: timeRange === days ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
                 fontSize: "13px"
               }}

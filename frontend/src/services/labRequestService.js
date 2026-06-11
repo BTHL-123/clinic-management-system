@@ -6,7 +6,7 @@ export const getMyLabRequests = (params) =>
   api.get("/lab-requests/my", { params });
 
 export const getLabRequestsByConsultationId = (consultationId) =>
-  api.get(`/lab-requests/by-consultation/${consultationId}`);
+  api.get(`/lab-requests/by-consultation/${consultationId}`, { skipErrorToast: true });
 
 export const getLabRequestById = (labRequestId) =>
   api.get(`/lab-requests/${labRequestId}`);

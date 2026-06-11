@@ -130,7 +130,7 @@ export default function AuditLogPage() {
       </section>
 
       <section className="panel">
-        <form className="toolbar" onSubmit={(event) => event.preventDefault()}>
+        <form className="toolbar" onSubmit={(event) => event.preventDefault()} style={{ gridTemplateColumns: "1fr 1fr 1fr auto" }}>
           <label className="search-box">
             <Search size={17} />
             <input
@@ -162,7 +162,13 @@ export default function AuditLogPage() {
       <section className="panel table-panel">
         <div className="table-header">
           <h2>Hoạt động đã ghi nhận</h2>
-          <span className="muted">{pagination.totalElements} bản ghi</span>
+          <div className="row-actions">
+            <span className="muted">{pagination.totalElements} bản ghi</span>
+            <button className="ghost-button" type="button" onClick={loadAuditLogs}>
+              <RefreshCw size={16} />
+              Làm mới
+            </button>
+          </div>
         </div>
         <div className="table-wrapper">
           <table className="data-table fixed-table">

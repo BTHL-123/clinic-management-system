@@ -137,14 +137,19 @@ export default function DepartmentManagement() {
       </div>
 
       {/* ── Search Bar ─────────────────────────────────── */}
-      <div className="search-bar">
+      <div className="search-bar" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
         <Search size={16} className="search-icon" />
         <input
           type="text"
           placeholder="Tìm kiếm theo tên hoặc mô tả..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ flex: 1 }}
         />
+        <button className="primary-button" style={{ flexShrink: 0 }} onClick={openCreate}>
+          <Plus size={16} />
+          Thêm chuyên khoa
+        </button>
       </div>
 
       {/* ── Error ──────────────────────────────────────── */}

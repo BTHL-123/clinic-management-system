@@ -177,28 +177,34 @@ export default function DoctorManagement() {
 
 
       {/* ── Filters ────────────────────────────────────── */}
-      <div className="search-bar" style={{ display: "flex", gap: "10px" }}>
-        <div style={{ position: "relative", flex: 1, maxWidth: "420px" }}>
-          <Search size={16} className="search-icon" />
-          <input
-            type="text"
-            placeholder="Tìm theo tên hoặc mã bác sĩ..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="search-bar" style={{ display: "flex", gap: "10px", alignItems: "center", maxWidth: "100%" }}>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center", flex: 1 }}>
+          <div style={{ position: "relative" }}>
+            <Search size={16} className="search-icon" />
+            <input
+              type="text"
+              placeholder="Tìm theo tên hoặc mã bác sĩ..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <select
+            style={{ minHeight: "44px", borderRadius: "8px", border: "1px solid #d7dee8", padding: "0 12px", background: "#fff" }}
+            value={departmentFilter}
+            onChange={(e) => setDepartmentFilter(e.target.value)}
+          >
+            <option value="">Tất cả chuyên khoa</option>
+            {departments.map((d) => (
+              <option key={d.departmentId} value={d.departmentId}>
+                {d.departmentName}
+              </option>
+            ))}
+          </select>
         </div>
-        <select
-          style={{ minHeight: "44px", borderRadius: "8px", border: "1px solid #d7dee8", padding: "0 12px", background: "#fff" }}
-          value={departmentFilter}
-          onChange={(e) => setDepartmentFilter(e.target.value)}
-        >
-          <option value="">Tất cả chuyên khoa</option>
-          {departments.map((d) => (
-            <option key={d.departmentId} value={d.departmentId}>
-              {d.departmentName}
-            </option>
-          ))}
-        </select>
+        <button className="primary-button" style={{ flexShrink: 0, marginRight: "16px" }} onClick={openCreate}>
+          <Plus size={16} />
+          Thêm bác sĩ
+        </button>
       </div>
 
       {error && <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>}

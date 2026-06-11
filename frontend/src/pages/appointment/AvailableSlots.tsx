@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Clock, Search, CalendarDays, ArrowLeft, ShieldAlert, CheckCircle, UserRound, Star } from "lucide-react";
-import { getAvailableSlots, getSchedules, lockSlot, releaseLock } from "../../services/scheduleService";
+import { getAvailableSlotsForPatient, getSchedules, lockSlot, releaseLock } from "../../services/scheduleService";
 import { getDoctors } from "../../services/doctorService";
 import appointmentService from "../../services/appointmentService";
 import { useToast } from "../../context/useToast";
@@ -94,7 +94,7 @@ export default function AvailableSlots() {
     setErrorMsg("");
     setSlots([]);
     try {
-      const json: any = await getAvailableSlots(Number(did), date);
+      const json: any = await getAvailableSlotsForPatient(Number(did), date);
       const data: TimeSlot[] = Array.isArray(json.data) ? json.data : [];
       setSlots(data);
       setFetchState("done");

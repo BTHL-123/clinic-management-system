@@ -217,7 +217,17 @@ export default function SystemSettingsPage() {
       <section className="panel table-panel">
         <div className="table-header">
           <h2>Danh sách cấu hình</h2>
-          <span className="muted">{pagination.totalElements} cấu hình</span>
+          <div className="row-actions">
+            <span className="muted">{pagination.totalElements} cấu hình</span>
+            <button className="ghost-button" type="button" onClick={loadSettings} disabled={loading}>
+              <RefreshCw size={16} />
+              Làm mới
+            </button>
+            <button className="primary-button compact" type="button" onClick={openCreateModal}>
+              <Plus size={16} />
+              Thêm cấu hình
+            </button>
+          </div>
         </div>
         <div className="table-wrapper">
           <table className="data-table fixed-table">

@@ -10,13 +10,14 @@ import java.util.List;
 
 public interface DoctorScheduleService {
     DoctorScheduleResponse createSchedule(DoctorScheduleRequest request);
+    List<DoctorScheduleResponse> createBulkSchedules(com.clinicmanagement.appointment.dto.BulkScheduleRequest request);
     DoctorScheduleResponse updateSchedule(Long id, DoctorScheduleRequest request);
     List<DoctorScheduleResponse> getSchedules(Long doctorId, LocalDate fromDate, LocalDate toDate, String status);
     DoctorScheduleResponse getScheduleById(Long id);
     DoctorScheduleResponse cancelSchedule(Long id, String reason);
     GenerateSlotsResponse generateSlots(Long id, int slotDurationMinutes);
     List<TimeSlotResponse> getSlotsByScheduleId(Long scheduleId);
-    List<TimeSlotResponse> getAvailableSlots(Long doctorId, LocalDate workDate);
+    List<TimeSlotResponse> getAvailableSlots(Long doctorId, LocalDate workDate, boolean isPatient);
     TimeSlotResponse blockSlot(Long slotId);
     TimeSlotResponse unblockSlot(Long slotId);
 }

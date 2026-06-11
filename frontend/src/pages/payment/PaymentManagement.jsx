@@ -180,7 +180,7 @@ export default function PaymentManagement() {
 
   /* ── Render ────────────────────────────────────────────── */
   return (
-    <>
+    <div className="receptionist-data-page">
       {/* ── Page Header ────────────────────────────────── */}
       <div className="page-header">
         <div className="flex flex-col items-center w-full">
@@ -229,19 +229,8 @@ export default function PaymentManagement() {
       {error && <div className="error-box">{error}</div>}
 
       {/* ── Table ──────────────────────────────────────── */}
-      <div className="table-wrapper">
-        <table className="data-table fixed-table">
-          <colgroup>
-            <col style={{ width: "4%" }} />
-            <col style={{ width: "12%" }} />
-            <col style={{ width: "12%" }} />
-            <col style={{ width: "10%" }} />
-            <col style={{ width: "13%" }} />
-            <col style={{ width: "11%" }} />
-            <col style={{ width: "12%" }} />
-            <col style={{ width: "13%" }} />
-            <col style={{ width: "9%" }} />
-          </colgroup>
+      <div className="table-wrapper receptionist-fit-table">
+        <table className="data-table">
           <thead>
             <tr>
               <th>#</th>
@@ -460,6 +449,6 @@ export default function PaymentManagement() {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

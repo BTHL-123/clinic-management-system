@@ -11,10 +11,12 @@ import {
   Clock,
   User,
   Activity,
-  ArrowLeft
+  ArrowLeft,
+  Stethoscope
 } from "lucide-react";
 import appointmentService from "../../services/appointmentService";
 import queueService from "../../services/queueService";
+import queueTicketService from "../../services/queueTicketService";
 import { getMyDoctorProfile } from "../../services/doctorService";
 import { useToast } from "../../context/useToast.js";
 
@@ -94,6 +96,18 @@ export default function DoctorTodayAppointments() {
       fetchData();
     } catch (err) {
       toast.error(err, "Không thể hoàn tất ca khám");
+    }
+  };
+
+  const handleExamine = async (id) => {
+    try {
+      const res = await queueTicketService.startExamination(id);
+      toast.success("Bắt đầu khám thành công!");
+      if (res.data?.consultationId) {
+        navigate(`/dashboard/examination/${res.data.consultationId}`);
+      }
+    } catch (err) {
+      toast.error(err, "Không thể bắt đầu khám");
     }
   };
 
@@ -281,6 +295,14 @@ export default function DoctorTodayAppointments() {
                                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-500/10 text-rose-700 hover:bg-rose-500/20 border border-rose-500/20 transition-all"
                               >
                                 <SkipForward size={14} /> Bỏ qua
+                              </button>
+                            )}
+                            {canComplete && (
+                              <button
+                                onClick={() => handleExamine(ticket.queueTicketId)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-500/20 text-purple-700 hover:bg-purple-500/30 border border-purple-500/30 transition-all"
+                              >
+                                <Stethoscope size={14} /> Khám bệnh
                               </button>
                             )}
                             {canComplete && (

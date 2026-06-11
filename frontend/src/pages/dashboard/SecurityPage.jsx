@@ -196,11 +196,21 @@ export default function SecurityPage() {
         <div className="panel">
           <div className="table-header">
             <h2>{selectedRole ? "Chi tiết vai trò" : "Tạo vai trò"}</h2>
-            {selectedRole && (
-              <button className="icon-button danger" type="button" onClick={handleDeleteRole}>
-                <Trash2 size={16} />
+            <div className="row-actions">
+              <button className="ghost-button" type="button" onClick={loadSecurity}>
+                <RefreshCw size={16} />
+                Làm mới
               </button>
-            )}
+              <button className="primary-button compact" type="button" onClick={resetRoleForm}>
+                <Plus size={16} />
+                Thêm vai trò
+              </button>
+              {selectedRole && (
+                <button className="icon-button danger" type="button" onClick={handleDeleteRole}>
+                  <Trash2 size={16} />
+                </button>
+              )}
+            </div>
           </div>
           <form className="form-grid" onSubmit={handleSaveRole}>
             <div className="field">

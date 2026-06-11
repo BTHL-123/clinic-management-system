@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ChevronDown, KeyRound, LogOut, UserSquare } from "lucide-react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import NotificationBell from "../components/NotificationBell.jsx";
 import { useAuth } from "../context/useAuth.js";
 import Sidebar from "../components/Sidebar.jsx";
@@ -9,6 +9,7 @@ import DoctorSidebar from "./DoctorSidebar.jsx";
 import PharmacistSidebar from "./PharmacistSidebar.jsx";
 import PatientSidebar from "./PatientSidebar.jsx";
 import LabTechnicianSidebar from "./LabTechnicianSidebar.jsx";
+import ReceptionistSidebar from "./ReceptionistSidebar.jsx";
 import bgImage from "../assets/images/background_2k.png";
 import patientBgImage from "../assets/images/patient_bg.png";
 
@@ -42,12 +43,13 @@ export default function DashboardLayout() {
   const isDoctor = roles.includes("DOCTOR");
   const isPharmacist = roles.includes("PHARMACIST");
   const isLabTechnician = roles.includes("LAB_TECHNICIAN");
+  const isReceptionist = roles.includes("RECEPTIONIST") && !roles.includes("ADMIN");
   const isPatientOnly = roles.includes("PATIENT") && !isDoctor && !isPharmacist && !isLabTechnician;
   const isAdminShell = roles.includes("ADMIN") && !isDoctor && !isPharmacist && !isPatientOnly && !isLabTechnician;
-  const usePatientVisualShell = isPatientOnly || isAdminShell || isPharmacist || isLabTechnician || isDoctor;
+  const usePatientVisualShell = isPatientOnly || isAdminShell || isPharmacist || isLabTechnician || isDoctor || isReceptionist;
 
   return (
-    <div className={`flex flex-col min-h-screen w-full relative selection:bg-teal-200 selection:text-teal-900 font-sans overflow-y-auto overflow-x-hidden ${usePatientVisualShell ? "patient-shell" : ""} ${isAdminShell ? "admin-shell" : ""}`}>
+    <div className={`flex flex-col min-h-screen w-full relative selection:bg-teal-200 selection:text-teal-900 font-sans overflow-y-auto overflow-x-hidden ${usePatientVisualShell ? "patient-shell" : ""} ${isAdminShell ? "admin-shell" : ""} ${isReceptionist ? "receptionist-shell" : ""}`}>
       {/* Global Background */}
       {usePatientVisualShell ? (
         <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#0a3d38]">
@@ -175,6 +177,8 @@ export default function DashboardLayout() {
             <PatientSidebar />
           ) : roles.includes("LAB_TECHNICIAN") ? (
             <LabTechnicianSidebar />
+          ) : isReceptionist ? (
+            <ReceptionistSidebar />
           ) : (
             <Sidebar />
           )}

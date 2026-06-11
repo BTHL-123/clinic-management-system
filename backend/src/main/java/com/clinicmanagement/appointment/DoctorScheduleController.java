@@ -44,6 +44,16 @@ public class DoctorScheduleController {
                 .body(ApiResponse.success("Tạo lịch làm việc thành công", response));
     }
 
+    @PostMapping("/bulk")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
+    public ResponseEntity<ApiResponse<List<DoctorScheduleResponse>>> createBulkSchedules(
+            @Valid @RequestBody com.clinicmanagement.appointment.dto.BulkScheduleRequest request
+    ) {
+        List<DoctorScheduleResponse> response = doctorScheduleService.createBulkSchedules(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Tạo lịch làm việc định kỳ thành công", response));
+    }
+
     @PutMapping("/{scheduleId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
     public ResponseEntity<ApiResponse<DoctorScheduleResponse>> updateSchedule(
@@ -84,7 +94,16 @@ public class DoctorScheduleController {
             @RequestParam Long doctorId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate workDate
     ) {
-        List<TimeSlotResponse> response = doctorScheduleService.getAvailableSlots(doctorId, workDate);
+        List<TimeSlotResponse> response = doctorScheduleService.getAvailableSlots(doctorId, workDate, false);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @GetMapping("/available-slots/patient")
+    public ResponseEntity<ApiResponse<List<TimeSlotResponse>>> getAvailableSlotsForPatient(
+            @RequestParam Long doctorId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate workDate
+    ) {
+        List<TimeSlotResponse> response = doctorScheduleService.getAvailableSlots(doctorId, workDate, true);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
