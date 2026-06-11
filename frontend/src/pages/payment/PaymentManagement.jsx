@@ -180,7 +180,7 @@ export default function PaymentManagement() {
 
   /* ── Render ────────────────────────────────────────────── */
   return (
-    <>
+    <div className="receptionist-data-page">
       {/* ── Page Header ────────────────────────────────── */}
       <div className="page-header">
         <div>
@@ -229,7 +229,7 @@ export default function PaymentManagement() {
       {error && <div className="error-box">{error}</div>}
 
       {/* ── Table ──────────────────────────────────────── */}
-      <div className="table-wrapper">
+      <div className="table-wrapper receptionist-fit-table">
         <table className="data-table">
           <thead>
             <tr>
@@ -449,6 +449,6 @@ export default function PaymentManagement() {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

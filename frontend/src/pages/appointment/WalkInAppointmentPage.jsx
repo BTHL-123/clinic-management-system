@@ -5,12 +5,10 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  ArrowLeft,
-  Loader2,
   Hash,
 } from "lucide-react";
 import { getDoctors } from "../../services/doctorService";
-import { getAvailableSlots, getSchedules } from "../../services/scheduleService";
+import { getAvailableSlots } from "../../services/scheduleService";
 import walkInService from "../../services/walkInService";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -239,7 +237,7 @@ export default function WalkInAppointmentPage() {
   // ─── Render ────────────────────────────────────────────────────────────────
   if (result) {
     return (
-      <div style={{ padding: "32px 0" }}>
+      <div className="walk-in-page walk-in-success" style={{ padding: "32px 0" }}>
         <SuccessCard result={result} onReset={handleReset} />
       </div>
     );
@@ -248,7 +246,7 @@ export default function WalkInAppointmentPage() {
   const selectedDoctor = doctors.find((d) => String(d.doctorId) === form.doctorId);
 
   return (
-    <>
+    <div className="walk-in-page">
       <style>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes spin   { to { transform: rotate(360deg); } }
@@ -289,7 +287,7 @@ export default function WalkInAppointmentPage() {
           )}
 
           {/* ── Section 1: Patient Info ──────────────────────────────────── */}
-          <div style={sectionStyle}>
+          <div className="walk-in-section" style={sectionStyle}>
             <SectionTitle icon={<UserPlus size={16} />} title="Thông tin bệnh nhân" />
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
@@ -349,7 +347,7 @@ export default function WalkInAppointmentPage() {
           </div>
 
           {/* ── Section 2: Appointment Info ──────────────────────────────── */}
-          <div style={sectionStyle}>
+          <div className="walk-in-section" style={sectionStyle}>
             <SectionTitle icon={<CalendarDays size={16} />} title="Thông tin lịch khám" />
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
@@ -445,7 +443,7 @@ export default function WalkInAppointmentPage() {
           </div>
 
           {/* ── Section 3: Symptoms ──────────────────────────────────────── */}
-          <div style={sectionStyle}>
+          <div className="walk-in-section" style={sectionStyle}>
             <SectionTitle icon={<AlertCircle size={16} />} title="Triệu chứng & Lý do khám" />
 
             <div className="field" style={{ marginBottom: "16px" }}>
@@ -496,7 +494,7 @@ export default function WalkInAppointmentPage() {
         </form>
 
         {/* ── Side Summary Panel ─────────────────────────────────────────── */}
-        <div style={{
+        <div className="walk-in-summary" style={{
           background: "#ffffff", border: "1px solid #e2e8f0",
           borderRadius: "14px", padding: "24px",
           boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
@@ -555,7 +553,7 @@ export default function WalkInAppointmentPage() {
         </div>
 
       </div>
-    </>
+    </div>
   );
 }
 
@@ -566,7 +564,7 @@ function Required() {
 
 function SectionTitle({ icon, title }) {
   return (
-    <div style={{
+    <div className="walk-in-section-title" style={{
       display: "flex", alignItems: "center", gap: "8px",
       marginBottom: "18px", paddingBottom: "10px",
       borderBottom: "1px solid #f1f5f9",

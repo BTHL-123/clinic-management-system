@@ -5,6 +5,8 @@ import {
   UserCheck,
   RefreshCw,
   AlertCircle,
+  SlidersHorizontal,
+  ChevronDown,
 } from "lucide-react";
 import appointmentService from "../../services/appointmentService";
 import { useToast } from "../../context/useToast.js";
@@ -114,7 +116,7 @@ export default function ReceptionistAppointmentsPage() {
   };
 
   return (
-    <div className="content">
+    <div className="content receptionist-data-page">
       <div className="page-header">
         <h1 className="page-title">
           <UserCheck size={24} style={{ color: "#0f766e" }} />
@@ -131,30 +133,38 @@ export default function ReceptionistAppointmentsPage() {
       </div>
 
       {/* Toolbar / Filters */}
-      <div className="panel" style={{ marginBottom: "20px" }}>
-        <form onSubmit={handleSearchSubmit} className="toolbar" style={{ gridTemplateColumns: "1fr auto auto auto" }}>
-          <div className="search-box">
-            <Search size={18} />
+      <div className="panel checkin-filter-panel">
+        <form onSubmit={handleSearchSubmit} className="checkin-filter-bar">
+          <label className="checkin-filter-field checkin-search-field">
+            <span className="checkin-filter-label">Tìm bệnh nhân</span>
+            <span className="checkin-filter-control">
+              <Search size={18} />
             <input
               type="text"
               placeholder="Tìm theo mã lịch hẹn, tên hoặc số điện thoại..."
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
             />
-          </div>
+            </span>
+          </label>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <Calendar size={18} style={{ color: "#64748b" }} />
+          <label className="checkin-filter-field">
+            <span className="checkin-filter-label">Ngày khám</span>
+            <span className="checkin-filter-control">
+              <Calendar size={18} />
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              style={{ width: "160px" }}
             />
-          </div>
+            </span>
+          </label>
 
-          <div>
-            <select value={status} onChange={(e) => setStatus(e.target.value)} style={{ width: "160px" }}>
+          <label className="checkin-filter-field">
+            <span className="checkin-filter-label">Trạng thái</span>
+            <span className="checkin-filter-control checkin-select-control">
+              <SlidersHorizontal size={18} />
+              <select value={status} onChange={(e) => setStatus(e.target.value)}>
               <option value="">Tất cả trạng thái</option>
               <option value="CONFIRMED">Confirmed (Chờ khám)</option>
               <option value="CHECKED_IN">Checked In (Đã check-in)</option>
@@ -162,16 +172,19 @@ export default function ReceptionistAppointmentsPage() {
               <option value="CANCELLED">Cancelled (Đã hủy)</option>
               <option value="NO_SHOW">Không đến khám (No Show)</option>
             </select>
-          </div>
+              <ChevronDown size={16} className="checkin-select-chevron" />
+            </span>
+          </label>
 
-          <button type="submit" className="primary-button" style={{ height: "40px" }}>
-            Tìm kiếm
+          <button type="submit" className="checkin-search-button">
+            <Search size={18} />
+            <span>Tìm kiếm</span>
           </button>
         </form>
       </div>
 
       {/* Data Table */}
-      <div className="table-wrapper">
+      <div className="table-wrapper receptionist-fit-table">
         <table className="data-table">
           <thead>
             <tr>

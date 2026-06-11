@@ -171,7 +171,7 @@ export default function PatientManagement() {
   };
 
   return (
-    <div className="text-white flex flex-col h-full gap-6 pb-6">
+    <div className="receptionist-patient-page text-white flex flex-col h-full gap-6 pb-6">
       {/* ── Page Header ────────────────────────────────── */}
       <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-6 shadow-xl flex flex-wrap justify-between items-center gap-4">
         <div>
@@ -211,7 +211,7 @@ export default function PatientManagement() {
       {/* ── Table ──────────────────────────────────────── */}
       <div className="flex-1 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] shadow-xl flex flex-col min-h-0 overflow-hidden">
         <div className="flex-1 overflow-auto custom-scrollbar">
-          <table className="w-full text-left border-collapse whitespace-nowrap">
+          <table className="receptionist-patient-table w-full text-left border-collapse whitespace-nowrap">
             <thead className="bg-white/5 border-b border-white/10 text-white/80 text-sm sticky top-0 z-10 backdrop-blur-md">
               <tr>
                 <th className="p-5 font-semibold">Mã BN</th>
@@ -246,26 +246,26 @@ export default function PatientManagement() {
                       {patient.insuranceNumber && <div className="text-xs text-teal-200/80">BHYT: <span className="text-teal-100">{patient.insuranceNumber}</span></div>}
                       {!patient.identityNumber && !patient.insuranceNumber && <span className="text-white/40">—</span>}
                     </td>
-                    <td className="p-4">
+                    <td className="p-4 receptionist-patient-account-cell">
                       {patient.userName ? (
-                        <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-1 rounded-full text-xs font-semibold">{patient.userName}</span>
+                        <span className="receptionist-patient-account-badge">{patient.userName}</span>
                       ) : (
-                        <span className="text-white/40 text-xs">Không có</span>
+                        <span className="receptionist-patient-account-empty">Không có</span>
                       )}
                     </td>
-                    <td className="p-4">
-                      <div className="flex items-center justify-center gap-2">
+                    <td className="p-4 receptionist-patient-actions-cell">
+                      <div className="receptionist-patient-actions flex items-center justify-center gap-2">
                         <button
                           onClick={() => navigate(`/dashboard/patients/${patient.patientId}`)}
                           title="Hồ sơ chi tiết"
-                          className="p-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border border-blue-500/20 rounded-lg transition-all"
+                          className="receptionist-patient-action receptionist-patient-action-view p-2 rounded-lg transition-all"
                         >
                           <Eye size={16} />
                         </button>
                         <button
                           onClick={() => setShowHistoryFor(patient.patientId)}
                           title="Lịch sử bệnh án"
-                          className="p-2 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/5 hover:border-white/20 rounded-lg transition-all"
+                          className="receptionist-patient-action receptionist-patient-action-history p-2 rounded-lg transition-all"
                         >
                           <ClipboardList size={16} />
                         </button>
@@ -274,14 +274,14 @@ export default function PatientManagement() {
                             <button
                               onClick={() => openEdit(patient)}
                               title="Chỉnh sửa"
-                              className="p-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/20 rounded-lg transition-all"
+                              className="receptionist-patient-action receptionist-patient-action-edit p-2 rounded-lg transition-all"
                             >
                               <Edit size={16} />
                             </button>
                             <button
                               onClick={() => setDeleteTarget(patient)}
                               title="Xóa"
-                              className="p-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/20 rounded-lg transition-all"
+                              className="receptionist-patient-action receptionist-patient-action-delete p-2 rounded-lg transition-all"
                             >
                               <Trash2 size={16} />
                             </button>

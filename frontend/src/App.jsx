@@ -59,6 +59,7 @@ import LandingPage from "./pages/LandingPage.jsx";
 import DoctorHome from "./pages/dashboard/DoctorHome.jsx";
 import PharmacistHome from "./pages/dashboard/PharmacistHome.jsx";
 import LabTechnicianHome from "./pages/dashboard/LabTechnicianHome.jsx";
+import ReceptionistHome from "./pages/dashboard/ReceptionistHome.jsx";
 function DashboardIndex() {
   const { user } = useAuth();
   const roles = user?.roles?.map((role) => role.roleName || role) || [];
@@ -77,6 +78,9 @@ function DashboardIndex() {
   }
   if (roles.includes("LAB_TECHNICIAN")) {
     return <LabTechnicianHome />;
+  }
+  if (roles.includes("RECEPTIONIST")) {
+    return <ReceptionistHome />;
   }
 
   return <DashboardHome />;
@@ -155,5 +159,4 @@ export default function App() {
     </Routes>
   );
 }
-
 
