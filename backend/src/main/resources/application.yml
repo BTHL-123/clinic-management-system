@@ -4,7 +4,7 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/clinic_management}
     username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:12345}
+    password: ${DB_PASSWORD:123456}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -45,7 +45,14 @@ app:
     avatar-dir: ${AVATAR_UPLOAD_DIR:uploads/avatars}
   gemini:
     api-key: ${GEMINI_API_KEY:}
-    model: ${GEMINI_MODEL:gemini-1.5-flash}
+    primary-model: ${GEMINI_PRIMARY_MODEL:gemini-2.0-flash}
+    fallback-model: ${GEMINI_FALLBACK_MODEL:gemini-2.0-flash-lite}
+  ai:
+    provider: ${AI_PROVIDER:groq}
+  groq:
+    api-key: ${GROQ_API_KEY:}
+    primary-model: ${GROQ_PRIMARY_MODEL:llama-3.3-70b-versatile}
+    fallback-model: ${GROQ_FALLBACK_MODEL:llama-3.1-8b-instant}
   seed:
     admin-email: ${APP_ADMIN_EMAIL:admin@example.com}
     admin-password: ${APP_ADMIN_PASSWORD:123456}

@@ -69,8 +69,8 @@ function StatCard({ icon: Icon, label, value, color }) {
       <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-black/5 border border-black/5 ${color}`}>
         <Icon size={24} />
       </div>
-      <span className="text-sm font-semibold text-slate-700 text-center">{label}</span>
-      <span className={`text-4xl font-extrabold leading-none mt-1 ${color}`}>{value ?? "—"}</span>
+      <span className="text-sm font-semibold patient-label text-center">{label}</span>
+      <span className="text-4xl font-extrabold leading-none mt-1 patient-data">{value ?? "—"}</span>
     </div>
   );
 }
@@ -155,8 +155,8 @@ export default function PatientQueueStatusPage() {
             <div className="w-20 h-20 rounded-full bg-black/5 flex items-center justify-center">
               <Users size={40} className="text-teal-600" />
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 m-0">Không có lịch hẹn hôm nay</h2>
-            <p className="text-base text-slate-700 m-0 max-w-[380px] font-semibold leading-relaxed">
+            <h2 className="text-2xl patient-card-title m-0">Không có lịch hẹn hôm nay</h2>
+            <p className="text-base patient-data m-0 max-w-[380px] font-semibold leading-relaxed">
               Bạn chưa có lịch khám nào được check-in hôm nay.
               Vui lòng đặt lịch hoặc liên hệ lễ tân để check-in.
             </p>
@@ -189,16 +189,16 @@ export default function PatientQueueStatusPage() {
               {/* Appointment info */}
               <div className="mt-2 p-5 bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <span className="text-xs font-bold text-slate-600 tracking-wider">BỆNH NHÂN</span>
-                  <p className="mt-1 text-lg font-bold text-slate-900 truncate">{data.patientName}</p>
+                  <span className="text-xs font-bold patient-label uppercase tracking-wider">Bệnh nhân</span>
+                  <p className="mt-1 text-lg patient-data truncate">{data.patientName}</p>
                 </div>
                 <div>
-                  <span className="text-xs font-bold text-slate-600 tracking-wider">BÁC SĨ</span>
-                  <p className="mt-1 text-lg font-bold text-slate-900 truncate">{data.doctorName}</p>
+                  <span className="text-xs font-bold patient-label uppercase tracking-wider">Bác sĩ</span>
+                  <p className="mt-1 text-lg patient-data truncate">{data.doctorName}</p>
                 </div>
                 <div>
-                  <span className="text-xs font-bold text-slate-600 tracking-wider">MÃ LỊCH HẸN</span>
-                  <p className="mt-1 text-lg font-bold text-teal-700 truncate">{data.appointmentCode || "—"}</p>
+                  <span className="text-xs font-bold patient-label uppercase tracking-wider">Mã lịch hẹn</span>
+                  <p className="mt-1 text-lg patient-data truncate">{data.appointmentCode || "—"}</p>
                 </div>
               </div>
             </div>

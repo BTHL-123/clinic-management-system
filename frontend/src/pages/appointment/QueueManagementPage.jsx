@@ -218,7 +218,7 @@ export default function QueueManagementPage() {
         <table className="data-table queue-table">
           <thead>
             <tr>
-              <th style={{ width: "80px", textAlign: "center" }}>STT</th>
+              <th style={{ textAlign: "center" }}>STT</th>
               <th>Mã Lịch Hẹn</th>
               <th>Bệnh Nhân</th>
               <th>Số Điện Thoại</th>
@@ -226,7 +226,7 @@ export default function QueueManagementPage() {
               <th style={{ textAlign: "center" }}>Giờ Hẹn</th>
               <th>Check-in</th>
               <th>Trạng Thái</th>
-              <th style={{ textAlign: "center", width: "240px" }}>Thao Tác</th>
+              <th style={{ textAlign: "center" }}>Thao Tác</th>
             </tr>
           </thead>
           <tbody>

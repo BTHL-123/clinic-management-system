@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from "react";
+﻿import React, { useState, useCallback, useEffect, useMemo } from "react";
 import {
   CalendarDays,
   ChevronDown,
@@ -976,12 +976,15 @@ export default function AppointmentManagement() {
 
   return (
     <div className="appointment-week-page">
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">
-            <CalendarDays size={26} />
-            Quản lý Lịch hẹn &amp; Lịch khám
+      <div className="flex flex-col items-center w-full mb-6">
+        <div className="flex flex-col items-center">
+          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
+            <span className="text-white"><CalendarDays size={26} /></span>
+            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Quản lý Lịch hẹn &amp; Lịch khám</span>
           </h1>
+          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
+            Quản lý lịch làm việc của bác sĩ và các ca khám trong tuần.
+          </p>
         </div>
       </div>
 

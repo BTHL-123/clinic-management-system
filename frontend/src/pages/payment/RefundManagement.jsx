@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { CheckCircle, XCircle, Clock, FileText, X, AlertCircle } from "lucide-react";
+import { CheckCircle, XCircle, Clock, FileText, X, AlertCircle, RotateCcw } from "lucide-react";
 import { getRefunds, approveRefund, rejectRefund } from "../../services/refundService";
 
 function RejectModal({ isOpen, onClose, onConfirm, busy }) {
@@ -149,9 +149,12 @@ export default function RefundManagement() {
   return (
     <div style={{ padding: "20px" }}>
       <div style={{ marginBottom: "24px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-        <div>
-          <h1 style={{ margin: "0 0 8px", fontSize: "1.5rem", fontWeight: 700, color: "#0f172a" }}>Quản lý hoàn tiền</h1>
-          <p style={{ margin: 0, color: "#64748b", fontSize: "14px" }}>Duyệt hoặc từ chối các yêu cầu hoàn tiền từ bệnh nhân.</p>
+        <div className="flex flex-col items-center w-full">
+          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
+            <span className="text-white"><RotateCcw size={26} /></span>
+            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Quản lý hoàn tiền</span>
+          </h1>
+          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">Duyệt hoặc từ chối các yêu cầu hoàn tiền từ bệnh nhân.</p>
         </div>
         <div>
           <select

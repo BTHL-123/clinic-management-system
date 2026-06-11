@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Edit, Eye, Plus, Search, Trash2, Users, X, ClipboardList } from "lucide-react";
+import { Edit, Eye, Plus, Search, Trash2, Users, X, ClipboardList, ArrowLeft } from "lucide-react";
 import {
   createPatient,
   deletePatient,
@@ -174,34 +174,43 @@ export default function PatientManagement() {
     <div className="receptionist-patient-page text-white flex flex-col h-full gap-6 pb-6">
       {/* ── Page Header ────────────────────────────────── */}
       <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-6 shadow-xl flex flex-wrap justify-between items-center gap-4">
-        <div>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="bg-white/10 hover:bg-white/20 active:scale-95 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm group"
+          >
+            <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
+            Quay lại
+          </button>
           <h1 className="text-2xl font-bold flex items-center gap-3">
             <Users size={28} className="text-teal-400" />
             Hồ sơ bệnh nhân
           </h1>
-          <p className="text-white/60 mt-1">Quản lý hồ sơ bệnh nhân, tiền sử bệnh lý và thông tin liên hệ.</p>
+          <p className="text-white/70 font-medium mt-3 text-center drop-shadow-sm text-sm md:text-base">
+            Quản lý hồ sơ bệnh nhân, tiền sử bệnh lý và thông tin liên hệ.
+          </p>
         </div>
         {!isDoctor && (
           <button
-            className="bg-gradient-to-r from-teal-400 to-emerald-400 text-slate-900 font-bold px-5 py-2.5 rounded-xl hover:shadow-[0_0_20px_rgba(45,212,191,0.4)] transition-all flex items-center gap-2"
+            className="md:absolute right-0 md:top-1/2 md:-translate-y-1/2 bg-gradient-to-r from-teal-400 to-emerald-400 text-slate-900 font-bold px-5 py-2.5 rounded-xl hover:shadow-[0_0_20px_rgba(45,212,191,0.4)] transition-all flex items-center gap-2 shadow-lg"
             onClick={openCreate}
           >
-            <Plus size={18} />
+            <Plus size={16} />
             Thêm bệnh nhân
           </button>
         )}
       </div>
 
       {/* ── Filters ────────────────────────────────────── */}
-      <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[1.5rem] p-5 shadow-xl flex gap-4">
+      <div className="patient-glass-panel rounded-[1.5rem] p-5 shadow-xl flex gap-4">
         <div className="relative flex-1 max-w-[420px]">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
+          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-teal-700/50" />
           <input
             type="text"
             placeholder="Tìm theo tên, mã bệnh nhân hoặc SĐT..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-900/40 border border-white/10 text-white placeholder-white/40 rounded-xl py-2.5 pl-11 pr-4 focus:outline-none focus:border-teal-400/50 transition-colors"
+            className="w-full patient-glass-input text-slate-900 placeholder-teal-700/50 text-sm rounded-xl py-2.5 pl-11 pr-4 focus:outline-none focus:border-teal-500/50 transition-colors font-semibold"
           />
         </div>
       </div>
@@ -209,42 +218,42 @@ export default function PatientManagement() {
       {error && <div className="bg-rose-500/20 border border-rose-500/30 text-rose-300 p-4 rounded-xl">{error}</div>}
 
       {/* ── Table ──────────────────────────────────────── */}
-      <div className="flex-1 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] shadow-xl flex flex-col min-h-0 overflow-hidden">
+      <div className="flex-1 patient-glass-panel rounded-[3rem] p-8 md:p-10 shadow-[0_12px_40px_rgba(0,0,0,0.22)] border-0 w-full flex flex-col min-h-0 overflow-hidden">
         <div className="flex-1 overflow-auto custom-scrollbar">
           <table className="receptionist-patient-table w-full text-left border-collapse whitespace-nowrap">
             <thead className="bg-white/5 border-b border-white/10 text-white/80 text-sm sticky top-0 z-10 backdrop-blur-md">
               <tr>
-                <th className="p-5 font-semibold">Mã BN</th>
-                <th className="p-5 font-semibold">Họ và tên</th>
-                <th className="p-5 font-semibold">Giới tính</th>
-                <th className="p-5 font-semibold">SĐT</th>
-                <th className="p-5 font-semibold">CCCD / BHYT</th>
-                <th className="p-5 font-semibold">Tài khoản</th>
-                <th className="p-5 font-semibold text-center">Hành động</th>
+                <th className="p-5 font-semibold" style={{color:"#0f766e"}}>Mã BN</th>
+                <th className="p-5 font-semibold" style={{color:"#0f766e"}}>Họ và tên</th>
+                <th className="p-5 font-semibold" style={{color:"#0f766e"}}>Giới tính</th>
+                <th className="p-5 font-semibold" style={{color:"#0f766e"}}>SĐT</th>
+                <th className="p-5 font-semibold" style={{color:"#0f766e"}}>CCCD / BHYT</th>
+                <th className="p-5 font-semibold" style={{color:"#0f766e"}}>Tài khoản</th>
+                <th className="p-5 font-semibold text-center" style={{color:"#0f766e"}}>Hành động</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-white/50">Đang tải dữ liệu...</td>
+                  <td colSpan={7} className="p-8 text-center text-slate-500 font-bold">Đang tải dữ liệu...</td>
                 </tr>
               ) : patients.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-white/50">Không tìm thấy bệnh nhân nào.</td>
+                  <td colSpan={7} className="p-8 text-center text-slate-500 font-bold">Không tìm thấy bệnh nhân nào.</td>
                 </tr>
               ) : (
                 patients.map((patient) => (
-                  <tr key={patient.patientId} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                  <tr key={patient.patientId} className="border-b border-slate-900/10 hover:bg-white/30 transition-colors">
                     <td className="p-4 pl-5">
-                      <span className="font-mono text-teal-300 bg-teal-400/10 px-2 py-1 rounded-md text-sm border border-teal-400/20">{patient.patientCode}</span>
+                      <span className="font-mono text-teal-700 bg-teal-50/80 px-2 py-1 rounded-md text-sm border border-teal-200/60 font-bold">{patient.patientCode}</span>
                     </td>
-                    <td className="p-4 font-bold text-white">{patient.fullName || "—"}</td>
-                    <td className="p-4 text-white/80">{patient.gender === "MALE" ? "Nam" : patient.gender === "FEMALE" ? "Nữ" : "Khác"}</td>
-                    <td className="p-4 text-white/80">{patient.phone || "—"}</td>
+                    <td className="p-4 font-bold text-slate-900">{patient.fullName || "—"}</td>
+                    <td className="p-4 text-slate-800 font-medium">{patient.gender === "MALE" ? "Nam" : patient.gender === "FEMALE" ? "Nữ" : "Khác"}</td>
+                    <td className="p-4 text-slate-800 font-medium">{patient.phone || "—"}</td>
                     <td className="p-4">
-                      {patient.identityNumber && <div className="text-xs text-white/60 mb-0.5">ID: <span className="text-white/90">{patient.identityNumber}</span></div>}
-                      {patient.insuranceNumber && <div className="text-xs text-teal-200/80">BHYT: <span className="text-teal-100">{patient.insuranceNumber}</span></div>}
-                      {!patient.identityNumber && !patient.insuranceNumber && <span className="text-white/40">—</span>}
+                      {patient.identityNumber && <div className="text-xs text-slate-600 mb-0.5 font-medium">ID: <span className="text-slate-800 font-semibold">{patient.identityNumber}</span></div>}
+                      {patient.insuranceNumber && <div className="text-xs text-teal-700 font-medium">BHYT: <span className="text-teal-800 font-semibold">{patient.insuranceNumber}</span></div>}
+                      {!patient.identityNumber && !patient.insuranceNumber && <span className="text-slate-400">—</span>}
                     </td>
                     <td className="p-4 receptionist-patient-account-cell">
                       {patient.userName ? (

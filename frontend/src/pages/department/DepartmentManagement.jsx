@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Building2, Edit, Plus, Search, Trash2, X } from "lucide-react";
 import {
   createDepartment,
@@ -120,31 +120,36 @@ export default function DepartmentManagement() {
   return (
     <>
       {/* ── Page Header ────────────────────────────────── */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">
-            <Building2 size={26} />
-            Quản lý Chuyên khoa
+      <div className="flex flex-col items-center w-full mb-6">
+        <div className="flex flex-col items-center">
+          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
+            <span className="text-white"><Building2 size={26} /></span>
+            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Quản lý Chuyên khoa</span>
           </h1>
-          <p className="muted">
+          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
             Quản lý danh sách các chuyên khoa trong phòng khám.
           </p>
         </div>
-        <button className="primary-button" onClick={openCreate}>
+        <button className="primary-button absolute right-0 top-1/2 -translate-y-1/2" onClick={openCreate}>
           <Plus size={16} />
           Thêm chuyên khoa
         </button>
       </div>
 
       {/* ── Search Bar ─────────────────────────────────── */}
-      <div className="search-bar">
+      <div className="search-bar" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
         <Search size={16} className="search-icon" />
         <input
           type="text"
           placeholder="Tìm kiếm theo tên hoặc mô tả..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ flex: 1 }}
         />
+        <button className="primary-button" style={{ flexShrink: 0 }} onClick={openCreate}>
+          <Plus size={16} />
+          Thêm chuyên khoa
+        </button>
       </div>
 
       {/* ── Error ──────────────────────────────────────── */}
@@ -152,7 +157,15 @@ export default function DepartmentManagement() {
 
       {/* ── Table ──────────────────────────────────────── */}
       <div className="table-wrapper">
-        <table className="data-table">
+        <table className="data-table fixed-table">
+          <colgroup>
+            <col style={{ width: "5%" }} />
+            <col style={{ width: "22%" }} />
+            <col style={{ width: "38%" }} />
+            <col style={{ width: "13%" }} />
+            <col style={{ width: "12%" }} />
+            <col style={{ width: "10%" }} />
+          </colgroup>
           <thead>
             <tr>
               <th>#</th>

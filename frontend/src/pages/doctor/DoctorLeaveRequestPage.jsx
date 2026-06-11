@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { ClipboardList, ArrowLeft } from "lucide-react";
 import doctorLeaveRequestService from "../../services/doctorLeaveRequestService.js";
 import { useToast } from "../../context/useToast.js";
 
 const STATUS_BADGE = {
-  PENDING: { label: "Chờ duyệt", color: "text-amber-300", bg: "bg-amber-500/20", border: "border-amber-500/30" },
-  APPROVED: { label: "Đã duyệt", color: "text-emerald-300", bg: "bg-emerald-500/20", border: "border-emerald-500/30" },
-  REJECTED: { label: "Bị từ chối", color: "text-rose-300", bg: "bg-rose-500/20", border: "border-rose-500/30" },
+  PENDING: { label: "Chờ duyệt", color: "text-amber-800", bg: "bg-amber-500/20", border: "border-amber-500/30" },
+  APPROVED: { label: "Đã duyệt", color: "text-emerald-800", bg: "bg-emerald-500/20", border: "border-emerald-500/30" },
+  REJECTED: { label: "Bị từ chối", color: "text-rose-800", bg: "bg-rose-500/20", border: "border-rose-500/30" },
 };
 
 const TYPE_LABEL = {
@@ -25,9 +27,9 @@ const CONFLICT_STATUS_BG = {
   CHECKED_IN: "bg-emerald-500/20",
 };
 const CONFLICT_STATUS_COLOR = {
-  SCHEDULED: "text-amber-300",
-  CONFIRMED: "text-blue-300",
-  CHECKED_IN: "text-emerald-300",
+  SCHEDULED: "text-amber-800",
+  CONFIRMED: "text-blue-800",
+  CHECKED_IN: "text-emerald-800",
 };
 
 function StatusBadge({ status }) {
@@ -41,6 +43,7 @@ function StatusBadge({ status }) {
 
 export default function DoctorLeaveRequestPage() {
   const toast = useToast();
+  const navigate = useNavigate();
   const today = new Date().toISOString().split("T")[0];
 
   const [form, setForm] = useState({
@@ -136,34 +139,48 @@ export default function DoctorLeaveRequestPage() {
   };
 
   return (
-    <div className="text-white flex flex-col h-full gap-6 pb-6">
-      <h1 className="text-2xl font-bold flex items-center gap-3">
-        📋 Yêu cầu nghỉ / Thay đổi lịch
-      </h1>
+    <div className="w-full flex flex-col items-center">
+      {/* Header */}
+      <div className="w-full relative flex flex-col items-center mb-8">
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 active:scale-95 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm group"
+        >
+          <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
+          Quay lại
+        </button>
+        <div className="flex flex-col items-center">
+          <h1 className="text-3xl font-extrabold text-white flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
+            <span className="text-white"><ClipboardList size={28} /></span>
+            Yêu cầu nghỉ / Thay đổi lịch
+          </h1>
+          <p className="text-white/70 font-medium mt-3 text-center drop-shadow-sm">Gửi và theo dõi các yêu cầu nghỉ phép hoặc đổi lịch trực.</p>
+        </div>
+      </div>
 
       {/* ─── Form ─── */}
-      <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-8 shadow-xl">
-        <h2 className="text-lg font-bold mb-6 text-white/90">
+      <div className="patient-glass-panel rounded-[3rem] p-8 md:p-10 shadow-[0_12px_40px_rgba(0,0,0,0.22)] border-0 w-full mb-6 text-slate-900">
+        <h2 className="text-lg font-extrabold mb-6 patient-card-title">
           Gửi yêu cầu mới
         </h2>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="col-span-1 md:col-span-2">
-              <label className="block text-sm font-semibold text-white/60 mb-2">Loại yêu cầu</label>
+              <label className="block text-sm font-bold patient-label mb-2">Loại yêu cầu</label>
               <select
                 name="requestType"
                 value={form.requestType}
                 onChange={handleChange}
-                className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 outline-none focus:border-teal-500/50 focus:bg-white/10 transition-all font-medium appearance-none"
+                className="w-full patient-glass-input text-slate-900 font-bold px-4 py-3 outline-none focus:border-teal-500/50 transition-all [&>option]:bg-white [&>option]:text-slate-900"
               >
-                <option value="LEAVE" className="bg-slate-800">Xin nghỉ</option>
-                <option value="CHANGE_SCHEDULE" className="bg-slate-800">Thay đổi lịch</option>
+                <option value="LEAVE">Xin nghỉ</option>
+                <option value="CHANGE_SCHEDULE">Thay đổi lịch</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-white/60 mb-2">Ngày</label>
+              <label className="block text-sm font-bold patient-label mb-2">Ngày</label>
               <input
                 type="date"
                 name="leaveDate"
@@ -171,37 +188,37 @@ export default function DoctorLeaveRequestPage() {
                 value={form.leaveDate}
                 onChange={handleChange}
                 required
-                className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 outline-none focus:border-teal-500/50 focus:bg-white/10 transition-all font-medium [color-scheme:dark]"
+                className="w-full patient-glass-input text-slate-900 font-bold px-4 py-3 outline-none focus:border-teal-500/50 transition-all [color-scheme:light]"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-white/60 mb-2">Giờ bắt đầu</label>
+                <label className="block text-sm font-bold patient-label mb-2">Giờ bắt đầu</label>
                 <input
                   type="time"
                   name="startTime"
                   value={form.startTime}
                   onChange={handleChange}
                   required
-                  className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 outline-none focus:border-teal-500/50 focus:bg-white/10 transition-all font-medium [color-scheme:dark]"
+                  className="w-full patient-glass-input text-slate-900 font-bold px-4 py-3 outline-none focus:border-teal-500/50 transition-all [color-scheme:light]"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-white/60 mb-2">Giờ kết thúc</label>
+                <label className="block text-sm font-bold patient-label mb-2">Giờ kết thúc</label>
                 <input
                   type="time"
                   name="endTime"
                   value={form.endTime}
                   onChange={handleChange}
                   required
-                  className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 outline-none focus:border-teal-500/50 focus:bg-white/10 transition-all font-medium [color-scheme:dark]"
+                  className="w-full patient-glass-input text-slate-900 font-bold px-4 py-3 outline-none focus:border-teal-500/50 transition-all [color-scheme:light]"
                 />
               </div>
             </div>
 
             <div className="col-span-1 md:col-span-2">
-              <label className="block text-sm font-semibold text-white/60 mb-2">Lý do</label>
+              <label className="block text-sm font-bold patient-label mb-2">Lý do</label>
               <textarea
                 name="reason"
                 value={form.reason}
@@ -209,13 +226,13 @@ export default function DoctorLeaveRequestPage() {
                 rows={3}
                 required
                 placeholder="Nhập lý do xin nghỉ hoặc thay đổi lịch..."
-                className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 outline-none focus:border-teal-500/50 focus:bg-white/10 transition-all font-medium placeholder:text-white/30 resize-y"
+                className="w-full patient-glass-input text-slate-900 font-bold px-4 py-3 outline-none focus:border-teal-500/50 transition-all placeholder:text-slate-500/50 resize-y"
               />
             </div>
           </div>
 
           {formError && (
-            <div className="bg-rose-500/20 border border-rose-500/30 text-rose-300 p-3 rounded-xl text-sm font-medium">
+            <div className="bg-rose-500/20 border border-rose-500/30 text-rose-800 p-3 rounded-xl text-sm font-medium">
               {formError}
             </div>
           )}
@@ -227,12 +244,12 @@ export default function DoctorLeaveRequestPage() {
 
           {conflictingAppointments.length > 0 && (
             <div className="mt-2 bg-rose-500/10 border border-rose-500/20 rounded-xl p-5">
-              <h3 className="text-sm font-bold text-rose-400 mb-4">
+              <h3 className="text-sm font-bold text-rose-800 mb-4">
                 Danh sách lịch hẹn bị trùng
               </h3>
               <div className="overflow-x-auto custom-scrollbar">
                 <table className="w-full text-left border-collapse whitespace-nowrap text-sm">
-                  <thead className="bg-rose-500/20 text-rose-300">
+                  <thead className="bg-rose-500/20 text-rose-800">
                     <tr>
                       {["Mã lịch hẹn", "Bệnh nhân", "Số điện thoại", "Ngày khám", "Giờ khám", "Trạng thái"].map((h) => (
                         <th key={h} className="p-3 font-semibold">{h}</th>
@@ -241,14 +258,14 @@ export default function DoctorLeaveRequestPage() {
                   </thead>
                   <tbody>
                     {conflictingAppointments.map((appt) => (
-                      <tr key={appt.appointmentId} className="border-b border-rose-500/10 hover:bg-rose-500/10 transition-colors">
-                        <td className="p-3 font-mono font-bold text-rose-300">{appt.appointmentCode}</td>
-                        <td className="p-3 font-medium text-white">{appt.patientName}</td>
-                        <td className="p-3 text-white/70">{appt.patientPhone || "—"}</td>
-                        <td className="p-3 text-white/90">{appt.appointmentDate}</td>
-                        <td className="p-3 font-medium">{appt.startTime?.slice(0, 5)}</td>
+                      <tr key={appt.appointmentId} className="border-b border-rose-500/20 hover:bg-rose-500/20 transition-colors">
+                        <td className="p-3 font-mono font-bold text-rose-700">{appt.appointmentCode}</td>
+                        <td className="p-3 font-bold text-slate-900">{appt.patientName}</td>
+                        <td className="p-3 text-slate-700 font-medium">{appt.patientPhone || "—"}</td>
+                        <td className="p-3 text-slate-800 font-semibold">{appt.appointmentDate}</td>
+                        <td className="p-3 font-semibold text-slate-800">{appt.startTime?.slice(0, 5)}</td>
                         <td className="p-3">
-                          <span className={`px-2 py-1 rounded-full text-xs font-bold border ${CONFLICT_STATUS_BG[appt.status] || "bg-white/10"} ${CONFLICT_STATUS_COLOR[appt.status] || "text-white/70"} border-current/30`}>
+                          <span className={`px-2 py-1 rounded-full text-xs font-bold border ${CONFLICT_STATUS_BG[appt.status] || "bg-slate-900/10"} ${CONFLICT_STATUS_COLOR[appt.status] || "text-slate-700"} border-current/30`}>
                             {CONFLICT_STATUS_LABEL[appt.status] || appt.status}
                           </span>
                         </td>
@@ -265,8 +282,8 @@ export default function DoctorLeaveRequestPage() {
               type="submit"
               disabled={submitting}
               className={`px-8 py-3 rounded-xl font-bold transition-all flex items-center justify-center ${submitting
-                  ? "bg-blue-500/40 text-blue-200 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5"
+                  ? "bg-teal-500/40 text-teal-200 cursor-not-allowed"
+                  : "bg-teal-600 hover:bg-teal-500 text-white shadow-lg shadow-teal-500/30 hover:shadow-teal-500/50 hover:-translate-y-0.5"
                 }`}
             >
               {submitting ? "Đang gửi..." : "Gửi yêu cầu"}
@@ -276,19 +293,19 @@ export default function DoctorLeaveRequestPage() {
       </div>
 
       {/* ─── Table ─── */}
-      <div className="flex-1 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-8 shadow-xl flex flex-col min-h-0 overflow-hidden">
-        <h2 className="text-lg font-bold mb-6 text-white/90">
+      <div className="flex-1 patient-glass-panel rounded-[3rem] p-8 md:p-10 shadow-[0_12px_40px_rgba(0,0,0,0.22)] border-0 w-full flex flex-col min-h-0 overflow-hidden text-slate-900">
+        <h2 className="text-lg font-bold mb-6 patient-card-title">
           Danh sách yêu cầu của tôi
         </h2>
 
         {loading ? (
-          <div className="text-center text-white/50 p-8 font-medium">Đang tải...</div>
+          <div className="text-center text-slate-500 p-8 font-medium">Đang tải...</div>
         ) : requests.length === 0 ? (
-          <div className="text-center text-white/50 p-8 font-medium">Chưa có yêu cầu nào.</div>
+          <div className="text-center text-slate-500 p-8 font-medium">Chưa có yêu cầu nào.</div>
         ) : (
           <div className="flex-1 overflow-auto custom-scrollbar -mx-8 px-8">
             <table className="w-full text-left border-collapse whitespace-nowrap">
-              <thead className="bg-white/5 border-b border-white/10 text-white/70 text-sm sticky top-0 backdrop-blur-md z-10">
+              <thead className="bg-white/5 border-b border-slate-900/10 text-[#0f766e] text-sm sticky top-0 backdrop-blur-md z-10">
                 <tr>
                   {["Loại", "Ngày", "Giờ", "Lý do", "Trạng thái", "Ghi chú admin", "Hành động"].map((h) => (
                     <th key={h} className="p-4 font-semibold">{h}</th>
@@ -297,13 +314,13 @@ export default function DoctorLeaveRequestPage() {
               </thead>
               <tbody>
                 {requests.map((r) => (
-                  <tr key={r.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                    <td className="p-4 font-bold text-white/90">{TYPE_LABEL[r.requestType] ?? r.requestType}</td>
-                    <td className="p-4 font-medium text-white">{r.leaveDate}</td>
-                    <td className="p-4 text-white/80">{r.startTime?.slice(0, 5)} – {r.endTime?.slice(0, 5)}</td>
-                    <td className="p-4 text-white/80 max-w-[200px] truncate" title={r.reason}>{r.reason}</td>
+                  <tr key={r.id} className="border-b border-slate-900/10 hover:bg-white/30 transition-colors">
+                    <td className="p-4 font-extrabold text-slate-900">{TYPE_LABEL[r.requestType] ?? r.requestType}</td>
+                    <td className="p-4 font-bold text-slate-900">{r.leaveDate}</td>
+                    <td className="p-4 text-slate-800 font-semibold">{r.startTime?.slice(0, 5)} – {r.endTime?.slice(0, 5)}</td>
+                    <td className="p-4 text-slate-700 max-w-[200px] truncate font-medium" title={r.reason}>{r.reason}</td>
                     <td className="p-4"><StatusBadge status={r.status} /></td>
-                    <td className={`p-4 ${r.adminComment ? "text-white/80" : "text-white/40 italic"}`}>
+                    <td className={`p-4 ${r.adminComment ? "text-slate-700 font-semibold" : "text-slate-400 italic"}`}>
                       {r.adminComment || "—"}
                     </td>
                     <td className="p-4">
@@ -312,14 +329,14 @@ export default function DoctorLeaveRequestPage() {
                           onClick={() => handleCancel(r.id)}
                           disabled={cancellingId === r.id}
                           className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${cancellingId === r.id
-                              ? "bg-rose-500/20 text-rose-300 border-rose-500/30 cursor-not-allowed opacity-60"
-                              : "bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20"
+                              ? "bg-rose-500/20 text-rose-800 border-rose-500/30 cursor-not-allowed opacity-60"
+                              : "bg-rose-500/10 text-rose-700 border-rose-500/20 hover:bg-rose-500/20"
                             }`}
                         >
                           {cancellingId === r.id ? "Đang hủy..." : "Hủy"}
                         </button>
                       ) : (
-                        <span className="text-white/30 text-sm">—</span>
+                        <span className="text-slate-400 text-sm">—</span>
                       )}
                     </td>
                   </tr>

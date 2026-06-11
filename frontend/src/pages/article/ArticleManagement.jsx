@@ -235,12 +235,12 @@ export default function ArticleManagement() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-        <div>
-          <h1 style={{ margin: "0 0 4px", fontSize: "1.5rem", fontWeight: 800, color: "#0f172a", display: "flex", alignItems: "center", gap: "8px" }}>
-            <FileText size={24} color="#0f766e" />
-            Quản lý Bài viết Y tế
+        <div className="flex flex-col items-center w-full">
+          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
+            <span className="text-white"><FileText size={24} /></span>
+            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Quản lý Bài viết Y tế</span>
           </h1>
-          <p style={{ margin: 0, color: "#64748b", fontSize: "14px" }}>
+          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
             Soạn thảo và quản lý các bài viết tin tức, kiến thức y khoa.
           </p>
         </div>
@@ -282,7 +282,7 @@ export default function ArticleManagement() {
         {loading ? (
           <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "40px", color: "#94a3b8" }}>Đang tải dữ liệu...</div>
         ) : !data || data.content.length === 0 ? (
-          <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "40px", color: "#94a3b8" }}>Không có bài viết nào.</div>
+          <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "40px", color: "#ffffff", fontWeight: 600, textShadow: "0 1px 3px rgba(0,0,0,0.3)" }}>Không có bài viết nào.</div>
         ) : (
           data.content.map((article) => (
             <div key={article.articleId} style={{

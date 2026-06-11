@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Edit, Plus, Search, Trash2, UserRound, X } from "lucide-react";
 import {
   createDoctor,
@@ -156,60 +156,82 @@ export default function DoctorManagement() {
   return (
     <>
       {/* ── Page Header ────────────────────────────────── */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">
-            <UserRound size={26} />
-            Quản lý Bác sĩ
+      <div className="flex flex-col items-center w-full mb-6">
+        <div className="flex flex-col items-center">
+          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
+            <span className="text-white"><UserRound size={26} /></span>
+            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Quản lý Bác sĩ</span>
           </h1>
-          <p className="muted">Quản lý hồ sơ bác sĩ và phân công chuyên khoa.</p>
+          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
+            Quản lý hồ sơ bác sĩ và phân công chuyên khoa.
+          </p>
         </div>
-        <button className="primary-button" onClick={openCreate}>
+        <button
+          className="primary-button absolute right-0 top-1/2 -translate-y-1/2"
+          onClick={openCreate}
+        >
           <Plus size={16} />
           Thêm bác sĩ
         </button>
       </div>
 
+
       {/* ── Filters ────────────────────────────────────── */}
-      <div className="search-bar" style={{ display: "flex", gap: "10px" }}>
-        <div style={{ position: "relative", flex: 1, maxWidth: "420px" }}>
-          <Search size={16} className="search-icon" />
-          <input
-            type="text"
-            placeholder="Tìm theo tên hoặc mã bác sĩ..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="search-bar" style={{ display: "flex", gap: "10px", alignItems: "center", maxWidth: "100%" }}>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center", flex: 1 }}>
+          <div style={{ position: "relative" }}>
+            <Search size={16} className="search-icon" />
+            <input
+              type="text"
+              placeholder="Tìm theo tên hoặc mã bác sĩ..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <select
+            style={{ minHeight: "44px", borderRadius: "8px", border: "1px solid #d7dee8", padding: "0 12px", background: "#fff" }}
+            value={departmentFilter}
+            onChange={(e) => setDepartmentFilter(e.target.value)}
+          >
+            <option value="">Tất cả chuyên khoa</option>
+            {departments.map((d) => (
+              <option key={d.departmentId} value={d.departmentId}>
+                {d.departmentName}
+              </option>
+            ))}
+          </select>
         </div>
-        <select
-          style={{ minHeight: "44px", borderRadius: "8px", border: "1px solid #d7dee8", padding: "0 12px", background: "#fff" }}
-          value={departmentFilter}
-          onChange={(e) => setDepartmentFilter(e.target.value)}
-        >
-          <option value="">Tất cả chuyên khoa</option>
-          {departments.map((d) => (
-            <option key={d.departmentId} value={d.departmentId}>
-              {d.departmentName}
-            </option>
-          ))}
-        </select>
+        <button className="primary-button" style={{ flexShrink: 0, marginRight: "16px" }} onClick={openCreate}>
+          <Plus size={16} />
+          Thêm bác sĩ
+        </button>
       </div>
 
       {error && <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>}
 
       {/* ── Table ──────────────────────────────────────── */}
-      <div className="table-wrapper">
-        <table className="data-table">
+      <div className="table-wrapper doctor-table-wrapper">
+        <table className="doctor-data-table">
+          <colgroup>
+            <col style={{ width: "10%" }} />
+            <col style={{ width: "17%" }} />
+            <col style={{ width: "17%" }} />
+            <col style={{ width: "8%" }} />
+            <col style={{ width: "12%" }} />
+            <col style={{ width: "13%" }} />
+            <col style={{ width: "14%" }} />
+            <col style={{ width: "9%" }} />
+          </colgroup>
           <thead>
             <tr>
-              <th>Mã BS</th>
-              <th>Họ và tên</th>
-              <th>Chuyên khoa</th>
-              <th>Học vị</th>
-              <th>Kinh nghiệm</th>
-              <th>Phí khám</th>
-              <th>Trạng thái</th>
-              <th style={{ textAlign: "center" }}>Hành động</th>
+              <th style={{ color: "#0f766e" }}>Mã BS</th>
+              <th style={{ color: "#0f766e" }}>Họ và tên</th>
+              <th style={{ color: "#0f766e" }}>Chuyên khoa</th>
+              <th style={{ color: "#0f766e" }}>Học vị</th>
+              <th style={{ color: "#0f766e" }}>Kinh nghiệm</th>
+              <th style={{ color: "#0f766e" }}>Phí khám</th>
+              <th style={{ color: "#0f766e" }}>Trạng thái</th>
+              <th style={{ textAlign: "center", color: "#0f766e" }}>Hành động</th>
             </tr>
           </thead>
           <tbody>
@@ -235,7 +257,7 @@ export default function DoctorManagement() {
                       {doctor.status === "ACTIVE" ? "Đang làm việc" : doctor.status === "ON_LEAVE" ? "Nghỉ phép" : "Đã nghỉ"}
                     </span>
                   </td>
-                  <td>
+                  <td style={{ textAlign: "center" }}>
                     <div className="action-group">
                       <button className="icon-button" onClick={() => openEdit(doctor)} title="Chỉnh sửa">
                         <Edit size={15} />

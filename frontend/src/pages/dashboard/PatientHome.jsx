@@ -96,17 +96,19 @@ export default function PatientHome() {
 
                     <div className="flex justify-between items-end mb-8">
                       <div>
-                        <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mb-1">Thời gian</p>
-                        <h2 className="text-5xl md:text-6xl font-black text-slate-900 tracking-tight">
-                          {new Date(`1970-01-01T${upcomingAppointment.estimatedStartTime}`).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                        <p className="patient-label text-sm font-bold uppercase tracking-widest mb-1">Thời gian</p>
+                        <h2 className="text-5xl md:text-6xl font-black patient-data tracking-tight">
+                          {upcomingAppointment.estimatedStartTime 
+                            ? new Date(`1970-01-01T${upcomingAppointment.estimatedStartTime}`).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+                            : '--:--'}
                         </h2>
                         <p className="text-teal-600 font-extrabold text-xl mt-2">
                           {new Date(upcomingAppointment.appointmentDate).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
                         </p>
                       </div>
                       <div className="text-right hidden sm:block">
-                        <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mb-1">Phòng khám</p>
-                        <p className="text-3xl font-black text-slate-900">P. {upcomingAppointment.roomId || 'Đang chờ'}</p>
+                        <p className="patient-label text-sm font-bold uppercase tracking-widest mb-1">Phòng khám</p>
+                        <p className="text-3xl font-black patient-data">P. {upcomingAppointment.roomId || 'Đang chờ'}</p>
                       </div>
                     </div>
                   </div>
@@ -121,8 +123,8 @@ export default function PatientHome() {
                         )}
                       </div>
                       <div>
-                        <div className="text-slate-500 text-xs font-bold uppercase tracking-widest">Bác sĩ phụ trách</div>
-                        <div className="text-slate-900 font-black text-xl">{upcomingAppointment.doctorName}</div>
+                        <div className="patient-label text-xs font-bold uppercase tracking-widest">Bác sĩ phụ trách</div>
+                        <div className="patient-data font-black text-xl">{upcomingAppointment.doctorName}</div>
                       </div>
                     </div>
                   </div>
@@ -187,7 +189,9 @@ export default function PatientHome() {
                 <form 
                   onSubmit={(e) => {
                     e.preventDefault();
-                    console.log("AI query submitted:", aiQuery);
+                    if (aiQuery.trim()) {
+                      navigate('/dashboard/ai-chat', { state: { initialQuery: aiQuery } });
+                    }
                   }} 
                   className="relative group w-full"
                 >

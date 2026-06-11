@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+﻿import { useState, useEffect, useCallback } from "react";
+import { CalendarOff } from "lucide-react";
 import doctorLeaveRequestService from "../../services/doctorLeaveRequestService.js";
 import { useToast } from "../../context/useToast.js";
 
@@ -147,9 +148,14 @@ export default function AdminDoctorLeaveRequestPage() {
 
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 16px" }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24, color: "#1e293b" }}>
-        🗓️ Phê duyệt yêu cầu nghỉ của bác sĩ
-      </h1>
+      <div className="flex flex-col items-center w-full mb-6">
+        <div className="flex flex-col items-center">
+          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
+            <span className="text-white"><CalendarOff size={26} /></span>
+            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Phê duyệt yêu cầu nghỉ của bác sĩ</span>
+          </h1>
+        </div>
+      </div>
 
       {/* ─── Filter bar ─── */}
       <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap", alignItems: "center" }}>

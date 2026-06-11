@@ -10,7 +10,13 @@ export default function PharmacistSidebar() {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const isExpanded = true;
+  const [isExpanded, setIsExpanded] = useState(() => {
+    return localStorage.getItem("pharmacistSidebarExpanded") === "true";
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem("pharmacistSidebarExpanded", isExpanded);
+  }, [isExpanded]);
 
   // Determine active nav based on URL path
   const getActiveNav = () => {
@@ -52,7 +58,13 @@ export default function PharmacistSidebar() {
       className="hidden md:flex flex-col justify-between patient-glass-panel bg-white/10 shadow-xl border border-white/20 rounded-[2rem] py-6 h-[calc(100vh-104px)] sticky top-[80px] z-[100]"
     >
       <div className="flex flex-col gap-3 w-full px-3 relative h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
-        {/* Expand Toggle Button Removed */}
+        {/* Expand Toggle Button */}
+        <button 
+          onClick={() => setIsExpanded(!isExpanded)}
+          className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white hover:bg-white/20 hover:text-white transition-all shrink-0 drop-shadow-md ${isExpanded ? "self-end mr-1" : "mx-auto"}`}
+        >
+          <ChevronRight size={22} className={`transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
+        </button>
 
         <div className="flex flex-col gap-1.5 w-full mt-2 flex-1">
           {navItems.map(item => (

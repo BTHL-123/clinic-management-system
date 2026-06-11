@@ -112,25 +112,22 @@ export default function StockTransactions() {
   return (
     <>
       <div className="w-full flex flex-col items-center">
-        <div className="w-full flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate("/dashboard")}
-              className="bg-white/10 hover:bg-white/20 active:scale-95 text-white p-2 rounded-xl backdrop-blur-md border border-white/20 transition-all shadow-sm group"
-            >
-              <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-            </button>
-            <div>
-              <h1 className="text-3xl font-extrabold text-white flex items-center gap-3 drop-shadow-md">
-                <div className="bg-fuchsia-500/25 p-2.5 rounded-xl border border-fuchsia-300/20 text-fuchsia-200">
-                  <History size={28} />
-                </div>
-                Lịch Sử Giao Dịch Kho
-              </h1>
-              <p className="text-white font-bold mt-1 drop-shadow-sm">Lịch sử xuất/nhập/hoàn trả thuốc.</p>
-            </div>
+        <div className="w-full relative flex flex-col items-center mb-8">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 active:scale-95 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm group"
+          >
+            <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
+            Quay lại
+          </button>
+          <div className="flex flex-col items-center">
+            <h1 className="text-3xl font-extrabold text-white flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
+              <span className="text-white"><History size={28} /></span>
+              Lịch Sử Giao Dịch Kho
+            </h1>
+            <p className="text-white/70 font-medium mt-3 text-center drop-shadow-sm">Lịch sử xuất/nhập/hoàn trả thuốc.</p>
           </div>
-          <button className="bg-gradient-to-r from-fuchsia-400 to-pink-400 hover:from-fuchsia-300 hover:to-pink-300 text-slate-900 font-bold px-5 py-2.5 rounded-xl shadow-lg hover:shadow-fuchsia-400/30 transition-all flex items-center gap-2" onClick={openForm}>
+          <button className="absolute right-0 top-1/2 -translate-y-1/2 bg-gradient-to-r from-fuchsia-400 to-pink-400 hover:from-fuchsia-300 hover:to-pink-300 text-slate-900 font-bold px-5 py-2.5 rounded-xl shadow-lg hover:shadow-fuchsia-400/30 transition-all flex items-center gap-2" onClick={openForm}>
             <Plus size={18} strokeWidth={2.5} />
             Xuất kho thủ công
           </button>
@@ -142,7 +139,7 @@ export default function StockTransactions() {
           <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-slate-900/10 text-slate-900 text-sm">
+                <tr className="border-b border-slate-900/10 text-[#0f766e] text-sm">
                   <th className="p-4 font-bold pb-3">Loại GD</th>
                   <th className="p-4 font-bold pb-3">Thuốc</th>
                   <th className="p-4 font-bold pb-3">Số lô</th>
