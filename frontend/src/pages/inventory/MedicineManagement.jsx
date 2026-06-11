@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Pill, Edit, Plus, Search, X, Trash2, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -336,7 +336,6 @@ export default function MedicineManagement() {
             </div>
           </div>
         )}
-      </div>
     </>
   );
 }
