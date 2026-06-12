@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { 
-  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, 
+import {
+  LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from "recharts";
-import { 
-  DollarSign, CalendarDays, Pill, AlertTriangle, 
-  TrendingUp, Users, Activity, ChevronRight, LayoutDashboard
+import {
+  DollarSign, CalendarDays, Pill, AlertTriangle,
+  TrendingUp, Activity, LayoutDashboard, Sparkles
 } from "lucide-react";
 import { 
   getRevenueSummary, getRevenueReport, getAppointmentReport, 
@@ -26,11 +26,7 @@ export default function DashboardHome() {
   const [stockSummary, setStockSummary] = useState(null);
   const [expiringBatches, setExpiringBatches] = useState([]);
 
-  useEffect(() => {
-    loadDashboardData();
-  }, [timeRange]);
-
-  const loadDashboardData = async () => {
+  async function loadDashboardData() {
     setLoading(true);
     setError(null);
     try {
@@ -72,7 +68,7 @@ export default function DashboardHome() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const formatStatus = (status) => {
     const map = {
@@ -87,6 +83,14 @@ export default function DashboardHome() {
     return map[status] || status;
   };
 
+  useEffect(() => {
+    // Dashboard data is server state refreshed whenever the selected reporting range changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadDashboardData();
+    // The selected range is the only input that should trigger a dashboard refresh.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeRange]);
+
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
   };
@@ -96,34 +100,26 @@ export default function DashboardHome() {
   };
 
   if (loading && !revenueSummary) {
-    return <div style={{ padding: "40px", textAlign: "center", color: "#64748b" }}>Đang tải bảng điều khiển...</div>;
+    return <div className="admin-dashboard-loading">Đang tải bảng điều khiển...</div>;
   }
 
   return (
     <div className="admin-dashboard">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-        <div className="flex flex-col items-center w-full">
-          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
-            <span className="text-white"><LayoutDashboard size={26} /></span>
-            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Tổng quan Hệ thống</span>
+      <div className="admin-dashboard-hero">
+        <div className="admin-dashboard-heading">
+          <span className="admin-dashboard-eyebrow"><Sparkles size={14} /> Trung tâm điều hành</span>
+          <h1>
+            <span><LayoutDashboard size={28} /></span>
+            <strong>Tổng quan hệ thống</strong>
           </h1>
-          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
-            Thống kê hoạt động và hiệu suất của phòng khám.
-          </p>
+          <p>Theo dõi vận hành, tài chính và nguồn lực phòng khám trong một màn hình.</p>
         </div>
-        <div style={{ position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)", display: "flex", gap: "8px", background: "rgba(255,255,255,0.2)", backdropFilter: "blur(8px)", padding: "4px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.3)" }}>
+        <div className="admin-dashboard-range">
           {[7, 30, 90].map(days => (
             <button
               key={days}
               onClick={() => setTimeRange(days)}
-              style={{
-                border: "none", padding: "6px 16px", borderRadius: "6px", cursor: "pointer",
-                background: timeRange === days ? "rgba(255,255,255,0.9)" : "transparent",
-                color: timeRange === days ? "#0f766e" : "rgba(255,255,255,0.7)",
-                fontWeight: timeRange === days ? 700 : 500,
-                boxShadow: timeRange === days ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
-                fontSize: "13px"
-              }}
+              className={timeRange === days ? "active" : ""}
             >
               {days} ngày
             </button>
@@ -138,8 +134,8 @@ export default function DashboardHome() {
       )}
 
       {/* Summary Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "20px", marginBottom: "24px" }}>
-        <div style={{ background: "#fff", padding: "20px", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>
+      <div className="admin-metric-grid">
+        <div className="admin-metric-card admin-metric-revenue">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
             <div>
               <p style={{ margin: 0, fontSize: "13px", color: "#64748b", fontWeight: 600 }}>TỔNG DOANH THU</p>
@@ -157,7 +153,7 @@ export default function DashboardHome() {
           </div>
         </div>
 
-        <div style={{ background: "#fff", padding: "20px", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>
+        <div className="admin-metric-card admin-metric-appointments">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
             <div>
               <p style={{ margin: 0, fontSize: "13px", color: "#64748b", fontWeight: 600 }}>TỔNG LỊCH KHÁM</p>
@@ -175,7 +171,7 @@ export default function DashboardHome() {
           </div>
         </div>
 
-        <div style={{ background: "#fff", padding: "20px", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>
+        <div className="admin-metric-card admin-metric-stock">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
             <div>
               <p style={{ margin: 0, fontSize: "13px", color: "#64748b", fontWeight: 600 }}>GIÁ TRỊ TỒN KHO</p>
@@ -192,7 +188,7 @@ export default function DashboardHome() {
           </div>
         </div>
 
-        <div style={{ background: "#fff", padding: "20px", borderRadius: "12px", border: "1px solid #e2e8f0", boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>
+        <div className="admin-metric-card admin-metric-alert">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
             <div>
               <p style={{ margin: 0, fontSize: "13px", color: "#64748b", fontWeight: 600 }}>CẢNH BÁO HẠN DÙNG</p>
@@ -211,8 +207,8 @@ export default function DashboardHome() {
       </div>
 
       {/* Charts Section */}
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "24px", marginBottom: "24px" }}>
-        <div style={{ background: "#fff", padding: "20px", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+      <div className="admin-chart-grid">
+        <div className="admin-dashboard-panel">
           <h3 style={{ margin: "0 0 20px", fontSize: "1.1rem", color: "#1e293b" }}>Biểu đồ Doanh thu</h3>
           <div style={{ height: "300px" }}>
             {revenueData.length > 0 ? (
@@ -235,7 +231,7 @@ export default function DashboardHome() {
           </div>
         </div>
 
-        <div style={{ background: "#fff", padding: "20px", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+        <div className="admin-dashboard-panel">
           <h3 style={{ margin: "0 0 20px", fontSize: "1.1rem", color: "#1e293b" }}>Phân bổ Lịch khám</h3>
           <div style={{ height: "300px" }}>
             {appointmentData.length > 0 ? (
@@ -266,8 +262,8 @@ export default function DashboardHome() {
       </div>
 
       {/* Tables Section */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
-        <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #e2e8f0", overflow: "hidden" }}>
+      <div className="admin-table-grid">
+        <div className="admin-dashboard-panel admin-dashboard-table-panel">
           <div style={{ padding: "16px 20px", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h3 style={{ margin: 0, fontSize: "1.1rem", color: "#1e293b" }}>Hiệu suất Bác sĩ</h3>
             <span style={{ fontSize: "13px", color: "#64748b" }}>{timeRange} ngày qua</span>
@@ -298,7 +294,7 @@ export default function DashboardHome() {
           </table>
         </div>
 
-        <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #e2e8f0", overflow: "hidden" }}>
+        <div className="admin-dashboard-panel admin-dashboard-table-panel">
           <div style={{ padding: "16px 20px", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h3 style={{ margin: 0, fontSize: "1.1rem", color: "#1e293b", display: "flex", alignItems: "center", gap: "6px" }}>
               <AlertTriangle size={18} color="#dc2626" /> Lô thuốc sắp/đã hết hạn

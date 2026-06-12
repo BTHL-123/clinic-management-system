@@ -5251,3 +5251,811 @@ a {
   box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.15) !important;
   outline: none !important;
 }
+
+/* Admin command center redesign */
+.admin-shell main,
+.admin-shell:has(.admin-sidebar-expanded) main {
+  max-width: 1700px;
+  padding-left: 24px;
+}
+
+.admin-floating-sidebar {
+  position: sticky;
+  top: 80px;
+  z-index: 46;
+  height: calc(100dvh - 104px);
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  border-radius: 30px 10px 30px 30px;
+  padding: 15px 10px;
+  background: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 18px 46px rgba(2, 44, 34, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  overflow: hidden;
+}
+
+.admin-sidebar-expand,
+.admin-floating-quick,
+.admin-floating-logout {
+  display: flex;
+  min-width: 48px;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 16px 6px 16px 16px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.admin-sidebar-expand {
+  align-self: flex-end;
+  border-color: rgba(255, 255, 255, 0.38);
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.admin-sidebar-expand.expanded svg {
+  transform: rotate(180deg);
+}
+
+.admin-sidebar-expand svg,
+.admin-floating-group-trigger svg {
+  transition: transform 0.25s ease;
+}
+
+.admin-floating-menu {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 7px;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.admin-floating-quick:hover,
+.admin-floating-quick.active,
+.admin-sidebar-expand:hover {
+  border-color: rgba(255, 255, 255, 0.56);
+  background: rgba(255, 255, 255, 0.26);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 8px 18px rgba(2, 44, 34, 0.14);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.admin-floating-group {
+  display: grid;
+  gap: 5px;
+}
+
+.admin-floating-group-trigger {
+  display: grid;
+  grid-template-columns: 22px 1fr 18px;
+  min-height: 44px;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid transparent;
+  border-radius: 15px 5px 15px 15px;
+  padding: 0 12px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.8rem;
+  font-weight: 850;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-floating-group-trigger:hover,
+.admin-floating-group-trigger.active {
+  border-color: rgba(255, 255, 255, 0.44);
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.admin-floating-group-trigger .open {
+  transform: rotate(180deg);
+}
+
+.admin-floating-children {
+  display: grid;
+  gap: 3px;
+  border-left: 1px solid rgba(255, 255, 255, 0.3);
+  margin-left: 22px;
+  padding: 2px 0 4px 10px;
+}
+
+.admin-floating-children button {
+  border: 0;
+  border-radius: 11px 4px 11px 11px;
+  padding: 8px 10px;
+  background: transparent;
+  color: rgba(231, 255, 252, 0.82);
+  font-size: 0.74rem;
+  font-weight: 750;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-floating-children button:hover,
+.admin-floating-children button.active {
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+}
+
+.admin-floating-logout {
+  gap: 10px;
+  color: #ffe4e6;
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.admin-floating-logout:hover {
+  border-color: rgba(254, 205, 211, 0.42);
+  background: rgba(225, 29, 72, 0.18);
+  color: #ffffff;
+}
+
+.admin-shell .admin-dashboard {
+  display: grid;
+  gap: 22px;
+  padding-bottom: 28px;
+}
+
+.admin-dashboard-loading {
+  display: grid;
+  min-height: 60vh;
+  place-items: center;
+  color: #e6fffb;
+  font-weight: 850;
+}
+
+.admin-shell .admin-dashboard-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 22px;
+  margin: 14px 0 4px;
+}
+
+.admin-dashboard-heading {
+  display: grid;
+  gap: 9px;
+}
+
+.admin-dashboard-eyebrow {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 7px;
+  margin-left: 20px;
+  color: #ccfbf1;
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 8px rgba(2, 44, 34, 0.28);
+}
+
+.admin-shell .admin-dashboard-heading h1 {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 78px;
+  align-items: center;
+  gap: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  border-radius: 999px;
+  margin: 0;
+  padding: 13px 32px;
+  background: rgba(255, 255, 255, 0.24);
+  color: #ffffff !important;
+  box-shadow: 0 16px 38px rgba(2, 44, 34, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.48);
+  backdrop-filter: blur(22px);
+}
+
+.admin-shell .admin-dashboard-heading h1 span {
+  display: inline-flex;
+  color: #18e0ce !important;
+}
+
+.admin-shell .admin-dashboard-heading h1 strong {
+  color: #ffffff;
+  font-size: clamp(1.75rem, 3vw, 2.55rem);
+  font-weight: 900;
+  letter-spacing: -0.045em;
+  text-shadow: 0 3px 14px rgba(2, 44, 34, 0.3);
+}
+
+.admin-shell .admin-dashboard-heading p {
+  max-width: 650px;
+  margin: 0 0 0 20px;
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-weight: 650;
+  text-shadow: 0 2px 8px rgba(2, 44, 34, 0.25);
+}
+
+.admin-dashboard-range {
+  display: inline-flex;
+  gap: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.46);
+  border-radius: 18px 6px 18px 18px;
+  padding: 5px;
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(16px);
+}
+
+.admin-dashboard-range button {
+  border: 0;
+  border-radius: 13px 4px 13px 13px;
+  padding: 9px 15px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.admin-dashboard-range button:hover,
+.admin-dashboard-range button.active {
+  background: rgba(255, 255, 255, 0.88);
+  color: #0f766e;
+  box-shadow: 0 5px 14px rgba(2, 44, 34, 0.13);
+}
+
+.admin-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.admin-shell .admin-metric-card,
+.admin-shell .admin-dashboard-panel {
+  border: 1px solid rgba(255, 255, 255, 0.56) !important;
+  border-radius: 24px 8px 24px 24px !important;
+  padding: 20px !important;
+  background: rgba(235, 255, 252, 0.5) !important;
+  box-shadow: 0 14px 36px rgba(2, 44, 34, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(24px);
+}
+
+.admin-shell .admin-metric-card {
+  position: relative;
+  min-height: 145px;
+  overflow: hidden;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.admin-shell .admin-metric-card::after {
+  position: absolute;
+  right: -32px;
+  bottom: -48px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: var(--metric-glow, rgba(45, 212, 191, 0.18));
+  content: "";
+  filter: blur(8px);
+}
+
+.admin-shell .admin-metric-card:hover {
+  box-shadow: 0 18px 44px rgba(2, 44, 34, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.68) !important;
+  transform: translateY(-3px);
+}
+
+.admin-metric-revenue { --metric-glow: rgba(16, 185, 129, 0.25); }
+.admin-metric-appointments { --metric-glow: rgba(14, 165, 233, 0.24); }
+.admin-metric-stock { --metric-glow: rgba(124, 58, 237, 0.2); }
+.admin-metric-alert { --metric-glow: rgba(244, 63, 94, 0.2); }
+
+.admin-shell .admin-metric-card p,
+.admin-shell .admin-metric-card span {
+  color: #315f5b !important;
+}
+
+.admin-shell .admin-metric-card h3 {
+  color: #082f2b !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-chart-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(320px, 0.9fr);
+  gap: 18px;
+}
+
+.admin-table-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.admin-shell .admin-dashboard-panel h3,
+.admin-shell .admin-dashboard-panel td,
+.admin-shell .admin-dashboard-panel th {
+  color: #123f3b !important;
+}
+
+.admin-shell .admin-dashboard-panel thead tr {
+  background: rgba(218, 251, 246, 0.62) !important;
+}
+
+.admin-shell .admin-dashboard-panel tbody tr:hover {
+  background: rgba(255, 255, 255, 0.32) !important;
+}
+
+/* Normalize legacy admin management pages without changing their behavior. */
+.admin-shell .page-stack,
+.admin-shell .content {
+  color: #123f3b;
+}
+
+.admin-shell .page-heading,
+.admin-shell .content > .page-header {
+  margin: 14px 0 26px;
+}
+
+.admin-shell .page-heading h1,
+.admin-shell .content > .page-header .page-title {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 72px;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  border-radius: 999px;
+  margin: 0;
+  padding: 12px 30px;
+  background: rgba(255, 255, 255, 0.24);
+  color: #ffffff !important;
+  font-size: clamp(1.65rem, 3vw, 2.35rem) !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.04em !important;
+  box-shadow: 0 16px 38px rgba(2, 44, 34, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.48);
+  text-shadow: 0 3px 14px rgba(2, 44, 34, 0.3);
+  backdrop-filter: blur(22px);
+}
+
+.admin-shell .page-heading h1 svg,
+.admin-shell .content > .page-header .page-title svg {
+  color: #18e0ce !important;
+}
+
+.admin-shell .panel,
+.admin-shell .table-wrapper,
+.admin-shell .table-panel,
+.admin-shell .filter-bar {
+  border-color: rgba(255, 255, 255, 0.55) !important;
+  border-radius: 24px 8px 24px 24px !important;
+  background: rgba(235, 255, 252, 0.46) !important;
+}
+
+.admin-shell .data-table th,
+.admin-shell table th {
+  background: rgba(218, 251, 246, 0.66) !important;
+  color: #075e57 !important;
+  font-weight: 850 !important;
+}
+
+.admin-shell .data-table td,
+.admin-shell table td {
+  color: #123f3b !important;
+  font-weight: 600;
+}
+
+.admin-shell button svg {
+  stroke-width: 2.3;
+}
+
+@media (max-width: 1250px) {
+  .admin-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-chart-grid,
+  .admin-table-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-shell main,
+  .admin-shell:has(.admin-sidebar-expanded) main {
+    padding-left: 16px;
+  }
+
+  .admin-shell .admin-dashboard-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-metric-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Admin readability and filter controls */
+.admin-shell .admin-dashboard-heading p,
+.admin-shell .page-heading p,
+.admin-shell .content > .page-header .muted,
+.admin-shell [class*="text-white/70"],
+.admin-shell [class*="text-white/80"] {
+  color: #f0fdfa !important;
+  font-weight: 700 !important;
+  line-height: 1.55;
+  text-shadow:
+    0 2px 5px rgba(2, 44, 34, 0.72),
+    0 6px 18px rgba(2, 44, 34, 0.42) !important;
+}
+
+.admin-shell .admin-dashboard-heading p {
+  width: fit-content;
+  max-width: min(680px, calc(100vw - 48px));
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 12px 4px 12px 12px;
+  padding: 7px 12px;
+  background: rgba(2, 44, 34, 0.22);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.admin-shell .search-bar,
+.admin-shell .filter-bar,
+.admin-shell .panel:has(> .toolbar),
+.admin-shell .checkin-filter-panel {
+  border: 1px solid rgba(255, 255, 255, 0.58) !important;
+  border-radius: 24px 8px 24px 24px !important;
+  padding: 16px 18px !important;
+  background: rgba(230, 255, 251, 0.42) !important;
+  box-shadow:
+    0 14px 34px rgba(2, 44, 34, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.62) !important;
+  backdrop-filter: blur(22px) !important;
+  -webkit-backdrop-filter: blur(22px) !important;
+}
+
+.admin-shell .search-bar,
+.admin-shell .toolbar {
+  gap: 12px !important;
+  align-items: center !important;
+}
+
+.admin-shell .toolbar {
+  min-height: 54px;
+}
+
+.admin-shell .search-bar > div,
+.admin-shell .search-box {
+  min-width: 0;
+}
+
+.admin-shell .search-box,
+.admin-shell .search-bar > div:has(> .search-icon),
+.admin-shell .search-bar > div:has(> input) {
+  position: relative;
+  min-height: 52px;
+  border: 1px solid rgba(255, 255, 255, 0.76) !important;
+  border-radius: 16px 6px 16px 16px !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  color: #0f766e !important;
+  box-shadow:
+    0 7px 18px rgba(2, 44, 34, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+.admin-shell .search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 15px;
+}
+
+.admin-shell .search-bar .search-icon {
+  color: #0f766e !important;
+  opacity: 0.82;
+}
+
+.admin-shell .search-bar input,
+.admin-shell .search-box input {
+  min-height: 50px !important;
+  border: 0 !important;
+  padding-block: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.admin-shell .toolbar > select,
+.admin-shell .search-bar select,
+.admin-shell .filter-bar select,
+.admin-shell .filter-bar input,
+.admin-shell .toolbar > input {
+  min-height: 52px !important;
+  border: 1px solid rgba(255, 255, 255, 0.78) !important;
+  border-radius: 16px 6px 16px 16px !important;
+  padding: 0 42px 0 15px !important;
+  background-color: rgba(255, 255, 255, 0.84) !important;
+  color: #0b3531 !important;
+  font-weight: 700 !important;
+  box-shadow:
+    0 7px 18px rgba(2, 44, 34, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
+}
+
+.admin-shell .search-box:focus-within,
+.admin-shell .search-bar > div:has(> input):focus-within,
+.admin-shell .toolbar > select:focus,
+.admin-shell .search-bar select:focus,
+.admin-shell .filter-bar select:focus,
+.admin-shell .filter-bar input:focus,
+.admin-shell .toolbar > input:focus {
+  border-color: #5eead4 !important;
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  box-shadow:
+    0 0 0 4px rgba(45, 212, 191, 0.22),
+    0 12px 26px rgba(2, 44, 34, 0.13) !important;
+}
+
+.admin-shell .checkin-filter-panel {
+  margin-bottom: 20px;
+}
+
+.admin-shell .checkin-filter-bar,
+.admin-shell .queue-filter-bar {
+  display: grid;
+  gap: 14px;
+  align-items: end;
+}
+
+.admin-shell .checkin-filter-bar {
+  grid-template-columns: minmax(280px, 1fr) minmax(190px, 0.3fr) minmax(230px, 0.38fr) auto;
+}
+
+.admin-shell .queue-filter-bar {
+  grid-template-columns: minmax(190px, 0.72fr) minmax(260px, 1fr) minmax(240px, 0.9fr);
+}
+
+.admin-shell .checkin-filter-field {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+}
+
+.admin-shell .checkin-filter-label {
+  padding-left: 4px;
+  color: #164e49;
+  font-size: 0.7rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-shadow: none;
+}
+
+.admin-shell .checkin-filter-control {
+  display: flex;
+  position: relative;
+  min-width: 0;
+  min-height: 52px;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 16px 6px 16px 16px;
+  padding: 0 14px;
+  background: rgba(255, 255, 255, 0.84);
+  color: #0f766e;
+  box-shadow:
+    0 7px 18px rgba(2, 44, 34, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.admin-shell .checkin-filter-control:focus-within {
+  border-color: #5eead4;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow:
+    0 0 0 4px rgba(45, 212, 191, 0.22),
+    0 12px 26px rgba(2, 44, 34, 0.13);
+  transform: translateY(-1px);
+}
+
+.admin-shell .checkin-filter-control input,
+.admin-shell .checkin-filter-control select {
+  width: 100%;
+  min-width: 0;
+  min-height: auto !important;
+  border: 0 !important;
+  outline: 0 !important;
+  padding: 0 24px 0 0 !important;
+  background: transparent !important;
+  color: #0b3531 !important;
+  font: inherit;
+  font-weight: 750 !important;
+  box-shadow: none !important;
+}
+
+.admin-shell .checkin-filter-control input[type="date"] {
+  min-width: 150px;
+  color-scheme: light;
+}
+
+.admin-shell .checkin-select-control select {
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.admin-shell .checkin-select-chevron {
+  position: absolute;
+  right: 14px;
+  color: #47716e;
+  pointer-events: none;
+}
+
+.admin-shell .checkin-search-button {
+  display: inline-flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 1px solid rgba(94, 234, 212, 0.34);
+  border-radius: 16px 6px 16px 16px;
+  padding: 0 22px;
+  background: linear-gradient(135deg, #0f766e, #0d9488);
+  color: #ffffff;
+  font-size: 0.94rem;
+  font-weight: 850;
+  box-shadow: 0 10px 24px rgba(15, 118, 110, 0.28);
+}
+
+.admin-shell .receptionist-patient-table .admin-patient-table-head,
+.admin-shell .receptionist-patient-table .admin-patient-table-head tr {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.14) !important;
+  background: rgba(240, 253, 250, 0.92) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.admin-shell .receptionist-patient-table .admin-patient-table-head th {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+  letter-spacing: 0 !important;
+  text-shadow: none !important;
+  text-transform: none !important;
+}
+
+.admin-shell .appointment-page-title,
+.admin-shell .appointment-page-title > span,
+.admin-shell .appointment-page-title > span:first-child {
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  text-shadow:
+    0 2px 5px rgba(2, 44, 34, 0.72),
+    0 7px 20px rgba(2, 44, 34, 0.42) !important;
+}
+
+.admin-shell .appointment-week-title {
+  color: #0f766e !important;
+}
+
+.admin-shell .appointment-week-title strong {
+  color: #082f2b !important;
+  font-weight: 900 !important;
+  text-shadow: none !important;
+}
+
+.admin-shell .appointment-week-title span {
+  color: #155e75 !important;
+  font-weight: 800 !important;
+  text-shadow: none !important;
+}
+
+.admin-shell .appointment-legend {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+  text-shadow: none !important;
+}
+
+.admin-shell .appointment-legend span {
+  border: 1px solid rgba(15, 118, 110, 0.16);
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: rgba(255, 255, 255, 0.56);
+}
+
+.admin-shell .appointment-resource-time-axis {
+  color: #083344 !important;
+  font-weight: 900 !important;
+  font-variant-numeric: tabular-nums;
+  text-shadow: none !important;
+}
+
+.admin-shell .appointment-resource-slot,
+.admin-shell .appointment-resource-slot span {
+  font-weight: 850 !important;
+  text-shadow: none !important;
+}
+
+.admin-shell .appointment-resource-slot.free {
+  background: rgba(255, 255, 255, 0.52) !important;
+  color: #475569 !important;
+}
+
+.admin-shell .appointment-resource-slot.available,
+.admin-shell .appointment-resource-slot.full,
+.admin-shell .appointment-resource-slot.available span,
+.admin-shell .appointment-resource-slot.full span {
+  color: #064e3b !important;
+}
+
+.admin-shell .appointment-resource-slot.booked,
+.admin-shell .appointment-resource-slot.booked span {
+  color: #1e3a8a !important;
+}
+
+.admin-shell .appointment-resource-slot.locked,
+.admin-shell .appointment-resource-slot.locked span {
+  color: #334155 !important;
+}
+
+.admin-shell .appointment-resource-slot.blocked,
+.admin-shell .appointment-resource-slot.blocked span {
+  color: #9a3412 !important;
+}
+
+.admin-shell .appointment-resource-slot.cancelled,
+.admin-shell .appointment-resource-slot.cancelled span,
+.admin-shell .appointment-resource-slot.on_leave,
+.admin-shell .appointment-resource-slot.on_leave span {
+  color: #991b1b !important;
+}
+
+.admin-shell .receptionist-fit-table {
+  width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.admin-shell .receptionist-fit-table .data-table {
+  width: max-content;
+  min-width: 100%;
+  table-layout: auto;
+}
+
+.admin-shell .receptionist-fit-table .data-table th,
+.admin-shell .receptionist-fit-table .data-table td {
+  width: auto !important;
+  min-width: max-content;
+  padding-inline: 18px;
+  white-space: nowrap;
+}
+
+.admin-shell .queue-table td:last-child > div {
+  flex-wrap: nowrap !important;
+}
+
+.admin-shell .queue-table .compact {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  .admin-shell .checkin-filter-bar,
+  .admin-shell .queue-filter-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-shell .toolbar,
+  .admin-shell .checkin-filter-bar,
+  .admin-shell .queue-filter-bar {
+    grid-template-columns: 1fr !important;
+  }
+
+  .admin-shell .search-bar {
+    align-items: stretch !important;
+    flex-direction: column;
+  }
+}

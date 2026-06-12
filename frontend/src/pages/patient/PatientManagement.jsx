@@ -186,9 +186,6 @@ export default function PatientManagement() {
             <Users size={28} className="text-teal-400" />
             Hồ sơ bệnh nhân
           </h1>
-          <p className="text-white/70 font-medium mt-3 text-center drop-shadow-sm text-sm md:text-base">
-            Quản lý hồ sơ bệnh nhân, tiền sử bệnh lý và thông tin liên hệ.
-          </p>
         </div>
         {!isDoctor && (
           <button
@@ -221,15 +218,15 @@ export default function PatientManagement() {
       <div className="flex-1 patient-glass-panel rounded-[3rem] p-8 md:p-10 shadow-[0_12px_40px_rgba(0,0,0,0.22)] border-0 w-full flex flex-col min-h-0 overflow-hidden">
         <div className="flex-1 overflow-auto custom-scrollbar">
           <table className="receptionist-patient-table w-full text-left border-collapse whitespace-nowrap">
-            <thead className="bg-white/5 border-b border-white/10 text-white/80 text-sm sticky top-0 z-10 backdrop-blur-md">
+            <thead className="admin-patient-table-head text-sm sticky top-0 z-10">
               <tr>
-                <th className="p-5 font-semibold" style={{color:"#0f766e"}}>Mã BN</th>
-                <th className="p-5 font-semibold" style={{color:"#0f766e"}}>Họ và tên</th>
-                <th className="p-5 font-semibold" style={{color:"#0f766e"}}>Giới tính</th>
-                <th className="p-5 font-semibold" style={{color:"#0f766e"}}>SĐT</th>
-                <th className="p-5 font-semibold" style={{color:"#0f766e"}}>CCCD / BHYT</th>
-                <th className="p-5 font-semibold" style={{color:"#0f766e"}}>Tài khoản</th>
-                <th className="p-5 font-semibold text-center" style={{color:"#0f766e"}}>Hành động</th>
+                <th className="p-5">Mã BN</th>
+                <th className="p-5">Họ và tên</th>
+                <th className="p-5">Giới tính</th>
+                <th className="p-5">SĐT</th>
+                <th className="p-5">CCCD / BHYT</th>
+                <th className="p-5">Tài khoản</th>
+                <th className="p-5 text-center">Hành động</th>
               </tr>
             </thead>
             <tbody>

@@ -10,6 +10,7 @@ import PharmacistSidebar from "./PharmacistSidebar.jsx";
 import PatientSidebar from "./PatientSidebar.jsx";
 import LabTechnicianSidebar from "./LabTechnicianSidebar.jsx";
 import ReceptionistSidebar from "./ReceptionistSidebar.jsx";
+import AdminSidebar from "./AdminSidebar.jsx";
 import bgImage from "../assets/images/background_2k.png";
 import patientBgImage from "../assets/images/patient_bg.png";
 
@@ -169,7 +170,9 @@ export default function DashboardLayout() {
         className="flex-1 w-full relative z-10 flex flex-col"
       >
         <main className="flex-1 w-full max-w-[1700px] mx-auto pt-[80px] px-4 md:px-6 pb-4 md:pb-6 flex gap-6 h-full">
-          {roles.includes("DOCTOR") ? (
+          {isAdminShell ? (
+            <AdminSidebar />
+          ) : roles.includes("DOCTOR") ? (
             <DoctorSidebar />
           ) : roles.includes("PHARMACIST") ? (
             <PharmacistSidebar />
