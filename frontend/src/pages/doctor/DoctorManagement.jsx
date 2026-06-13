@@ -5,6 +5,7 @@ import {
   deleteDoctor,
   getDoctors,
   updateDoctor,
+} from "../../services/doctorService";
 import { getActiveDepartments } from "../../services/departmentService";
 import { getUsers } from "../../services/userService";
 import PageHeader from "../../components/PageHeader";
