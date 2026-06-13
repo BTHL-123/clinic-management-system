@@ -242,23 +242,23 @@
 }
 
 .appointment-day-summary.selected {
-  border-color: rgba(20, 184, 166, 0.8) !important;
-  background: rgba(204, 251, 241, 0.85) !important;
+  border-color: #10b981 !important;
+  background: #d1fae5 !important;
   box-shadow:
-    0 0 0 3px rgba(20, 184, 166, 0.25),
-    0 8px 24px rgba(15, 118, 110, 0.15) !important;
-  transform: translateY(-3px);
+    0 0 0 4px rgba(16, 185, 129, 0.2),
+    0 10px 25px rgba(16, 185, 129, 0.3) !important;
+  transform: translateY(-4px);
 }
 
 .appointment-day-summary.selected span,
 .appointment-day-summary.selected strong,
 .appointment-day-summary.selected small,
 .appointment-day-summary.selected em {
-  color: #0f766e !important;
+  color: #065f46 !important;
 }
 
 .appointment-day-summary.selected em {
-  background: rgba(15, 118, 110, 0.15) !important;
+  background: rgba(6, 95, 70, 0.15) !important;
 }
 
 .appointment-resource-board {
@@ -2647,13 +2647,13 @@ a {
 }
 
 .admin-shell .appointment-day-summary.selected {
-  border-color: rgba(20, 184, 166, 0.8) !important;
-  background: rgba(204, 251, 241, 0.85) !important;
+  border-color: #10b981 !important;
+  background: #d1fae5 !important;
   box-shadow:
-    0 0 0 3px rgba(20, 184, 166, 0.25),
-    0 8px 24px rgba(15, 118, 110, 0.15),
+    0 0 0 4px rgba(16, 185, 129, 0.2),
+    0 10px 25px rgba(16, 185, 129, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
-  transform: translateY(-3px);
+  transform: translateY(-4px);
 }
 
 .admin-shell .appointment-day-summary:not(.selected) strong,
@@ -2667,11 +2667,11 @@ a {
 .admin-shell .appointment-day-summary.selected span,
 .admin-shell .appointment-day-summary.selected small,
 .admin-shell .appointment-day-summary.selected em {
-  color: #0f766e !important;
+  color: #065f46 !important;
 }
 
 .admin-shell .appointment-day-summary.selected em {
-  background: rgba(15, 118, 110, 0.15) !important;
+  background: rgba(6, 95, 70, 0.15) !important;
 }
 
 .admin-shell .appointment-day-summary em {
@@ -5033,12 +5033,19 @@ a {
   color: #0f766e;
 }
 
-.receptionist-shell .appointment-day-summary strong,
+.receptionist-shell .appointment-day-summary:not(.selected) strong,
 .receptionist-shell .appointment-resource-head strong,
 .receptionist-shell .appointment-selected-card strong,
 .receptionist-shell .appointment-doctor-card strong,
 .receptionist-shell .appointment-table-doctor-name {
   color: #092f2c;
+}
+
+.receptionist-shell .appointment-day-summary.selected strong,
+.receptionist-shell .appointment-day-summary.selected span,
+.receptionist-shell .appointment-day-summary.selected small,
+.receptionist-shell .appointment-day-summary.selected em {
+  color: #065f46 !important;
 }
 
 .receptionist-shell .appointment-resource-slot.free {

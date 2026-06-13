@@ -5,6 +5,7 @@ import { getMyDoctorProfile } from "../../services/doctorService";
 import queueTicketService from "../../services/queueTicketService";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "../../context/useToast.js";
+import PageHeader from "../../components/PageHeader";
 
 const STATUS_LABEL = {
   WAITING: { label: "Chờ khám", color: "text-amber-800", bg: "bg-amber-500/20", border: "border-amber-500/30" },
@@ -112,26 +113,15 @@ export default function ConsultationPage() {
   return (
     <div className="text-white flex flex-col h-full gap-6 pb-6">
       {/* Header */}
-      <div className="w-full relative flex flex-col items-center mb-6">
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 active:scale-95 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm group"
-        >
-          <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
-          Quay lại
-        </button>
-        <div className="flex flex-col items-center">
-          <h2 className="text-2xl md:text-3xl font-extrabold text-white flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg text-center">
-            <span className="text-white"><Stethoscope size={28} /></span>
-            Phòng khám — Hàng đợi bệnh nhân
-          </h2>
-          {doctor && (
-            <p className="text-white/70 font-medium mt-3 text-center drop-shadow-sm">
-              Bác sĩ phụ trách: {doctor.fullName || doctor.user?.fullName}
-            </p>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        title="Phòng khám — Hàng đợi bệnh nhân"
+        icon={Stethoscope}
+        iconColor="text-white"
+        subtitle={
+          doctor ? `Bác sĩ phụ trách: ${doctor.fullName || doctor.user?.fullName}` : undefined
+        }
+        onBack={() => navigate("/dashboard")}
+      />
 
       {error && (
         <div className="bg-rose-500/20 border border-rose-500/30 text-rose-300 p-4 rounded-xl font-medium">

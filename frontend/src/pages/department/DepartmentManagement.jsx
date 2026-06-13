@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Building2, Edit, Plus, Search, Trash2, X } from "lucide-react";
 import {
   createDepartment,
@@ -6,6 +6,7 @@ import {
   getDepartments,
   updateDepartment,
 } from "../../services/departmentService";
+import PageHeader from "../../components/PageHeader";
 
 const EMPTY_FORM = { departmentName: "", description: "", status: "ACTIVE" };
 
@@ -120,21 +121,18 @@ export default function DepartmentManagement() {
   return (
     <>
       {/* ── Page Header ────────────────────────────────── */}
-      <div className="flex flex-col items-center w-full mb-6">
-        <div className="flex flex-col items-center">
-          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
-            <span className="text-white"><Building2 size={26} /></span>
-            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Quản lý Chuyên khoa</span>
-          </h1>
-          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
-            Quản lý danh sách các chuyên khoa trong phòng khám.
-          </p>
-        </div>
-        <button className="primary-button absolute right-0 top-1/2 -translate-y-1/2" onClick={openCreate}>
-          <Plus size={16} />
-          Thêm chuyên khoa
-        </button>
-      </div>
+      <PageHeader
+        title="Quản lý Chuyên khoa"
+        icon={Building2}
+        iconColor="text-white"
+        subtitle="Quản lý danh sách các chuyên khoa trong phòng khám."
+        rightContent={
+          <button className="bg-white text-teal-700 hover:bg-teal-50 font-bold px-4 py-2 rounded-xl shadow-md transition-all flex items-center gap-2" onClick={openCreate}>
+            <Plus size={16} />
+            Thêm chuyên khoa
+          </button>
+        }
+      />
 
       {/* ── Search Bar ─────────────────────────────────── */}
       <div className="search-bar" style={{ display: "flex", alignItems: "center", gap: "10px" }}>

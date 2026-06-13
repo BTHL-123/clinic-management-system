@@ -3,6 +3,7 @@ import { History, ArrowDownCircle, ArrowUpCircle, Plus, X, ArrowLeft } from "luc
 import { useNavigate } from "react-router-dom";
 import { getTransactions, exportStock, getBatches } from "../../services/inventoryService";
 import { getMedicines } from "../../services/medicineService";
+import PageHeader from "../../components/PageHeader";
 
 const EMPTY_FORM = { medicineId: "", batchId: "", quantity: "", note: "" };
 
@@ -112,26 +113,19 @@ export default function StockTransactions() {
   return (
     <>
       <div className="w-full flex flex-col items-center">
-        <div className="w-full relative flex flex-col items-center mb-8">
-          <button
-            onClick={() => navigate("/dashboard")}
-            className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 active:scale-95 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm group"
-          >
-            <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
-            Quay lại
-          </button>
-          <div className="flex flex-col items-center">
-            <h1 className="text-3xl font-extrabold text-white flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
-              <span className="text-white"><History size={28} /></span>
-              Lịch Sử Giao Dịch Kho
-            </h1>
-            <p className="text-white/70 font-medium mt-3 text-center drop-shadow-sm">Lịch sử xuất/nhập/hoàn trả thuốc.</p>
-          </div>
-          <button className="absolute right-0 top-1/2 -translate-y-1/2 bg-gradient-to-r from-fuchsia-400 to-pink-400 hover:from-fuchsia-300 hover:to-pink-300 text-slate-900 font-bold px-5 py-2.5 rounded-xl shadow-lg hover:shadow-fuchsia-400/30 transition-all flex items-center gap-2" onClick={openForm}>
-            <Plus size={18} strokeWidth={2.5} />
-            Xuất kho thủ công
-          </button>
-        </div>
+        <PageHeader
+          title="Lịch Sử Giao Dịch Kho"
+          icon={History}
+          iconColor="text-white"
+          subtitle="Lịch sử xuất/nhập/hoàn trả thuốc."
+          onBack={() => navigate("/dashboard")}
+          rightContent={
+            <button className="bg-gradient-to-r from-fuchsia-400 to-pink-400 hover:from-fuchsia-300 hover:to-pink-300 text-slate-900 font-bold px-5 py-2.5 rounded-xl shadow-lg hover:shadow-fuchsia-400/30 transition-all flex items-center gap-2" onClick={openForm}>
+              <Plus size={18} strokeWidth={2.5} />
+              Xuất kho thủ công
+            </button>
+          }
+        />
 
         <div className="patient-glass-panel patient-glass-panel-clear rounded-[3rem] p-8 md:p-10 shadow-[0_12px_40px_rgba(0,0,0,0.22)] border-0 w-full">
           {error && <div className="bg-rose-500/20 border border-rose-500/50 text-rose-200 p-4 rounded-xl mb-6">{error}</div>}

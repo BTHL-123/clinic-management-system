@@ -3,6 +3,7 @@ import { FlaskConical, RefreshCw, CheckCircle, ClipboardEdit, X, FileText } from
 import { getAllLabRequests, acceptLabRequest } from "../../services/labRequestService";
 import { createLabResult } from "../../services/labResultService";
 import { useToast } from "../../context/useToast.js";
+import PageHeader from "../../components/PageHeader";
 
 const STATUS_MAP = {
   REQUESTED: { label: "Chờ tiếp nhận", color: "text-amber-700", bg: "bg-amber-100", border: "border-amber-200" },
@@ -106,20 +107,12 @@ export default function LabRequestPage() {
     <div className="max-w-[1100px] mx-auto w-full flex flex-col items-center pb-10">
 
       {/* Header */}
-      <div className="w-full mb-10 relative flex flex-col sm:flex-row justify-center items-center min-h-[80px] mt-4">
-        <div className="w-full sm:absolute sm:left-0 sm:top-4 flex justify-start mb-4 sm:mb-0 px-4 sm:px-0">
-          {/* Dashboard Home usually acts as the root, so no back button here unless they came from somewhere, but let's leave it without a back button or add a small one */}
-        </div>
-        <div className="flex flex-col items-center text-center mt-2 px-4">
-          <h1 className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-4">
-            <FlaskConical size={32} className="text-teal-400 drop-shadow-md" />
-            <span className="drop-shadow-md">Phòng Xét Nghiệm</span>
-          </h1>
-          <p className="text-white/80 font-bold drop-shadow-sm text-[16px] max-w-[600px]">
-            Quản lý, tiếp nhận và cập nhật kết quả xét nghiệm của bệnh nhân.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Phòng Xét Nghiệm"
+        icon={FlaskConical}
+        iconColor="text-teal-400"
+        subtitle="Quản lý, tiếp nhận và cập nhật kết quả xét nghiệm của bệnh nhân."
+      />
 
       {error && (
         <div className="bg-rose-100/80 border border-rose-300 text-rose-800 p-4 rounded-2xl shadow-sm font-semibold">

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import appointmentService from "../../services/appointmentService";
 import { useToast } from "../../context/useToast.js";
+import PageHeader from "../../components/PageHeader";
 
 export default function ReceptionistAppointmentsPage() {
   const toast = useToast();
@@ -117,20 +118,17 @@ export default function ReceptionistAppointmentsPage() {
 
   return (
     <div className="content receptionist-data-page">
-      <div className="page-header">
-        <h1 className="page-title">
-          <UserCheck size={24} style={{ color: "#0f766e" }} />
-          Check-in Bệnh nhân
-        </h1>
-        <button
-          className="ghost-button"
-          onClick={() => fetchAppointments(currentPage)}
-          style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
-        >
-          <RefreshCw size={16} className={loading ? "spin-animation" : ""} />
-          Làm mới
-        </button>
-      </div>
+      <PageHeader
+        title="Check-in Bệnh nhân"
+        icon={UserCheck}
+        iconColor="text-white"
+        rightContent={
+          <button className="bg-white/10 hover:bg-white/20 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm" onClick={() => fetchAppointments(currentPage)}>
+            <RefreshCw size={16} className={loading ? "spin-animation" : ""} />
+            Làm mới
+          </button>
+        }
+      />
 
       {/* Toolbar / Filters */}
       <div className="panel checkin-filter-panel">

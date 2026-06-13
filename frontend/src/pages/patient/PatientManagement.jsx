@@ -10,6 +10,7 @@ import {
 import { getUsers } from "../../services/userService";
 import MedicalHistory from "../../components/MedicalHistory";
 import { useAuth } from "../../context/useAuth";
+import PageHeader from "../../components/PageHeader";
 
 const EMPTY_FORM = {
   userId: "",
@@ -173,30 +174,23 @@ export default function PatientManagement() {
   return (
     <div className="receptionist-patient-page text-white flex flex-col h-full gap-6 pb-6">
       {/* ── Page Header ────────────────────────────────── */}
-      <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] p-6 shadow-xl flex flex-wrap justify-between items-center gap-4">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate("/dashboard")}
-            className="bg-white/10 hover:bg-white/20 active:scale-95 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm group"
-          >
-            <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
-            Quay lại
-          </button>
-          <h1 className="text-2xl font-bold flex items-center gap-3">
-            <Users size={28} className="text-teal-400" />
-            Hồ sơ bệnh nhân
-          </h1>
-        </div>
-        {!isDoctor && (
-          <button
-            className="md:absolute right-0 md:top-1/2 md:-translate-y-1/2 bg-gradient-to-r from-teal-400 to-emerald-400 text-slate-900 font-bold px-5 py-2.5 rounded-xl hover:shadow-[0_0_20px_rgba(45,212,191,0.4)] transition-all flex items-center gap-2 shadow-lg"
-            onClick={openCreate}
-          >
-            <Plus size={16} />
-            Thêm bệnh nhân
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Hồ sơ bệnh nhân"
+        icon={Users}
+        iconColor="text-white"
+        onBack={() => navigate("/dashboard")}
+        rightContent={
+          !isDoctor && (
+            <button
+              className="bg-gradient-to-r from-teal-400 to-emerald-400 text-slate-900 font-bold px-5 py-2.5 rounded-xl hover:shadow-[0_0_20px_rgba(45,212,191,0.4)] transition-all flex items-center gap-2 shadow-lg"
+              onClick={openCreate}
+            >
+              <Plus size={16} />
+              Thêm bệnh nhân
+            </button>
+          )
+        }
+      />
 
       {/* ── Filters ────────────────────────────────────── */}
       <div className="patient-glass-panel rounded-[1.5rem] p-5 shadow-xl flex gap-4">

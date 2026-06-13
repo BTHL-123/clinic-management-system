@@ -659,9 +659,10 @@ function DayResourceCalendar({
   const handleMouseDown = (e: React.MouseEvent) => {
     isDraggingBoard.current = true;
     if (boardRef.current) {
-      startX.current = e.pageX - boardRef.current.offsetLeft;
+      startX.current = e.clientX;
       scrollLeft.current = boardRef.current.scrollLeft;
       boardRef.current.style.cursor = 'grabbing';
+      boardRef.current.dataset.dragged = "false";
     }
   };
 
@@ -679,10 +680,12 @@ function DayResourceCalendar({
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDraggingBoard.current) return;
     if (dragSelection) return; // Prevent horizontal board scrolling if user is dragging to select slots vertically
-    e.preventDefault();
     if (boardRef.current) {
-      const x = e.pageX - boardRef.current.offsetLeft;
+      const x = e.clientX;
       const walk = (x - startX.current) * 1.5;
+      if (Math.abs(walk) > 5) {
+        boardRef.current.dataset.dragged = "true";
+      }
       boardRef.current.scrollLeft = scrollLeft.current - walk;
     }
   };
@@ -745,7 +748,14 @@ function DayResourceCalendar({
                     type="button"
                     className={`appointment-resource-slot ${status.toLowerCase()} ${schedule.scheduleId === selectedScheduleId ? "selected" : ""}`}
                     key={time}
-                    onClick={() => onPickSchedule(schedule)}
+                    onClick={(e) => {
+                      if (boardRef.current?.dataset.dragged === "true") {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return;
+                      }
+                      onPickSchedule(schedule);
+                    }}
                     title={`${formatTime(schedule.startTime)} - ${formatTime(schedule.endTime)} · ${doctorLabel(doctors, schedule.doctorId)}`}
                   >
                     <span>{slot ? slotStatusLabel(slot.status) : scheduleStatusLabel(schedule.status)}</span>

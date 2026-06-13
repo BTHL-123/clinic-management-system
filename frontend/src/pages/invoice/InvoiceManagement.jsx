@@ -18,6 +18,7 @@ import {
 } from "../../services/invoiceService";
 import { createPayment, confirmCashPayment, createOnlinePaymentUrl } from "../../services/paymentService";
 import { getMedicines } from "../../services/medicineService";
+import PageHeader from "../../components/PageHeader";
 
 const STATUS_OPTIONS = [
   { value: "", label: "Tất cả" },
@@ -342,19 +343,18 @@ export default function InvoiceManagement() {
   return (
     <>
       {/* ── Page Header ────────────────────────────────── */}
-      <div className="page-header">
-        <div className="flex flex-col items-center w-full">
-          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
-            <span className="text-white"><Receipt size={26} /></span>
-            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Quản lý Hóa đơn</span>
-          </h1>
-          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">Quản lý hóa đơn khám chữa bệnh.</p>
-        </div>
-        <button className="primary-button" onClick={openCreate}>
-          <Plus size={16} />
-          Tạo hóa đơn
-        </button>
-      </div>
+      <PageHeader
+        title="Quản lý Hóa đơn"
+        icon={Receipt}
+        iconColor="text-white"
+        subtitle="Quản lý hóa đơn khám chữa bệnh."
+        rightContent={
+          <button className="primary-button" onClick={openCreate}>
+            <Plus size={16} />
+            Tạo hóa đơn
+          </button>
+        }
+      />
 
       {/* ── Search & Filter ──────────────────────────────── */}
       <div style={{ display: "flex", gap: 12, marginBottom: 18, flexWrap: "wrap" }}>

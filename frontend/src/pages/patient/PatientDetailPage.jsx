@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, User, History, Phone, Mail, MapPin, Heart, Shield, AlertTriangle } from "lucide-react";
 import { getPatientById } from "../../services/patientService";
 import MedicalHistory from "../../components/MedicalHistory";
+import PageHeader from "../../components/PageHeader";
 
 const TABS = [
   { id: "info", label: "Thông tin hành chính", icon: User },
@@ -34,22 +35,33 @@ export default function PatientDetailPage() {
   }, [patientId]);
 
   if (loading) {
-    return <div className="page-header">Đang tải thông tin bệnh nhân...</div>;
+    return (
+      <div className="w-full flex flex-col items-center">
+        <PageHeader
+          title="Chi tiết bệnh nhân"
+          icon={User}
+          iconColor="text-white"
+          onBack={() => navigate("/dashboard/patients")}
+        />
+        <div className="patient-glass-card p-6 md:p-8 w-full mt-4 text-center text-slate-500 font-semibold">
+          Đang tải thông tin bệnh nhân...
+        </div>
+      </div>
+    );
   }
-
   if (error) {
     return (
-      <>
-        <div className="page-header">
-          <div>
-            <h1 className="page-title">Chi tiết bệnh nhân</h1>
-          </div>
-          <button className="secondary-button" onClick={() => navigate("/dashboard/patients")}>
-            <ArrowLeft size={16} /> Quay lại
-          </button>
+      <div className="w-full flex flex-col items-center">
+        <PageHeader
+          title="Chi tiết bệnh nhân"
+          icon={User}
+          iconColor="text-white"
+          onBack={() => navigate("/dashboard/patients")}
+        />
+        <div className="patient-glass-card p-6 md:p-8 w-full mt-4 text-center text-red-600 font-semibold">
+          {error}
         </div>
-        <div className="error-box">{error}</div>
-      </>
+      </div>
     );
   }
 
@@ -146,26 +158,23 @@ export default function PatientDetailPage() {
   return (
     <div className="flex flex-col h-full gap-6 pb-6">
       {/* Page Header */}
-      <div className="bg-white/60 backdrop-blur-xl border border-white/60 rounded-[2rem] p-6 shadow-sm flex items-center gap-5">
-        <button
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-white/80 border border-white hover:bg-teal-50 hover:border-teal-100 text-slate-500 hover:text-teal-600 transition-all shadow-sm group"
-          onClick={() => navigate("/dashboard/patients")}
-          title="Quay lại danh sách"
-        >
-          <ArrowLeft size={20} className="group-hover:-translate-x-0.5 transition-transform" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800 mb-1">
-            {patient.fullName || "Bệnh nhân"}
-          </h1>
-          <p className="text-slate-500 font-medium flex items-center gap-2 text-sm">
-            <span className="bg-teal-100/50 text-teal-700 px-2 py-0.5 rounded-md font-bold">{patient.patientCode}</span>
+      {/* Page Header */}
+      <PageHeader
+        title={patient.fullName || "Bệnh nhân"}
+        icon={User}
+        iconColor="text-white"
+        subtitle={
+          <span className="flex items-center gap-2 justify-center">
+            <span className="bg-teal-500/20 text-teal-100 px-2 py-0.5 rounded-md font-bold border border-teal-500/30">
+              {patient.patientCode}
+            </span>
             • {genderLabel(patient.gender)}
             {patient.dateOfBirth && ` • ${formatDate(patient.dateOfBirth)}`}
             {patient.phone && ` • ${patient.phone}`}
-          </p>
-        </div>
-      </div>
+          </span>
+        }
+        onBack={() => navigate("/dashboard/patients")}
+      />
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-slate-200/50 pb-px">

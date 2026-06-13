@@ -8,6 +8,7 @@ import RescheduleModal from "../appointment/RescheduleModal.jsx";
 import { getPayments } from "../../services/paymentService.js";
 import { getRefunds } from "../../services/refundService.js";
 import RefundRequestModal from "./RefundRequestModal.jsx";
+import PageHeader from "../../components/PageHeader";
 
 // Modal Component for Cancelling Appointment
 function CancelModal({ isOpen, onClose, onConfirm, busy }) {
@@ -465,26 +466,13 @@ export default function MyAppointmentsPage() {
 
   return (
     <div className="max-w-[1100px] mx-auto w-full flex flex-col items-center">
-      <div className="w-full mb-10 relative flex flex-col sm:flex-row justify-center items-center min-h-[80px]">
-        <div className="w-full sm:absolute sm:left-0 sm:top-4 flex justify-start mb-4 sm:mb-0 px-4 sm:px-0">
-          <button 
-            onClick={() => navigate("/dashboard", { state: { activeClusterId: "booking" } })}
-            className="bg-white/10 hover:bg-white/20 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm"
-          >
-            <ArrowLeft size={18} />
-            Quay lại
-          </button>
-        </div>
-        <div className="flex flex-col items-center text-center mt-2 px-4">
-          <h1 className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-4">
-            <CalendarDays size={32} className="text-teal-400 drop-shadow-md" />
-            <span className="drop-shadow-md">Lịch hẹn của tôi</span>
-          </h1>
-          <p className="text-white/70 font-medium drop-shadow-sm text-[16px] max-w-[600px]">
-            Xem lịch hẹn sắp tới và tra cứu lịch sử khám bệnh của bạn.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Lịch hẹn của tôi"
+        icon={CalendarDays}
+        iconColor="text-teal-400"
+        subtitle="Xem lịch hẹn sắp tới và tra cứu lịch sử khám bệnh của bạn."
+        onBack={() => navigate("/dashboard", { state: { activeClusterId: "booking" } })}
+      />
 
       <div className="patient-glass-card p-6 md:p-8 w-full max-w-[800px] mx-auto mb-10">
         <div className="flex flex-wrap gap-3 mb-8">

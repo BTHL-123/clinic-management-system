@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
 import PatientProfile from "../patient/PatientProfile";
 import DoctorProfile from "../doctor/DoctorProfile";
+import PageHeader from "../../components/PageHeader";
 
 function AccountProfileCard({ isPatientMode }) {
   const { user, updateCurrentUser, uploadCurrentUserAvatar } = useAuth();
@@ -149,30 +150,17 @@ export default function ProfilePage() {
           color: #0f766e !important;
         }
       `}</style>
-      <div className="w-full mb-10 relative flex flex-col sm:flex-row justify-center items-center min-h-[80px] mt-4">
-        <div className="w-full sm:absolute sm:left-0 sm:top-4 flex justify-start mb-4 sm:mb-0 px-4 sm:px-0">
-          <button
-            onClick={() => navigate("/dashboard", { state: { activeClusterId: "settings" } })}
-            className="bg-white/10 hover:bg-white/20 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm"
-            title="Quay lại"
-          >
-            <ArrowLeft size={18} />
-            Quay lại
-          </button>
-        </div>
-        <div className="flex flex-col items-center text-center mt-2 w-full px-4">
-          <h1 className={usePatientVisualShell
-            ? "inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg text-2xl md:text-3xl font-extrabold text-[#0f766e] tracking-tight mb-4"
-            : "inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg text-2xl md:text-3xl font-extrabold text-[#0f766e] tracking-tight mb-4"}
-          >
-            <UserSquare size={32} className="text-teal-400 drop-shadow-md" />
-            <span className="drop-shadow-md">Hồ sơ của tôi</span>
-          </h1>
-          <p className={usePatientVisualShell ? "text-white/80 font-bold drop-shadow-sm text-[16px] max-w-[600px]" : "text-white/70 font-medium drop-shadow-sm text-[16px] max-w-[600px]"}>
+      <PageHeader
+        title="Hồ sơ của tôi"
+        icon={UserSquare}
+        iconColor="text-teal-400"
+        subtitle={
+          <span className={usePatientVisualShell ? "text-white/80 font-bold" : "text-white/70 font-medium"}>
             Cập nhật thông tin cá nhân, avatar và xem hồ sơ theo vai trò.
-          </p>
-        </div>
-      </div>
+          </span>
+        }
+        onBack={() => navigate("/dashboard", { state: { activeClusterId: "settings" } })}
+      />
 
       <div className={usePatientVisualShell ? "w-full max-w-[800px] flex flex-col gap-8 mb-10" : "w-full max-w-[800px] flex flex-col gap-8"}>
         <AccountProfileCard isPatientMode={usePatientVisualShell} />

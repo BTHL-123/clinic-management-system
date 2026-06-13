@@ -1,4 +1,4 @@
-﻿import { Lock, Plus, RefreshCw, Search, Trash2, Unlock, UserRoundPlus } from "lucide-react";
+import { Lock, Plus, RefreshCw, Search, Trash2, Unlock, UserRoundPlus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { getActiveDepartments } from "../../services/departmentService";
 import {
@@ -9,6 +9,7 @@ import {
   unlockUser,
   updateUser,
 } from "../../services/userService";
+import PageHeader from "../../components/PageHeader";
 
 const roleOptions = ["ADMIN", "RECEPTIONIST", "DOCTOR", "PHARMACIST", "LAB_TECHNICIAN", "PATIENT"];
 const createEmptyForm = () => ({
@@ -163,21 +164,18 @@ export default function UsersPage() {
 
   return (
     <div className="page-stack">
-      <div className="flex flex-col items-center w-full mb-6">
-        <div className="flex flex-col items-center">
-          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
-            <span className="text-white"><UserRoundPlus size={26} /></span>
-            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Quản lý Tài khoản</span>
-          </h1>
-          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
-            Tạo tài khoản nhân viên, tìm kiếm và quản lý quyền truy cập.
-          </p>
-        </div>
-        <button className="primary-button absolute right-0 top-1/2 -translate-y-1/2 compact" onClick={resetForm}>
-          <Plus size={17} />
-          Tạo tài khoản
-        </button>
-      </div>
+      <PageHeader
+        title="Quản lý Tài khoản"
+        icon={UserRoundPlus}
+        iconColor="text-white"
+        subtitle="Tạo tài khoản nhân viên, tìm kiếm và quản lý quyền truy cập."
+        rightContent={
+          <button className="bg-white text-teal-700 hover:bg-teal-50 font-bold px-4 py-2 rounded-xl shadow-md transition-all flex items-center gap-2" onClick={resetForm}>
+            <Plus size={17} />
+            Tạo tài khoản
+          </button>
+        }
+      />
 
       <section className="panel">
         <form className="toolbar" onSubmit={(event) => event.preventDefault()}>

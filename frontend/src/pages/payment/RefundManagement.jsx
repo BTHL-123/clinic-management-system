@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { CheckCircle, XCircle, Clock, FileText, X, AlertCircle, RotateCcw } from "lucide-react";
 import { getRefunds, approveRefund, rejectRefund } from "../../services/refundService";
+import PageHeader from "../../components/PageHeader";
 
 function RejectModal({ isOpen, onClose, onConfirm, busy }) {
   const [reason, setReason] = useState("");
@@ -148,15 +149,12 @@ export default function RefundManagement() {
 
   return (
     <div style={{ padding: "20px" }}>
-      <div style={{ marginBottom: "24px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-        <div className="flex flex-col items-center w-full">
-          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
-            <span className="text-white"><RotateCcw size={26} /></span>
-            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Quản lý hoàn tiền</span>
-          </h1>
-          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">Duyệt hoặc từ chối các yêu cầu hoàn tiền từ bệnh nhân.</p>
-        </div>
-        <div>
+      <PageHeader
+        title="Quản lý hoàn tiền"
+        icon={RotateCcw}
+        iconColor="text-white"
+        subtitle="Duyệt hoặc từ chối các yêu cầu hoàn tiền từ bệnh nhân."
+        rightContent={
           <select
             value={statusFilter}
             onChange={e => { setStatusFilter(e.target.value); setPage(0); }}
@@ -167,8 +165,8 @@ export default function RefundManagement() {
             <option value="COMPLETED">Hoàn thành</option>
             <option value="REJECTED">Đã từ chối</option>
           </select>
-        </div>
-      </div>
+        }
+      />
 
       {error && (
         <div style={{ padding: "12px", background: "#fef2f2", color: "#dc2626", borderRadius: "8px", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>

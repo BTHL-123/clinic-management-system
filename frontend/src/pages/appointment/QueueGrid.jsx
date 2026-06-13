@@ -58,9 +58,10 @@ export default function QueueGrid({ doctors, schedules, slotsBySchedule, onSlotC
 
   const handleMouseDown = (e) => {
     isDragging.current = true;
-    startX.current = e.pageX - boardRef.current.offsetLeft;
+    startX.current = e.clientX;
     scrollLeft.current = boardRef.current.scrollLeft;
     boardRef.current.style.cursor = 'grabbing';
+    boardRef.current.dataset.dragged = "false";
   };
 
   const handleMouseLeave = () => {
@@ -75,9 +76,11 @@ export default function QueueGrid({ doctors, schedules, slotsBySchedule, onSlotC
 
   const handleMouseMove = (e) => {
     if (!isDragging.current) return;
-    e.preventDefault();
-    const x = e.pageX - boardRef.current.offsetLeft;
+    const x = e.clientX;
     const walk = (x - startX.current) * 1.5;
+    if (Math.abs(walk) > 5) {
+      boardRef.current.dataset.dragged = "true";
+    }
     boardRef.current.scrollLeft = scrollLeft.current - walk;
   };
 
@@ -146,7 +149,12 @@ export default function QueueGrid({ doctors, schedules, slotsBySchedule, onSlotC
                     type="button"
                     className={`appointment-resource-slot ${statusClass}`}
                     key={time}
-                    onClick={() => {
+                    onClick={(e) => {
+                      if (boardRef.current?.dataset.dragged === "true") {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return;
+                      }
                       if (status === "AVAILABLE") {
                         onSlotClick(doctor, schedule, slot);
                       }
