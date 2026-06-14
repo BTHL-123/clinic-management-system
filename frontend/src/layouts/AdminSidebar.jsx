@@ -101,11 +101,32 @@ export default function AdminSidebar() {
   const location = useLocation();
   const [isExpanded, setIsExpanded] = useState(() => localStorage.getItem("adminSidebarExpanded") === "true");
   const activeGroup = groups.find((group) => group.items.some((item) => isItemActive(location.pathname, item)))?.id;
-  const [openGroup, setOpenGroup] = useState(activeGroup || "overview");
+  const [openGroups, setOpenGroups] = useState(() => {
+    try {
+      const stored = localStorage.getItem("adminSidebarOpenGroups");
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (e) {}
+    return {
+      overview: true,
+      ...(activeGroup ? { [activeGroup]: true } : {})
+    };
+  });
 
   useEffect(() => {
     localStorage.setItem("adminSidebarExpanded", isExpanded);
   }, [isExpanded]);
+
+  useEffect(() => {
+    localStorage.setItem("adminSidebarOpenGroups", JSON.stringify(openGroups));
+  }, [openGroups]);
+
+  useEffect(() => {
+    if (activeGroup) {
+      setOpenGroups((prev) => ({ ...prev, [activeGroup]: true }));
+    }
+  }, [activeGroup]);
 
   const handleLogout = async () => {
     await logout();
@@ -133,14 +154,14 @@ export default function AdminSidebar() {
         {isExpanded ? (
           groups.map((group) => {
             const Icon = group.icon;
-            const isOpen = openGroup === group.id;
+            const isOpen = !!openGroups[group.id];
             const isActive = activeGroup === group.id;
             return (
               <section className="admin-floating-group" key={group.id}>
                 <button
                   type="button"
                   className={`admin-floating-group-trigger ${isActive ? "active" : ""}`}
-                  onClick={() => setOpenGroup(isOpen ? "" : group.id)}
+                  onClick={() => setOpenGroups((prev) => ({ ...prev, [group.id]: !isOpen }))}
                   aria-expanded={isOpen}
                 >
                   <Icon size={20} />

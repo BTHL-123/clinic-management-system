@@ -63,6 +63,42 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
                 .orElse(30);
     }
 
+    private int generateTimeSlotsForSchedule(DoctorSchedule schedule, int slotDuration) {
+        schedule.getTimeSlots().clear();
+        LocalTime currentSlotTime = schedule.getStartTime();
+        LocalTime endTime = schedule.getEndTime();
+        int slotCount = 0;
+        
+        while (true) {
+            LocalTime nextTime = currentSlotTime.plusMinutes(slotDuration);
+            // If nextTime rolls over to midnight and the schedule's end time is 23:59 (standard day cap),
+            // we adjust nextTime to match endTime to make a valid final slot of the day.
+            if (nextTime.equals(LocalTime.MIDNIGHT) && 
+                (endTime.equals(LocalTime.of(23, 59)) || endTime.equals(LocalTime.of(23, 59, 59)))) {
+                nextTime = endTime;
+            }
+            
+            // Break if we roll over past midnight or exceed end time
+            if (nextTime.isBefore(currentSlotTime) || nextTime.isAfter(endTime)) {
+                break;
+            }
+            
+            TimeSlot timeSlot = new TimeSlot();
+            timeSlot.setDoctorSchedule(schedule);
+            timeSlot.setStartTime(currentSlotTime);
+            timeSlot.setEndTime(nextTime);
+            timeSlot.setStatus("AVAILABLE");
+            schedule.getTimeSlots().add(timeSlot);
+            slotCount++;
+            
+            if (nextTime.equals(endTime)) {
+                break;
+            }
+            currentSlotTime = nextTime;
+        }
+        return slotCount;
+    }
+
     @Override
     @Transactional
     public DoctorScheduleResponse createSchedule(DoctorScheduleRequest request) {
@@ -97,17 +133,7 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
 
         int slotDuration = getSlotDurationMinutes(request.slotDurationMinutes());
 
-        LocalTime currentSlotTime = request.startTime();
-        while (currentSlotTime.plusMinutes(slotDuration).isBefore(request.endTime()) ||
-               currentSlotTime.plusMinutes(slotDuration).equals(request.endTime())) {
-            TimeSlot timeSlot = new TimeSlot();
-            timeSlot.setDoctorSchedule(schedule);
-            timeSlot.setStartTime(currentSlotTime);
-            timeSlot.setEndTime(currentSlotTime.plusMinutes(slotDuration));
-            timeSlot.setStatus("AVAILABLE");
-            schedule.getTimeSlots().add(timeSlot);
-            currentSlotTime = currentSlotTime.plusMinutes(slotDuration);
-        }
+        generateTimeSlotsForSchedule(schedule, slotDuration);
 
         DoctorSchedule savedSchedule = doctorScheduleRepository.save(schedule);
         return mapToResponse(savedSchedule);
@@ -165,17 +191,7 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
                     schedule.setMaxPatients(request.maxPatients() != null ? request.maxPatients() : 20);
                     schedule.setStatus("AVAILABLE");
 
-                    LocalTime currentSlotTime = request.startTime();
-                    while (currentSlotTime.plusMinutes(slotDuration).isBefore(request.endTime()) ||
-                           currentSlotTime.plusMinutes(slotDuration).equals(request.endTime())) {
-                        TimeSlot timeSlot = new TimeSlot();
-                        timeSlot.setDoctorSchedule(schedule);
-                        timeSlot.setStartTime(currentSlotTime);
-                        timeSlot.setEndTime(currentSlotTime.plusMinutes(slotDuration));
-                        timeSlot.setStatus("AVAILABLE");
-                        schedule.getTimeSlots().add(timeSlot);
-                        currentSlotTime = currentSlotTime.plusMinutes(slotDuration);
-                    }
+                    generateTimeSlotsForSchedule(schedule, slotDuration);
 
                     DoctorSchedule savedSchedule = doctorScheduleRepository.save(schedule);
                     responses.add(mapToResponse(savedSchedule));
@@ -244,17 +260,7 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
 
         int slotDuration = getSlotDurationMinutes(request.slotDurationMinutes());
 
-        LocalTime currentSlotTime = request.startTime();
-        while (currentSlotTime.plusMinutes(slotDuration).isBefore(request.endTime()) ||
-               currentSlotTime.plusMinutes(slotDuration).equals(request.endTime())) {
-            TimeSlot timeSlot = new TimeSlot();
-            timeSlot.setDoctorSchedule(schedule);
-            timeSlot.setStartTime(currentSlotTime);
-            timeSlot.setEndTime(currentSlotTime.plusMinutes(slotDuration));
-            timeSlot.setStatus("AVAILABLE");
-            schedule.getTimeSlots().add(timeSlot);
-            currentSlotTime = currentSlotTime.plusMinutes(slotDuration);
-        }
+        generateTimeSlotsForSchedule(schedule, slotDuration);
 
         DoctorSchedule savedSchedule = doctorScheduleRepository.save(schedule);
         return mapToResponse(savedSchedule);
@@ -324,19 +330,7 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         schedule.getTimeSlots().clear();
         doctorScheduleRepository.save(schedule);
 
-        LocalTime currentSlotTime = schedule.getStartTime();
-        int slotCount = 0;
-        while (currentSlotTime.plusMinutes(slotDurationMinutes).isBefore(schedule.getEndTime()) ||
-               currentSlotTime.plusMinutes(slotDurationMinutes).equals(schedule.getEndTime())) {
-            TimeSlot timeSlot = new TimeSlot();
-            timeSlot.setDoctorSchedule(schedule);
-            timeSlot.setStartTime(currentSlotTime);
-            timeSlot.setEndTime(currentSlotTime.plusMinutes(slotDurationMinutes));
-            timeSlot.setStatus("AVAILABLE");
-            schedule.getTimeSlots().add(timeSlot);
-            slotCount++;
-            currentSlotTime = currentSlotTime.plusMinutes(slotDurationMinutes);
-        }
+        int slotCount = generateTimeSlotsForSchedule(schedule, slotDurationMinutes);
 
         doctorScheduleRepository.save(schedule);
         return new GenerateSlotsResponse(id, slotCount);
