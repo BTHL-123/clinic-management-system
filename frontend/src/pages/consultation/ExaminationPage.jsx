@@ -19,6 +19,7 @@ import {
 } from "../../services/prescriptionService";
 import { getMedicines } from "../../services/medicineService";
 import { useToast } from "../../context/useToast.js";
+import PageHeader from "../../components/PageHeader";
 
 const EMPTY_FORM = {
   symptoms: "",
@@ -386,21 +387,13 @@ export default function ExaminationPage() {
   return (
     <div className="w-full h-full flex flex-col items-center pb-24">
       {/* Header */}
-      <div className="w-full relative flex flex-col items-center mb-8 mt-2">
-        <button
-          onClick={() => navigate("/dashboard/consultation")}
-          className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 active:scale-95 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm group"
-        >
-          <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
-          Quay lại
-        </button>
-        <div className="flex flex-col items-center">
-          <h1 className="text-3xl font-extrabold text-white flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
-            <span className="text-white"><Stethoscope size={28} /></span>
-            Khám bệnh — Phiên #{consultationId}
-          </h1>
-          {consultation && (
-            <div className="mt-4 flex items-center gap-4 text-white/90 bg-white/10 backdrop-blur-md px-5 py-2 rounded-2xl border border-white/20 text-sm font-medium shadow-sm">
+      <PageHeader
+        title={`Khám bệnh — Phiên #${consultationId}`}
+        icon={Stethoscope}
+        iconColor="text-white"
+        subtitle={
+          consultation ? (
+            <div className="mt-4 flex flex-wrap justify-center items-center gap-4 text-white/90 bg-white/10 backdrop-blur-md px-5 py-2 rounded-2xl border border-white/20 text-sm font-medium shadow-sm">
               <span className="flex items-center gap-2">
                 <User size={16} className="text-emerald-300" /> Bệnh nhân ID: <strong className="text-white">{consultation.patientId}</strong>
               </span>
@@ -417,9 +410,10 @@ export default function ExaminationPage() {
                 {consultation.status === "IN_PROGRESS" ? "ĐANG KHÁM" : consultation.status}
               </span>
             </div>
-          )}
-        </div>
-      </div>
+          ) : undefined
+        }
+        onBack={() => navigate("/dashboard/consultation")}
+      />
 
       {error && (
         <div className="w-full bg-rose-500/20 border border-rose-500/30 text-rose-100 p-4 rounded-2xl mb-6 flex items-center gap-3 backdrop-blur-md">

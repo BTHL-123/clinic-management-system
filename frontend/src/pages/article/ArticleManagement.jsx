@@ -10,6 +10,7 @@ import {
   publishArticle
 } from "../../services/articleService.js";
 import { useToast } from "../../context/useToast.js";
+import PageHeader from "../../components/PageHeader";
 
 // Custom toolbar options for ReactQuill
 const modules = {
@@ -234,29 +235,18 @@ export default function ArticleManagement() {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-        <div className="flex flex-col items-center w-full">
-          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
-            <span className="text-white"><FileText size={24} /></span>
-            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Quản lý Bài viết Y tế</span>
-          </h1>
-          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
-            Soạn thảo và quản lý các bài viết tin tức, kiến thức y khoa.
-          </p>
-        </div>
-        <button
-          onClick={handleOpenCreate}
-          style={{
-            display: "flex", alignItems: "center", gap: "6px",
-            background: "#0f766e", color: "#fff", border: "none",
-            padding: "10px 16px", borderRadius: "8px", fontWeight: 600,
-            cursor: "pointer", fontSize: "14px"
-          }}
-        >
-          <Plus size={18} />
-          Tạo bài viết
-        </button>
-      </div>
+      <PageHeader
+        title="Quản lý Bài viết Y tế"
+        icon={FileText}
+        iconColor="text-white"
+        subtitle="Soạn thảo và quản lý các bài viết tin tức, kiến thức y khoa."
+        rightContent={
+          <button className="bg-white text-teal-700 hover:bg-teal-50 font-bold px-4 py-2 rounded-xl shadow-md transition-all flex items-center gap-2" onClick={handleOpenCreate}>
+            <Plus size={18} />
+            Tạo bài viết
+          </button>
+        }
+      />
 
       <div style={{ display: "flex", gap: "12px", marginBottom: "20px" }}>
         <select

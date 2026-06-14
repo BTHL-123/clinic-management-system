@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ClipboardList, ArrowLeft } from "lucide-react";
 import doctorLeaveRequestService from "../../services/doctorLeaveRequestService.js";
 import { useToast } from "../../context/useToast.js";
+import PageHeader from "../../components/PageHeader";
 
 const STATUS_BADGE = {
   PENDING: { label: "Chờ duyệt", color: "text-amber-800", bg: "bg-amber-500/20", border: "border-amber-500/30" },
@@ -141,22 +142,13 @@ export default function DoctorLeaveRequestPage() {
   return (
     <div className="w-full flex flex-col items-center">
       {/* Header */}
-      <div className="w-full relative flex flex-col items-center mb-8">
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 active:scale-95 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm group"
-        >
-          <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
-          Quay lại
-        </button>
-        <div className="flex flex-col items-center">
-          <h1 className="text-3xl font-extrabold text-white flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
-            <span className="text-white"><ClipboardList size={28} /></span>
-            Yêu cầu nghỉ / Thay đổi lịch
-          </h1>
-          <p className="text-white/70 font-medium mt-3 text-center drop-shadow-sm">Gửi và theo dõi các yêu cầu nghỉ phép hoặc đổi lịch trực.</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Yêu cầu nghỉ / Thay đổi lịch"
+        icon={ClipboardList}
+        iconColor="text-white"
+        subtitle="Gửi và theo dõi các yêu cầu nghỉ phép hoặc đổi lịch trực."
+        onBack={() => navigate("/dashboard")}
+      />
 
       {/* ─── Form ─── */}
       <div className="patient-glass-panel rounded-[3rem] p-8 md:p-10 shadow-[0_12px_40px_rgba(0,0,0,0.22)] border-0 w-full mb-6 text-slate-900">

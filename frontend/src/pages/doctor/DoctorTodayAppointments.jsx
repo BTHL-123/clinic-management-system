@@ -19,6 +19,7 @@ import queueService from "../../services/queueService";
 import queueTicketService from "../../services/queueTicketService";
 import { getMyDoctorProfile } from "../../services/doctorService";
 import { useToast } from "../../context/useToast.js";
+import PageHeader from "../../components/PageHeader";
 
 export default function DoctorTodayAppointments() {
   const toast = useToast();
@@ -139,34 +140,23 @@ export default function DoctorTodayAppointments() {
   return (
     <div className="w-full flex flex-col items-center">
       {/* Header */}
-      <div className="w-full relative flex flex-col items-center mb-8">
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 active:scale-95 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm group"
-        >
-          <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
-          Quay lại
-        </button>
-        <div className="flex flex-col items-center">
-          <h1 className="text-3xl font-extrabold text-white flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
-            <span className="text-white"><Calendar size={28} /></span>
-            Lịch khám hôm nay
-          </h1>
-          {doctor && (
-            <p className="text-white/70 font-medium mt-3 text-center drop-shadow-sm">
-              Bác sĩ phụ trách: {doctor.fullName || doctor.user?.fullName}
-            </p>
-          )}
-        </div>
-        <button
-          className="absolute right-0 top-1/2 -translate-y-1/2 bg-gradient-to-r from-teal-400 to-emerald-400 hover:from-teal-300 hover:to-emerald-300 text-slate-900 font-bold px-5 py-2.5 rounded-xl shadow-lg hover:shadow-teal-400/30 transition-all flex items-center gap-2"
-          onClick={fetchData}
-          disabled={loading}
-        >
-          <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
-          Làm mới
-        </button>
-      </div>
+      <PageHeader
+        title="Lịch khám hôm nay"
+        icon={Calendar}
+        iconColor="text-white"
+        subtitle={doctor ? `Bác sĩ phụ trách: ${doctor.fullName || doctor.user?.fullName}` : null}
+        onBack={() => navigate("/dashboard")}
+        rightContent={
+          <button
+            className="bg-gradient-to-r from-teal-400 to-emerald-400 hover:from-teal-300 hover:to-emerald-300 text-slate-900 font-bold px-5 py-2.5 rounded-xl shadow-lg hover:shadow-teal-400/30 transition-all flex items-center gap-2"
+            onClick={fetchData}
+            disabled={loading}
+          >
+            <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+            Làm mới
+          </button>
+        }
+      />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 w-full mb-6">

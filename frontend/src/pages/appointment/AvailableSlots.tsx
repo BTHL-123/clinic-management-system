@@ -270,10 +270,10 @@ export default function AvailableSlots() {
   useEffect(() => {
     const slotToRelease = selectedSlot?.slotId;
     const isSuccess = bookingSuccess;
-    
+
     return () => {
       if (slotToRelease && !isSuccess) {
-        releaseLock(slotToRelease).catch(() => {});
+        releaseLock(slotToRelease).catch(() => { });
       }
     };
   }, [selectedSlot, bookingSuccess]);
@@ -291,10 +291,10 @@ export default function AvailableSlots() {
     <div className="max-w-[1100px] mx-auto w-full flex flex-col items-center">
       <div className="w-full mb-10 relative flex flex-col sm:flex-row justify-center items-center min-h-[80px]">
         <div className="w-full sm:absolute sm:left-0 sm:top-4 flex justify-start mb-4 sm:mb-0 px-4 sm:px-0">
-          <button 
+          <button
             onClick={() => {
               if (selectedSlot && !bookingSuccess) {
-                releaseLock(selectedSlot.slotId).catch(() => {});
+                releaseLock(selectedSlot.slotId).catch(() => { });
               }
               navigate("/dashboard", { state: { activeClusterId: "booking" } });
             }}
@@ -325,178 +325,178 @@ export default function AvailableSlots() {
         <div className="flex flex-col gap-10 w-full items-center">
           <div className={`flex flex-col lg:flex-row justify-center gap-8 items-start w-full transition-all duration-500`}>
             <div className="patient-glass-card p-6 md:p-8 w-full max-w-[600px] mx-auto lg:mx-0">
-            <div className="flex flex-col gap-5">
-              <div className="flex flex-col gap-2">
-                <label htmlFor="as-workDate" className="patient-label text-[14px]">Ngày khám</label>
-                <input
-                  type="date"
-                  id="as-workDate"
-                  min={today}
-                  value={workDate}
-                  className="w-full px-4 py-3 patient-glass-input"
-                  onChange={(e) => {
-                    setWorkDate(e.target.value);
-                    setDoctorId("");
-                    setSlots([]);
-                    setFetchState("idle");
-                  }}
-                />
-              </div>
+              <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-2">
+                  <label htmlFor="as-workDate" className="patient-label text-[14px]">Ngày khám</label>
+                  <input
+                    type="date"
+                    id="as-workDate"
+                    min={today}
+                    value={workDate}
+                    className="w-full px-4 py-3 patient-glass-input"
+                    onChange={(e) => {
+                      setWorkDate(e.target.value);
+                      setDoctorId("");
+                      setSlots([]);
+                      setFetchState("idle");
+                    }}
+                  />
+                </div>
 
-              <div className="flex flex-col gap-2">
-                <label htmlFor="as-doctorId" className="patient-label text-[14px]">Bác sĩ có lịch trong ngày</label>
-                <select
-                  id="as-doctorId"
-                  value={doctorId}
-                  className="w-full px-4 py-3 patient-glass-input disabled:opacity-50 disabled:cursor-not-allowed"
-                  onChange={(e) => setDoctorId(e.target.value)}
-                  disabled={!workDate || doctorFetchState === "loading" || doctorOptions.length === 0}
-                >
-                  <option value="">
-                    {!workDate
-                      ? "Chọn ngày khám trước"
-                      : doctorFetchState === "loading"
-                        ? "Đang tải bác sĩ..."
-                        : doctorOptions.length === 0
-                          ? "Không có bác sĩ phù hợp"
-                          : "Chọn bác sĩ"}
-                  </option>
-                  {doctorOptions.map((doctor) => (
-                    <option key={doctor.doctorId} value={doctor.doctorId}>
-                      {getDoctorLabel(doctor)}
-                      {doctor.departmentName ? ` - ${doctor.departmentName}` : ""}
-                      {getDoctorScheduleText(doctor.doctorId) ? ` (${getDoctorScheduleText(doctor.doctorId)})` : ""}
+                <div className="flex flex-col gap-2">
+                  <label htmlFor="as-doctorId" className="patient-label text-[14px]">Bác sĩ có lịch trong ngày</label>
+                  <select
+                    id="as-doctorId"
+                    value={doctorId}
+                    className="w-full px-4 py-3 patient-glass-input disabled:opacity-50 disabled:cursor-not-allowed"
+                    onChange={(e) => setDoctorId(e.target.value)}
+                    disabled={!workDate || doctorFetchState === "loading" || doctorOptions.length === 0}
+                  >
+                    <option value="">
+                      {!workDate
+                        ? "Chọn ngày khám trước"
+                        : doctorFetchState === "loading"
+                          ? "Đang tải bác sĩ..."
+                          : doctorOptions.length === 0
+                            ? "Không có bác sĩ phù hợp"
+                            : "Chọn bác sĩ"}
                     </option>
-                  ))}
-                </select>
+                    {doctorOptions.map((doctor) => (
+                      <option key={doctor.doctorId} value={doctor.doctorId}>
+                        {getDoctorLabel(doctor)}
+                        {doctor.departmentName ? ` - ${doctor.departmentName}` : ""}
+                        {getDoctorScheduleText(doctor.doctorId) ? ` (${getDoctorScheduleText(doctor.doctorId)})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-            </div>
 
-            {doctorFetchState === "loading" && (
-              <div
-                style={{
-                  marginTop: "16px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  fontSize: "13px",
-                  color: "#334155",
-                  fontWeight: "bold"
-                }}
-              >
-                <CalendarDays size={14} />
-                Đang tìm bác sĩ có lịch làm việc trong ngày {workDate}...
-              </div>
-            )}
+              {doctorFetchState === "loading" && (
+                <div
+                  style={{
+                    marginTop: "16px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    fontSize: "13px",
+                    color: "#334155",
+                    fontWeight: "bold"
+                  }}
+                >
+                  <CalendarDays size={14} />
+                  Đang tìm bác sĩ có lịch làm việc trong ngày {workDate}...
+                </div>
+              )}
 
-            {doctorFetchState === "error" && (
-              <div className="error-box" style={{ marginTop: "16px" }}>
-                {doctorErrorMsg}
-              </div>
-            )}
+              {doctorFetchState === "error" && (
+                <div className="error-box" style={{ marginTop: "16px" }}>
+                  {doctorErrorMsg}
+                </div>
+              )}
 
-            {workDate && doctorFetchState === "done" && doctorOptions.length === 0 && (
-              <div
-                style={{
-                  marginTop: "16px",
-                  padding: "12px 14px",
-                  border: "1px solid #cbd5e1",
-                  borderRadius: "8px",
-                  background: "rgba(0,0,0,0.05)",
-                  color: "#1e293b",
-                  fontSize: "13px",
-                  fontWeight: "bold"
-                }}
-              >
-                Không có bác sĩ nào có lịch làm việc trong ngày này. Hãy chọn ngày khác.
-              </div>
-            )}
+              {workDate && doctorFetchState === "done" && doctorOptions.length === 0 && (
+                <div
+                  style={{
+                    marginTop: "16px",
+                    padding: "12px 14px",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: "8px",
+                    background: "rgba(0,0,0,0.05)",
+                    color: "#1e293b",
+                    fontSize: "13px",
+                    fontWeight: "bold"
+                  }}
+                >
+                  Không có bác sĩ nào có lịch làm việc trong ngày này. Hãy chọn ngày khác.
+                </div>
+              )}
 
-            {workDate && doctorOptions.length > 0 && (
-              <div
-                style={{
-                  marginTop: "16px",
-                  display: "grid",
-                  gap: "10px",
-                }}
-              >
-                {doctorOptions.map((doctor) => {
-                  const isSelected = String(doctor.doctorId) === doctorId;
-                  return (
-                    <button
-                      key={doctor.doctorId}
-                      type="button"
-                      onClick={() => setDoctorId(String(doctor.doctorId))}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: "12px",
-                        padding: "12px 14px",
-                        borderRadius: "14px",
-                        border: isSelected ? "1.5px solid #0f766e" : "1px solid rgba(0, 0, 0, 0.15)",
-                        background: isSelected ? "rgba(15, 118, 110, 0.15)" : "rgba(0, 0, 0, 0.05)",
-                        backdropFilter: "blur(8px)",
-                        boxShadow: isSelected ? "0 4px 12px rgba(15, 118, 110, 0.15)" : "none",
-                        color: "#0f172a",
-                        cursor: "pointer",
-                        textAlign: "left",
-                        transition: "all 0.2s ease",
-                      }}
-                    >
-                      <span style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
-                        <UserRound size={18} color={isSelected ? "#0f766e" : "#475569"} />
-                        <span style={{ minWidth: 0 }}>
-                          <strong style={{ display: "block", fontSize: "14px", fontWeight: 800 }}>{getDoctorLabel(doctor)}</strong>
-                          <span style={{ display: "block", fontSize: "12px", color: "#475569", fontWeight: 600 }}>
-                            {[doctor.departmentName, doctor.specialization].filter(Boolean).join(" - ") || "Chưa có chuyên khoa"}
+              {workDate && doctorOptions.length > 0 && (
+                <div
+                  style={{
+                    marginTop: "16px",
+                    display: "grid",
+                    gap: "10px",
+                  }}
+                >
+                  {doctorOptions.map((doctor) => {
+                    const isSelected = String(doctor.doctorId) === doctorId;
+                    return (
+                      <button
+                        key={doctor.doctorId}
+                        type="button"
+                        onClick={() => setDoctorId(String(doctor.doctorId))}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: "12px",
+                          padding: "12px 14px",
+                          borderRadius: "14px",
+                          border: isSelected ? "1.5px solid #0f766e" : "1px solid rgba(0, 0, 0, 0.15)",
+                          background: isSelected ? "rgba(15, 118, 110, 0.15)" : "rgba(0, 0, 0, 0.05)",
+                          backdropFilter: "blur(8px)",
+                          boxShadow: isSelected ? "0 4px 12px rgba(15, 118, 110, 0.15)" : "none",
+                          color: "#0f172a",
+                          cursor: "pointer",
+                          textAlign: "left",
+                          transition: "all 0.2s ease",
+                        }}
+                      >
+                        <span style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+                          <UserRound size={18} color={isSelected ? "#0f766e" : "#475569"} />
+                          <span style={{ minWidth: 0 }}>
+                            <strong style={{ display: "block", fontSize: "14px", fontWeight: 800 }}>{getDoctorLabel(doctor)}</strong>
+                            <span style={{ display: "block", fontSize: "12px", color: "#475569", fontWeight: 600 }}>
+                              {[doctor.departmentName, doctor.specialization].filter(Boolean).join(" - ") || "Chưa có chuyên khoa"}
+                            </span>
                           </span>
                         </span>
-                      </span>
-                      <span style={{ fontSize: "12px", color: "#0f766e", fontWeight: 800, whiteSpace: "nowrap" }}>
-                        {getDoctorScheduleText(doctor.doctorId)}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {selectedDoctor && workDate && (
-              <div className="mt-4 flex items-center gap-2 text-[13px] text-slate-700 font-bold">
-                <CalendarDays size={14} />
-                Đang hiển thị ca khám của {getDoctorLabel(selectedDoctor)} vào ngày {workDate}
-              </div>
-            )}
-          </div>
-
-          {selectedDoctor && doctorId && (
-            <div className="patient-glass-card p-6 lg:p-8 animate-[fadeIn_0.3s_ease] w-full max-w-[450px] mx-auto lg:mx-0">
-              <h3 className="text-[1.1rem] patient-section-title mb-6 flex items-center gap-2">
-                 Chi tiết Bác sĩ
-              </h3>
-              <div className="flex gap-5 items-center">
-                <div className="w-20 h-20 rounded-full bg-teal-900/50 flex-shrink-0 flex items-center justify-center border-2 border-teal-400/50 shadow-sm overflow-hidden">
-                  <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${selectedDoctor.doctorId}&backgroundColor=115e59`} alt="Avatar" className="w-full h-full object-cover" />
+                        <span style={{ fontSize: "12px", color: "#0f766e", fontWeight: 800, whiteSpace: "nowrap" }}>
+                          {getDoctorScheduleText(doctor.doctorId)}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
-                <div className="flex flex-col">
-                  <strong className="text-lg patient-data font-extrabold">{getDoctorLabel(selectedDoctor)}</strong>
-                  <span className="text-sm patient-data font-bold mb-2">{selectedDoctor.departmentName || "Khám tổng quát"}</span>
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map(star => <Star key={star} size={14} className="fill-amber-400 text-amber-400" />)}
-                  </div>
-                </div>
-              </div>
-              {getDoctorScheduleText(selectedDoctor.doctorId) && (
-                <div className="mt-6 flex justify-end">
-                  <span className="text-xs font-bold text-teal-900 bg-teal-100 border border-teal-300 px-4 py-2 rounded-full shadow-sm tracking-wide">
-                    {getDoctorScheduleText(selectedDoctor.doctorId)}
-                  </span>
+              )}
+
+              {selectedDoctor && workDate && (
+                <div className="mt-4 flex items-center gap-2 text-[13px] text-slate-700 font-bold">
+                  <CalendarDays size={14} />
+                  Đang hiển thị ca khám của {getDoctorLabel(selectedDoctor)} vào ngày {workDate}
                 </div>
               )}
             </div>
-          )}
-        </div>
+
+            {selectedDoctor && doctorId && (
+              <div className="patient-glass-card p-6 lg:p-8 animate-[fadeIn_0.3s_ease] w-full max-w-[450px] mx-auto lg:mx-0">
+                <h3 className="text-[1.1rem] patient-section-title mb-6 flex items-center gap-2">
+                  Chi tiết Bác sĩ
+                </h3>
+                <div className="flex gap-5 items-center">
+                  <div className="w-20 h-20 rounded-full bg-teal-900/50 flex-shrink-0 flex items-center justify-center border-2 border-teal-400/50 shadow-sm overflow-hidden">
+                    <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${selectedDoctor.doctorId}&backgroundColor=115e59`} alt="Avatar" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex flex-col">
+                    <strong className="text-lg patient-data font-extrabold">{getDoctorLabel(selectedDoctor)}</strong>
+                    <span className="text-sm patient-data font-bold mb-2">{selectedDoctor.departmentName || "Khám tổng quát"}</span>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map(star => <Star key={star} size={14} className="fill-amber-400 text-amber-400" />)}
+                    </div>
+                  </div>
+                </div>
+                {getDoctorScheduleText(selectedDoctor.doctorId) && (
+                  <div className="mt-6 flex justify-end">
+                    <span className="text-xs font-bold text-teal-900 bg-teal-100 border border-teal-300 px-4 py-2 rounded-full shadow-sm tracking-wide">
+                      {getDoctorScheduleText(selectedDoctor.doctorId)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {fetchState === "idle" && (!workDate || (doctorOptions.length > 0 && !doctorId)) && (
             <div className="text-center py-20 px-4 text-slate-800 max-w-[600px] font-bold">
@@ -590,11 +590,10 @@ export default function AvailableSlots() {
                       key={slot.slotId}
                       disabled={isLocked}
                       onClick={() => handleSelectSlot(slot)}
-                      className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-full font-bold text-[13px] tracking-wide transition-all duration-200 ${
-                        isLocked 
-                          ? "bg-black/20 border border-dashed border-white/20 text-white/40 cursor-not-allowed backdrop-blur-sm" 
+                      className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-full font-bold text-[13px] tracking-wide transition-all duration-200 ${isLocked
+                          ? "bg-black/20 border border-dashed border-white/20 text-white/40 cursor-not-allowed backdrop-blur-sm"
                           : "bg-white/15 backdrop-blur-md border border-white/30 text-white hover:-translate-y-0.5 hover:shadow-[0_4px_15px_rgba(0,0,0,0.15)] hover:border-white/60 hover:bg-white/25 cursor-pointer shadow-sm"
-                      }`}
+                        }`}
                     >
                       <Clock size={15} strokeWidth={2.5} />
                       {formatTime(slot.startTime)} – {formatTime(slot.endTime)}
@@ -631,9 +630,8 @@ export default function AvailableSlots() {
               Quay lại chọn ca
             </button>
 
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-[13px] tracking-wide border transition-colors ${
-              isWarningTime ? "bg-red-100 text-red-700 border-red-350 animate-pulse" : "bg-teal-100 text-teal-900 border-teal-300"
-            }`}>
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-[13px] tracking-wide border transition-colors ${isWarningTime ? "bg-red-100 text-red-700 border-red-350 animate-pulse" : "bg-teal-100 text-teal-900 border-teal-300"
+              }`}>
               <Clock size={16} strokeWidth={2.5} />
               <span>Thời gian giữ chỗ: {timeString}</span>
             </div>

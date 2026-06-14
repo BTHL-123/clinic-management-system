@@ -14,6 +14,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { useToast } from "../../context/useToast";
+import PageHeader from "../../components/PageHeader";
 
 interface DoctorSchedule {
   scheduleId: number;
@@ -134,7 +135,12 @@ function addDays(date: Date, days: number) {
 function addMinutes(time: string, minutes: number) {
   const [hour, minute] = time.split(":").map(Number);
   const total = hour * 60 + minute + minutes;
-  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  if (h >= 24) {
+    return "23:59";
+  }
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
 function formatTime(t: string) {
@@ -618,6 +624,7 @@ interface DayResourceCalendarProps {
   onPickSchedule: (schedule: DoctorSchedule) => void;
   onQuickCreate: (doctorId: number, date: string, startTime: string, endTime: string) => Promise<boolean>;
   onToggleSlot: (slot: TimeSlot) => Promise<void>;
+  onDeleteSchedule?: (scheduleId: number) => Promise<void>;
 }
 
 function DayResourceCalendar({
@@ -629,6 +636,7 @@ function DayResourceCalendar({
   onPickSchedule,
   onQuickCreate,
   onToggleSlot,
+  onDeleteSchedule,
 }: DayResourceCalendarProps) {
   const [dragSelection, setDragSelection] = useState<{ doctorId: number; startIndex: number; endIndex: number } | null>(null);
   const [creating, setCreating] = useState(false);
@@ -659,9 +667,10 @@ function DayResourceCalendar({
   const handleMouseDown = (e: React.MouseEvent) => {
     isDraggingBoard.current = true;
     if (boardRef.current) {
-      startX.current = e.pageX - boardRef.current.offsetLeft;
+      startX.current = e.clientX;
       scrollLeft.current = boardRef.current.scrollLeft;
       boardRef.current.style.cursor = 'grabbing';
+      boardRef.current.dataset.dragged = "false";
     }
   };
 
@@ -679,10 +688,12 @@ function DayResourceCalendar({
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDraggingBoard.current) return;
     if (dragSelection) return; // Prevent horizontal board scrolling if user is dragging to select slots vertically
-    e.preventDefault();
     if (boardRef.current) {
-      const x = e.pageX - boardRef.current.offsetLeft;
+      const x = e.clientX;
       const walk = (x - startX.current) * 1.5;
+      if (Math.abs(walk) > 5) {
+        boardRef.current.dataset.dragged = "true";
+      }
       boardRef.current.scrollLeft = scrollLeft.current - walk;
     }
   };
@@ -745,8 +756,30 @@ function DayResourceCalendar({
                     type="button"
                     className={`appointment-resource-slot ${status.toLowerCase()} ${schedule.scheduleId === selectedScheduleId ? "selected" : ""}`}
                     key={time}
-                    onClick={() => onPickSchedule(schedule)}
-                    title={`${formatTime(schedule.startTime)} - ${formatTime(schedule.endTime)} · ${doctorLabel(doctors, schedule.doctorId)}`}
+                    onClick={async (e) => {
+                      if (boardRef.current?.dataset.dragged === "true") {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return;
+                      }
+                      if (schedule.scheduleId === selectedScheduleId && onDeleteSchedule) {
+                        const slots = slotsBySchedule[schedule.scheduleId] || [];
+                        const hasBooked = slots.some((s) => s.status === "BOOKED");
+                        if (hasBooked) {
+                          onPickSchedule(schedule);
+                          return;
+                        }
+                        await onDeleteSchedule(schedule.scheduleId);
+                        return;
+                      }
+                      onPickSchedule(schedule);
+                    }}
+                    title={
+                      schedule.scheduleId === selectedScheduleId && 
+                      !(slotsBySchedule[schedule.scheduleId] || []).some((s) => s.status === "BOOKED")
+                        ? "Bấm lại lần nữa để xóa lịch khám này"
+                        : `${formatTime(schedule.startTime)} - ${formatTime(schedule.endTime)} · ${doctorLabel(doctors, schedule.doctorId)}`
+                    }
                   >
                     <span>{slot ? slotStatusLabel(slot.status) : scheduleStatusLabel(schedule.status)}</span>
                     {slot && (slot.status === "AVAILABLE" || slot.status === "BLOCKED") && (
@@ -933,6 +966,23 @@ export default function AppointmentManagement() {
     }
   };
 
+  const deleteSchedule = async (scheduleId: number) => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/doctor-schedules/${scheduleId}`, {
+        method: "DELETE",
+        headers: getHeaders(),
+      });
+      if (!response.ok) {
+        await handleFetchError(response);
+      }
+      toast.success("Đã xóa lịch làm việc.");
+      setSelectedSchedule(null);
+      await loadSchedules();
+    } catch (error: any) {
+      toast.error(error.message || "Không thể xóa lịch làm việc.");
+    }
+  };
+
   const toggleSlotBlocked = async (slot: TimeSlot) => {
     const shouldUnblock = slot.status === "BLOCKED";
     try {
@@ -955,17 +1005,12 @@ export default function AppointmentManagement() {
 
   return (
     <div className="appointment-week-page">
-      <div className="flex flex-col items-center w-full mb-6">
-        <div className="flex flex-col items-center">
-          <h1 className="appointment-page-title flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
-            <span className="text-white"><CalendarDays size={26} /></span>
-            <span className="text-2xl font-bold tracking-wide">Quản lý Lịch hẹn &amp; Lịch khám</span>
-          </h1>
-          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
-            Quản lý lịch làm việc của bác sĩ và các ca khám trong tuần.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Quản lý Lịch hẹn & Lịch khám"
+        icon={CalendarDays}
+        showBackButton={false}
+        className="mb-0"
+      />
 
       <div className="appointment-week-toolbar">
         <div className="appointment-week-title">
@@ -1032,6 +1077,7 @@ export default function AppointmentManagement() {
             onPickSchedule={(schedule) => pickSchedule(PANEL.UPDATE, schedule)}
             onQuickCreate={quickCreateSchedule}
             onToggleSlot={toggleSlotBlocked}
+            onDeleteSchedule={deleteSchedule}
           />
         </section>
 

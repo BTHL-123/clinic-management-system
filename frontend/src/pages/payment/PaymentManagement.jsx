@@ -13,6 +13,7 @@ import {
   getPaymentById,
   getPayments,
 } from "../../services/paymentService";
+import PageHeader from "../../components/PageHeader";
 
 const STATUS_OPTIONS = [
   { value: "", label: "Tất cả" },
@@ -182,19 +183,18 @@ export default function PaymentManagement() {
   return (
     <div className="receptionist-data-page">
       {/* ── Page Header ────────────────────────────────── */}
-      <div className="page-header">
-        <div className="flex flex-col items-center w-full">
-          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
-            <span className="text-white"><Wallet size={26} /></span>
-            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Quản lý Thanh toán</span>
-          </h1>
-          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">Quản lý các giao dịch thanh toán.</p>
-        </div>
-        <button className="primary-button" onClick={openCreate}>
-          <Plus size={16} />
-          Tạo thanh toán
-        </button>
-      </div>
+      <PageHeader
+        title="Quản lý Thanh toán"
+        icon={Wallet}
+        iconColor="text-white"
+        subtitle="Quản lý các giao dịch thanh toán."
+        rightContent={
+          <button className="primary-button" onClick={openCreate}>
+            <Plus size={16} />
+            Tạo thanh toán
+          </button>
+        }
+      />
 
       {/* ── Search & Filter ──────────────────────────────── */}
       <div style={{ display: "flex", gap: 12, marginBottom: 18, flexWrap: "wrap" }}>

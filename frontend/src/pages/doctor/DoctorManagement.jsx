@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Edit, Plus, Search, Trash2, UserRound, X } from "lucide-react";
 import {
   createDoctor,
@@ -8,6 +8,7 @@ import {
 } from "../../services/doctorService";
 import { getActiveDepartments } from "../../services/departmentService";
 import { getUsers } from "../../services/userService";
+import PageHeader from "../../components/PageHeader";
 
 const EMPTY_FORM = {
   userId: "",
@@ -156,24 +157,21 @@ export default function DoctorManagement() {
   return (
     <>
       {/* ── Page Header ────────────────────────────────── */}
-      <div className="flex flex-col items-center w-full mb-6">
-        <div className="flex flex-col items-center">
-          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
-            <span className="text-white"><UserRound size={26} /></span>
-            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Quản lý Bác sĩ</span>
-          </h1>
-          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
-            Quản lý hồ sơ bác sĩ và phân công chuyên khoa.
-          </p>
-        </div>
-        <button
-          className="primary-button absolute right-0 top-1/2 -translate-y-1/2"
-          onClick={openCreate}
-        >
-          <Plus size={16} />
-          Thêm bác sĩ
-        </button>
-      </div>
+      <PageHeader
+        title="Quản lý Bác sĩ"
+        icon={UserRound}
+        iconColor="text-white"
+        subtitle="Quản lý hồ sơ bác sĩ và phân công chuyên khoa."
+        rightContent={
+          <button
+            className="bg-white text-teal-700 hover:bg-teal-50 font-bold px-4 py-2 rounded-xl shadow-md transition-all flex items-center gap-2"
+            onClick={openCreate}
+          >
+            <Plus size={16} />
+            Thêm bác sĩ
+          </button>
+        }
+      />
 
 
       {/* ── Filters ────────────────────────────────────── */}

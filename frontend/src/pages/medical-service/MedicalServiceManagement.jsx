@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Edit, HeartPulse, Plus, Search, Trash2, X } from "lucide-react";
 import {
   createMedicalService,
@@ -6,6 +6,7 @@ import {
   getMedicalServices,
   updateMedicalService,
 } from "../../services/medicalServiceService";
+import PageHeader from "../../components/PageHeader";
 
 const SERVICE_TYPES = [
   { value: "CONSULTATION", label: "Khám bệnh" },
@@ -157,21 +158,18 @@ export default function MedicalServiceManagement() {
   return (
     <>
       {/* ── Page Header ────────────────────────────────── */}
-      <div className="flex flex-col items-center w-full mb-6">
-        <div className="flex flex-col items-center">
-          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
-            <span className="text-white"><HeartPulse size={26} /></span>
-            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Quản lý Dịch vụ y tế</span>
-          </h1>
-          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
-            Quản lý danh sách các dịch vụ y tế trong phòng khám.
-          </p>
-        </div>
-        <button className="primary-button absolute right-0 top-1/2 -translate-y-1/2" onClick={openCreate}>
-          <Plus size={16} />
-          Thêm dịch vụ
-        </button>
-      </div>
+      <PageHeader
+        title="Quản lý Dịch vụ y tế"
+        icon={HeartPulse}
+        iconColor="text-white"
+        subtitle="Quản lý danh sách các dịch vụ y tế trong phòng khám."
+        rightContent={
+          <button className="bg-white text-teal-700 hover:bg-teal-50 font-bold px-4 py-2 rounded-xl shadow-md transition-all flex items-center gap-2" onClick={openCreate}>
+            <Plus size={16} />
+            Thêm dịch vụ
+          </button>
+        }
+      />
 
       {/* ── Search Bar ─────────────────────────────────── */}
       <div className="search-bar" style={{ display: "flex", alignItems: "center", gap: "10px" }}>

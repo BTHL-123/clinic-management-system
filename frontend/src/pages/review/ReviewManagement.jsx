@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Search, EyeOff, Eye, Trash2, AlertCircle, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { getReviews, toggleReviewVisibility, deleteReview } from "../../services/reviewService.js";
 import { useToast } from "../../context/useToast.js";
+import PageHeader from "../../components/PageHeader";
 
 export default function ReviewManagement() {
   const toast = useToast();
@@ -63,17 +64,12 @@ export default function ReviewManagement() {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-        <div className="flex flex-col items-center w-full">
-          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
-            <span className="text-white"><Star size={26} /></span>
-            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Quản lý Đánh giá</span>
-          </h1>
-          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
-            Kiểm duyệt và quản lý các đánh giá từ bệnh nhân đối với bác sĩ.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Quản lý Đánh giá"
+        icon={Star}
+        iconColor="text-white"
+        subtitle="Kiểm duyệt và quản lý các đánh giá từ bệnh nhân đối với bác sĩ."
+      />
 
       <div style={{ display: "flex", gap: "12px", marginBottom: "20px" }}>
         <div style={{ position: "relative", width: "300px" }}>

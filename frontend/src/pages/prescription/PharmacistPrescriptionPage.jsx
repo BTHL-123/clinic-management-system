@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Pill, RefreshCw, CheckCircle, Eye, AlertTriangle, ShieldCheck, ArrowLeft } from "lucide-react";
 import { getPrescriptions, dispensePrescription } from "../../services/prescriptionService";
 import { useToast } from "../../context/useToast.js";
+import PageHeader from "../../components/PageHeader";
 
 const STATUS_MAP = {
   CREATED: { label: "Chờ cấp phát", color: "#d97706", bg: "#fef3c7" },
@@ -81,22 +82,13 @@ export default function PharmacistPrescriptionPage() {
   return (
     <div className="w-full flex flex-col items-center">
       {/* Header */}
-      <div className="w-full relative flex flex-col items-center mb-8">
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 active:scale-95 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm group"
-        >
-          <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
-          Quay lại
-        </button>
-        <div className="flex flex-col items-center">
-          <h1 className="text-3xl font-extrabold text-white flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
-            <span className="text-white"><Pill size={28} /></span>
-            Quản lý cấp phát thuốc
-          </h1>
-          <p className="text-white/70 font-medium mt-3 text-center drop-shadow-sm">Kiểm tra và cấp phát thuốc theo đơn của bác sĩ.</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Quản lý cấp phát thuốc"
+        icon={Pill}
+        iconColor="text-white"
+        subtitle="Kiểm tra và cấp phát thuốc theo đơn của bác sĩ."
+        onBack={() => navigate("/dashboard")}
+      />
 
       {error && <div className="bg-rose-500/20 border border-rose-500/50 text-rose-200 p-4 rounded-xl mb-6 w-full">{error}</div>}
 

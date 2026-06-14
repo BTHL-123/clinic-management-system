@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Eye, FileClock, RefreshCw, Search, X } from "lucide-react";
 import { getAuditLogs } from "../../services/auditLogService.js";
+import PageHeader from "../../components/PageHeader";
 
 const PAGE_SIZE = 10;
 
@@ -113,21 +114,18 @@ export default function AuditLogPage() {
 
   return (
     <div className="page-stack">
-      <section className="page-heading">
-        <div className="flex flex-col items-center w-full">
-          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
-            <span className="text-white"><FileClock size={26} /></span>
-            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Nhật ký hệ thống</span>
-          </h1>
-          <p className="muted mt-3">Theo dõi các hoạt động đã được ghi nhận trong hệ thống.</p>
-        </div>
-        <div className="heading-actions">
-          <button className="ghost-button" type="button" onClick={loadAuditLogs}>
+      <PageHeader
+        title="Nhật ký hệ thống"
+        icon={FileClock}
+        iconColor="text-white"
+        subtitle="Theo dõi các hoạt động đã được ghi nhận trong hệ thống."
+        rightContent={
+          <button className="bg-white/10 hover:bg-white/20 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm" type="button" onClick={loadAuditLogs}>
             <RefreshCw size={17} />
             Làm mới
           </button>
-        </div>
-      </section>
+        }
+      />
 
       <section className="panel">
         <form className="toolbar" onSubmit={(event) => event.preventDefault()} style={{ gridTemplateColumns: "1fr 1fr 1fr auto" }}>

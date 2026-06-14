@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Edit2, Plus, RefreshCw, Settings, Trash2, X } from "lucide-react";
 import {
   deleteSystemSetting,
@@ -6,6 +6,7 @@ import {
   upsertSystemSetting,
 } from "../../services/systemSettingService.js";
 import { emitToast } from "../../services/toastService.js";
+import PageHeader from "../../components/PageHeader";
 
 const PAGE_SIZE = 10;
 const emptyForm = { settingKey: "", settingValue: "", description: "" };
@@ -165,27 +166,24 @@ export default function SystemSettingsPage() {
 
   return (
     <div className="page-stack">
-      <div className="flex flex-col items-center w-full mb-6">
-        <div className="flex flex-col items-center">
-          <h1 className="flex items-center gap-3 bg-white/25 backdrop-blur-md px-7 py-3.5 rounded-full border border-white/40 shadow-lg">
-            <span className="text-white"><Settings size={26} /></span>
-            <span style={{ color: "#0f766e" }} className="text-2xl font-bold tracking-wide">Cấu hình hệ thống</span>
-          </h1>
-          <p className="text-white/70 font-medium mt-3 drop-shadow-sm">
-            Quản lý các thiết lập vận hành dùng chung trong hệ thống.
-          </p>
-        </div>
-        <div className="heading-actions absolute right-0 top-1/2 -translate-y-1/2">
-          <button className="ghost-button" type="button" onClick={loadSettings} disabled={loading}>
-            <RefreshCw size={17} />
-            Làm mới
-          </button>
-          <button className="primary-button" type="button" onClick={openCreateModal}>
-            <Plus size={17} />
-            Thêm cấu hình
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Cấu hình hệ thống"
+        icon={Settings}
+        iconColor="text-white"
+        subtitle="Quản lý các thiết lập vận hành dùng chung trong hệ thống."
+        rightContent={
+          <div className="flex gap-2">
+            <button className="bg-white/10 hover:bg-white/20 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm" type="button" onClick={loadSettings} disabled={loading}>
+              <RefreshCw size={17} />
+              Làm mới
+            </button>
+            <button className="bg-white text-teal-700 hover:bg-teal-50 font-bold px-4 py-2 rounded-xl shadow-md transition-all flex items-center gap-2" type="button" onClick={openCreateModal}>
+              <Plus size={17} />
+              Thêm cấu hình
+            </button>
+          </div>
+        }
+      />
 
       <section className="panel">
         <div className="table-header" style={{ alignItems: "flex-start" }}>

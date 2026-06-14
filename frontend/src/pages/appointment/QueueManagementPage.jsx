@@ -13,6 +13,7 @@ import {
 import queueService from "../../services/queueService";
 import { getDoctors } from "../../services/doctorService";
 import { useToast } from "../../context/useToast.js";
+import PageHeader from "../../components/PageHeader";
 
 export default function QueueManagementPage() {
   const toast = useToast();
@@ -122,20 +123,17 @@ export default function QueueManagementPage() {
 
   return (
     <div className="content receptionist-data-page">
-      <div className="page-header">
-        <h1 className="page-title">
-          <Users size={24} style={{ color: "#0f766e" }} />
-          Quản lý hàng đợi
-        </h1>
-        <button
-          className="ghost-button"
-          onClick={fetchQueue}
-          style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
-        >
-          <RefreshCw size={16} className={loading ? "spin-animation" : ""} />
-          Làm mới
-        </button>
-      </div>
+      <PageHeader
+        title="Quản lý hàng đợi"
+        icon={Users}
+        iconColor="text-white"
+        rightContent={
+          <button className="bg-white/10 hover:bg-white/20 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm" onClick={fetchQueue}>
+            <RefreshCw size={16} className={loading ? "spin-animation" : ""} />
+            Làm mới
+          </button>
+        }
+      />
 
       {/* Grid of stats overview */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px", marginBottom: "20px" }}>

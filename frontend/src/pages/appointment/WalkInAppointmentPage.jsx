@@ -15,6 +15,7 @@ import walkInService from "../../services/walkInService";
 import { getPatients } from "../../services/patientService";
 import QueueGrid from "./QueueGrid";
 import { useToast } from "../../context/useToast";
+import PageHeader from "../../components/PageHeader";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const GENDER_OPTIONS = [
@@ -338,17 +339,12 @@ export default function WalkInAppointmentPage() {
       `}</style>
 
       {/* Page Header */}
-      <div className="flex flex-col items-center w-full mb-8 mt-4">
-        <div className="flex flex-col items-center">
-          <h1 className="flex items-center gap-3 bg-white/60 backdrop-blur-md px-8 py-4 rounded-full border border-white/50 shadow-md">
-            <span style={{ color: "#0f766e" }}><UserPlus size={28} strokeWidth={2.5} /></span>
-            <span style={{ color: "#0f766e", fontSize: "1.5rem", fontWeight: 800, letterSpacing: "-0.02em" }}>Tạo lịch khám trực tiếp</span>
-          </h1>
-          <p style={{ color: "#1e293b", fontWeight: 600, marginTop: "12px", background: "rgba(255,255,255,0.5)", padding: "4px 16px", borderRadius: "20px", backdropFilter: "blur(4px)" }}>
-            Lễ tân: Chọn ngày và bấm vào một ô trống (màu xanh lục) để đặt lịch nhanh.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Tạo lịch khám trực tiếp"
+        icon={UserPlus}
+        iconColor="text-white"
+        subtitle="Lễ tân: Chọn ngày và bấm vào một ô trống (màu xanh lục) để đặt lịch nhanh."
+      />
 
       <div className="patient-glass-panel" style={{ padding: "24px", borderRadius: "20px", marginBottom: "24px", border: "1px solid rgba(255,255,255,0.4)" }}>
         <div style={{ display: "flex", alignItems: "flex-end", gap: "24px" }}>
