@@ -11,7 +11,6 @@ import {
   confirmCashPayment,
   createPayment,
   getPaymentById,
-  getPaymentById,
   getPayments,
 } from "../../services/paymentService";
 import PageHeader from "../../components/PageHeader";

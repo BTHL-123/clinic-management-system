@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import {
   LineChart, Line, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from "recharts";
 import {
   DollarSign, CalendarDays, Pill, AlertTriangle,
   TrendingUp, Activity, LayoutDashboard, Sparkles
 } from "lucide-react";
-import { 
-  getRevenueSummary, getRevenueReport, getAppointmentReport, 
-  getDoctorPerformance, getMedicineStockSummary, getExpiringBatches 
+import {
+  getRevenueSummary, getRevenueReport, getAppointmentReport,
+  getDoctorPerformance, getMedicineStockSummary, getExpiringBatches
 } from "../../services/reportService.js";
 
 const COLORS = ["#0ea5e9", "#10b981", "#f59e0b", "#f43f5e", "#8b5cf6", "#64748b"];
@@ -33,7 +33,7 @@ export default function DashboardHome() {
       const today = new Date();
       const fromDate = new Date();
       fromDate.setDate(today.getDate() - timeRange);
-      
+
       const fromStr = fromDate.toISOString().split("T")[0];
       const toStr = today.toISOString().split("T")[0];
 
@@ -50,14 +50,14 @@ export default function DashboardHome() {
 
       setRevenueSummary(revSummary.data ?? revSummary);
       setRevenueData(revReport.data ?? revReport);
-      
+
       // Format appointment data for PieChart
       const apptData = (apptReport.data ?? apptReport).map(item => ({
         name: formatStatus(item.status),
         value: item.count
       }));
       setAppointmentData(apptData);
-      
+
       setDoctorPerformance(docPerf.data ?? docPerf);
       setStockSummary(stockSum.data ?? stockSum);
       setExpiringBatches(expiring.data ?? expiring);
@@ -217,8 +217,8 @@ export default function DashboardHome() {
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                   <XAxis dataKey="date" tickFormatter={formatDateStr} stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${val / 1000000}M`} />
-                  <Tooltip 
-                    formatter={(value) => formatCurrency(value)} 
+                  <Tooltip
+                    formatter={(value) => formatCurrency(value)}
                     labelFormatter={formatDateStr}
                     contentStyle={{ borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}
                   />
@@ -281,7 +281,7 @@ export default function DashboardHome() {
               {doctorPerformance.length === 0 ? (
                 <tr><td colSpan={4} style={{ textAlign: "center", padding: "20px", color: "#94a3b8" }}>Chưa có dữ liệu</td></tr>
               ) : (
-                doctorPerformance.sort((a,b) => b.totalRevenue - a.totalRevenue).map((doc) => (
+                doctorPerformance.sort((a, b) => b.totalRevenue - a.totalRevenue).map((doc) => (
                   <tr key={doc.doctorId} style={{ borderTop: "1px solid #f1f5f9" }}>
                     <td style={{ padding: "12px 20px", fontWeight: 500, color: "#334155" }}>{doc.doctorName}</td>
                     <td style={{ padding: "12px 20px", textAlign: "right", color: "#64748b" }}>{doc.totalAppointments}</td>

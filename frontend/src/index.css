@@ -849,6 +849,7 @@
 }
 
 @media (max-width: 760px) {
+
   .appointment-week-toolbar,
   .appointment-section-title {
     display: grid;
@@ -1055,8 +1056,11 @@ a {
 .auth-visual::before {
   content: "";
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(240,249,255,0.5) 100%);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 249, 255, 0.5) 100%);
 }
 
 .brand-lockup {
@@ -1238,7 +1242,7 @@ a {
   min-height: 44px;
 }
 
-.google-login-button > div {
+.google-login-button>div {
   width: 100% !important;
 }
 
@@ -2111,11 +2115,11 @@ a {
   background: #0d4f56;
 }
 
-.admin-shell > .fixed.inset-0 {
+.admin-shell>.fixed.inset-0 {
   background-color: #0b4f55 !important;
 }
 
-.admin-shell > .fixed.inset-0::after {
+.admin-shell>.fixed.inset-0::after {
   position: absolute;
   inset: 0;
   pointer-events: none;
@@ -2133,7 +2137,7 @@ a {
   padding-top: 86px;
 }
 
-.admin-shell header > div {
+.admin-shell header>div {
   border-color: rgba(255, 255, 255, 0.45) !important;
   background: rgba(222, 253, 247, 0.24) !important;
   box-shadow:
@@ -2213,7 +2217,7 @@ a {
 .admin-shell .permission-item,
 .admin-shell .metric-card,
 .admin-shell .data-table,
-.admin-shell .admin-dashboard > div:not(:first-child) > div,
+.admin-shell .admin-dashboard>div:not(:first-child)>div,
 .admin-shell .admin-dashboard table {
   border-color: rgba(255, 255, 255, 0.48) !important;
   border-radius: 28px !important;
@@ -2225,12 +2229,12 @@ a {
   -webkit-backdrop-filter: blur(22px);
 }
 
-.admin-shell .admin-dashboard > div:nth-of-type(2) > div {
+.admin-shell .admin-dashboard>div:nth-of-type(2)>div {
   min-height: 132px;
 }
 
-.admin-shell .admin-dashboard > div:nth-of-type(3) > div,
-.admin-shell .admin-dashboard > div:nth-of-type(4) > div {
+.admin-shell .admin-dashboard>div:nth-of-type(3)>div,
+.admin-shell .admin-dashboard>div:nth-of-type(4)>div {
   overflow: hidden;
 }
 
@@ -2280,18 +2284,18 @@ a {
   color: #0f172a !important;
 }
 
-.admin-shell .admin-dashboard > div:first-child p {
+.admin-shell .admin-dashboard>div:first-child p {
   color: #f8fffd !important;
 }
 
-.admin-shell .admin-dashboard > div:first-child > div:last-child {
+.admin-shell .admin-dashboard>div:first-child>div:last-child {
   border: 1px solid rgba(255, 255, 255, 0.34) !important;
   background: rgba(222, 253, 247, 0.22) !important;
   border-radius: 999px !important;
   backdrop-filter: blur(16px);
 }
 
-.admin-shell .admin-dashboard > div:first-child button {
+.admin-shell .admin-dashboard>div:first-child button {
   border-radius: 999px !important;
 }
 
@@ -2343,13 +2347,13 @@ a {
 
 /* Admin pages reuse the Patient visual language: vivid teal shell + frosted cards. */
 .admin-shell .admin-sidebar,
-.admin-shell header > div,
+.admin-shell header>div,
 .admin-shell .panel,
 .admin-shell .role-card,
 .admin-shell .permission-item,
 .admin-shell .metric-card,
 .admin-shell .data-table,
-.admin-shell .admin-dashboard > div:not(:first-child) > div {
+.admin-shell .admin-dashboard>div:not(:first-child)>div {
   background: rgba(255, 255, 255, 0.34) !important;
   backdrop-filter: blur(24px) !important;
   -webkit-backdrop-filter: blur(24px) !important;
@@ -2502,19 +2506,19 @@ a {
 }
 
 .admin-shell .page-heading h1,
-.admin-shell .admin-dashboard > div:first-child h1 {
+.admin-shell .admin-dashboard>div:first-child h1 {
   color: #ffffff !important;
   font-size: unset !important;
   font-weight: unset !important;
   letter-spacing: 0 !important;
 }
 
-.admin-shell .admin-dashboard > div:first-child h1 span[style*="color"] {
+.admin-shell .admin-dashboard>div:first-child h1 span[style*="color"] {
   color: #0f766e !important;
 }
 
 .admin-shell .page-heading p,
-.admin-shell .admin-dashboard > div:first-child p,
+.admin-shell .admin-dashboard>div:first-child p,
 .admin-shell .muted {
   color: rgba(204, 251, 241, 0.9) !important;
 }
@@ -2559,7 +2563,7 @@ a {
 
 .admin-shell .page-title-icon {
   background: rgba(255, 255, 255, 0.22) !important;
-  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.45), 0 4px 12px rgba(0,0,0,0.15) !important;
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.45), 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }
 
 .admin-shell .ghost-button,
@@ -2569,7 +2573,7 @@ a {
   color: #083344 !important;
 }
 
-.admin-shell .admin-dashboard > div:first-child > div:last-child {
+.admin-shell .admin-dashboard>div:first-child>div:last-child {
   background: rgba(255, 255, 255, 0.2) !important;
   border: 1px solid rgba(255, 255, 255, 0.45) !important;
   border-radius: 2rem !important;
@@ -3204,13 +3208,25 @@ a {
 
 /* â”€â”€ Animations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ── Notification Bell & Dropdown ──────────────────────── */
@@ -3695,9 +3711,11 @@ a {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+
   html {
     @apply font-sans;
   }
@@ -3787,7 +3805,7 @@ a {
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
   border: 1px solid rgba(255, 255, 255, 0.25) !important;
-  box-shadow: 
+  box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.15),
     0 4px 16px rgba(0, 0, 0, 0.12) !important;
 }
@@ -3867,7 +3885,7 @@ a {
   font-weight: 800;
 }
 
-.patient-shell .patient-glass-card .field > label,
+.patient-shell .patient-glass-card .field>label,
 .patient-shell .patient-glass-card label.patient-label {
   color: var(--patient-label-color);
   font-weight: 650;
@@ -3968,9 +3986,11 @@ a {
   font-weight: 500 !important;
   transition: all 0.2s ease !important;
 }
+
 .patient-shell .patient-glass-input::placeholder {
   color: rgba(51, 65, 85, 0.65) !important;
 }
+
 .patient-shell .patient-glass-input:focus {
   background: rgba(255, 255, 255, 0.32) !important;
   border-color: rgba(94, 234, 212, 0.7) !important;
@@ -3986,6 +4006,7 @@ a {
   box-shadow: none !important;
   overflow: hidden;
 }
+
 .patient-shell .patient-glass-card .data-table {
   width: 100% !important;
   min-width: 100% !important;
@@ -3993,20 +4014,24 @@ a {
   background: transparent !important;
   border: none !important;
 }
+
 .patient-shell .patient-glass-card .data-table th {
   background: rgba(255, 255, 255, 0.15) !important;
   color: #0f766e !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
   font-weight: 800;
 }
+
 .patient-shell .patient-glass-card .data-table td {
   border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
   color: #1e293b !important;
   font-weight: 600;
 }
+
 .patient-shell .patient-glass-card .data-table tbody tr:hover {
   background: rgba(255, 255, 255, 0.12) !important;
 }
+
 .patient-shell .patient-glass-card .table-row:hover {
   background: rgba(255, 255, 255, 0.12) !important;
 }
@@ -4014,9 +4039,11 @@ a {
 .patient-shell .custom-scrollbar::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.25);
 }
+
 .patient-shell .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.45);
 }
+
 .patient-shell .custom-scrollbar {
   scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
 }
@@ -4045,7 +4072,8 @@ a {
   backdrop-filter: blur(24px) !important;
   -webkit-backdrop-filter: blur(24px) !important;
   border: 1px solid rgba(255, 255, 255, 0.55) !important;
-  border-radius: 2rem !important; /* rounded-3xl */
+  border-radius: 2rem !important;
+  /* rounded-3xl */
   box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.12) !important;
   color: #0f172a !important;
 }
@@ -4055,7 +4083,8 @@ a {
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
-  border-radius: 1.25rem !important; /* rounded-2xl */
+  border-radius: 1.25rem !important;
+  /* rounded-2xl */
   box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.1) !important;
   color: #1e293b !important;
 }
@@ -4065,17 +4094,21 @@ a {
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
   border: 1px solid rgba(255, 255, 255, 0.35) !important;
-  border-radius: 0.75rem !important; /* rounded-xl */
+  border-radius: 0.75rem !important;
+  /* rounded-xl */
   color: #0f172a !important;
   font-weight: 500 !important;
   transition: all 0.2s ease !important;
 }
+
 .patient-glass-input::placeholder {
   color: rgba(51, 65, 85, 0.65) !important;
 }
+
 .patient-glass-input:focus {
   background: rgba(255, 255, 255, 0.32) !important;
-  border-color: rgba(94, 234, 212, 0.6) !important; /* teal-400/60 */
+  border-color: rgba(94, 234, 212, 0.6) !important;
+  /* teal-400/60 */
   box-shadow: 0 0 0 4px rgba(94, 234, 212, 0.15) !important;
   outline: none !important;
 }
@@ -4089,6 +4122,7 @@ a {
   box-shadow: none !important;
   overflow: hidden;
 }
+
 .patient-glass-card .data-table {
   width: 100% !important;
   min-width: 100% !important;
@@ -4096,29 +4130,35 @@ a {
   background: transparent !important;
   border: none !important;
 }
+
 .patient-glass-card .data-table th {
   background: rgba(255, 255, 255, 0.2) !important;
   color: #0f766e !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.25) !important;
   font-weight: 800;
 }
+
 .patient-glass-card .data-table td {
   border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
   color: #1e293b !important;
   font-weight: 600;
 }
+
 .patient-glass-card .data-table tbody tr {
   background: transparent !important;
   transition: background 0.2s ease;
 }
+
 .patient-glass-card .data-table tbody tr:hover {
   background: rgba(255, 255, 255, 0.1) !important;
 }
+
 .patient-glass-card .table-row {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
   background: transparent !important;
   transition: background 0.2s ease;
 }
+
 .patient-glass-card .table-row:hover {
   background: rgba(255, 255, 255, 0.1) !important;
 }
@@ -4573,7 +4613,7 @@ a {
 }
 
 .receptionist-shell .receptionist-data-page .search-bar input,
-.receptionist-shell .receptionist-data-page > select {
+.receptionist-shell .receptionist-data-page>select {
   border-color: rgba(255, 255, 255, 0.68) !important;
   background: rgba(255, 255, 255, 0.78) !important;
   color: #0f302d;
@@ -4829,7 +4869,7 @@ a {
   color: #0f302d;
 }
 
-.receptionist-shell .receptionist-patient-page > div {
+.receptionist-shell .receptionist-patient-page>.patient-glass-panel {
   border-color: rgba(255, 255, 255, 0.55) !important;
   background: rgba(255, 255, 255, 0.36) !important;
   box-shadow: 0 14px 38px rgba(2, 44, 34, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
@@ -4846,7 +4886,7 @@ a {
   color: #18e0ce !important;
 }
 
-.receptionist-shell .receptionist-patient-page h1 + p {
+.receptionist-shell .receptionist-patient-page h1+p {
   color: rgba(255, 255, 255, 0.9) !important;
   font-weight: 650;
   text-shadow: 0 2px 8px rgba(2, 44, 34, 0.26);
@@ -5073,7 +5113,7 @@ a {
 
 .receptionist-shell .walk-in-section,
 .receptionist-shell .walk-in-summary,
-.receptionist-shell .walk-in-success > div {
+.receptionist-shell .walk-in-success>div {
   border: 1px solid rgba(255, 255, 255, 0.58) !important;
   background: rgba(255, 255, 255, 0.36) !important;
   box-shadow: 0 14px 38px rgba(2, 44, 34, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.58) !important;
@@ -5105,20 +5145,20 @@ a {
   color: #5e7774;
 }
 
-.receptionist-shell .walk-in-summary > div {
+.receptionist-shell .walk-in-summary>div {
   border-bottom-color: rgba(255, 255, 255, 0.38) !important;
 }
 
-.receptionist-shell .walk-in-summary > div > span:first-child {
+.receptionist-shell .walk-in-summary>div>span:first-child {
   color: #315f5b !important;
   font-weight: 700;
 }
 
-.receptionist-shell .walk-in-summary > div > span:last-child {
+.receptionist-shell .walk-in-summary>div>span:last-child {
   color: #092f2c !important;
 }
 
-.receptionist-shell .walk-in-summary > div:last-child {
+.receptionist-shell .walk-in-summary>div:last-child {
   border-color: rgba(153, 246, 228, 0.65) !important;
   background: rgba(204, 251, 241, 0.58) !important;
 }
@@ -5190,7 +5230,7 @@ a {
     padding: 24px;
   }
 
-  .receptionist-primary-command > svg {
+  .receptionist-primary-command>svg {
     display: none;
   }
 
@@ -5225,7 +5265,8 @@ a {
   backdrop-filter: blur(24px) !important;
   -webkit-backdrop-filter: blur(24px) !important;
   border: 1px solid rgba(255, 255, 255, 0.45) !important;
-  border-radius: 2rem !important; /* rounded-3xl */
+  border-radius: 2rem !important;
+  /* rounded-3xl */
   box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08) !important;
   color: #0f172a !important;
 }
@@ -5235,7 +5276,8 @@ a {
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
   border: 1px solid rgba(255, 255, 255, 0.4) !important;
-  border-radius: 1.25rem !important; /* rounded-2xl */
+  border-radius: 1.25rem !important;
+  /* rounded-2xl */
   box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.04) !important;
 }
 
@@ -5244,17 +5286,22 @@ a {
   backdrop-filter: blur(4px) !important;
   -webkit-backdrop-filter: blur(4px) !important;
   border: 1px solid rgba(255, 255, 255, 0.45) !important;
-  border-radius: 0.75rem !important; /* rounded-xl */
-  color: #0f172a !important; /* slate-900 */
+  border-radius: 0.75rem !important;
+  /* rounded-xl */
+  color: #0f172a !important;
+  /* slate-900 */
   font-weight: 500 !important;
   transition: all 0.2s ease !important;
 }
+
 .light-glass-input::placeholder {
   color: rgba(15, 23, 42, 0.5) !important;
 }
+
 .light-glass-input:focus {
   background: rgba(255, 255, 255, 0.6) !important;
-  border-color: rgba(20, 184, 166, 0.6) !important; /* teal-500/60 */
+  border-color: rgba(20, 184, 166, 0.6) !important;
+  /* teal-500/60 */
   box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.15) !important;
   outline: none !important;
 }
@@ -5554,10 +5601,21 @@ a {
   transform: translateY(-3px);
 }
 
-.admin-metric-revenue { --metric-glow: rgba(16, 185, 129, 0.25); }
-.admin-metric-appointments { --metric-glow: rgba(14, 165, 233, 0.24); }
-.admin-metric-stock { --metric-glow: rgba(124, 58, 237, 0.2); }
-.admin-metric-alert { --metric-glow: rgba(244, 63, 94, 0.2); }
+.admin-metric-revenue {
+  --metric-glow: rgba(16, 185, 129, 0.25);
+}
+
+.admin-metric-appointments {
+  --metric-glow: rgba(14, 165, 233, 0.24);
+}
+
+.admin-metric-stock {
+  --metric-glow: rgba(124, 58, 237, 0.2);
+}
+
+.admin-metric-alert {
+  --metric-glow: rgba(244, 63, 94, 0.2);
+}
 
 .admin-shell .admin-metric-card p,
 .admin-shell .admin-metric-card span {
@@ -5602,12 +5660,12 @@ a {
 }
 
 .admin-shell .page-heading,
-.admin-shell .content > .page-header {
+.admin-shell .content>.page-header {
   margin: 14px 0 26px;
 }
 
 .admin-shell .page-heading h1,
-.admin-shell .content > .page-header .page-title {
+.admin-shell .content>.page-header .page-title {
   display: inline-flex;
   width: fit-content;
   min-height: 72px;
@@ -5628,7 +5686,7 @@ a {
 }
 
 .admin-shell .page-heading h1 svg,
-.admin-shell .content > .page-header .page-title svg {
+.admin-shell .content>.page-header .page-title svg {
   color: #18e0ce !important;
 }
 
@@ -5670,6 +5728,7 @@ a {
 }
 
 @media (max-width: 760px) {
+
   .admin-shell main,
   .admin-shell:has(.admin-sidebar-expanded) main {
     padding-left: 16px;
@@ -5688,7 +5747,7 @@ a {
 /* Admin readability and filter controls */
 .admin-shell .admin-dashboard-heading p,
 .admin-shell .page-heading p,
-.admin-shell .content > .page-header .muted,
+.admin-shell .content>.page-header .muted,
 .admin-shell [class*="text-white/70"],
 .admin-shell [class*="text-white/80"] {
   color: #f0fdfa !important;
@@ -5735,14 +5794,14 @@ a {
   min-height: 54px;
 }
 
-.admin-shell .search-bar > div,
+.admin-shell .search-bar>div,
 .admin-shell .search-box {
   min-width: 0;
 }
 
 .admin-shell .search-box,
-.admin-shell .search-bar > div:has(> .search-icon),
-.admin-shell .search-bar > div:has(> input) {
+.admin-shell .search-bar>div:has(> .search-icon),
+.admin-shell .search-bar>div:has(> input) {
   position: relative;
   min-height: 52px;
   border: 1px solid rgba(255, 255, 255, 0.76) !important;
@@ -5775,11 +5834,11 @@ a {
   box-shadow: none !important;
 }
 
-.admin-shell .toolbar > select,
+.admin-shell .toolbar>select,
 .admin-shell .search-bar select,
 .admin-shell .filter-bar select,
 .admin-shell .filter-bar input,
-.admin-shell .toolbar > input {
+.admin-shell .toolbar>input {
   min-height: 52px !important;
   border: 1px solid rgba(255, 255, 255, 0.78) !important;
   border-radius: 16px 6px 16px 16px !important;
@@ -5793,12 +5852,12 @@ a {
 }
 
 .admin-shell .search-box:focus-within,
-.admin-shell .search-bar > div:has(> input):focus-within,
-.admin-shell .toolbar > select:focus,
+.admin-shell .search-bar>div:has(> input):focus-within,
+.admin-shell .toolbar>select:focus,
 .admin-shell .search-bar select:focus,
 .admin-shell .filter-bar select:focus,
 .admin-shell .filter-bar input:focus,
-.admin-shell .toolbar > input:focus {
+.admin-shell .toolbar>input:focus {
   border-color: #5eead4 !important;
   background-color: rgba(255, 255, 255, 0.96) !important;
   box-shadow:
@@ -5933,8 +5992,8 @@ a {
 }
 
 .admin-shell .appointment-page-title,
-.admin-shell .appointment-page-title > span,
-.admin-shell .appointment-page-title > span:first-child {
+.admin-shell .appointment-page-title>span,
+.admin-shell .appointment-page-title>span:first-child {
   color: #ffffff !important;
   font-weight: 900 !important;
   text-shadow:
@@ -6070,15 +6129,41 @@ a {
   text-overflow: ellipsis;
 }
 
-.admin-shell .queue-table th:nth-child(1) { width: 6%; }
-.admin-shell .queue-table th:nth-child(2) { width: 12%; }
-.admin-shell .queue-table th:nth-child(3) { width: 13%; }
-.admin-shell .queue-table th:nth-child(4) { width: 12%; }
-.admin-shell .queue-table th:nth-child(5) { width: 13%; }
-.admin-shell .queue-table th:nth-child(6) { width: 10%; }
-.admin-shell .queue-table th:nth-child(7) { width: 9%; }
-.admin-shell .queue-table th:nth-child(8) { width: 11%; }
-.admin-shell .queue-table th:nth-child(9) { width: 14%; }
+.admin-shell .queue-table th:nth-child(1) {
+  width: 6%;
+}
+
+.admin-shell .queue-table th:nth-child(2) {
+  width: 12%;
+}
+
+.admin-shell .queue-table th:nth-child(3) {
+  width: 13%;
+}
+
+.admin-shell .queue-table th:nth-child(4) {
+  width: 12%;
+}
+
+.admin-shell .queue-table th:nth-child(5) {
+  width: 13%;
+}
+
+.admin-shell .queue-table th:nth-child(6) {
+  width: 10%;
+}
+
+.admin-shell .queue-table th:nth-child(7) {
+  width: 9%;
+}
+
+.admin-shell .queue-table th:nth-child(8) {
+  width: 11%;
+}
+
+.admin-shell .queue-table th:nth-child(9) {
+  width: 14%;
+}
 
 .admin-shell .queue-table tbody tr {
   border-bottom: 1px solid rgba(15, 118, 110, 0.11);
@@ -6093,7 +6178,7 @@ a {
   background: rgba(255, 255, 255, 0.34);
 }
 
-.admin-shell .queue-table td:last-child > div {
+.admin-shell .queue-table td:last-child>div {
   flex-wrap: nowrap !important;
   justify-content: flex-end !important;
 }
@@ -6104,6 +6189,7 @@ a {
 }
 
 @media (max-width: 1100px) {
+
   .admin-shell .checkin-filter-bar,
   .admin-shell .queue-filter-bar {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -6111,6 +6197,7 @@ a {
 }
 
 @media (max-width: 760px) {
+
   .admin-shell .toolbar,
   .admin-shell .checkin-filter-bar,
   .admin-shell .queue-filter-bar {

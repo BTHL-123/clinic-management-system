@@ -146,7 +146,7 @@ export default function ProfilePage() {
         .patient-glass-input, .patient-glass-input-clear input, .patient-glass-input select, .patient-glass-input textarea {
           color: #000000 !important;
         }
-        .page-title, .page-title span, h2.inline-flex span, h2 span, h1 span {
+        .page-title, .page-title span, h2.inline-flex span, h2 span {
           color: #0f766e !important;
         }
       `}</style>

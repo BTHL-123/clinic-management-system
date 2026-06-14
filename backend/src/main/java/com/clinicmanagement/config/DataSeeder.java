@@ -32,6 +32,7 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        migrateCheckConstraint();
         seedRoles();
         seedPermissions();
         seedAdmin();
@@ -39,6 +40,20 @@ public class DataSeeder implements CommandLineRunner {
         seedPatient();
         seedMedicalRecords();
         syncPostgresSequences();
+    }
+
+    private void migrateCheckConstraint() {
+        jdbcTemplate.execute((org.springframework.jdbc.core.ConnectionCallback<Void>) connection -> {
+            if ("PostgreSQL".equalsIgnoreCase(connection.getMetaData().getDatabaseProductName())) {
+                try (var statement = connection.createStatement()) {
+                    statement.execute("ALTER TABLE appointment_slots DROP CONSTRAINT IF EXISTS appointment_slots_status_check");
+                    statement.execute("ALTER TABLE appointment_slots ADD CONSTRAINT appointment_slots_status_check CHECK (status IN ('AVAILABLE', 'LOCKED', 'BOOKED', 'BLOCKED', 'CANCELLED'))");
+                } catch (Exception e) {
+                    System.err.println("Migration of appointment_slots_status_check failed: " + e.getMessage());
+                }
+            }
+            return null;
+        });
     }
 
     private void seedRoles() {
