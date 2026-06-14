@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { X, CalendarDays, Clock, UserRound } from "lucide-react";
-import { getSchedules, getAvailableSlots } from "../../services/scheduleService";
+import { getSchedules, getAvailableSlotsForPatient } from "../../services/scheduleService";
 import { getDoctors } from "../../services/doctorService";
 import appointmentService from "../../services/appointmentService";
 
@@ -32,7 +32,7 @@ export default function RescheduleModal({ isOpen, onClose, onRescheduleSuccess, 
 
   const fetchSlots = useCallback(async (docId, workDate) => {
     try {
-      const res = await getAvailableSlots(docId, workDate);
+      const res = await getAvailableSlotsForPatient(docId, workDate);
       const allSlots = Array.isArray(res) ? res : (res?.data || []);
       setSlots(allSlots.filter(s => s.status === "AVAILABLE"));
     } catch (e) {

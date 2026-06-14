@@ -63,15 +63,28 @@ public class AuthServiceImpl implements AuthService {
         user.setRoles(Set.of(patientRole));
         User savedUser = userRepository.save(user);
 
-        Patient patient = new Patient();
+        Patient patient = null;
+        if (request.phone() != null && !request.phone().isBlank()) {
+            patient = patientRepository.findTopByPhone(request.phone().trim()).orElse(null);
+        }
+
+        if (patient == null) {
+            patient = new Patient();
+            patient.setPatientCode(nextPatientCode());
+            patient.setFullName(request.fullName());
+            patient.setGender(normalizeGender(request.gender()));
+            patient.setDateOfBirth(request.dateOfBirth());
+            patient.setPhone(request.phone());
+            patient.setEmail(email);
+            patient.setAddress(request.address());
+        } else {
+            // Update email if it was missing
+            if (patient.getEmail() == null || patient.getEmail().isBlank()) {
+                patient.setEmail(email);
+            }
+        }
+        
         patient.setUser(savedUser);
-        patient.setPatientCode(nextPatientCode());
-        patient.setFullName(request.fullName());
-        patient.setGender(normalizeGender(request.gender()));
-        patient.setDateOfBirth(request.dateOfBirth());
-        patient.setPhone(request.phone());
-        patient.setEmail(email);
-        patient.setAddress(request.address());
         Patient savedPatient = patientRepository.save(patient);
 
         return new RegisterResponse(savedUser.getUserId(), savedPatient.getPatientId(), savedUser.getEmail(), "PATIENT");

@@ -20,8 +20,19 @@ export const getAvailableSlots = (doctorId, workDate) =>
     params: { doctorId, workDate },
   });
 
+export const getAvailableSlotsForPatient = (doctorId, workDate) =>
+  axiosClient.get("/doctor-schedules/available-slots/patient", {
+    params: { doctorId, workDate },
+  });
+
 export const lockSlot = (slotId) =>
   axiosClient.post(`/doctor-schedules/slots/${slotId}/lock`);
 
 export const releaseLock = (slotId) =>
   axiosClient.delete(`/doctor-schedules/slots/${slotId}/lock`);
+
+export const blockSlot = (slotId) =>
+  axiosClient.put(`/doctor-schedules/slots/${slotId}/block`);
+
+export const unblockSlot = (slotId) =>
+  axiosClient.put(`/doctor-schedules/slots/${slotId}/unblock`);

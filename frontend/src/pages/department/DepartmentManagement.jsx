@@ -6,6 +6,7 @@ import {
   getDepartments,
   updateDepartment,
 } from "../../services/departmentService";
+import PageHeader from "../../components/PageHeader";
 
 const EMPTY_FORM = { departmentName: "", description: "", status: "ACTIVE" };
 
@@ -120,31 +121,33 @@ export default function DepartmentManagement() {
   return (
     <>
       {/* ── Page Header ────────────────────────────────── */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">
-            <Building2 size={26} />
-            Quản lý Chuyên khoa
-          </h1>
-          <p className="muted">
-            Quản lý danh sách các chuyên khoa trong phòng khám.
-          </p>
-        </div>
-        <button className="primary-button" onClick={openCreate}>
-          <Plus size={16} />
-          Thêm chuyên khoa
-        </button>
-      </div>
+      <PageHeader
+        title="Quản lý Chuyên khoa"
+        icon={Building2}
+        iconColor="text-white"
+        subtitle="Quản lý danh sách các chuyên khoa trong phòng khám."
+        rightContent={
+          <button className="bg-white text-teal-700 hover:bg-teal-50 font-bold px-4 py-2 rounded-xl shadow-md transition-all flex items-center gap-2" onClick={openCreate}>
+            <Plus size={16} />
+            Thêm chuyên khoa
+          </button>
+        }
+      />
 
       {/* ── Search Bar ─────────────────────────────────── */}
-      <div className="search-bar">
+      <div className="search-bar" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
         <Search size={16} className="search-icon" />
         <input
           type="text"
           placeholder="Tìm kiếm theo tên hoặc mô tả..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ flex: 1 }}
         />
+        <button className="primary-button" style={{ flexShrink: 0 }} onClick={openCreate}>
+          <Plus size={16} />
+          Thêm chuyên khoa
+        </button>
       </div>
 
       {/* ── Error ──────────────────────────────────────── */}
@@ -152,7 +155,15 @@ export default function DepartmentManagement() {
 
       {/* ── Table ──────────────────────────────────────── */}
       <div className="table-wrapper">
-        <table className="data-table">
+        <table className="data-table fixed-table">
+          <colgroup>
+            <col style={{ width: "5%" }} />
+            <col style={{ width: "22%" }} />
+            <col style={{ width: "38%" }} />
+            <col style={{ width: "13%" }} />
+            <col style={{ width: "12%" }} />
+            <col style={{ width: "10%" }} />
+          </colgroup>
           <thead>
             <tr>
               <th>#</th>

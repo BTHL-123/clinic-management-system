@@ -25,6 +25,8 @@ public interface InventoryService {
 
     StockTransactionResponse exportStock(ExportTransactionRequest request, User currentUser);
 
+    void exportStockAutomated(Long medicineId, Integer requiredQuantity, String referenceType, Long referenceId, String note);
+
     PageResponse<MedicineStockAlertResponse> getActiveAlerts(Pageable pageable);
 
     void resolveAlert(Long alertId, User currentUser);

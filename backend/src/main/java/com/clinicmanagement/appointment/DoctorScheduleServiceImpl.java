@@ -25,6 +25,9 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     private final DoctorScheduleRepository doctorScheduleRepository;
     private final TimeSlotRepository timeSlotRepository;
     private final DoctorRepository doctorRepository;
+    private final com.clinicmanagement.systemsetting.SystemSettingRepository systemSettingRepository;
+    private final com.clinicmanagement.auditlog.AuditLogRepository auditLogRepository;
+    private final com.clinicmanagement.user.UserRepository userRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -32,11 +35,68 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     public DoctorScheduleServiceImpl(
             DoctorScheduleRepository doctorScheduleRepository,
             TimeSlotRepository timeSlotRepository,
-            DoctorRepository doctorRepository
+            DoctorRepository doctorRepository,
+            com.clinicmanagement.systemsetting.SystemSettingRepository systemSettingRepository,
+            com.clinicmanagement.auditlog.AuditLogRepository auditLogRepository,
+            com.clinicmanagement.user.UserRepository userRepository
     ) {
         this.doctorScheduleRepository = doctorScheduleRepository;
         this.timeSlotRepository = timeSlotRepository;
         this.doctorRepository = doctorRepository;
+        this.systemSettingRepository = systemSettingRepository;
+        this.auditLogRepository = auditLogRepository;
+        this.userRepository = userRepository;
+    }
+
+    private int getSlotDurationMinutes(Integer requestedDuration) {
+        if (requestedDuration != null && requestedDuration > 0) {
+            return requestedDuration;
+        }
+        return systemSettingRepository.findBySettingKey("DEFAULT_SLOT_DURATION_MINUTES")
+                .map(setting -> {
+                    try {
+                        return Integer.parseInt(setting.getSettingValue());
+                    } catch (NumberFormatException e) {
+                        return 30;
+                    }
+                })
+                .orElse(30);
+    }
+
+    private int generateTimeSlotsForSchedule(DoctorSchedule schedule, int slotDuration) {
+        schedule.getTimeSlots().clear();
+        LocalTime currentSlotTime = schedule.getStartTime();
+        LocalTime endTime = schedule.getEndTime();
+        int slotCount = 0;
+        
+        while (true) {
+            LocalTime nextTime = currentSlotTime.plusMinutes(slotDuration);
+            // If nextTime rolls over to midnight and the schedule's end time is 23:59 (standard day cap),
+            // we adjust nextTime to match endTime to make a valid final slot of the day.
+            if (nextTime.equals(LocalTime.MIDNIGHT) && 
+                (endTime.equals(LocalTime.of(23, 59)) || endTime.equals(LocalTime.of(23, 59, 59)))) {
+                nextTime = endTime;
+            }
+            
+            // Break if we roll over past midnight or exceed end time
+            if (nextTime.isBefore(currentSlotTime) || nextTime.isAfter(endTime)) {
+                break;
+            }
+            
+            TimeSlot timeSlot = new TimeSlot();
+            timeSlot.setDoctorSchedule(schedule);
+            timeSlot.setStartTime(currentSlotTime);
+            timeSlot.setEndTime(nextTime);
+            timeSlot.setStatus("AVAILABLE");
+            schedule.getTimeSlots().add(timeSlot);
+            slotCount++;
+            
+            if (nextTime.equals(endTime)) {
+                break;
+            }
+            currentSlotTime = nextTime;
+        }
+        return slotCount;
     }
 
     @Override
@@ -46,6 +106,14 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
 
         if (!request.startTime().isBefore(request.endTime())) {
             throw new BusinessException("Start time must be before end time");
+        }
+
+        java.time.LocalDate today = java.time.LocalDate.now();
+        if (request.workDate().isBefore(today)) {
+            throw new BusinessException("Cannot schedule for a past date");
+        }
+        if (request.workDate().equals(today) && request.startTime().isBefore(java.time.LocalTime.now())) {
+            throw new BusinessException("Cannot schedule for a past time today");
         }
 
         List<DoctorSchedule> existingSchedules = doctorScheduleRepository.findActiveSchedulesByDoctorAndDate(request.doctorId(), request.workDate());
@@ -63,20 +131,80 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         schedule.setMaxPatients(request.maxPatients() != null ? request.maxPatients() : 20);
         schedule.setStatus("AVAILABLE");
 
-        LocalTime currentSlotTime = request.startTime();
-        while (currentSlotTime.plusMinutes(30).isBefore(request.endTime()) ||
-               currentSlotTime.plusMinutes(30).equals(request.endTime())) {
-            TimeSlot timeSlot = new TimeSlot();
-            timeSlot.setDoctorSchedule(schedule);
-            timeSlot.setStartTime(currentSlotTime);
-            timeSlot.setEndTime(currentSlotTime.plusMinutes(30));
-            timeSlot.setStatus("AVAILABLE");
-            schedule.getTimeSlots().add(timeSlot);
-            currentSlotTime = currentSlotTime.plusMinutes(30);
-        }
+        int slotDuration = getSlotDurationMinutes(request.slotDurationMinutes());
+
+        generateTimeSlotsForSchedule(schedule, slotDuration);
 
         DoctorSchedule savedSchedule = doctorScheduleRepository.save(schedule);
         return mapToResponse(savedSchedule);
+    }
+
+    @Override
+    @Transactional
+    public List<DoctorScheduleResponse> createBulkSchedules(com.clinicmanagement.appointment.dto.BulkScheduleRequest request) {
+        ensureDoctorExists(request.doctorId());
+
+        if (!request.startTime().isBefore(request.endTime())) {
+            throw new BusinessException("Start time must be before end time");
+        }
+        if (request.fromDate().isAfter(request.toDate())) {
+            throw new BusinessException("From date must be before or equal to To date");
+        }
+
+        List<DoctorScheduleResponse> responses = new java.util.ArrayList<>();
+        int slotDuration = getSlotDurationMinutes(request.slotDurationMinutes());
+
+        // 1. Validation phase: check for overlapping dates
+        LocalDate validateDate = request.fromDate();
+        List<LocalDate> overlappingDates = new java.util.ArrayList<>();
+        while (!validateDate.isAfter(request.toDate())) {
+            if (request.daysOfWeek().contains(validateDate.getDayOfWeek())) {
+                boolean exists = doctorScheduleRepository.findActiveSchedulesByDoctorAndDate(request.doctorId(), validateDate)
+                        .stream()
+                        .anyMatch(s -> 
+                            (request.startTime().isBefore(s.getEndTime()) && request.endTime().isAfter(s.getStartTime()))
+                        );
+                if (exists) {
+                    overlappingDates.add(validateDate);
+                }
+            }
+            validateDate = validateDate.plusDays(1);
+        }
+
+        if (!overlappingDates.isEmpty()) {
+            String datesStr = overlappingDates.stream()
+                .map(d -> d.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")))
+                .collect(Collectors.joining(", "));
+            throw new BusinessException("Trùng lặp lịch làm việc vào các ngày: " + datesStr + ". Vui lòng kiểm tra lại để tránh đè lịch.");
+        }
+
+        // 2. Creation phase
+        LocalDate currentDate = request.fromDate();
+        while (!currentDate.isAfter(request.toDate())) {
+            if (request.daysOfWeek().contains(currentDate.getDayOfWeek())) {
+                if (!currentDate.isBefore(LocalDate.now())) {
+                    DoctorSchedule schedule = new DoctorSchedule();
+                    schedule.setDoctorId(request.doctorId());
+                    schedule.setWorkDate(currentDate);
+                    schedule.setStartTime(request.startTime());
+                    schedule.setEndTime(request.endTime());
+                    schedule.setMaxPatients(request.maxPatients() != null ? request.maxPatients() : 20);
+                    schedule.setStatus("AVAILABLE");
+
+                    generateTimeSlotsForSchedule(schedule, slotDuration);
+
+                    DoctorSchedule savedSchedule = doctorScheduleRepository.save(schedule);
+                    responses.add(mapToResponse(savedSchedule));
+                }
+            }
+            currentDate = currentDate.plusDays(1);
+        }
+
+        if (responses.isEmpty()) {
+            throw new BusinessException("Không có lịch nào được tạo. Vui lòng kiểm tra lại (có thể bạn chọn ngày trong quá khứ).");
+        }
+
+        return responses;
     }
 
     @Override
@@ -90,9 +218,21 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         if ("CANCELLED".equals(schedule.getStatus())) {
             throw new BusinessException("Cannot update a cancelled schedule");
         }
+        
+        java.time.LocalDate today = java.time.LocalDate.now();
+        if (schedule.getWorkDate().isBefore(today) || 
+           (schedule.getWorkDate().equals(today) && schedule.getStartTime().isBefore(java.time.LocalTime.now()))) {
+            throw new BusinessException("Cannot update a schedule that has already started or passed");
+        }
 
         if (!request.startTime().isBefore(request.endTime())) {
             throw new BusinessException("Start time must be before end time");
+        }
+        if (request.workDate().isBefore(today)) {
+            throw new BusinessException("Cannot schedule for a past date");
+        }
+        if (request.workDate().equals(today) && request.startTime().isBefore(java.time.LocalTime.now())) {
+            throw new BusinessException("Cannot schedule for a past time today");
         }
 
         boolean hasBookedSlots = timeSlotRepository.existsByScheduleIdAndStatus(id, "BOOKED");
@@ -118,17 +258,9 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         schedule.setEndTime(request.endTime());
         schedule.setMaxPatients(request.maxPatients() != null ? request.maxPatients() : 20);
 
-        LocalTime currentSlotTime = request.startTime();
-        while (currentSlotTime.plusMinutes(30).isBefore(request.endTime()) ||
-               currentSlotTime.plusMinutes(30).equals(request.endTime())) {
-            TimeSlot timeSlot = new TimeSlot();
-            timeSlot.setDoctorSchedule(schedule);
-            timeSlot.setStartTime(currentSlotTime);
-            timeSlot.setEndTime(currentSlotTime.plusMinutes(30));
-            timeSlot.setStatus("AVAILABLE");
-            schedule.getTimeSlots().add(timeSlot);
-            currentSlotTime = currentSlotTime.plusMinutes(30);
-        }
+        int slotDuration = getSlotDurationMinutes(request.slotDurationMinutes());
+
+        generateTimeSlotsForSchedule(schedule, slotDuration);
 
         DoctorSchedule savedSchedule = doctorScheduleRepository.save(schedule);
         return mapToResponse(savedSchedule);
@@ -198,19 +330,7 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         schedule.getTimeSlots().clear();
         doctorScheduleRepository.save(schedule);
 
-        LocalTime currentSlotTime = schedule.getStartTime();
-        int slotCount = 0;
-        while (currentSlotTime.plusMinutes(slotDurationMinutes).isBefore(schedule.getEndTime()) ||
-               currentSlotTime.plusMinutes(slotDurationMinutes).equals(schedule.getEndTime())) {
-            TimeSlot timeSlot = new TimeSlot();
-            timeSlot.setDoctorSchedule(schedule);
-            timeSlot.setStartTime(currentSlotTime);
-            timeSlot.setEndTime(currentSlotTime.plusMinutes(slotDurationMinutes));
-            timeSlot.setStatus("AVAILABLE");
-            schedule.getTimeSlots().add(timeSlot);
-            slotCount++;
-            currentSlotTime = currentSlotTime.plusMinutes(slotDurationMinutes);
-        }
+        int slotCount = generateTimeSlotsForSchedule(schedule, slotDurationMinutes);
 
         doctorScheduleRepository.save(schedule);
         return new GenerateSlotsResponse(id, slotCount);
@@ -234,17 +354,42 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
 
     @Override
     @Transactional
-    public List<TimeSlotResponse> getAvailableSlots(Long doctorId, LocalDate workDate) {
+    public List<TimeSlotResponse> getAvailableSlots(Long doctorId, LocalDate workDate, boolean isPatient) {
         ensureDoctorExists(doctorId);
 
         List<TimeSlot> slots = timeSlotRepository.findAllSlotsByDoctorAndDate(doctorId, workDate);
         LocalDateTime now = LocalDateTime.now();
+        LocalDate today = LocalDate.now();
+        LocalTime currentTime = LocalTime.now();
+        boolean isToday = workDate.equals(today);
+
         return slots.stream()
+                .filter(ts -> !"CANCELLED".equals(ts.getStatus()))
+                .filter(ts -> {
+                    // For patient, filter out BLOCKED slots completely
+                    if (isPatient && "BLOCKED".equals(ts.getStatus())) {
+                        return false;
+                    }
+                    // For patient, filter out EXPIRED slots completely (where endTime has passed today)
+                    if (isPatient && isToday && ts.getEndTime().isBefore(currentTime)) {
+                        return false;
+                    }
+                    return true;
+                })
                 .map(ts -> {
                     String status = ts.getStatus();
+                    
                     if ("LOCKED".equals(status) && ts.getLockedUntil() != null && ts.getLockedUntil().isBefore(now)) {
                         status = "AVAILABLE";
                     }
+
+                    // For receptionist, map past AVAILABLE/LOCKED slots to EXPIRED for clear UI indication
+                    if (!isPatient && isToday && ts.getEndTime().isBefore(currentTime)) {
+                        if ("AVAILABLE".equals(status) || "LOCKED".equals(status)) {
+                            status = "EXPIRED";
+                        }
+                    }
+
                     return new TimeSlotResponse(
                             ts.getId(),
                             ts.getDoctorSchedule().getId(),
@@ -254,6 +399,77 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
                     );
                 })
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public TimeSlotResponse blockSlot(Long slotId) {
+        TimeSlot slot = timeSlotRepository.findByIdWithPessimisticLock(slotId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ca khám không tồn tại với id: " + slotId));
+
+        if ("BLOCKED".equals(slot.getStatus())) {
+            return mapSlotToResponse(slot);
+        }
+        if (!"AVAILABLE".equals(slot.getStatus())) {
+            throw new BusinessException("Chỉ có thể khóa ca khám đang trống");
+        }
+
+        slot.setStatus("BLOCKED");
+        slot.setLockedUntil(null);
+        slot.setLockedByPatientId(null);
+        
+        TimeSlot savedSlot = timeSlotRepository.save(slot);
+        logAudit("BLOCK_SLOT", "TimeSlot", slotId, "Khóa ca khám");
+        return mapSlotToResponse(savedSlot);
+    }
+
+    @Override
+    @Transactional
+    public TimeSlotResponse unblockSlot(Long slotId) {
+        TimeSlot slot = timeSlotRepository.findByIdWithPessimisticLock(slotId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ca khám không tồn tại với id: " + slotId));
+
+        if ("AVAILABLE".equals(slot.getStatus())) {
+            return mapSlotToResponse(slot);
+        }
+        if (!"BLOCKED".equals(slot.getStatus())) {
+            throw new BusinessException("Chỉ có thể mở lại ca khám đã bị khóa");
+        }
+
+        slot.setStatus("AVAILABLE");
+        slot.setLockedUntil(null);
+        slot.setLockedByPatientId(null);
+        
+        TimeSlot savedSlot = timeSlotRepository.save(slot);
+        logAudit("UNBLOCK_SLOT", "TimeSlot", slotId, "Mở lại ca khám");
+        return mapSlotToResponse(savedSlot);
+    }
+
+    private void logAudit(String action, String tableName, Long recordId, String details) {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        com.clinicmanagement.user.User user = null;
+        if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof com.clinicmanagement.security.CustomUserDetails) {
+            com.clinicmanagement.security.CustomUserDetails userDetails = (com.clinicmanagement.security.CustomUserDetails) auth.getPrincipal();
+            user = userRepository.findById(userDetails.getUser().getUserId()).orElse(null);
+        }
+
+        com.clinicmanagement.auditlog.AuditLog log = new com.clinicmanagement.auditlog.AuditLog();
+        log.setUser(user);
+        log.setAction(action);
+        log.setTableName(tableName);
+        log.setRecordId(recordId);
+        log.setNewValue("{\"details\": \"" + details + "\"}");
+        auditLogRepository.save(log);
+    }
+
+    private TimeSlotResponse mapSlotToResponse(TimeSlot slot) {
+        return new TimeSlotResponse(
+                slot.getId(),
+                slot.getDoctorSchedule().getId(),
+                slot.getStartTime(),
+                slot.getEndTime(),
+                slot.getStatus()
+        );
     }
 
     private DoctorScheduleResponse mapToResponse(DoctorSchedule schedule) {

@@ -1,8 +1,20 @@
-import { Calendar, Info, AlertTriangle, CheckCircle, Trash2, Check, RefreshCw, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Calendar, Info, AlertTriangle, CheckCircle, Trash2, Check, RefreshCw, ChevronLeft, ChevronRight, Loader2, ArrowLeft, Bell } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import notificationService from "../../services/notificationService";
+import { useAuth } from "../../context/useAuth";
+import PageHeader from "../../components/PageHeader";
 
 export default function NotificationsPage() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const roles = user?.roles?.map((r) => r.roleName || r) || [];
+  const isDoctor = roles.includes("DOCTOR");
+  const isPharmacist = roles.includes("PHARMACIST");
+  const isLabTechnician = roles.includes("LAB_TECHNICIAN");
+  const isPatientOnly = roles.includes("PATIENT") && !isDoctor && !isPharmacist && !isLabTechnician;
+  const isAdminShell = roles.includes("ADMIN") && !isDoctor && !isPharmacist && !isPatientOnly && !isLabTechnician;
+  const usePatientVisualShell = isPatientOnly || isAdminShell || isPharmacist || isLabTechnician;
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -89,153 +101,170 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="page-stack">
-      <div className="page-heading">
-        <div>
-          <h1 style={{ display: "flex", alignItems: "center", gap: "10px", margin: 0, fontSize: "1.75rem", fontWeight: 800 }}>
-            Thông báo của tôi
+    <div className={usePatientVisualShell ? "max-w-[1100px] mx-auto w-full flex flex-col items-center pb-10" : "max-w-[1100px] mx-auto w-full flex flex-col items-center pb-10"}>
+      <PageHeader
+        title="Thông báo của tôi"
+        icon={Bell}
+        iconColor={usePatientVisualShell ? "text-teal-400" : "text-teal-300"}
+        subtitle={
+          <span className={usePatientVisualShell ? "text-white/80 font-bold" : "text-white/70 font-medium"}>
+            Nhận và xem các cập nhật về lịch khám hoặc thông báo từ hệ thống.
+          </span>
+        }
+        onBack={() => navigate("/dashboard", { state: { activeClusterId: "settings" } })}
+      />
+
+      <div className={`${usePatientVisualShell ? "patient-glass-panel rounded-[2rem]" : "light-glass-card"} p-6 md:p-8 w-full max-w-[800px] mx-auto mb-10`}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", gap: "12px", width: "100%" }}>
+          <div>
             {unreadCount > 0 && (
               <span className="status-pill locked" style={{ fontSize: "0.85rem", padding: "4px 10px" }}>
                 {unreadCount} chưa đọc
               </span>
             )}
-          </h1>
-          <p className="muted" style={{ margin: "4px 0 0" }}>Nhận và xem các cập nhật về lịch khám hoặc thông báo từ hệ thống.</p>
-        </div>
-
-        <div className="heading-actions">
-          {unreadCount > 0 && (
-            <button className="ghost-button" onClick={handleMarkAllRead} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <CheckCircle size={16} />
-              Đánh dấu đọc tất cả
+          </div>
+          <div className="heading-actions">
+            {unreadCount > 0 && (
+              <button className="ghost-button" onClick={handleMarkAllRead} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <CheckCircle size={16} />
+                Đánh dấu đọc tất cả
+              </button>
+            )}
+            <button className="ghost-button" onClick={fetchNotifications} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+              Làm mới
             </button>
-          )}
-          <button className="ghost-button" onClick={fetchNotifications} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-            Làm mới
-          </button>
-        </div>
-      </div>
-
-      <div className="panel" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "16px 20px", borderBottom: "1px solid #dfe5ec", display: "flex", gap: "12px", background: "#f8fafc" }}>
-          <button
-            onClick={() => setFilterUnread(false)}
-            className={`secondary-button ${!filterUnread ? "active" : ""}`}
-            style={{
-              minHeight: 36,
-              background: !filterUnread ? "#00b5f1" : "#ffffff",
-              color: !filterUnread ? "#ffffff" : "#334155",
-              borderColor: !filterUnread ? "#00b5f1" : "#d7dee8",
-              fontWeight: 700
-            }}
-          >
-            Tất cả thông báo
-          </button>
-          <button
-            onClick={() => setFilterUnread(true)}
-            className={`secondary-button ${filterUnread ? "active" : ""}`}
-            style={{
-              minHeight: 36,
-              background: filterUnread ? "#00b5f1" : "#ffffff",
-              color: filterUnread ? "#ffffff" : "#334155",
-              borderColor: filterUnread ? "#00b5f1" : "#d7dee8",
-              fontWeight: 700
-            }}
-          >
-            Chưa đọc
-          </button>
+          </div>
         </div>
 
-        {loading && notifications.length === 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "60px 20px" }}>
-            <Loader2 className="animate-spin" size={32} style={{ color: "#00b5f1", marginBottom: 12 }} />
-            <span className="muted">Đang tải thông báo...</span>
+        <div className={usePatientVisualShell ? "patient-glass-subcard" : "light-glass-subcard"} style={{ padding: 0, overflow: "hidden", border: "1px solid rgba(255, 255, 255, 0.45)" }}>
+          <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(255, 255, 255, 0.25)", display: "flex", gap: "12px", background: "rgba(255, 255, 255, 0.2)" }}>
+            <button
+              onClick={() => setFilterUnread(false)}
+              style={{
+                minHeight: 36,
+                padding: "6px 16px",
+                borderRadius: "12px",
+                background: !filterUnread ? "#0f766e" : "rgba(255, 255, 255, 0.35)",
+                color: !filterUnread ? "#ffffff" : "#0f172a",
+                border: "1px solid rgba(255, 255, 255, 0.3)",
+                fontWeight: 700,
+                cursor: "pointer",
+                transition: "all 0.2s"
+              }}
+            >
+              Tất cả thông báo
+            </button>
+            <button
+              onClick={() => setFilterUnread(true)}
+              style={{
+                minHeight: 36,
+                padding: "6px 16px",
+                borderRadius: "12px",
+                background: filterUnread ? "#0f766e" : "rgba(255, 255, 255, 0.35)",
+                color: filterUnread ? "#ffffff" : "#0f172a",
+                border: "1px solid rgba(255, 255, 255, 0.3)",
+                fontWeight: 700,
+                cursor: "pointer",
+                transition: "all 0.2s"
+              }}
+            >
+              Chưa đọc
+            </button>
           </div>
-        ) : notifications.length === 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "80px 20px", textAlign: "center" }}>
-            <div style={{ fontSize: "3rem", marginBottom: 16 }}>🔔</div>
-            <h3 style={{ margin: "0 0 8px", color: "#1e293b", fontWeight: 700 }}>Hộp thư của bạn đang trống</h3>
-            <p className="muted" style={{ maxWidth: 360, margin: 0 }}>
-              {filterUnread ? "Không tìm thấy thông báo chưa đọc nào." : "Bạn không có thông báo nào vào lúc này."}
-            </p>
-          </div>
-        ) : (
-          <div>
-            {notifications.map((item) => (
-              <div
-                key={item.notificationId}
-                className={`notification-row ${!item.isRead ? "unread" : ""}`}
-                style={{
-                  display: "flex",
-                  alignItems: "start",
-                  gap: "16px",
-                  padding: "20px",
-                  borderBottom: "1px solid #f1f5f9",
-                  background: !item.isRead ? "rgba(240, 249, 255, 0.4)" : "#ffffff",
-                  cursor: "pointer",
-                  transition: "background 0.2s"
-                }}
-                onClick={() => !item.isRead && handleMarkAsRead(item.notificationId)}
-              >
-                {getNotificationIcon(item.type)}
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 12 }}>
-                    <h3 style={{ margin: "0 0 6px", fontSize: "1.05rem", fontWeight: !item.isRead ? "750" : "600", color: "#0f172a" }}>
-                      {item.title}
-                    </h3>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span className="muted" style={{ fontSize: "0.8rem" }}>{formatDate(item.createdAt)}</span>
-                      {!item.isRead && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleMarkAsRead(item.notificationId);
-                          }}
-                          className="icon-button"
-                          style={{ width: 28, height: 28, borderRadius: "50%", background: "#f0f9ff", border: "1px solid #bae6fd" }}
-                          title="Đánh dấu đã đọc"
-                        >
-                          <Check size={14} style={{ color: "#0284c7" }} />
-                        </button>
-                      )}
+
+          {loading && notifications.length === 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "60px 20px" }}>
+              <Loader2 className="animate-spin" size={32} style={{ color: "#00b5f1", marginBottom: 12 }} />
+              <span className={usePatientVisualShell ? "text-white/60" : "muted"}>Đang tải thông báo...</span>
+            </div>
+          ) : notifications.length === 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "80px 20px", textAlign: "center" }}>
+              <div style={{ fontSize: "3rem", marginBottom: 16 }}>🔔</div>
+              <h3 style={{ margin: "0 0 8px", color: usePatientVisualShell ? "white" : "#1e293b", fontWeight: 700 }}>Hộp thư của bạn đang trống</h3>
+              <p className={usePatientVisualShell ? "text-white/60" : "muted"} style={{ maxWidth: 360, margin: 0 }}>
+                {filterUnread ? "Không tìm thấy thông báo chưa đọc nào." : "Bạn không có thông báo nào vào lúc này."}
+              </p>
+            </div>
+          ) : (
+            <div>
+              {notifications.map((item) => (
+                <div
+                  key={item.notificationId}
+                  className={`notification-row ${!item.isRead ? "unread" : ""}`}
+                  style={{
+                    display: "flex",
+                    alignItems: "start",
+                    gap: "16px",
+                    padding: "20px",
+                    borderBottom: "1px solid rgba(255, 255, 255, 0.25)",
+                    background: !item.isRead ? "rgba(224, 242, 254, 0.35)" : "transparent",
+                    cursor: "pointer",
+                    transition: "background 0.2s"
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = !item.isRead ? "rgba(224, 242, 254, 0.55)" : "rgba(255, 255, 255, 0.2)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = !item.isRead ? "rgba(224, 242, 254, 0.35)" : "transparent"; }}
+                  onClick={() => !item.isRead && handleMarkAsRead(item.notificationId)}
+                >
+                  {getNotificationIcon(item.type)}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 12 }}>
+                      <h3 style={{ margin: "0 0 6px", fontSize: "1.05rem", fontWeight: !item.isRead ? "750" : "600", color: usePatientVisualShell ? "white" : "#0f172a" }}>
+                        {item.title}
+                      </h3>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span className={usePatientVisualShell ? "text-white/50" : "muted"} style={{ fontSize: "0.8rem", marginBottom: 0 }}>{formatDate(item.createdAt)}</span>
+                        {!item.isRead && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMarkAsRead(item.notificationId);
+                            }}
+                            className="icon-button"
+                            style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255, 255, 255, 0.7)", border: "1px solid rgba(255, 255, 255, 0.4)" }}
+                            title="Đánh dấu đã đọc"
+                          >
+                            <Check size={14} style={{ color: "#0f766e" }} />
+                          </button>
+                        )}
+                      </div>
                     </div>
+                    <p style={{ margin: 0, fontSize: "0.92rem", color: usePatientVisualShell ? "rgba(255,255,255,0.8)" : "#475569", lineHeight: 1.5 }}>
+                      {item.message}
+                    </p>
                   </div>
-                  <p style={{ margin: 0, fontSize: "0.92rem", color: "#475569", lineHeight: 1.5 }}>
-                    {item.message}
-                  </p>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          )}
+        </div>
+
+        {totalPages > 1 && (
+          <div className="pagination" style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12 }}>
+            <button
+              onClick={() => setPage(p => Math.max(0, p - 1))}
+              disabled={page === 0}
+              className="ghost-button"
+              style={{ padding: "6px 12px", minHeight: 36 }}
+            >
+              <ChevronLeft size={16} />
+              Trang trước
+            </button>
+            <span className="muted" style={{ fontSize: "0.9rem", fontWeight: 600 }}>
+              Trang {page + 1} / {totalPages}
+            </span>
+            <button
+              onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+              disabled={page === totalPages - 1}
+              className="ghost-button"
+              style={{ padding: "6px 12px", minHeight: 36 }}
+            >
+              Trang sau
+              <ChevronRight size={16} />
+            </button>
           </div>
         )}
       </div>
-
-      {totalPages > 1 && (
-        <div className="pagination" style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12 }}>
-          <button
-            onClick={() => setPage(p => Math.max(0, p - 1))}
-            disabled={page === 0}
-            className="ghost-button"
-            style={{ padding: "6px 12px", minHeight: 36 }}
-          >
-            <ChevronLeft size={16} />
-            Trang trước
-          </button>
-          <span className="muted" style={{ fontSize: "0.9rem", fontWeight: 600 }}>
-            Trang {page + 1} / {totalPages}
-          </span>
-          <button
-            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-            disabled={page === totalPages - 1}
-            className="ghost-button"
-            style={{ padding: "6px 12px", minHeight: 36 }}
-          >
-            Trang sau
-            <ChevronRight size={16} />
-          </button>
-        </div>
-      )}
     </div>
   );
 }

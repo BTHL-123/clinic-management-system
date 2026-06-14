@@ -108,6 +108,11 @@ public class QueueTicketService {
         ticket.setStatus("DONE");
         ticket.setCompletedAt(LocalDateTime.now());
         queueTicketRepository.save(ticket);
+        
+        if (ticket.getAppointment() != null) {
+            ticket.getAppointment().setStatus("COMPLETED");
+        }
+        
         return QueueTicketResponse.from(ticket, getConsultationId(ticket));
     }
 

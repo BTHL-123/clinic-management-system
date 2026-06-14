@@ -1,32 +1,70 @@
 import { useState, useEffect, useRef } from "react";
-import { MessageSquare, Send, Bot, User, Stethoscope, AlertCircle } from "lucide-react";
+import { MessageSquare, Send, Bot, User, Stethoscope, AlertCircle, ArrowLeft, Sparkles } from "lucide-react";
 import {
   createSession,
   sendMessage,
   generateSuggestion,
+  acceptSuggestion,
+  getAllSessions,
+  getMessages
 } from "../../services/aiChatService";
+import { useNavigate, useLocation } from "react-router-dom";
+import PageHeader from "../../components/PageHeader";
 
 export default function AiChatPatient() {
+  const location = useLocation();
   const [sessionId, setSessionId] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [inputText, setInputText] = useState("");
+  const [inputText, setInputText] = useState(location.state?.initialQuery || "");
   const [loading, setLoading] = useState(false);
   const [suggestion, setSuggestion] = useState(null);
   const [error, setError] = useState("");
   const chatEndRef = useRef(null);
+  const navigate = useNavigate();
+
+  // Flag to know if we need to auto send initial query
+  const [hasSentInitial, setHasSentInitial] = useState(false);
 
   // Initialize session on mount
   useEffect(() => {
     const initSession = async () => {
       try {
-        const res = await createSession({ sessionType: "SYMPTOM_CHECK" });
-        setSessionId(res.data.aiChatSessionId);
-        setMessages([
-          {
-            sender: "AI",
-            text: "Xin chào! Tôi là trợ lý AI y tế. Vui lòng mô tả triệu chứng của bạn để tôi có thể tư vấn chuyên khoa phù hợp nhé.",
-          },
-        ]);
+        const res = await getAllSessions();
+        if (res.data && res.data.length > 0) {
+          const latestSession = res.data[0];
+          setSessionId(latestSession.aiChatSessionId);
+          // Load messages for this session
+          const msgRes = await getMessages(latestSession.aiChatSessionId);
+          if (msgRes.data && msgRes.data.length > 0) {
+            setMessages([
+              {
+                sender: "AI",
+                text: "Xin chào! Tôi là trợ lý AI y tế. Vui lòng mô tả triệu chứng của bạn để tôi có thể tư vấn chuyên khoa phù hợp nhé.",
+              },
+              ...msgRes.data.map(m => ({
+                sender: m.senderType === "PATIENT" ? "USER" : "AI",
+                text: m.messageText
+              }))
+            ]);
+          } else {
+            setMessages([
+              {
+                sender: "AI",
+                text: "Xin chào! Tôi là trợ lý AI y tế. Vui lòng mô tả triệu chứng của bạn để tôi có thể tư vấn chuyên khoa phù hợp nhé.",
+              },
+            ]);
+          }
+        } else {
+          // No previous sessions, create new
+          const createRes = await createSession({ sessionType: "SYMPTOM_CHECK" });
+          setSessionId(createRes.data.aiChatSessionId);
+          setMessages([
+            {
+              sender: "AI",
+              text: "Xin chào! Tôi là trợ lý AI y tế. Vui lòng mô tả triệu chứng của bạn để tôi có thể tư vấn chuyên khoa phù hợp nhé.",
+            },
+          ]);
+        }
       } catch (err) {
         setError(err.message);
       }
@@ -34,22 +72,50 @@ export default function AiChatPatient() {
     initSession();
   }, []);
 
+  // Handle auto-send if initial query exists and session is ready
+  useEffect(() => {
+    if (sessionId && location.state?.initialQuery && !hasSentInitial && messages.length <= 1) {
+      setHasSentInitial(true);
+      handleSendQuery(location.state.initialQuery);
+    }
+  }, [sessionId, location.state, messages.length, hasSentInitial]);
+
+  const handleNewChat = async () => {
+    try {
+      setLoading(true);
+      const res = await createSession({ sessionType: "SYMPTOM_CHECK" });
+      setSessionId(res.data.aiChatSessionId);
+      setMessages([
+        {
+          sender: "AI",
+          text: "Xin chào! Tôi là trợ lý AI y tế. Vui lòng mô tả triệu chứng của bạn để tôi có thể tư vấn chuyên khoa phù hợp nhé.",
+        },
+      ]);
+      setSuggestion(null);
+      setError("");
+      setInputText("");
+      setHasSentInitial(true);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Auto-scroll
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, suggestion]);
+  }, [messages, suggestion, loading]);
 
-  const handleSend = async (e) => {
-    e.preventDefault();
-    if (!inputText.trim() || !sessionId) return;
-
-    const userMsg = inputText.trim();
-    setInputText("");
-    setMessages((prev) => [...prev, { sender: "USER", text: userMsg }]);
+  const handleSendQuery = async (queryText) => {
+    if (!queryText.trim() || !sessionId) return;
     
+    setInputText("");
+    setMessages((prev) => [...prev, { sender: "USER", text: queryText }]);
+
     try {
       setLoading(true);
-      const res = await sendMessage(sessionId, { messageText: userMsg });
+      const res = await sendMessage(sessionId, { messageText: queryText });
       setMessages((prev) => [
         ...prev,
         { sender: "AI", text: res.data.aiMessage.messageText },
@@ -60,6 +126,11 @@ export default function AiChatPatient() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSend = (e) => {
+    e.preventDefault();
+    handleSendQuery(inputText);
   };
 
   const handleGetSuggestion = async () => {
@@ -76,151 +147,210 @@ export default function AiChatPatient() {
     }
   };
 
+  const handleAcceptSuggestion = async (rec) => {
+    if (!suggestion) return;
+    try {
+      setLoading(true);
+      await acceptSuggestion(suggestion.suggestionId);
+      navigate("/dashboard/available-slots", {
+        state: {
+          prefillDepartmentId: rec ? rec.departmentId : suggestion.departmentId,
+          prefillDepartmentName: rec ? rec.departmentName : suggestion.departmentName
+        }
+      });
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="page-header" style={{ display: "block", height: "calc(100vh - 120px)" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <div>
-          <h1 className="page-title">
-            <MessageSquare size={26} style={{ color: "#0ea5e9" }} />
-            Tư vấn AI
-          </h1>
-          <p className="muted">Chat với AI để được chẩn đoán sơ bộ và gợi ý chuyên khoa.</p>
-        </div>
-        <button 
-          className="primary-button" 
-          onClick={handleGetSuggestion}
-          disabled={loading || !sessionId || messages.length < 2}
-          style={{ background: "#8b5cf6" }}
-        >
-          <Stethoscope size={16} /> Nhận gợi ý chuyên khoa
-        </button>
-      </div>
+    <div className="max-w-[1100px] mx-auto w-full flex flex-col items-center pb-10 h-[calc(100vh-104px)] overflow-hidden">
+      
+      {/* Header */}
+      <PageHeader
+        title="Trợ lý y tế AI"
+        icon={MessageSquare}
+        iconColor="text-teal-400"
+        subtitle="Hệ thống phân tích triệu chứng thông minh giúp bạn tìm kiếm chuyên khoa nhanh chóng."
+        onBack={() => navigate("/dashboard")}
+      />
 
       {error && (
-        <div className="error-box" style={{ marginBottom: 16 }}>
-          <AlertCircle size={16} /> {error}
+        <div className="w-full bg-rose-500/20 border border-rose-500/50 text-rose-200 p-4 rounded-xl mb-4 font-bold flex items-center gap-2">
+          <AlertCircle size={18} /> {error}
         </div>
       )}
 
-      <div style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "calc(100% - 100px)",
-        background: "#fff",
-        borderRadius: 12,
-        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-        overflow: "hidden"
-      }}>
-        {/* Chat window */}
-        <div style={{ flex: 1, padding: 20, overflowY: "auto", background: "#f8fafc" }}>
-          {messages.map((msg, idx) => (
-            <div key={idx} style={{
-              display: "flex",
-              justifyContent: msg.sender === "USER" ? "flex-end" : "flex-start",
-              marginBottom: 16
-            }}>
-              <div style={{
-                display: "flex",
-                flexDirection: msg.sender === "USER" ? "row-reverse" : "row",
-                alignItems: "flex-start",
-                maxWidth: "70%"
-              }}>
-                <div style={{
-                  width: 36, height: 36, borderRadius: "50%",
-                  background: msg.sender === "USER" ? "#0ea5e9" : "#e2e8f0",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  color: msg.sender === "USER" ? "#fff" : "#475569",
-                  margin: msg.sender === "USER" ? "0 0 0 12px" : "0 12px 0 0",
-                  flexShrink: 0
-                }}>
-                  {msg.sender === "USER" ? <User size={20} /> : <Bot size={20} />}
-                </div>
-                <div style={{
-                  background: msg.sender === "USER" ? "#0ea5e9" : "#fff",
-                  color: msg.sender === "USER" ? "#fff" : "#334155",
-                  padding: "12px 16px",
-                  borderRadius: "16px",
-                  borderTopRightRadius: msg.sender === "USER" ? "4px" : "16px",
-                  borderTopLeftRadius: msg.sender === "AI" ? "4px" : "16px",
-                  boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-                  lineHeight: 1.5
-                }}>
-                  {msg.text}
-                </div>
-              </div>
-            </div>
-          ))}
-
-          {loading && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#64748b", margin: "16px 0 0 48px" }}>
-              <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }}></span> AI đang gõ...
-            </div>
-          )}
-
-          {suggestion && (
-            <div style={{
-              margin: "24px 0 0 48px",
-              padding: 20,
-              background: "#fdf4ff",
-              border: "1px solid #f5d0fe",
-              borderRadius: 12,
-              maxWidth: "60%"
-            }}>
-              <h4 style={{ color: "#a21caf", display: "flex", alignItems: "center", gap: 8, margin: "0 0 12px 0" }}>
-                <Stethoscope size={18} /> Kết quả gợi ý
-              </h4>
-              <p style={{ margin: "0 0 8px 0" }}>Chuyên khoa phù hợp: <strong>{suggestion.departmentName}</strong></p>
-              <p style={{ margin: "0 0 8px 0" }}>Độ tin cậy: <strong>{suggestion.confidenceScore}%</strong></p>
-              <p style={{ margin: 0, fontSize: "0.9rem", color: "#701a75" }}>{suggestion.explanation}</p>
-            </div>
-          )}
-          <div ref={chatEndRef} />
+      {/* Main Chat Interface */}
+      <div className="w-full patient-glass-panel rounded-[2rem] flex flex-col flex-1 overflow-hidden shadow-2xl border-0">
+        
+        {/* Chat Controls */}
+        <div className="bg-white/10 backdrop-blur-md border-b border-white/20 p-4 flex justify-between items-center shrink-0">
+          <button
+            className="bg-white/20 hover:bg-white/30 text-white font-bold px-4 py-2 rounded-xl transition-all shadow-sm text-sm"
+            onClick={handleNewChat}
+            disabled={loading}
+          >
+            + Bắt đầu mới
+          </button>
+          <button
+            className="bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-400 hover:to-fuchsia-400 text-white font-bold px-5 py-2 rounded-xl transition-all shadow-lg flex items-center gap-2 text-sm disabled:opacity-50"
+            onClick={handleGetSuggestion}
+            disabled={loading || !sessionId || messages.length < 2}
+          >
+            <Stethoscope size={16} /> Chẩn đoán & Gợi ý
+          </button>
         </div>
 
-        {/* Input area */}
-        <form onSubmit={handleSend} style={{
-          display: "flex",
-          padding: 16,
-          background: "#fff",
-          borderTop: "1px solid #e2e8f0"
-        }}>
-          <input
-            type="text"
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            placeholder="Mô tả triệu chứng của bạn (ví dụ: tôi bị đau đầu và sốt cao)..."
-            disabled={loading || !sessionId}
-            style={{
-              flex: 1,
-              padding: "12px 16px",
-              border: "1px solid #cbd5e1",
-              borderRadius: "24px",
-              outline: "none",
-              fontSize: "1rem",
-              background: "#f8fafc"
-            }}
-          />
-          <button
-            type="submit"
-            disabled={!inputText.trim() || loading || !sessionId}
-            style={{
-              marginLeft: 12,
-              background: inputText.trim() ? "#0ea5e9" : "#cbd5e1",
-              color: "#fff",
-              border: "none",
-              borderRadius: "50%",
-              width: 48,
-              height: 48,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: inputText.trim() ? "pointer" : "not-allowed",
-              transition: "all 0.2s"
-            }}
-          >
-            <Send size={20} style={{ marginLeft: 2 }} />
-          </button>
-        </form>
+        {/* Messages Area */}
+        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-white/5">
+          <div className="flex flex-col gap-6 max-w-4xl mx-auto w-full">
+            {messages.map((msg, idx) => (
+              <div 
+                key={idx} 
+                className={`flex w-full ${msg.sender === "USER" ? "justify-end" : "justify-start"}`}
+              >
+                <div className={`flex gap-3 max-w-[85%] md:max-w-[75%] ${msg.sender === "USER" ? "flex-row-reverse" : "flex-row"}`}>
+                  
+                  {/* Avatar */}
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-md border-2 ${
+                    msg.sender === "USER" 
+                      ? "bg-teal-500 text-white border-teal-300" 
+                      : "bg-gradient-to-br from-violet-400 to-fuchsia-500 text-white border-violet-300"
+                  }`}>
+                    {msg.sender === "USER" ? <User size={20} /> : <Bot size={20} />}
+                  </div>
+
+                  {/* Bubble */}
+                  <div className={`p-4 rounded-2xl shadow-sm text-[15px] font-medium leading-relaxed ${
+                    msg.sender === "USER" 
+                      ? "bg-teal-600 text-white rounded-tr-sm" 
+                      : "bg-white/80 backdrop-blur-md text-slate-800 rounded-tl-sm border border-white/40"
+                  }`}>
+                    {msg.text}
+                  </div>
+
+                </div>
+              </div>
+            ))}
+
+            {loading && !suggestion && (
+              <div className="flex justify-start w-full">
+                <div className="flex gap-3 max-w-[75%]">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-md border-2 bg-gradient-to-br from-violet-400 to-fuchsia-500 text-white border-violet-300">
+                    <Bot size={20} />
+                  </div>
+                  <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-md text-slate-800 rounded-tl-sm border border-white/40 shadow-sm flex items-center gap-3">
+                    <span className="flex gap-1">
+                      <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                      <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                      <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                    </span>
+                    <span className="text-sm font-bold text-violet-600">Đang phân tích...</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {suggestion && (
+              <div className="flex justify-start w-full mt-4">
+                <div className="flex gap-3 w-full max-w-3xl">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-md border-2 bg-gradient-to-br from-violet-400 to-fuchsia-500 text-white border-violet-300">
+                    <Stethoscope size={20} />
+                  </div>
+                  
+                  <div className="p-6 rounded-2xl bg-white/95 backdrop-blur-xl text-slate-800 rounded-tl-sm border border-fuchsia-200 shadow-xl w-full">
+                    <h4 className="text-lg font-black text-fuchsia-700 flex items-center gap-2 mb-4 border-b border-fuchsia-100 pb-2">
+                      <Sparkles size={20} className="text-fuchsia-500" /> Kết quả phân tích AI
+                    </h4>
+                    
+                    {suggestion.recommendations && suggestion.recommendations.length > 0 ? (
+                      <div className="flex flex-col gap-4">
+                        {suggestion.message && (
+                          <div className="p-3 bg-fuchsia-50 rounded-xl text-fuchsia-800 font-medium italic border border-fuchsia-100">
+                            "{suggestion.message}"
+                          </div>
+                        )}
+                        {suggestion.recommendations.map((rec, idx) => (
+                          <div key={idx} className="p-5 bg-gradient-to-r from-white to-violet-50/50 border border-violet-100 rounded-xl flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-2">
+                              <strong className="text-xl font-extrabold text-violet-900">{rec.departmentName}</strong>
+                              <span className="bg-violet-100 text-violet-700 px-3 py-1 rounded-full text-sm font-black border border-violet-200">
+                                {rec.confidenceScore}% Phù hợp
+                              </span>
+                            </div>
+                            <p className="text-slate-600 font-medium leading-relaxed">{rec.explanation}</p>
+                            <button
+                              onClick={() => handleAcceptSuggestion(rec)}
+                              disabled={loading}
+                              className="bg-violet-600 hover:bg-violet-500 text-white font-bold py-2.5 px-5 rounded-xl mt-2 transition-all flex items-center gap-2 w-fit shadow-lg shadow-violet-500/30"
+                            >
+                              <Stethoscope size={18} /> Đặt khám khoa {rec.departmentName}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-4">
+                        {suggestion.message && (
+                          <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium">
+                            {suggestion.message}
+                          </div>
+                        )}
+                        {suggestion.departmentName && (
+                          <div className="p-5 bg-gradient-to-r from-white to-violet-50/50 border border-violet-100 rounded-xl flex flex-col gap-3 shadow-sm">
+                            <div className="flex justify-between items-center">
+                              <span className="text-slate-500 font-bold uppercase text-xs tracking-wider">Chuyên khoa đề xuất</span>
+                              <span className="bg-violet-100 text-violet-700 px-3 py-1 rounded-full text-xs font-black border border-violet-200">
+                                {suggestion.confidenceScore}% Phù hợp
+                              </span>
+                            </div>
+                            <strong className="text-2xl font-black text-violet-900">{suggestion.departmentName}</strong>
+                            <p className="text-slate-600 font-medium">{suggestion.explanation}</p>
+                            <button
+                              onClick={() => handleAcceptSuggestion(null)}
+                              disabled={loading}
+                              className="bg-violet-600 hover:bg-violet-500 text-white font-bold py-2.5 px-5 rounded-xl mt-2 transition-all flex items-center gap-2 w-fit shadow-lg shadow-violet-500/30"
+                            >
+                              <Stethoscope size={18} /> Đặt khám chuyên khoa này
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div ref={chatEndRef} />
+          </div>
+        </div>
+
+        {/* Input Form */}
+        <div className="bg-white/10 backdrop-blur-xl p-4 border-t border-white/20 shrink-0">
+          <form onSubmit={handleSend} className="max-w-4xl mx-auto w-full relative flex items-center bg-white/90 rounded-full p-1.5 shadow-lg border border-teal-100">
+            <input
+              type="text"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              placeholder="Mô tả chi tiết triệu chứng của bạn..."
+              disabled={loading || !sessionId}
+              className="flex-1 bg-transparent border-none outline-none px-6 py-3 font-semibold text-slate-800 placeholder:text-slate-400"
+            />
+            <button
+              type="submit"
+              disabled={!inputText.trim() || loading || !sessionId}
+              className="w-12 h-12 bg-teal-500 hover:bg-teal-400 disabled:bg-slate-300 text-white rounded-full flex items-center justify-center shrink-0 transition-all shadow-md group disabled:shadow-none"
+            >
+              <Send size={20} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            </button>
+          </form>
+          <div className="text-center mt-3 text-white/70 text-xs font-semibold">
+            AI có thể mắc lỗi. Luôn tham khảo ý kiến bác sĩ để có chẩn đoán chính xác nhất.
+          </div>
+        </div>
       </div>
     </div>
   );

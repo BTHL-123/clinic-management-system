@@ -9,5 +9,6 @@ public record DoctorScheduleRequest(
         @NotNull LocalDate workDate,
         @NotNull LocalTime startTime,
         @NotNull LocalTime endTime,
-        Integer maxPatients
+        Integer maxPatients,
+        Integer slotDurationMinutes
 ) {}

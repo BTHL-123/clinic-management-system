@@ -1,48 +1,22 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Users,
-  Search,
   Calendar,
-  UserCheck,
   RefreshCw,
-  AlertCircle,
-  CheckCircle2,
-  ChevronRight,
   Play,
   SkipForward,
   Check,
-  UserX,
+  Stethoscope,
+  SlidersHorizontal,
+  ChevronDown,
 } from "lucide-react";
 import queueService from "../../services/queueService";
 import { getDoctors } from "../../services/doctorService";
-
-function Toast({ message, type }) {
-  if (!message) return null;
-  const isError = type === "error";
-  return (
-    <div
-      style={{
-        padding: "12px 16px",
-        borderRadius: "8px",
-        marginBottom: "16px",
-        fontSize: "14px",
-        fontWeight: 500,
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        background: isError ? "#fef2f2" : "#f0fdf4",
-        border: `1px solid ${isError ? "#fee2e2" : "#dcfce7"}`,
-        color: isError ? "#991b1b" : "#166534",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-      }}
-    >
-      {isError ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
-      <span>{message}</span>
-    </div>
-  );
-}
+import { useToast } from "../../context/useToast.js";
+import PageHeader from "../../components/PageHeader";
 
 export default function QueueManagementPage() {
+  const toast = useToast();
   const todayStr = new Date().toISOString().split("T")[0];
 
   // Filters
@@ -54,16 +28,6 @@ export default function QueueManagementPage() {
   const [queueTickets, setQueueTickets] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  // Toast
-  const [toast, setToast] = useState({ message: "", type: "" });
-
-  const showToast = (message, type = "success") => {
-    setToast({ message, type });
-    setTimeout(() => {
-      setToast({ message: "", type: "" });
-    }, 4000);
-  };
 
   // Fetch doctors for filter dropdown
   useEffect(() => {
@@ -92,7 +56,7 @@ export default function QueueManagementPage() {
       const list = response?.data || [];
       setQueueTickets(list);
     } catch (err) {
-      showToast(err.message || "Không thể tải danh sách hàng đợi", "error");
+      toast.error(err, "Không thể tải danh sách hàng đợi");
     } finally {
       setLoading(false);
     }
@@ -106,45 +70,45 @@ export default function QueueManagementPage() {
   const handleCall = async (id) => {
     try {
       await queueService.callPatient(id);
-      showToast("Đã gọi khám bệnh nhân thành công!");
+      toast.success("Đã gọi khám bệnh nhân thành công!");
       fetchQueue();
     } catch (err) {
-      showToast(err.message || "Gọi khám thất bại", "error");
+      toast.error(err, "Gọi khám thất bại");
     }
   };
 
   const handleSkip = async (id) => {
     try {
       await queueService.skipPatient(id);
-      showToast("Đã bỏ qua bệnh nhân.");
+      toast.success("Đã bỏ qua bệnh nhân.");
       fetchQueue();
     } catch (err) {
-      showToast(err.message || "Không thể bỏ qua", "error");
+      toast.error(err, "Không thể bỏ qua");
     }
   };
 
   const handleComplete = async (id) => {
     try {
       await queueService.completePatient(id);
-      showToast("Đã hoàn tất ca khám.");
+      toast.success("Đã hoàn tất ca khám.");
       fetchQueue();
     } catch (err) {
-      showToast(err.message || "Không thể hoàn tất", "error");
+      toast.error(err, "Không thể hoàn tất");
     }
   };
 
   const getStatusBadge = (ticketStatus) => {
     switch (ticketStatus) {
       case "WAITING":
-        return <span style={{ background: "#e0f2fe", color: "#0369a1", padding: "4px 10px", borderRadius: "9999px", fontSize: "12px", fontWeight: 700 }}>Đang chờ</span>;
+        return <span className="queue-status queue-status-waiting">Đang chờ</span>;
       case "CALLED":
-        return <span style={{ background: "#fef3c7", color: "#b45309", padding: "4px 10px", borderRadius: "9999px", fontSize: "12px", fontWeight: 700 }}>Đang khám</span>;
+        return <span className="queue-status queue-status-called">Đang khám</span>;
       case "SKIPPED":
-        return <span style={{ background: "#fee2e2", color: "#b91c1c", padding: "4px 10px", borderRadius: "9999px", fontSize: "12px", fontWeight: 700 }}>Bỏ qua</span>;
+        return <span className="queue-status queue-status-skipped">Bỏ qua</span>;
       case "COMPLETED":
-        return <span style={{ background: "#dcfce7", color: "#15803d", padding: "4px 10px", borderRadius: "9999px", fontSize: "12px", fontWeight: 700 }}>Hoàn tất</span>;
+        return <span className="queue-status queue-status-completed">Hoàn tất</span>;
       default:
-        return <span style={{ background: "#f1f5f9", color: "#475569", padding: "4px 10px", borderRadius: "9999px", fontSize: "12px", fontWeight: 700 }}>{ticketStatus}</span>;
+        return <span className="queue-status">{ticketStatus}</span>;
     }
   };
 
@@ -158,23 +122,18 @@ export default function QueueManagementPage() {
   };
 
   return (
-    <div className="content">
-      <div className="page-header">
-        <h1 className="page-title">
-          <Users size={24} style={{ color: "#0f766e" }} />
-          Quản lý hàng đợi
-        </h1>
-        <button
-          className="ghost-button"
-          onClick={fetchQueue}
-          style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
-        >
-          <RefreshCw size={16} className={loading ? "spin-animation" : ""} />
-          Làm mới
-        </button>
-      </div>
-
-      <Toast message={toast.message} type={toast.type} />
+    <div className="content receptionist-data-page">
+      <PageHeader
+        title="Quản lý hàng đợi"
+        icon={Users}
+        iconColor="text-white"
+        rightContent={
+          <button className="bg-white/10 hover:bg-white/20 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm" onClick={fetchQueue}>
+            <RefreshCw size={16} className={loading ? "spin-animation" : ""} />
+            Làm mới
+          </button>
+        }
+      />
 
       {/* Grid of stats overview */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px", marginBottom: "20px" }}>
@@ -205,55 +164,59 @@ export default function QueueManagementPage() {
       </div>
 
       {/* Filters Toolbar */}
-      <div className="panel" style={{ marginBottom: "20px" }}>
-        <div className="toolbar" style={{ gridTemplateColumns: "1fr 1fr 1fr", gap: "16px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <Calendar size={18} style={{ color: "#64748b" }} />
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              style={{ width: "100%" }}
-            />
-          </div>
+      <div className="panel checkin-filter-panel queue-filter-panel">
+        <div className="queue-filter-bar">
+          <label className="checkin-filter-field">
+            <span className="checkin-filter-label">Ngày khám</span>
+            <span className="checkin-filter-control">
+              <Calendar size={18} />
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
+            </span>
+          </label>
 
-          <div>
-            <select
-              value={doctorId}
-              onChange={(e) => setDoctorId(e.target.value)}
-              style={{ width: "100%" }}
-            >
-              <option value="">Tất cả bác sĩ</option>
-              {doctors.map(d => (
-                <option key={d.doctorId} value={d.doctorId}>
-                  {d.user?.fullName || d.fullName} ({d.specialization})
-                </option>
-              ))}
-            </select>
-          </div>
+          <label className="checkin-filter-field">
+            <span className="checkin-filter-label">Bác sĩ phụ trách</span>
+            <span className="checkin-filter-control checkin-select-control">
+              <Stethoscope size={18} />
+              <select value={doctorId} onChange={(e) => setDoctorId(e.target.value)}>
+                <option value="">Tất cả bác sĩ</option>
+                {doctors.map(d => (
+                  <option key={d.doctorId} value={d.doctorId}>
+                    {d.user?.fullName || d.fullName} ({d.specialization})
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={16} className="checkin-select-chevron" />
+            </span>
+          </label>
 
-          <div>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              style={{ width: "100%" }}
-            >
-              <option value="">Tất cả trạng thái hàng đợi</option>
-              <option value="WAITING">Đang chờ (Waiting)</option>
-              <option value="CALLED">Đang khám (Called)</option>
-              <option value="SKIPPED">Bỏ qua (Skipped)</option>
-              <option value="COMPLETED">Hoàn tất (Completed)</option>
-            </select>
-          </div>
+          <label className="checkin-filter-field">
+            <span className="checkin-filter-label">Trạng thái hàng đợi</span>
+            <span className="checkin-filter-control checkin-select-control">
+              <SlidersHorizontal size={18} />
+              <select value={status} onChange={(e) => setStatus(e.target.value)}>
+                <option value="">Tất cả trạng thái</option>
+                <option value="WAITING">Đang chờ</option>
+                <option value="CALLED">Đang khám</option>
+                <option value="SKIPPED">Bỏ qua</option>
+                <option value="COMPLETED">Hoàn tất</option>
+              </select>
+              <ChevronDown size={16} className="checkin-select-chevron" />
+            </span>
+          </label>
         </div>
       </div>
 
       {/* Table container */}
-      <div className="table-wrapper">
-        <table className="data-table">
+      <div className="table-wrapper receptionist-fit-table queue-table-wrapper">
+        <table className="data-table queue-table">
           <thead>
             <tr>
-              <th style={{ width: "80px", textAlign: "center" }}>STT</th>
+              <th style={{ textAlign: "center" }}>STT</th>
               <th>Mã Lịch Hẹn</th>
               <th>Bệnh Nhân</th>
               <th>Số Điện Thoại</th>
@@ -261,19 +224,19 @@ export default function QueueManagementPage() {
               <th style={{ textAlign: "center" }}>Giờ Hẹn</th>
               <th>Check-in</th>
               <th>Trạng Thái</th>
-              <th style={{ textAlign: "center", width: "240px" }}>Thao Tác</th>
+              <th style={{ textAlign: "center" }}>Thao Tác</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="9" style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>
+                <td colSpan="9" className="queue-table-message">
                   Đang tải dữ liệu hàng đợi...
                 </td>
               </tr>
             ) : queueTickets.length === 0 ? (
               <tr>
-                <td colSpan="9" style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>
+                <td colSpan="9" className="queue-table-message">
                   Không có bệnh nhân nào trong hàng đợi hôm nay.
                 </td>
               </tr>
@@ -305,14 +268,14 @@ export default function QueueManagementPage() {
                         #{ticket.queueNumber}
                       </span>
                     </td>
-                    <td style={{ fontWeight: 650, color: "#0f766e" }}>{ticket.appointmentCode}</td>
-                    <td style={{ fontWeight: 600 }}>{ticket.patientName}</td>
+                    <td className="queue-appointment-code">{ticket.appointmentCode}</td>
+                    <td className="queue-patient-name">{ticket.patientName}</td>
                     <td>{ticket.patientPhone || "—"}</td>
                     <td>{ticket.doctorName}</td>
                     <td style={{ textAlign: "center", fontWeight: 500 }}>
                       {ticket.startTime?.slice(0, 5)} - {ticket.endTime?.slice(0, 5)}
                     </td>
-                    <td style={{ fontSize: "13px", color: "#64748b" }}>
+                    <td className="queue-checkin-time">
                       {ticket.checkedInAt ? new Date(ticket.checkedInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "—"}
                     </td>
                     <td>{getStatusBadge(ticket.queueStatus)}</td>

@@ -9,6 +9,7 @@ import {
   unlockUser,
   updateUser,
 } from "../../services/userService";
+import PageHeader from "../../components/PageHeader";
 
 const roleOptions = ["ADMIN", "RECEPTIONIST", "DOCTOR", "PHARMACIST", "LAB_TECHNICIAN", "PATIENT"];
 const createEmptyForm = () => ({
@@ -163,16 +164,18 @@ export default function UsersPage() {
 
   return (
     <div className="page-stack">
-      <section className="page-heading">
-        <div>
-          <h1>Quản lý Tài khoản</h1>
-          <p className="muted">Tạo tài khoản nhân viên, tìm kiếm và quản lý quyền truy cập.</p>
-        </div>
-        <button className="primary-button compact" onClick={resetForm}>
-          <Plus size={17} />
-          Tạo tài khoản
-        </button>
-      </section>
+      <PageHeader
+        title="Quản lý Tài khoản"
+        icon={UserRoundPlus}
+        iconColor="text-white"
+        subtitle="Tạo tài khoản nhân viên, tìm kiếm và quản lý quyền truy cập."
+        rightContent={
+          <button className="bg-white text-teal-700 hover:bg-teal-50 font-bold px-4 py-2 rounded-xl shadow-md transition-all flex items-center gap-2" onClick={resetForm}>
+            <Plus size={17} />
+            Tạo tài khoản
+          </button>
+        }
+      />
 
       <section className="panel">
         <form className="toolbar" onSubmit={(event) => event.preventDefault()}>

@@ -6,6 +6,8 @@ public record SendChatMessageResponse(
 ) {
     public record MessageDetail(
             Long messageId,
-            String messageText
+            String messageText,
+            String senderType,
+            java.time.LocalDateTime createdAt
     ) {}
 }

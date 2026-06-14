@@ -1,6 +1,7 @@
 package com.clinicmanagement.appointment;
  
 import com.clinicmanagement.appointment.dto.AppointmentResponse;
+import com.clinicmanagement.appointment.dto.MarkNoShowRequest;
 import com.clinicmanagement.appointment.dto.WalkInAppointmentRequest;
 import com.clinicmanagement.appointment.dto.WalkInAppointmentResponse;
 import com.clinicmanagement.common.dto.ApiResponse;
@@ -34,7 +35,7 @@ public class WalkInAppointmentController {
      * Accessible only by users with ADMIN or RECEPTIONIST role.
      */
     @PostMapping("/walk-in")
-    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<WalkInAppointmentResponse>> createWalkInAppointment(
             @Valid @RequestBody WalkInAppointmentRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
@@ -84,5 +85,22 @@ public class WalkInAppointmentController {
         Long receptionistId = userDetails.getUser().getUserId();
         AppointmentResponse response = appointmentService.checkInAppointment(appointmentId, receptionistId);
         return ResponseEntity.ok(ApiResponse.success("Check-in bệnh nhân thành công", response));
+    }
+
+    /**
+     * PUT /api/receptionist/appointments/{appointmentId}/no-show
+     * Mark an appointment as No Show.
+     */
+    @PutMapping("/{appointmentId}/no-show")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
+    public ResponseEntity<ApiResponse<AppointmentResponse>> markNoShow(
+            @PathVariable Long appointmentId,
+            @RequestBody(required = false) MarkNoShowRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long receptionistId = userDetails.getUser().getUserId();
+        String note = request != null ? request.note() : null;
+        AppointmentResponse response = appointmentService.markNoShow(appointmentId, note, receptionistId);
+        return ResponseEntity.ok(ApiResponse.success("Đánh dấu No Show thành công", response));
     }
 }

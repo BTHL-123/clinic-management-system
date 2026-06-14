@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { History } from "lucide-react";
+import { History, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { getMyPatientProfile } from "../../services/patientService";
 import MedicalHistory from "../../components/MedicalHistory";
-
+import PageHeader from "../../components/PageHeader";
 export default function PatientMedicalHistoryPage() {
+  const navigate = useNavigate();
   const [patientId, setPatientId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -32,43 +34,28 @@ export default function PatientMedicalHistoryPage() {
     fetchProfile();
   }, []);
 
-  if (loading) {
-    return <div className="page-header">Đang tải lịch sử bệnh án...</div>;
-  }
-
-  if (notFound) {
-    return (
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">
-            <History size={26} />
-            Lịch sử bệnh án
-          </h1>
-          <p className="muted" style={{ color: "red", marginTop: 10 }}>
-            Tài khoản của bạn chưa được liên kết với bất kỳ hồ sơ bệnh nhân nào. Vui lòng liên hệ với lễ tân để được hỗ trợ.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <>
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">
-            <History size={26} />
-            Lịch sử bệnh án
-          </h1>
-          <p className="muted">Xem lại danh sách các lần khám chữa bệnh trước đây của bạn.</p>
-        </div>
-      </div>
+    <div className="max-w-[1600px] w-[95%] mx-auto flex flex-col items-center">
+      <PageHeader
+        title="Lịch sử bệnh án"
+        icon={History}
+        iconColor="text-teal-400"
+        subtitle={notFound ? <span className="text-rose-300">Tài khoản của bạn chưa được liên kết với bất kỳ hồ sơ bệnh nhân nào. Vui lòng liên hệ với lễ tân để được hỗ trợ.</span> : "Xem lại danh sách các lần khám chữa bệnh trước đây của bạn."}
+        onBack={() => navigate("/dashboard", { state: { activeClusterId: "records" } })}
+      />
 
-      {error && <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>}
-
-      <div style={{ background: "#fff", borderRadius: 12, padding: "24px 0", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
-        <MedicalHistory patientId={patientId} inline={true} />
+      <div className="patient-glass-card p-6 md:p-8 w-full max-w-full mx-auto mb-10">
+        {loading ? (
+          <div className="text-center py-10 text-white/50 font-medium">Đang tải lịch sử bệnh án...</div>
+        ) : notFound ? (
+          <div className="text-center py-10 text-rose-400 font-medium">Không tìm thấy hồ sơ.</div>
+        ) : (
+          <>
+            {error && <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>}
+            <MedicalHistory patientId={patientId} inline={true} isPatientView={true} />
+          </>
+        )}
       </div>
-    </>
+    </div>
   );
 }

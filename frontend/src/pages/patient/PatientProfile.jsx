@@ -87,61 +87,59 @@ export default function PatientProfile() {
   };
 
   if (loading) {
-    return <div className="page-header">Đang tải hồ sơ...</div>;
+    return <div className="text-white/70 font-medium p-4">Đang tải hồ sơ...</div>;
   }
 
   if (notFound) {
     return (
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">
-            <UserSquare size={26} />
-            Hồ sơ cá nhân
-          </h1>
-          <p className="muted" style={{ color: "red", marginTop: 10 }}>
-            Tài khoản của bạn chưa được liên kết với bất kỳ hồ sơ bệnh nhân nào. Vui lòng liên hệ với lễ tân để được hỗ trợ.
-          </p>
-        </div>
+      <div className="mb-10 mt-6 flex flex-col items-center text-center px-4">
+        <h2 className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-4">
+          <UserSquare size={32} className="text-teal-400 drop-shadow-md" />
+          <span className="drop-shadow-md">Hồ sơ cá nhân</span>
+        </h2>
+        <p className="text-red-400 font-bold drop-shadow-sm text-[16px] max-w-[600px] mt-2">
+          Tài khoản của bạn chưa được liên kết với bất kỳ hồ sơ bệnh nhân nào. Vui lòng liên hệ với lễ tân để được hỗ trợ.
+        </p>
       </div>
     );
   }
 
   return (
     <>
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">
-            <UserSquare size={26} />
-            Hồ sơ cá nhân
-          </h1>
-          <p className="muted">Quản lý và cập nhật thông tin sức khỏe của bạn.</p>
-        </div>
+      <div className="mb-10 mt-6 flex flex-col items-center text-center px-4">
+        <h2 className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-4">
+          <UserSquare size={32} className="text-teal-400 drop-shadow-md" />
+          <span className="drop-shadow-md">Hồ sơ cá nhân</span>
+        </h2>
+        <p className="text-white/70 font-medium drop-shadow-sm text-[16px] max-w-[600px]">
+          Quản lý và cập nhật thông tin sức khỏe của bạn.
+        </p>
       </div>
 
       {error && <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>}
       {successMsg && <div style={{ padding: "12px 16px", background: "#e6f4ea", color: "#1e8e3e", borderRadius: 8, marginBottom: 16, border: "1px solid #ceead6" }}>{successMsg}</div>}
 
-      <div style={{ background: "#fff", borderRadius: 12, padding: 24, boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+      <div className="patient-glass-card p-6 md:p-8">
         <form className="form-stack" onSubmit={handleSubmit}>
           
           <div style={{ marginBottom: 20 }}>
-            <h3 style={{ borderBottom: "1px solid #eee", paddingBottom: 8, marginBottom: 16 }}>Thông tin cơ bản</h3>
+            <h3 className="patient-section-title" style={{ borderBottom: "1px solid rgba(255,255,255,0.3)", paddingBottom: 8, marginBottom: 16 }}>Thông tin cơ bản</h3>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               
               <div className="field">
                 <label>Mã bệnh nhân</label>
-                <input value={patientCode} disabled style={{ background: "#f5f7fa" }} />
-                <span className="muted" style={{ fontSize: 12 }}>Không thể thay đổi mã bệnh nhân.</span>
+                <input value={patientCode} disabled className="patient-glass-input disabled:opacity-60" />
+                <span className="muted" style={{ fontSize: 12, marginBottom: 0 }}>Không thể thay đổi mã bệnh nhân.</span>
               </div>
               
               <div className="field">
                 <label>Họ và tên *</label>
-                <input name="fullName" value={formData.fullName} onChange={handleChange} required />
+                <input name="fullName" className="patient-glass-input" value={formData.fullName} onChange={handleChange} required />
               </div>
               
               <div className="field">
                 <label>Giới tính *</label>
-                <select name="gender" value={formData.gender} onChange={handleChange} required>
+                <select name="gender" className="patient-glass-input" value={formData.gender} onChange={handleChange} required>
                   <option value="MALE">Nam</option>
                   <option value="FEMALE">Nữ</option>
                   <option value="OTHER">Khác</option>
@@ -150,56 +148,56 @@ export default function PatientProfile() {
               
               <div className="field">
                 <label>Ngày sinh</label>
-                <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} />
+                <input type="date" name="dateOfBirth" className="patient-glass-input" value={formData.dateOfBirth} onChange={handleChange} />
               </div>
               
               <div className="field">
                 <label>Số điện thoại</label>
-                <input name="phone" value={formData.phone} onChange={handleChange} />
+                <input name="phone" className="patient-glass-input" value={formData.phone} onChange={handleChange} />
               </div>
               
               <div className="field">
                 <label>Email</label>
-                <input type="email" name="email" value={formData.email} onChange={handleChange} />
+                <input type="email" name="email" className="patient-glass-input" value={formData.email} onChange={handleChange} />
               </div>
               
               <div className="field" style={{ gridColumn: "span 2" }}>
                 <label>Địa chỉ</label>
-                <textarea name="address" value={formData.address} onChange={handleChange} rows={2} />
+                <textarea name="address" className="patient-glass-input" value={formData.address} onChange={handleChange} rows={2} />
               </div>
               
               <div className="field">
                 <label>CCCD / CMND</label>
-                <input name="identityNumber" value={formData.identityNumber} onChange={handleChange} />
+                <input name="identityNumber" className="patient-glass-input" value={formData.identityNumber} onChange={handleChange} />
               </div>
               
               <div className="field">
                 <label>Mã BHYT</label>
-                <input name="insuranceNumber" value={formData.insuranceNumber} onChange={handleChange} />
+                <input name="insuranceNumber" className="patient-glass-input" value={formData.insuranceNumber} onChange={handleChange} />
               </div>
             </div>
           </div>
           
           <div style={{ marginBottom: 20 }}>
-            <h3 style={{ borderBottom: "1px solid #eee", paddingBottom: 8, marginBottom: 16 }}>Liên hệ khẩn cấp</h3>
+            <h3 className="patient-section-title" style={{ borderBottom: "1px solid rgba(255,255,255,0.3)", paddingBottom: 8, marginBottom: 16 }}>Liên hệ khẩn cấp</h3>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <div className="field">
                 <label>Tên người liên hệ</label>
-                <input name="emergencyContactName" value={formData.emergencyContactName} onChange={handleChange} />
+                <input name="emergencyContactName" className="patient-glass-input" value={formData.emergencyContactName} onChange={handleChange} />
               </div>
               <div className="field">
                 <label>Số điện thoại người liên hệ</label>
-                <input name="emergencyContactPhone" value={formData.emergencyContactPhone} onChange={handleChange} />
+                <input name="emergencyContactPhone" className="patient-glass-input" value={formData.emergencyContactPhone} onChange={handleChange} />
               </div>
             </div>
           </div>
           
           <div style={{ marginBottom: 20 }}>
-            <h3 style={{ borderBottom: "1px solid #eee", paddingBottom: 8, marginBottom: 16 }}>Thông tin y tế</h3>
+            <h3 className="patient-section-title" style={{ borderBottom: "1px solid rgba(255,255,255,0.3)", paddingBottom: 8, marginBottom: 16 }}>Thông tin y tế</h3>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <div className="field">
                 <label>Nhóm máu</label>
-                <select name="bloodType" value={formData.bloodType} onChange={handleChange}>
+                <select name="bloodType" className="patient-glass-input" value={formData.bloodType} onChange={handleChange}>
                   <option value="">-- Chưa xác định --</option>
                   <option value="A">A</option>
                   <option value="B">B</option>
@@ -210,12 +208,12 @@ export default function PatientProfile() {
               
               <div className="field" style={{ gridColumn: "span 2" }}>
                 <label>Tiền sử dị ứng</label>
-                <textarea name="allergies" value={formData.allergies} onChange={handleChange} rows={2} placeholder="Nhập các loại thuốc, thức ăn mà bạn bị dị ứng..." />
+                <textarea name="allergies" className="patient-glass-input" value={formData.allergies} onChange={handleChange} rows={2} placeholder="Nhập các loại thuốc, thức ăn mà bạn bị dị ứng..." />
               </div>
               
               <div className="field" style={{ gridColumn: "span 2" }}>
                 <label>Tiền sử bệnh</label>
-                <textarea name="medicalHistory" value={formData.medicalHistory} onChange={handleChange} rows={3} placeholder="Nhập các bệnh mãn tính hoặc phẫu thuật từng thực hiện..." />
+                <textarea name="medicalHistory" className="patient-glass-input" value={formData.medicalHistory} onChange={handleChange} rows={3} placeholder="Nhập các bệnh mãn tính hoặc phẫu thuật từng thực hiện..." />
               </div>
             </div>
           </div>

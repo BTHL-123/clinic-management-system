@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   CheckCircle,
-  CreditCard,
+  Wallet,
   Eye,
   Plus,
   Search,
@@ -13,6 +13,7 @@ import {
   getPaymentById,
   getPayments,
 } from "../../services/paymentService";
+import PageHeader from "../../components/PageHeader";
 
 const STATUS_OPTIONS = [
   { value: "", label: "Tất cả" },
@@ -180,21 +181,20 @@ export default function PaymentManagement() {
 
   /* ── Render ────────────────────────────────────────────── */
   return (
-    <>
+    <div className="receptionist-data-page">
       {/* ── Page Header ────────────────────────────────── */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">
-            <CreditCard size={26} />
-            Quản lý Thanh toán
-          </h1>
-          <p className="muted">Quản lý các giao dịch thanh toán.</p>
-        </div>
-        <button className="primary-button" onClick={openCreate}>
-          <Plus size={16} />
-          Tạo thanh toán
-        </button>
-      </div>
+      <PageHeader
+        title="Quản lý Thanh toán"
+        icon={Wallet}
+        iconColor="text-white"
+        subtitle="Quản lý các giao dịch thanh toán."
+        rightContent={
+          <button className="primary-button" onClick={openCreate}>
+            <Plus size={16} />
+            Tạo thanh toán
+          </button>
+        }
+      />
 
       {/* ── Search & Filter ──────────────────────────────── */}
       <div style={{ display: "flex", gap: 12, marginBottom: 18, flexWrap: "wrap" }}>
@@ -229,7 +229,7 @@ export default function PaymentManagement() {
       {error && <div className="error-box">{error}</div>}
 
       {/* ── Table ──────────────────────────────────────── */}
-      <div className="table-wrapper">
+      <div className="table-wrapper receptionist-fit-table">
         <table className="data-table">
           <thead>
             <tr>
@@ -449,6 +449,6 @@ export default function PaymentManagement() {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

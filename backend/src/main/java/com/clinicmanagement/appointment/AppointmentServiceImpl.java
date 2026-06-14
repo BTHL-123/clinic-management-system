@@ -20,6 +20,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import com.clinicmanagement.notification.NotificationService;
+import com.clinicmanagement.review.ReviewRepository;
+import com.clinicmanagement.payment.Payment;
+import com.clinicmanagement.payment.PaymentRepository;
 
 @Service
 @Transactional(readOnly = true)
@@ -32,6 +35,8 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final UserRepository userRepository;
     private final QueueTicketRepository queueTicketRepository;
     private final NotificationService notificationService;
+    private final ReviewRepository reviewRepository;
+    private final PaymentRepository paymentRepository;
 
     public AppointmentServiceImpl(
             AppointmentRepository appointmentRepository,
@@ -40,7 +45,9 @@ public class AppointmentServiceImpl implements AppointmentService {
             DoctorRepository doctorRepository,
             UserRepository userRepository,
             QueueTicketRepository queueTicketRepository,
-            NotificationService notificationService
+            NotificationService notificationService,
+            ReviewRepository reviewRepository,
+            PaymentRepository paymentRepository
     ) {
         this.appointmentRepository = appointmentRepository;
         this.timeSlotRepository = timeSlotRepository;
@@ -49,6 +56,8 @@ public class AppointmentServiceImpl implements AppointmentService {
         this.userRepository = userRepository;
         this.queueTicketRepository = queueTicketRepository;
         this.notificationService = notificationService;
+        this.reviewRepository = reviewRepository;
+        this.paymentRepository = paymentRepository;
     }
 
     @Override
@@ -97,9 +106,8 @@ public class AppointmentServiceImpl implements AppointmentService {
             Pageable pageable
     ) {
         LocalDate currentDate = LocalDate.now();
-        LocalTime currentTime = LocalTime.now();
         Page<Appointment> appointments = appointmentRepository.findMyAppointments(
-                userId, upcoming, currentDate, currentTime, pageable
+                userId, upcoming, currentDate, pageable
         );
         return PageResponse.from(appointments.map(this::mapToResponse));
     }
@@ -108,6 +116,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         Integer queueNumber = app.getQueueTicket() != null ? app.getQueueTicket().getQueueNumber() : null;
         String queueStatus = app.getQueueTicket() != null ? app.getQueueTicket().getStatus() : null;
         String patientPhone = app.getPatient() != null ? app.getPatient().getPhone() : null;
+        Boolean hasReviewed = "COMPLETED".equals(app.getStatus()) && reviewRepository.existsByAppointmentAppointmentId(app.getAppointmentId());
         return new AppointmentResponse(
                 app.getAppointmentId(),
                 app.getAppointmentCode(),
@@ -132,7 +141,8 @@ public class AppointmentServiceImpl implements AppointmentService {
                 patientPhone,
                 app.getCheckedInAt(),
                 queueNumber,
-                queueStatus
+                queueStatus,
+                hasReviewed
         );
     }
 
@@ -142,6 +152,13 @@ public class AppointmentServiceImpl implements AppointmentService {
         // Issue #3: Dùng pessimistic write lock để tránh race condition
         TimeSlot slot = timeSlotRepository.findByIdWithPessimisticLock(request.slotId())
                 .orElseThrow(() -> new ResourceNotFoundException("Ca khám không tồn tại với id: " + request.slotId()));
+
+        // Issue #4: Expired slot protection
+        LocalDate workDate = slot.getDoctorSchedule().getWorkDate();
+        LocalDate today = LocalDate.now();
+        if (workDate.isBefore(today) || (workDate.equals(today) && slot.getEndTime().isBefore(LocalTime.now()))) {
+            throw new BusinessException("Ca khám này đã qua thời gian, không thể đặt.");
+        }
 
         // Issue #2: Kiểm tra slot hợp lệ để book
         String slotStatus = slot.getStatus();
@@ -202,6 +219,18 @@ public class AppointmentServiceImpl implements AppointmentService {
         app.setAppointmentCode("APT" + System.currentTimeMillis());
 
         Appointment savedApp = appointmentRepository.save(app);
+
+        // Tạo Payment DEPOSIT/PENDING
+        Payment payment = new Payment();
+        payment.setAppointmentId(savedApp.getAppointmentId());
+        // Generate a random payment code
+        payment.setPaymentCode("PAY-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        payment.setPaymentType("DEPOSIT");
+        payment.setPaymentMethod(request.paymentMethod() != null ? request.paymentMethod() : "CASH");
+        payment.setAmount(doctor.getConsultationFee());
+        payment.setStatus("PENDING");
+        payment.setPaidBy(patient.getUser());
+        paymentRepository.save(payment);
 
         try {
             notificationService.createNotification(
@@ -274,6 +303,15 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointment.setCancelledAt(java.time.LocalDateTime.now());
         appointment.setCancelledBy(currentUserId);
         appointmentRepository.save(appointment);
+
+        // Xử lý Payment khi hủy lịch
+        java.util.List<Payment> payments = paymentRepository.findByAppointmentId(appointmentId);
+        for (Payment p : payments) {
+            if ("PENDING".equals(p.getStatus())) {
+                p.setStatus("CANCELLED");
+                paymentRepository.save(p);
+            }
+        }
 
         // 5. Giải phóng slot — đặt lại thành AVAILABLE
         if (appointment.getTimeSlot() != null) {
@@ -523,5 +561,63 @@ public class AppointmentServiceImpl implements AppointmentService {
         return appointments.stream()
                 .map(this::mapToResponse)
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public AppointmentResponse markNoShow(Long appointmentId, String note, Long receptionistId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Lịch hẹn không tồn tại với ID: " + appointmentId));
+
+        String status = appointment.getStatus();
+        if ("CANCELLED".equals(status)) {
+            throw new BusinessException("Không thể đánh dấu No Show lịch hẹn đã hủy.");
+        }
+        if ("COMPLETED".equals(status)) {
+            throw new BusinessException("Không thể đánh dấu No Show lịch hẹn đã hoàn thành.");
+        }
+        if ("CHECKED_IN".equals(status)) {
+            throw new BusinessException("Không thể đánh dấu No Show lịch hẹn đã check-in.");
+        }
+        if ("NO_SHOW".equals(status)) {
+            throw new BusinessException("Lịch hẹn này đã được đánh dấu No Show trước đó.");
+        }
+
+        appointment.setStatus("NO_SHOW");
+        appointment.setNoShowReason(note);
+        appointment.setCancelledAt(LocalDateTime.now());
+        appointment.setCancelledBy(receptionistId);
+
+        // Free the time slot so it can be rebooked
+        if (appointment.getTimeSlot() != null) {
+            TimeSlot slot = appointment.getTimeSlot();
+            slot.setStatus("AVAILABLE");
+            slot.setLockedByPatientId(null);
+            slot.setLockedUntil(null);
+            timeSlotRepository.save(slot);
+        }
+
+        // Fix orphan data: cancel queue ticket if it exists (e.g. walk-in appointments)
+        queueTicketRepository.findByAppointment(appointment).ifPresent(ticket -> {
+            ticket.setStatus("CANCELLED");
+            queueTicketRepository.save(ticket);
+        });
+
+        Appointment saved = appointmentRepository.save(appointment);
+
+        try {
+            if (saved.getPatient() != null && saved.getPatient().getUser() != null) {
+                notificationService.createNotification(
+                        saved.getPatient().getUser().getUserId(),
+                        "Lịch hẹn bị đánh dấu No Show",
+                        "Lịch hẹn mã " + saved.getAppointmentCode() + " của bạn đã bị đánh dấu là bệnh nhân không đến khám (No Show).",
+                        "APPOINTMENT"
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("Không thể tạo thông báo No Show: " + e.getMessage());
+        }
+
+        return mapToResponse(saved);
     }
 }

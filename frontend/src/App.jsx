@@ -16,6 +16,7 @@ import MedicalServiceManagement from "./pages/medical-service/MedicalServiceMana
 import InvoiceManagement from "./pages/invoice/InvoiceManagement.jsx";
 import PaymentManagement from "./pages/payment/PaymentManagement.jsx";
 import PaymentCallback from "./pages/payment/PaymentCallback.jsx";
+import RefundManagement from "./pages/payment/RefundManagement.jsx";
 import AppointmentManagement from "./pages/appointment/Appointments.tsx";
 import AvailableSlots from "./pages/appointment/AvailableSlots.tsx";
 import AiChatPatient from "./pages/ai-chat/AiChatPatient.jsx";
@@ -23,6 +24,8 @@ import WalkInAppointmentPage from "./pages/appointment/WalkInAppointmentPage.jsx
 import ReceptionistAppointmentsPage from "./pages/appointment/ReceptionistAppointmentsPage.jsx";
 import QueueManagementPage from "./pages/appointment/QueueManagementPage.jsx";
 import DoctorTodayAppointments from "./pages/doctor/DoctorTodayAppointments.jsx";
+import DoctorLeaveRequestPage from "./pages/doctor/DoctorLeaveRequestPage.jsx";
+import AdminDoctorLeaveRequestPage from "./pages/doctor/AdminDoctorLeaveRequestPage.jsx";
 import NotificationsPage from "./pages/notification/NotificationsPage.jsx";
 import DoctorManagement from "./pages/doctor/DoctorManagement.jsx";
 import AlertsDashboard from "./pages/inventory/AlertsDashboard.jsx";
@@ -35,21 +38,61 @@ import PatientDetailPage from "./pages/patient/PatientDetailPage.jsx";
 import ConsultationPage from "./pages/consultation/ConsultationPage.jsx";
 import ExaminationPage from "./pages/consultation/ExaminationPage.jsx";
 import LabRequestPage from "./pages/lab/LabRequestPage.jsx";
+import PrescriptionDetailPage from "./pages/prescription/PrescriptionDetailPage.jsx";
+import PharmacistPrescriptionPage from "./pages/prescription/PharmacistPrescriptionPage.jsx";
+import PatientLabResultPage from "./pages/lab/PatientLabResultPage.jsx";
 import ProfilePage from "./pages/profile/ProfilePage.jsx";
 import MyAppointmentsPage from "./pages/patient/MyAppointmentsPage.jsx";
 import AppointmentDetailPage from "./pages/appointment/AppointmentDetailPage.jsx";
 import PatientMedicalHistoryPage from "./pages/patient/PatientMedicalHistoryPage.jsx";
+import ReviewManagement from "./pages/review/ReviewManagement.jsx";
+import ArticleManagement from "./pages/article/ArticleManagement.jsx";
+import PatientQueueStatusPage from "./pages/appointment/PatientQueueStatusPage.jsx";
+import AuditLogPage from "./pages/audit/AuditLogPage.jsx";
+import SystemSettingsPage from "./pages/settings/SystemSettingsPage.jsx";
+
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import { useAuth } from "./context/useAuth.js";
 
 import LandingPage from "./pages/LandingPage.jsx";
 
+import DoctorHome from "./pages/dashboard/DoctorHome.jsx";
+import PharmacistHome from "./pages/dashboard/PharmacistHome.jsx";
+import LabTechnicianHome from "./pages/dashboard/LabTechnicianHome.jsx";
+import ReceptionistHome from "./pages/dashboard/ReceptionistHome.jsx";
 function DashboardIndex() {
   const { user } = useAuth();
-  if (user?.roles?.includes("PATIENT")) {
+  const roles = user?.roles?.map((role) => role.roleName || role) || [];
+
+  if (roles.includes("ADMIN")) {
+    return <DashboardHome />;
+  }
+  if (roles.includes("DOCTOR")) {
+    return <DoctorHome />;
+  }
+  if (roles.includes("PATIENT")) {
     return <PatientHome />;
   }
+  if (roles.includes("PHARMACIST")) {
+    return <PharmacistHome />;
+  }
+  if (roles.includes("LAB_TECHNICIAN")) {
+    return <LabTechnicianHome />;
+  }
+  if (roles.includes("RECEPTIONIST")) {
+    return <ReceptionistHome />;
+  }
+
   return <DashboardHome />;
+}
+
+function AdminOnly({ children }) {
+  const { user } = useAuth();
+  const roles = user?.roles?.map((role) => role.roleName || role) || [];
+  if (!roles.includes("ADMIN")) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
 }
 
 export default function App() {
@@ -79,6 +122,7 @@ export default function App() {
         <Route path="invoices" element={<InvoiceManagement />} />
         <Route path="payments" element={<PaymentManagement />} />
         <Route path="payment/callback" element={<PaymentCallback />} />
+        <Route path="refunds" element={<RefundManagement />} />
         <Route path="medicines" element={<MedicineManagement />} />
         <Route path="suppliers" element={<SupplierManagement />} />
         <Route path="inventory/batches" element={<InventoryBatches />} />
@@ -94,6 +138,7 @@ export default function App() {
         <Route path="my-appointments" element={<MyAppointmentsPage />} />
         <Route path="appointments/:id" element={<AppointmentDetailPage />} />
         <Route path="my-medical-history" element={<PatientMedicalHistoryPage />} />
+        <Route path="queue-status" element={<PatientQueueStatusPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="doctors" element={<DoctorManagement />} />
         <Route path="patients" element={<PatientManagement />} />
@@ -101,12 +146,17 @@ export default function App() {
         <Route path="consultation" element={<ConsultationPage />} />
         <Route path="examination/:consultationId" element={<ExaminationPage />} />
         <Route path="lab-requests" element={<LabRequestPage />} />
+        <Route path="prescriptions/:prescriptionId" element={<PrescriptionDetailPage />} />
+        <Route path="pharmacist/prescriptions" element={<PharmacistPrescriptionPage />} />
+        <Route path="my-lab-results" element={<PatientLabResultPage />} />
+        <Route path="reviews" element={<ReviewManagement />} />
+        <Route path="articles" element={<ArticleManagement />} />
+        <Route path="audit-logs" element={<AdminOnly><AuditLogPage /></AdminOnly>} />
+        <Route path="system-settings" element={<AdminOnly><SystemSettingsPage /></AdminOnly>} />
+        <Route path="doctor-leave-requests" element={<DoctorLeaveRequestPage />} />
+        <Route path="admin/doctor-leave-requests" element={<AdminDoctorLeaveRequestPage />} />
       </Route>
     </Routes>
   );
 }
-
-
-
-
 

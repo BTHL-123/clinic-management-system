@@ -4,11 +4,14 @@ import com.clinicmanagement.common.dto.ApiResponse;
 import com.clinicmanagement.common.dto.PageResponse;
 import com.clinicmanagement.labrequest.dto.CreateLabRequestRequest;
 import com.clinicmanagement.labrequest.dto.LabRequestResponse;
+import com.clinicmanagement.patient.Patient;
+import com.clinicmanagement.patient.PatientRepository;
 import com.clinicmanagement.security.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,6 +26,7 @@ import java.util.List;
 public class LabRequestController {
 
     private final LabRequestService labRequestService;
+    private final PatientRepository patientRepository;
 
     /**
      * GET /api/lab-requests?status=REQUESTED&page=0&size=10
@@ -85,5 +89,25 @@ public class LabRequestController {
         Long userId = userDetails.getUser().getUserId();
         return ResponseEntity.ok(ApiResponse.success("Tiếp nhận phiếu xét nghiệm thành công",
                 labRequestService.accept(labRequestId, userId)));
+    }
+
+    /**
+     * GET /api/lab-requests/my?page=0&size=10
+     * PATIENT — xem tất cả phiếu xét nghiệm của mình (Task 80)
+     */
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<PageResponse<LabRequestResponse>>> getMyLabRequests(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long userId = userDetails.getUser().getUserId();
+        Patient patient = patientRepository.findByUser_UserId(userId)
+                .orElseThrow(() -> new com.clinicmanagement.common.exception.ResourceNotFoundException(
+                        "Không tìm thấy hồ sơ bệnh nhân."));
+        Pageable pageable = PageRequest.of(page, size, Sort.by("requestedAt").descending());
+        return ResponseEntity.ok(ApiResponse.success(
+                labRequestService.getByPatientId(patient.getPatientId(), pageable)));
     }
 }

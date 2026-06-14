@@ -218,7 +218,7 @@ CREATE TABLE appointment_slots (
     end_time TIME NOT NULL,
 
     status VARCHAR(20) NOT NULL DEFAULT 'AVAILABLE'
-        CHECK (status IN ('AVAILABLE', 'LOCKED', 'BOOKED', 'CANCELLED')),
+        CHECK (status IN ('AVAILABLE', 'LOCKED', 'BOOKED', 'BLOCKED', 'CANCELLED')),
 
     locked_until TIMESTAMP,
     locked_by_patient_id BIGINT,
@@ -967,6 +967,7 @@ CREATE TABLE refunds (
 
     refund_amount NUMERIC(12,2) NOT NULL CHECK (refund_amount >= 0),
     reason TEXT,
+    reject_reason TEXT,
 
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
         CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED', 'COMPLETED', 'FAILED')),

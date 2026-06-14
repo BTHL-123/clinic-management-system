@@ -6,6 +6,7 @@ import {
   getMedicalServices,
   updateMedicalService,
 } from "../../services/medicalServiceService";
+import PageHeader from "../../components/PageHeader";
 
 const SERVICE_TYPES = [
   { value: "CONSULTATION", label: "Khám bệnh" },
@@ -157,31 +158,33 @@ export default function MedicalServiceManagement() {
   return (
     <>
       {/* ── Page Header ────────────────────────────────── */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">
-            <HeartPulse size={26} />
-            Quản lý Dịch vụ y tế
-          </h1>
-          <p className="muted">
-            Quản lý danh sách các dịch vụ y tế trong phòng khám.
-          </p>
-        </div>
-        <button className="primary-button" onClick={openCreate}>
-          <Plus size={16} />
-          Thêm dịch vụ
-        </button>
-      </div>
+      <PageHeader
+        title="Quản lý Dịch vụ y tế"
+        icon={HeartPulse}
+        iconColor="text-white"
+        subtitle="Quản lý danh sách các dịch vụ y tế trong phòng khám."
+        rightContent={
+          <button className="bg-white text-teal-700 hover:bg-teal-50 font-bold px-4 py-2 rounded-xl shadow-md transition-all flex items-center gap-2" onClick={openCreate}>
+            <Plus size={16} />
+            Thêm dịch vụ
+          </button>
+        }
+      />
 
       {/* ── Search Bar ─────────────────────────────────── */}
-      <div className="search-bar">
+      <div className="search-bar" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
         <Search size={16} className="search-icon" />
         <input
           type="text"
           placeholder="Tìm kiếm theo mã, tên hoặc mô tả..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ flex: 1 }}
         />
+        <button className="primary-button" style={{ flexShrink: 0 }} onClick={openCreate}>
+          <Plus size={16} />
+          Thêm dịch vụ
+        </button>
       </div>
 
       {/* ── Error ──────────────────────────────────────── */}
@@ -189,7 +192,17 @@ export default function MedicalServiceManagement() {
 
       {/* ── Table ──────────────────────────────────────── */}
       <div className="table-wrapper">
-        <table className="data-table">
+        <table className="data-table fixed-table">
+          <colgroup>
+            <col style={{ width: "4%" }} />
+            <col style={{ width: "11%" }} />
+            <col style={{ width: "22%" }} />
+            <col style={{ width: "11%" }} />
+            <col style={{ width: "11%" }} />
+            <col style={{ width: "12%" }} />
+            <col style={{ width: "11%" }} />
+            <col style={{ width: "10%" }} />
+          </colgroup>
           <thead>
             <tr>
               <th>#</th>

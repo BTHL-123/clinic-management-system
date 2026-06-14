@@ -1,9 +1,18 @@
 import api from "./axiosClient";
 
-export const getPrescriptionByConsultationId = async (consultationId) => {
-  return await api.get(`/prescriptions/by-consultation/${consultationId}`);
-};
+export const getPrescriptionByConsultationId = (consultationId) =>
+  api.get(`/prescriptions/by-consultation/${consultationId}`, { skipErrorToast: true });
 
-export const getPrescriptionById = async (prescriptionId) => {
-  return await api.get(`/prescriptions/${prescriptionId}`);
-};
+export const getPrescriptionById = (prescriptionId) =>
+  api.get(`/prescriptions/${prescriptionId}`);
+
+export const getPrescriptions = (params) =>
+  api.get("/prescriptions", { params });
+
+export const createPrescription = (data) => api.post("/prescriptions", data);
+
+export const checkDrugInteractions = (prescriptionId) =>
+  api.post(`/prescriptions/${prescriptionId}/check-interactions`);
+
+export const dispensePrescription = (prescriptionId) =>
+  api.post(`/prescriptions/${prescriptionId}/dispense`);

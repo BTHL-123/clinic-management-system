@@ -18,6 +18,7 @@ import {
 } from "../../services/invoiceService";
 import { createPayment, confirmCashPayment, createOnlinePaymentUrl } from "../../services/paymentService";
 import { getMedicines } from "../../services/medicineService";
+import PageHeader from "../../components/PageHeader";
 
 const STATUS_OPTIONS = [
   { value: "", label: "Tất cả" },
@@ -342,21 +343,18 @@ export default function InvoiceManagement() {
   return (
     <>
       {/* ── Page Header ────────────────────────────────── */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">
-            <Receipt size={26} />
-            Quản lý Hóa đơn
-          </h1>
-          <p className="muted">
-            Quản lý hóa đơn khám chữa bệnh.
-          </p>
-        </div>
-        <button className="primary-button" onClick={openCreate}>
-          <Plus size={16} />
-          Tạo hóa đơn
-        </button>
-      </div>
+      <PageHeader
+        title="Quản lý Hóa đơn"
+        icon={Receipt}
+        iconColor="text-white"
+        subtitle="Quản lý hóa đơn khám chữa bệnh."
+        rightContent={
+          <button className="primary-button" onClick={openCreate}>
+            <Plus size={16} />
+            Tạo hóa đơn
+          </button>
+        }
+      />
 
       {/* ── Search & Filter ──────────────────────────────── */}
       <div style={{ display: "flex", gap: 12, marginBottom: 18, flexWrap: "wrap" }}>
@@ -394,7 +392,7 @@ export default function InvoiceManagement() {
 
       {/* ── Table ──────────────────────────────────────── */}
       <div className="table-wrapper">
-        <table className="data-table">
+        <table className="data-table fixed-table">
           <thead>
             <tr>
               <th>#</th>
@@ -674,7 +672,7 @@ export default function InvoiceManagement() {
             </div>
 
             <div className="table-wrapper" style={{ marginBottom: 16 }}>
-              <table className="data-table">
+              <table className="data-table fixed-table">
                 <thead>
                   <tr>
                     <th>Dịch vụ</th>

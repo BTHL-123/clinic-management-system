@@ -5,9 +5,9 @@ import {
   createRole,
   deleteRole,
   getPermissions,
-  getRoles,
   updateRole,
 } from "../../services/securityService";
+import PageHeader from "../../components/PageHeader";
 
 const emptyRole = { roleName: "", description: "" };
 
@@ -137,22 +137,24 @@ export default function SecurityPage() {
 
   return (
     <div className="page-stack">
-      <section className="page-heading">
-        <div>
-          <h1>Bảo mật & Phân quyền</h1>
-          <p className="muted">Quản lý vai trò và phân quyền truy cập cho các module hệ thống.</p>
-        </div>
-        <div className="heading-actions">
-          <button className="ghost-button" type="button" onClick={loadSecurity}>
-            <RefreshCw size={17} />
-            Làm mới
-          </button>
-          <button className="primary-button compact" type="button" onClick={resetRoleForm}>
-            <Plus size={17} />
-            Thêm vai trò
-          </button>
-        </div>
-      </section>
+      <PageHeader
+        title="Bảo mật & Phân quyền"
+        icon={ShieldCheck}
+        iconColor="text-white"
+        subtitle="Quản lý vai trò và phân quyền truy cập cho các module hệ thống."
+        rightContent={
+          <div className="flex gap-2">
+            <button className="bg-white/10 hover:bg-white/20 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm" type="button" onClick={loadSecurity}>
+              <RefreshCw size={17} />
+              Làm mới
+            </button>
+            <button className="bg-white text-teal-700 hover:bg-teal-50 font-bold px-4 py-2 rounded-xl shadow-md transition-all flex items-center gap-2" type="button" onClick={resetRoleForm}>
+              <Plus size={17} />
+              Thêm vai trò
+            </button>
+          </div>
+        }
+      />
 
       {(message || error) && (
         <div className={error ? "error-box" : "success-box"}>{error || message}</div>
@@ -191,11 +193,21 @@ export default function SecurityPage() {
         <div className="panel">
           <div className="table-header">
             <h2>{selectedRole ? "Chi tiết vai trò" : "Tạo vai trò"}</h2>
-            {selectedRole && (
-              <button className="icon-button danger" type="button" onClick={handleDeleteRole}>
-                <Trash2 size={16} />
+            <div className="row-actions">
+              <button className="ghost-button" type="button" onClick={loadSecurity}>
+                <RefreshCw size={16} />
+                Làm mới
               </button>
-            )}
+              <button className="primary-button compact" type="button" onClick={resetRoleForm}>
+                <Plus size={16} />
+                Thêm vai trò
+              </button>
+              {selectedRole && (
+                <button className="icon-button danger" type="button" onClick={handleDeleteRole}>
+                  <Trash2 size={16} />
+                </button>
+              )}
+            </div>
           </div>
           <form className="form-grid" onSubmit={handleSaveRole}>
             <div className="field">

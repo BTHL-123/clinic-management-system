@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Slf4j
 @Service
@@ -49,6 +50,13 @@ public class WalkInAppointmentServiceImpl implements WalkInAppointmentService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Không tìm thấy ca khám với ID: " + request.slotId()));
 
+        // ── 3.5. Expired slot protection ──────────────────────────────────────
+        LocalDate workDate = slot.getDoctorSchedule().getWorkDate();
+        LocalDate today = LocalDate.now();
+        if (workDate.isBefore(today) || (workDate.equals(today) && slot.getEndTime().isBefore(LocalTime.now()))) {
+            throw new BusinessException("Ca khám này đã qua thời gian, không thể đặt.");
+        }
+
         // ── 4. Validate the slot belongs to the correct doctor and date ────────
         DoctorSchedule schedule = slot.getDoctorSchedule();
         if (!schedule.getDoctorId().equals(request.doctorId())) {
@@ -73,6 +81,9 @@ public class WalkInAppointmentServiceImpl implements WalkInAppointmentService {
         }
         if ("CANCELLED".equals(slotStatus)) {
             throw new BusinessException("Ca khám này đã bị hủy.");
+        }
+        if ("BLOCKED".equals(slotStatus)) {
+            throw new BusinessException("Ca khám này đang tạm đóng.");
         }
 
         // ── 6. Extra duplicate guard at appointment level ─────────────────────

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, User, History, Phone, Mail, MapPin, Heart, Shield, AlertTriangle } from "lucide-react";
 import { getPatientById } from "../../services/patientService";
 import MedicalHistory from "../../components/MedicalHistory";
+import PageHeader from "../../components/PageHeader";
 
 const TABS = [
   { id: "info", label: "Thông tin hành chính", icon: User },
@@ -34,22 +35,33 @@ export default function PatientDetailPage() {
   }, [patientId]);
 
   if (loading) {
-    return <div className="page-header">Đang tải thông tin bệnh nhân...</div>;
+    return (
+      <div className="w-full flex flex-col items-center">
+        <PageHeader
+          title="Chi tiết bệnh nhân"
+          icon={User}
+          iconColor="text-white"
+          onBack={() => navigate("/dashboard/patients")}
+        />
+        <div className="patient-glass-card p-6 md:p-8 w-full mt-4 text-center text-slate-500 font-semibold">
+          Đang tải thông tin bệnh nhân...
+        </div>
+      </div>
+    );
   }
-
   if (error) {
     return (
-      <>
-        <div className="page-header">
-          <div>
-            <h1 className="page-title">Chi tiết bệnh nhân</h1>
-          </div>
-          <button className="secondary-button" onClick={() => navigate("/dashboard/patients")}>
-            <ArrowLeft size={16} /> Quay lại
-          </button>
+      <div className="w-full flex flex-col items-center">
+        <PageHeader
+          title="Chi tiết bệnh nhân"
+          icon={User}
+          iconColor="text-white"
+          onBack={() => navigate("/dashboard/patients")}
+        />
+        <div className="patient-glass-card p-6 md:p-8 w-full mt-4 text-center text-red-600 font-semibold">
+          {error}
         </div>
-        <div className="error-box">{error}</div>
-      </>
+      </div>
     );
   }
 
@@ -65,13 +77,13 @@ export default function PatientDetailPage() {
   };
 
   const renderInfoTab = () => (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Thông tin cơ bản */}
-      <div style={{ background: "#f9fafb", padding: 20, borderRadius: 10, border: "1px solid #e5e7eb" }}>
-        <h3 style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-          <User size={18} /> Thông tin cơ bản
+      <div className="bg-white/60 backdrop-blur-xl border border-white/60 p-6 rounded-3xl shadow-sm">
+        <h3 className="text-lg font-bold text-slate-800 mb-5 flex items-center gap-2">
+          <User size={20} className="text-teal-600" /> Thông tin cơ bản
         </h3>
-        <div style={{ display: "grid", gap: 12 }}>
+        <div className="grid gap-4">
           <InfoRow label="Mã bệnh nhân" value={patient.patientCode} />
           <InfoRow label="Họ và tên" value={patient.fullName} bold />
           <InfoRow label="Giới tính" value={genderLabel(patient.gender)} />
@@ -82,18 +94,18 @@ export default function PatientDetailPage() {
       </div>
 
       {/* Liên hệ */}
-      <div style={{ background: "#f9fafb", padding: 20, borderRadius: 10, border: "1px solid #e5e7eb" }}>
-        <h3 style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-          <Phone size={18} /> Thông tin liên hệ
+      <div className="bg-white/60 backdrop-blur-xl border border-white/60 p-6 rounded-3xl shadow-sm">
+        <h3 className="text-lg font-bold text-slate-800 mb-5 flex items-center gap-2">
+          <Phone size={20} className="text-sky-600" /> Thông tin liên hệ
         </h3>
-        <div style={{ display: "grid", gap: 12 }}>
-          <InfoRow label="Số điện thoại" value={patient.phone} icon={<Phone size={14} />} />
-          <InfoRow label="Email" value={patient.email} icon={<Mail size={14} />} />
-          <InfoRow label="Địa chỉ" value={patient.address} icon={<MapPin size={14} />} />
-          <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 12, marginTop: 4 }}>
-            <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 8 }}>Liên hệ khẩn cấp</p>
-            <InfoRow label="Người liên hệ" value={patient.emergencyContactName} />
-            <div style={{ marginTop: 8 }}>
+        <div className="grid gap-4">
+          <InfoRow label="Số điện thoại" value={patient.phone} icon={<Phone size={16} />} />
+          <InfoRow label="Email" value={patient.email} icon={<Mail size={16} />} />
+          <InfoRow label="Địa chỉ" value={patient.address} icon={<MapPin size={16} />} />
+          <div className="border-t border-slate-200/60 pt-4 mt-2">
+            <p className="text-sm font-semibold text-slate-500 mb-3">Liên hệ khẩn cấp</p>
+            <div className="grid gap-4">
+              <InfoRow label="Người liên hệ" value={patient.emergencyContactName} />
               <InfoRow label="SĐT khẩn cấp" value={patient.emergencyContactPhone} />
             </div>
           </div>
@@ -101,36 +113,36 @@ export default function PatientDetailPage() {
       </div>
 
       {/* Thông tin y tế - full width */}
-      <div style={{ gridColumn: "span 2", background: "#f9fafb", padding: 20, borderRadius: 10, border: "1px solid #e5e7eb" }}>
-        <h3 style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-          <Heart size={18} /> Thông tin y tế
+      <div className="md:col-span-2 bg-white/60 backdrop-blur-xl border border-white/60 p-6 rounded-3xl shadow-sm">
+        <h3 className="text-lg font-bold text-slate-800 mb-5 flex items-center gap-2">
+          <Heart size={20} className="text-rose-500" /> Thông tin y tế
         </h3>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
-          <div>
-            <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 4 }}>Nhóm máu</p>
-            <p style={{ fontWeight: 600, fontSize: 16, color: "#dc2626" }}>{patient.bloodType || "—"}</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white/40 p-4 rounded-2xl border border-white/50">
+            <p className="text-sm font-semibold text-slate-500 mb-2">Nhóm máu</p>
+            <p className="font-bold text-2xl text-rose-600">{patient.bloodType || "—"}</p>
           </div>
-          <div style={{ gridColumn: "span 2" }}>
-            <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}>
-              <AlertTriangle size={13} /> Tiền sử dị ứng
+          <div className="md:col-span-2 bg-white/40 p-4 rounded-2xl border border-white/50">
+            <p className="text-sm font-semibold text-slate-500 mb-2 flex items-center gap-2">
+              <AlertTriangle size={16} className="text-amber-500" /> Tiền sử dị ứng
             </p>
-            <p style={{ whiteSpace: "pre-wrap" }}>{patient.allergies || "Không có thông tin"}</p>
+            <p className="text-slate-700 whitespace-pre-wrap">{patient.allergies || "Không có thông tin"}</p>
           </div>
-          <div style={{ gridColumn: "span 3" }}>
-            <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}>
-              <Shield size={13} /> Tiền sử bệnh
+          <div className="md:col-span-3 bg-white/40 p-4 rounded-2xl border border-white/50">
+            <p className="text-sm font-semibold text-slate-500 mb-2 flex items-center gap-2">
+              <Shield size={16} className="text-teal-600" /> Tiền sử bệnh
             </p>
-            <p style={{ whiteSpace: "pre-wrap" }}>{patient.medicalHistory || "Không có thông tin"}</p>
+            <p className="text-slate-700 whitespace-pre-wrap">{patient.medicalHistory || "Không có thông tin"}</p>
           </div>
         </div>
       </div>
 
       {/* Tài khoản liên kết */}
-      <div style={{ gridColumn: "span 2", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f0f9ff", padding: "12px 20px", borderRadius: 10, border: "1px solid #bae6fd" }}>
-        <span style={{ fontSize: 14, color: "#0369a1" }}>
-          Tài khoản liên kết: {patient.userName ? <strong>{patient.userName}</strong> : <em style={{ color: "#9ca3af" }}>Không có</em>}
+      <div className="md:col-span-2 flex justify-between items-center bg-gradient-to-r from-sky-50 to-white/60 backdrop-blur-xl p-5 rounded-3xl border border-sky-100 shadow-sm">
+        <span className="text-sm font-medium text-slate-700">
+          Tài khoản liên kết: {patient.userName ? <strong className="text-sky-700 ml-1 bg-sky-100 px-2 py-0.5 rounded-full">{patient.userName}</strong> : <em className="text-slate-400 ml-1">Không có</em>}
         </span>
-        <span style={{ fontSize: 13, color: "#6b7280" }}>
+        <span className="text-sm font-medium text-slate-500">
           Ngày tạo hồ sơ: {formatDate(patient.createdAt)}
         </span>
       </div>
@@ -138,39 +150,34 @@ export default function PatientDetailPage() {
   );
 
   const renderHistoryTab = () => (
-    <div style={{ background: "#fff", borderRadius: 10, border: "1px solid #e5e7eb", overflow: "hidden" }}>
+    <div className="bg-white/60 backdrop-blur-xl border border-white/60 rounded-3xl overflow-hidden shadow-sm">
       <MedicalHistory patientId={Number(patientId)} inline />
     </div>
   );
 
   return (
-    <>
+    <div className="flex flex-col h-full gap-6 pb-6">
       {/* Page Header */}
-      <div className="page-header">
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <button
-            className="icon-button"
-            onClick={() => navigate("/dashboard/patients")}
-            title="Quay lại danh sách"
-            style={{ border: "1px solid #d1d5db", borderRadius: 8, padding: "6px 10px" }}
-          >
-            <ArrowLeft size={18} />
-          </button>
-          <div>
-            <h1 className="page-title" style={{ marginBottom: 4 }}>
-              {patient.fullName || "Bệnh nhân"}
-            </h1>
-            <p className="muted">
-              {patient.patientCode} · {genderLabel(patient.gender)}
-              {patient.dateOfBirth && ` · ${formatDate(patient.dateOfBirth)}`}
-              {patient.phone && ` · ${patient.phone}`}
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* Page Header */}
+      <PageHeader
+        title={patient.fullName || "Bệnh nhân"}
+        icon={User}
+        iconColor="text-white"
+        subtitle={
+          <span className="flex items-center gap-2 justify-center">
+            <span className="bg-teal-500/20 text-teal-100 px-2 py-0.5 rounded-md font-bold border border-teal-500/30">
+              {patient.patientCode}
+            </span>
+            • {genderLabel(patient.gender)}
+            {patient.dateOfBirth && ` • ${formatDate(patient.dateOfBirth)}`}
+            {patient.phone && ` • ${patient.phone}`}
+          </span>
+        }
+        onBack={() => navigate("/dashboard/patients")}
+      />
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 0, borderBottom: "2px solid #e5e7eb", marginBottom: 24 }}>
+      <div className="flex gap-2 border-b border-slate-200/50 pb-px">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -178,23 +185,13 @@ export default function PatientDetailPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "12px 24px",
-                border: "none",
-                borderBottom: isActive ? "2px solid #2563eb" : "2px solid transparent",
-                background: "none",
-                color: isActive ? "#2563eb" : "#6b7280",
-                fontWeight: isActive ? 600 : 400,
-                fontSize: 14,
-                cursor: "pointer",
-                marginBottom: "-2px",
-                transition: "all 0.2s ease",
-              }}
+              className={`flex items-center gap-2 px-6 py-3 rounded-t-2xl font-bold text-sm transition-all border-b-2 ${
+                isActive 
+                  ? "border-teal-500 text-teal-700 bg-white/40" 
+                  : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-white/20"
+              }`}
             >
-              <Icon size={16} />
+              <Icon size={18} />
               {tab.label}
             </button>
           );
@@ -202,24 +199,25 @@ export default function PatientDetailPage() {
       </div>
 
       {/* Tab Content */}
-      {activeTab === "info" && renderInfoTab()}
-      {activeTab === "history" && renderHistoryTab()}
-    </>
+      <div className="flex-1">
+        {activeTab === "info" && renderInfoTab()}
+        {activeTab === "history" && renderHistoryTab()}
+      </div>
+    </div>
   );
 }
 
 function InfoRow({ label, value, bold, highlight, icon }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-      <span style={{ fontSize: 13, color: "#6b7280", display: "flex", alignItems: "center", gap: 4 }}>
-        {icon} {label}
+    <div className="flex justify-between items-center py-1">
+      <span className="text-sm font-semibold text-slate-500 flex items-center gap-2">
+        {icon && <span className="text-slate-400">{icon}</span>}
+        {label}
       </span>
       <span
-        style={{
-          fontWeight: bold ? 600 : 400,
-          color: highlight ? "#0f766e" : "#111827",
-          fontSize: 14,
-        }}
+        className={`text-sm ${
+          bold ? "font-bold text-slate-800" : "font-medium text-slate-700"
+        } ${highlight ? "text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md" : ""}`}
       >
         {value || "—"}
       </span>
