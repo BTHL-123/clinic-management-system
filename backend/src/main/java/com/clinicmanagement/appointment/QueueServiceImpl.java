@@ -181,8 +181,8 @@ public class QueueServiceImpl implements QueueService {
         // 5. Count patients ahead (WAITING with smaller queue number)
         int patientsAhead = queueTicketRepository.countPatientsAhead(doctorId, today, myQueueNumber);
 
-        // 6. Estimate waiting time: 15 min per patient ahead
-        final int AVG_CONSULTATION_MINUTES = 15;
+        // 6. Estimate waiting time: 30 min per patient ahead
+        final int AVG_CONSULTATION_MINUTES = 30;
         int estimatedWaitMinutes = patientsAhead * AVG_CONSULTATION_MINUTES;
 
         // 7. Build DTO

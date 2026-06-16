@@ -213,18 +213,18 @@ export default function QueueManagementPage() {
 
       {/* Table container */}
       <div className="table-wrapper receptionist-fit-table queue-table-wrapper">
-        <table className="data-table queue-table">
+        <table className="data-table fixed-table queue-table w-full min-w-[1100px]">
           <thead>
             <tr>
-              <th style={{ textAlign: "center" }}>STT</th>
-              <th>Mã Lịch Hẹn</th>
-              <th>Bệnh Nhân</th>
-              <th>Số Điện Thoại</th>
-              <th>Bác Sĩ</th>
-              <th style={{ textAlign: "center" }}>Giờ Hẹn</th>
-              <th>Check-in</th>
-              <th>Trạng Thái</th>
-              <th style={{ textAlign: "center" }}>Thao Tác</th>
+              <th style={{ width: "5%", textAlign: "center" }}>STT</th>
+              <th style={{ width: "11%", textAlign: "left" }}>Mã Lịch Hẹn</th>
+              <th style={{ width: "13%", textAlign: "left" }}>Bệnh Nhân</th>
+              <th style={{ width: "11%", textAlign: "left" }}>Số Điện Thoại</th>
+              <th style={{ width: "12%", textAlign: "left" }}>Bác Sĩ</th>
+              <th style={{ width: "8%", textAlign: "center" }}>Giờ Hẹn</th>
+              <th style={{ width: "9%", textAlign: "left" }}>Check-in</th>
+              <th style={{ width: "9%", textAlign: "left" }}>Trạng Thái</th>
+              <th style={{ width: "22%", textAlign: "center" }}>Thao Tác</th>
             </tr>
           </thead>
           <tbody>
@@ -268,19 +268,19 @@ export default function QueueManagementPage() {
                         #{ticket.queueNumber}
                       </span>
                     </td>
-                    <td className="queue-appointment-code">{ticket.appointmentCode}</td>
-                    <td className="queue-patient-name">{ticket.patientName}</td>
-                    <td>{ticket.patientPhone || "—"}</td>
-                    <td>{ticket.doctorName}</td>
+                    <td className="queue-appointment-code" style={{ textAlign: "left" }}>{ticket.appointmentCode}</td>
+                    <td className="queue-patient-name" style={{ textAlign: "left" }}>{ticket.patientName}</td>
+                    <td style={{ textAlign: "left" }}>{ticket.patientPhone || "—"}</td>
+                    <td style={{ textAlign: "left" }}>{ticket.doctorName}</td>
                     <td style={{ textAlign: "center", fontWeight: 500 }}>
                       {ticket.startTime?.slice(0, 5)} - {ticket.endTime?.slice(0, 5)}
                     </td>
-                    <td className="queue-checkin-time">
+                    <td className="queue-checkin-time" style={{ textAlign: "left" }}>
                       {ticket.checkedInAt ? new Date(ticket.checkedInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "—"}
                     </td>
-                    <td>{getStatusBadge(ticket.queueStatus)}</td>
-                    <td>
-                      <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
+                    <td style={{ textAlign: "left" }}>{getStatusBadge(ticket.queueStatus)}</td>
+                    <td style={{ textAlign: "center" }}>
+                      <div style={{ display: "flex", gap: "6px", justifyContent: "center", alignItems: "center" }}>
                         {canCall && (
                           <button
                             className="primary-button compact"
@@ -291,10 +291,17 @@ export default function QueueManagementPage() {
                                 ? "linear-gradient(135deg, #475569, #64748b)" // Recalling
                                 : "linear-gradient(135deg, #0284c7, #06b6d4)",
                               boxShadow: "0 2px 4px rgba(2,132,199,0.15)",
+                              color: "white",
                               fontWeight: 700,
                               display: "inline-flex",
                               alignItems: "center",
-                              gap: "4px"
+                              gap: "4px",
+                              padding: "4px 10px",
+                              minHeight: "32px",
+                              fontSize: "12px",
+                              borderRadius: "8px",
+                              border: "none",
+                              cursor: "pointer"
                             }}
                           >
                             <Play size={14} />
@@ -309,10 +316,16 @@ export default function QueueManagementPage() {
                             style={{
                               borderColor: "#fca5a5",
                               color: "#dc2626",
-                              fontWeight: 600,
+                              background: "#ffffff",
+                              fontWeight: 650,
                               display: "inline-flex",
                               alignItems: "center",
-                              gap: "4px"
+                              gap: "4px",
+                              padding: "4px 10px",
+                              minHeight: "32px",
+                              fontSize: "12px",
+                              borderRadius: "8px",
+                              cursor: "pointer"
                             }}
                           >
                             <SkipForward size={14} />
@@ -327,10 +340,17 @@ export default function QueueManagementPage() {
                             style={{
                               background: "linear-gradient(135deg, #16a34a, #22c55e)",
                               boxShadow: "0 2px 4px rgba(22,163,74,0.15)",
+                              color: "white",
                               fontWeight: 700,
                               display: "inline-flex",
                               alignItems: "center",
-                              gap: "4px"
+                              gap: "4px",
+                              padding: "4px 10px",
+                              minHeight: "32px",
+                              fontSize: "12px",
+                              borderRadius: "8px",
+                              border: "none",
+                              cursor: "pointer"
                             }}
                           >
                             <Check size={14} />

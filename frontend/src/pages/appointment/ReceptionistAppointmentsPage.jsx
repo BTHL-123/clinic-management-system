@@ -7,6 +7,9 @@ import {
   AlertCircle,
   SlidersHorizontal,
   ChevronDown,
+  MoreVertical,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import appointmentService from "../../services/appointmentService";
 import { useToast } from "../../context/useToast.js";
@@ -183,18 +186,18 @@ export default function ReceptionistAppointmentsPage() {
 
       {/* Data Table */}
       <div className="table-wrapper receptionist-fit-table">
-        <table className="data-table">
+        <table className="data-table fixed-table w-full min-w-[1100px]">
           <thead>
             <tr>
-              <th>Mã Lịch Hẹn</th>
-              <th>Bệnh Nhân</th>
-              <th>Số Điện Thoại</th>
-              <th>Bác Sĩ</th>
-              <th>Ngày Khám</th>
-              <th>Giờ Khám</th>
-              <th>Trạng Thái</th>
-              <th>Số Thứ Tự</th>
-              <th style={{ textAlign: "center" }}>Thao Tác</th>
+              <th style={{ width: "11%", textAlign: "left" }}>Mã Lịch Hẹn</th>
+              <th style={{ width: "13%", textAlign: "left" }}>Bệnh Nhân</th>
+              <th style={{ width: "11%", textAlign: "left" }}>Số Điện Thoại</th>
+              <th style={{ width: "13%", textAlign: "left" }}>Bác Sĩ</th>
+              <th style={{ width: "10%", textAlign: "left" }}>Ngày Khám</th>
+              <th style={{ width: "10%", textAlign: "left" }}>Giờ Khám</th>
+              <th style={{ width: "10%", textAlign: "left" }}>Trạng Thái</th>
+              <th style={{ width: "7%", textAlign: "center" }}>Số Thứ Tự</th>
+              <th style={{ width: "15%", textAlign: "center" }}>Thao Tác</th>
             </tr>
           </thead>
           <tbody>
@@ -217,16 +220,16 @@ export default function ReceptionistAppointmentsPage() {
 
                 return (
                   <tr key={app.appointmentId}>
-                    <td style={{ fontWeight: 600, color: "#0f766e" }}>{app.appointmentCode}</td>
-                    <td style={{ fontWeight: 600 }}>{app.patientName}</td>
-                    <td>{app.patientPhone || "—"}</td>
-                    <td>{app.doctorName}</td>
-                    <td>{app.appointmentDate}</td>
-                    <td style={{ fontWeight: 500 }}>
+                    <td style={{ fontWeight: 600, color: "#0f766e", textAlign: "left" }}>{app.appointmentCode}</td>
+                    <td style={{ fontWeight: 600, textAlign: "left" }}>{app.patientName}</td>
+                    <td style={{ textAlign: "left" }}>{app.patientPhone || "—"}</td>
+                    <td style={{ textAlign: "left" }}>{app.doctorName}</td>
+                    <td style={{ textAlign: "left" }}>{app.appointmentDate}</td>
+                    <td style={{ fontWeight: 500, textAlign: "left" }}>
                       {app.startTime?.slice(0, 5)} - {app.endTime?.slice(0, 5)}
                     </td>
-                    <td>{getStatusBadge(app.status)}</td>
-                    <td>
+                    <td style={{ textAlign: "left" }}>{getStatusBadge(app.status)}</td>
+                    <td style={{ textAlign: "center" }}>
                       {app.queueNumber ? (
                         <span
                           style={{
@@ -247,46 +250,62 @@ export default function ReceptionistAppointmentsPage() {
                       )}
                     </td>
                     <td style={{ textAlign: "center" }}>
-                      <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
-                        {canCheckIn ? (
+                      <div style={{ display: "flex", gap: "6px", justifyContent: "center", alignItems: "center" }}>
+                        {app.status === "CHECKED_IN" && (
+                          <span style={{ color: "#166534", fontWeight: 700, fontSize: "13px", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                            ✓ Đã check-in
+                          </span>
+                        )}
+                        {canCheckIn && (
                           <button
-                            className="primary-button compact"
                             onClick={() => handleCheckIn(app.appointmentId)}
                             style={{
                               background: "linear-gradient(135deg, #0f766e, #0d9488)",
-                              boxShadow: "0 2px 4px rgba(15,118,110,0.2)",
+                              boxShadow: "0 2px 4px rgba(13,148,136,0.15)",
+                              color: "white",
                               fontWeight: 700,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              padding: "6px 10px",
+                              minHeight: "32px",
+                              fontSize: "12px",
+                              borderRadius: "8px",
+                              border: "none",
+                              cursor: "pointer",
+                              transition: "all 0.15s ease"
                             }}
+                            title="Check-in"
                           >
-                            Check-in
+                            <CheckCircle size={14} /> Check-in
                           </button>
-                        ) : app.status === "CHECKED_IN" ? (
-                          <span style={{ color: "#16a34a", fontWeight: 700, fontSize: "13.5px", display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                            ✓ Đã check-in
-                          </span>
-                        ) : (
-                          <span style={{ color: "#94a3b8", fontSize: "13px", display: !["SCHEDULED", "CONFIRMED"].includes(app.status) ? "inline-block" : "none" }}>
-                            Không khả dụng
-                          </span>
                         )}
-
                         {["SCHEDULED", "CONFIRMED"].includes(app.status) && (
                           <button
-                            className="danger-button compact"
                             onClick={() => openNoShowModal(app.appointmentId)}
                             style={{
-                              padding: "4px 12px",
-                              borderRadius: "6px",
-                              fontSize: "13px",
-                              fontWeight: 600,
-                              background: "#fef2f2",
-                              color: "#dc2626",
-                              border: "1px solid #fee2e2",
-                              cursor: "pointer"
+                              background: "linear-gradient(135deg, #e11d48, #be123c)",
+                              boxShadow: "0 2px 4px rgba(225,29,72,0.15)",
+                              color: "white",
+                              fontWeight: 700,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              padding: "6px 10px",
+                              minHeight: "32px",
+                              fontSize: "12px",
+                              borderRadius: "8px",
+                              border: "none",
+                              cursor: "pointer",
+                              transition: "all 0.15s ease"
                             }}
+                            title="Đánh dấu Không đến"
                           >
-                            Đánh dấu Không đến
+                            <XCircle size={14} /> Không đến
                           </button>
+                        )}
+                        {!["SCHEDULED", "CONFIRMED", "CHECKED_IN"].includes(app.status) && (
+                          <span style={{ color: "#94a3b8" }}>—</span>
                         )}
                       </div>
                     </td>

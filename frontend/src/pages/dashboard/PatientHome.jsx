@@ -90,17 +90,27 @@ export default function PatientHome() {
                 {/* Main Ticket Info */}
                 <div className="p-8 md:p-10 flex-1 relative z-10 flex flex-col justify-between">
                   <div>
-                    <div className="flex items-center gap-3 bg-teal-50 text-teal-700 w-max px-4 py-2 rounded-full text-sm font-bold border border-teal-100 mb-8 uppercase tracking-wider shadow-sm">
-                      <ShieldCheck size={16} /> Phiếu Khám Sắp Tới
+                    <div className="flex flex-wrap gap-2 mb-8">
+                      <div className="flex items-center gap-3 bg-teal-50 text-teal-700 w-max px-4 py-2 rounded-full text-sm font-bold border border-teal-100 uppercase tracking-wider shadow-sm">
+                        <ShieldCheck size={16} /> Phiếu Khám Sắp Tới
+                      </div>
+                      {upcomingAppointment.queueNumber && (
+                        <div className="flex items-center gap-2 bg-amber-100 text-amber-950 w-max px-4 py-2 rounded-full text-sm font-extrabold border border-amber-300 uppercase tracking-wider shadow-sm backdrop-blur-sm animate-pulse">
+                          Số thứ tự: #{upcomingAppointment.queueNumber}
+                        </div>
+                      )}
+                      {upcomingAppointment.queueStatus === 'CALLED' && (
+                        <div className="flex items-center gap-2 bg-rose-100 text-rose-950 w-max px-4 py-2 rounded-full text-sm font-extrabold border border-rose-300 uppercase tracking-wider shadow-sm backdrop-blur-sm animate-bounce">
+                          Đã được gọi!
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex justify-between items-end mb-8">
                       <div>
                         <p className="patient-label text-sm font-bold uppercase tracking-widest mb-1">Thời gian</p>
                         <h2 className="text-5xl md:text-6xl font-black patient-data tracking-tight">
-                          {upcomingAppointment.estimatedStartTime 
-                            ? new Date(`1970-01-01T${upcomingAppointment.estimatedStartTime}`).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
-                            : '--:--'}
+                          {String(upcomingAppointment.estimatedStartTime || upcomingAppointment.startTime || '').slice(0, 5) || '--:--'}
                         </h2>
                         <p className="text-teal-600 font-extrabold text-xl mt-2">
                           {new Date(upcomingAppointment.appointmentDate).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
@@ -108,7 +118,11 @@ export default function PatientHome() {
                       </div>
                       <div className="text-right hidden sm:block">
                         <p className="patient-label text-sm font-bold uppercase tracking-widest mb-1">Phòng khám</p>
-                        <p className="text-3xl font-black patient-data">P. {upcomingAppointment.roomId || 'Đang chờ'}</p>
+                        <p className="text-3xl font-black patient-data">
+                          {upcomingAppointment.queueStatus === 'CALLED'
+                            ? `P. Khám (${upcomingAppointment.departmentName || 'Chuyên khoa'})`
+                            : `P. Chờ (${upcomingAppointment.departmentName || 'Chuyên khoa'})`}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -141,9 +155,17 @@ export default function PatientHome() {
                   
                   <button 
                     onClick={() => navigate('/dashboard/queue-status')}
-                    className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-400 hover:to-teal-500 text-white font-black py-4 rounded-2xl transition-all shadow-lg hover:shadow-teal-400/30 hover:-translate-y-1"
+                    className={`w-full text-white font-black py-4 rounded-2xl transition-all shadow-lg hover:-translate-y-1 ${
+                      upcomingAppointment.queueStatus === 'CALLED'
+                        ? "bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-400 hover:to-red-500 shadow-red-400/30 hover:shadow-red-400/40"
+                        : "bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-400 hover:to-teal-500 shadow-teal-400/30 hover:shadow-teal-400/40"
+                    }`}
                   >
-                    LẤY SỐ THỨ TỰ
+                    {upcomingAppointment.queueStatus === 'CALLED'
+                      ? "VÀO PHÒNG KHÁM"
+                      : upcomingAppointment.queueNumber
+                      ? "THEO DÕI HÀNG ĐỢI"
+                      : "LẤY SỐ THỨ TỰ"}
                   </button>
                 </div>
               </motion.div>
