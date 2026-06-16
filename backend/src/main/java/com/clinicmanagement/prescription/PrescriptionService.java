@@ -123,7 +123,7 @@ public class PrescriptionService {
 
             // Lấy các lô còn hàng, ưu tiên lô gần hết hạn nhất (FEFO)
             List<MedicineBatch> batches = medicineBatchRepository
-                    .findByMedicineMedicineIdAndStatus(medicineId, "AVAILABLE");
+                    .findUsableFefoBatches(medicineId, LocalDate.now());
 
             int remaining = required;
             for (MedicineBatch batch : batches) {

@@ -48,8 +48,11 @@ public class DataSeeder implements CommandLineRunner {
                 try (var statement = connection.createStatement()) {
                     statement.execute("ALTER TABLE appointment_slots DROP CONSTRAINT IF EXISTS appointment_slots_status_check");
                     statement.execute("ALTER TABLE appointment_slots ADD CONSTRAINT appointment_slots_status_check CHECK (status IN ('AVAILABLE', 'LOCKED', 'BOOKED', 'BLOCKED', 'CANCELLED'))");
+
+                    statement.execute("ALTER TABLE medicine_batches DROP CONSTRAINT IF EXISTS medicine_batches_status_check");
+                    statement.execute("ALTER TABLE medicine_batches ADD CONSTRAINT medicine_batches_status_check CHECK (status IN ('AVAILABLE', 'LOW_STOCK', 'EXPIRED', 'OUT_OF_STOCK', 'CANCELLED'))");
                 } catch (Exception e) {
-                    System.err.println("Migration of appointment_slots_status_check failed: " + e.getMessage());
+                    System.err.println("Migration of check constraints failed: " + e.getMessage());
                 }
             }
             return null;
