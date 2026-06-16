@@ -257,7 +257,7 @@ function AppointmentCard({
         )}
         <button
           onClick={() => navigate(`/dashboard/appointments/${appt.appointmentId}`)}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md border border-white/30 bg-white/10 text-white/80 hover:bg-white/20 hover:text-white cursor-pointer text-[13px] font-semibold transition-all"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-teal-600 text-white hover:bg-teal-700 hover:text-white shadow-sm cursor-pointer text-[13px] font-semibold transition-all"
         >
           Xem chi tiết
         </button>
