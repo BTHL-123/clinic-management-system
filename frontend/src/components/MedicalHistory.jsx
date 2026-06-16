@@ -166,14 +166,14 @@ export default function MedicalHistory({ patientId, onClose, inline = false, isP
        * ═══════════════════════════════════════════════════════════════════════ */}
       <div className="flex flex-col gap-6">
         {selectedRecord.hasLabResult && (
-          <div className="bg-white/60 backdrop-blur-xl border border-white/60 p-6 rounded-3xl shadow-sm">
+          <div className={isPatientView ? "patient-glass-subcard p-6" : "bg-white/60 backdrop-blur-xl border border-white/60 p-6 rounded-3xl shadow-sm"}>
             <LabResultView consultationId={selectedRecord.consultationId} />
           </div>
         )}
         {selectedRecord.hasPrescription && (
-          <div className="bg-white/60 backdrop-blur-xl border border-white/60 p-6 rounded-3xl shadow-sm">
+          <div className={isPatientView ? "patient-glass-subcard p-6" : "bg-white/60 backdrop-blur-xl border border-white/60 p-6 rounded-3xl shadow-sm"}>
             <div className="flex justify-between items-center mb-4">
-              <span className="font-bold text-lg text-slate-800">💊 Đơn thuốc</span>
+              <span className={isPatientView ? "patient-card-title text-lg" : "font-bold text-lg text-slate-800"}>💊 Đơn thuốc</span>
               {prescriptionIdMap[selectedRecord.consultationId] && (
                 <button
                   onClick={() => navigate(`/dashboard/prescriptions/${prescriptionIdMap[selectedRecord.consultationId]}`)}
@@ -183,7 +183,7 @@ export default function MedicalHistory({ patientId, onClose, inline = false, isP
                 </button>
               )}
             </div>
-            <PrescriptionDetailView consultationId={selectedRecord.consultationId} />
+            <PrescriptionDetailView consultationId={selectedRecord.consultationId} isPatientMode={isPatientView} />
           </div>
         )}
       </div>
