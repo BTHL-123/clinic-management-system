@@ -18,6 +18,7 @@ const EMPTY_FORM = {
   unit: "",
   rxnormCode: "",
   description: "",
+  usageInstructions: "",
   status: "ACTIVE",
 };
 
@@ -74,6 +75,7 @@ export default function MedicineManagement() {
       unit: med.unit ?? "",
       rxnormCode: med.rxnormCode ?? "",
       description: med.description ?? "",
+      usageInstructions: med.usageInstructions ?? "",
       status: med.status,
     });
     setEditingId(med.medicineId);
@@ -300,12 +302,25 @@ export default function MedicineManagement() {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium text-white/80">Mô tả / Ghi chú</label>
+                  <label className="text-sm font-medium text-white/80">Thành phần / Chức năng (Mô tả)</label>
                   <textarea
                     name="description"
                     rows={2}
                     value={formData.description}
                     onChange={handleChange}
+                    placeholder="Nhập thành phần chi tiết hoặc chức năng của thuốc..."
+                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-teal-400 focus:outline-none"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-white/80">Hướng dẫn sử dụng mặc định</label>
+                  <textarea
+                    name="usageInstructions"
+                    rows={2}
+                    value={formData.usageInstructions}
+                    onChange={handleChange}
+                    placeholder="VD: Uống sau ăn 30 phút, ngày 2 lần..."
                     className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-teal-400 focus:outline-none"
                   />
                 </div>

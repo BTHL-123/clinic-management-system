@@ -39,7 +39,28 @@ public class DataSeeder implements CommandLineRunner {
         seedDoctor();
         seedPatient();
         seedMedicalRecords();
+        seedLabTests();
         syncPostgresSequences();
+    }
+
+    private void seedLabTests() {
+        List<Long> existingTests = jdbcTemplate.query(
+                "SELECT lab_test_id FROM lab_tests",
+                (rs, rowNum) -> rs.getLong("lab_test_id"));
+        if (!existingTests.isEmpty()) {
+            return;
+        }
+
+        jdbcTemplate.update("INSERT INTO lab_tests (test_code, test_name, description, price, status, created_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+                "XN01", "Xét nghiệm máu tổng quát", "Kiểm tra hồng cầu, bạch cầu, tiểu cầu", 150000.00, "ACTIVE");
+        jdbcTemplate.update("INSERT INTO lab_tests (test_code, test_name, description, price, status, created_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+                "XN02", "Đường huyết (Glucose)", "Kiểm tra mức đường trong máu", 50000.00, "ACTIVE");
+        jdbcTemplate.update("INSERT INTO lab_tests (test_code, test_name, description, price, status, created_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+                "XN03", "Xét nghiệm nước tiểu", "Phân tích 10 thông số nước tiểu", 80000.00, "ACTIVE");
+        jdbcTemplate.update("INSERT INTO lab_tests (test_code, test_name, description, price, status, created_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+                "XN04", "Men gan (AST/ALT)", "Kiểm tra chức năng gan", 120000.00, "ACTIVE");
+        jdbcTemplate.update("INSERT INTO lab_tests (test_code, test_name, description, price, status, created_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+                "XN05", "Siêu âm bụng", "Kiểm tra tổng quát nội tạng", 200000.00, "ACTIVE");
     }
 
     private void migrateCheckConstraint() {
@@ -252,6 +273,7 @@ public class DataSeeder implements CommandLineRunner {
         syncPostgresSequence("appointments", "appointment_id");
         syncPostgresSequence("consultation_sessions", "consultation_id");
         syncPostgresSequence("medical_records", "medical_record_id");
+        syncPostgresSequence("lab_tests", "lab_test_id");
     }
 
     private void syncPostgresSequence(String tableName, String idColumn) {

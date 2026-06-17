@@ -53,6 +53,9 @@ public class Medicine {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "usage_instructions", length = 255)
+    private String usageInstructions;
+
     @Column(nullable = false, length = 20)
     @Builder.Default
     private String status = "ACTIVE";

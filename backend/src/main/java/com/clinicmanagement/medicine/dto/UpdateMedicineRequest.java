@@ -11,5 +11,6 @@ public class UpdateMedicineRequest {
     private String unit;
     private String rxnormCode;
     private String description;
+    private String usageInstructions;
     private String status;
 }

@@ -9,7 +9,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -28,9 +27,12 @@ public class Patient {
     @Column(name = "patient_id")
     private Long patientId;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
+
+    @Column(name = "relationship_to_user", nullable = false, length = 20)
+    private String relationshipToUser = "SELF";
 
     @Column(name = "patient_code", nullable = false, unique = true, length = 30)
     private String patientCode;

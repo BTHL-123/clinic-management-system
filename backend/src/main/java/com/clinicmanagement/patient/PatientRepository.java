@@ -12,6 +12,7 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
     Optional<Patient> findTopByPhone(String phone);
     Optional<Patient> findTopByOrderByPatientIdDesc();
 
+    java.util.List<Patient> findListByUserUserId(Long userId);
     Optional<Patient> findByUserUserId(Long userId);
 
     Optional<Patient> findByUser_UserId(Long userId);

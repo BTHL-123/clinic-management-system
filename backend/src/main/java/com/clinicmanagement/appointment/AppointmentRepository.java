@@ -121,4 +121,15 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long>,
             @Param("doctorId") Long doctorId,
             @Param("date") LocalDate date
     );
+
+    @Query("SELECT a FROM Appointment a WHERE " +
+           "a.status = 'CONFIRMED' AND " +
+           "a.reminderSent = false AND " +
+           "a.appointmentDate = :date AND " +
+           "a.startTime BETWEEN :now AND :endTime")
+    java.util.List<Appointment> findAppointmentsForReminder(
+            @Param("date") LocalDate date,
+            @Param("now") LocalTime now,
+            @Param("endTime") LocalTime endTime
+    );
 }

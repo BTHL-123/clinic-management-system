@@ -17,4 +17,5 @@ public class CreateMedicineRequest {
     private String unit;
     private String rxnormCode;
     private String description;
+    private String usageInstructions;
 }
