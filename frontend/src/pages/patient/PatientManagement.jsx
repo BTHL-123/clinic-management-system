@@ -212,7 +212,7 @@ export default function PatientManagement() {
       <div className="flex-1 patient-glass-panel rounded-[3rem] p-8 md:p-10 shadow-[0_12px_40px_rgba(0,0,0,0.22)] border-0 w-full flex flex-col min-h-0 overflow-hidden">
         <div className="flex-1 overflow-auto custom-scrollbar">
           <table className="receptionist-patient-table w-full text-left border-collapse whitespace-nowrap">
-            <thead className="admin-patient-table-head text-sm sticky top-0 z-10">
+            <thead className="bg-white/5 border-b border-slate-900/10 text-[#0f766e] text-sm sticky top-0 z-10 backdrop-blur-md">
               <tr>
                 <th className="p-5">Mã BN</th>
                 <th className="p-5">Họ và tên</th>

@@ -68,7 +68,7 @@ const LandingPage = () => {
       </div>
 
       {/* Premium Header */}
-      <header className={`fixed z-50 w-full transition-all duration-700 left-1/2 -translate-x-1/2 ${scrolled ? 'top-4 max-w-[1100px] xl:max-w-[1200px] bg-white/50 backdrop-blur-2xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.08)] py-2 rounded-full px-4 md:px-6' : 'top-0 max-w-[100%] 2xl:max-w-[1600px] bg-transparent py-8 px-6 md:px-12'}`}>
+      <header className={`fixed z-50 w-full transition-all duration-700 left-1/2 -translate-x-1/2 ${scrolled ? 'top-4 max-w-[1100px] xl:max-w-[1200px] bg-white/50 backdrop-blur-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] py-2 rounded-full px-4 md:px-6' : 'top-0 max-w-[100%] 2xl:max-w-[1600px] bg-transparent py-8 px-6 md:px-12'}`}>
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-3 cursor-pointer group" onClick={() => navigate('/')}>
             <LogoSVG
@@ -169,7 +169,7 @@ const LandingPage = () => {
             </p>
 
             {/* Glassmorphic Search Bar */}
-            <div className="relative max-w-3xl mx-auto group mt-8">
+            <div className="relative flex items-center max-w-3xl mx-auto group mt-8">
               <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none text-teal-600">
                 <Search size={24} />
               </div>
@@ -179,7 +179,7 @@ const LandingPage = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <Button className="absolute right-2 top-2 bottom-2 rounded-full bg-teal-800 hover:bg-teal-950 text-white font-bold px-8 transition-colors">
+              <Button className="absolute right-2 top-1/2 -translate-y-1/2 h-12 rounded-full bg-teal-800 hover:bg-teal-950 text-white font-bold px-8 transition-colors">
                 Tìm kiếm
               </Button>
             </div>

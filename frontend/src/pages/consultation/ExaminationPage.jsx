@@ -393,22 +393,30 @@ export default function ExaminationPage() {
         iconColor="text-white"
         subtitle={
           consultation ? (
-            <div className="mt-4 flex flex-wrap justify-center items-center gap-4 text-white/90 bg-white/10 backdrop-blur-md px-5 py-2 rounded-2xl border border-white/20 text-sm font-medium shadow-sm">
-              <span className="flex items-center gap-2">
-                <User size={16} className="text-emerald-300" /> Bệnh nhân ID: <strong className="text-white">{consultation.patientId}</strong>
-              </span>
-              <span className="opacity-50">•</span>
-              <span className="flex items-center gap-2">
-                <Stethoscope size={16} className="text-emerald-300" /> Bác sĩ ID: <strong className="text-white">{consultation.doctorId}</strong>
-              </span>
-              <span className="opacity-50">•</span>
-              <span className="flex items-center gap-2">
-                <Clock size={16} className="text-emerald-300" /> Bắt đầu: <strong className="text-white">{consultation.startedAt ? new Date(consultation.startedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : "—"}</strong>
-              </span>
-              <span className="opacity-50">•</span>
-              <span className={`px-2.5 py-1 rounded-full text-xs font-black shadow-sm ${consultation.status === "IN_PROGRESS" ? "bg-teal-500/20 text-teal-100 border border-teal-500/30" : "bg-emerald-500/20 text-emerald-100 border border-emerald-500/30"}`}>
-                {consultation.status === "IN_PROGRESS" ? "ĐANG KHÁM" : consultation.status}
-              </span>
+            <div className="mt-4 p-[1.5px] rounded-2xl bg-gradient-to-r from-teal-400 via-cyan-400 to-emerald-400 shadow-[0_8px_32px_rgba(20,184,166,0.25)]">
+              <div className="bg-slate-900/60 backdrop-blur-xl px-6 py-2.5 rounded-[15px] flex flex-wrap justify-center items-center gap-5 text-sm font-semibold text-white">
+                <span className="flex items-center gap-2">
+                  <User size={16} className="text-teal-300 drop-shadow-[0_0_8px_rgba(94,234,212,0.4)] stroke-[2.5]" />
+                  <span className="text-slate-300 font-medium">Bệnh nhân ID:</span>
+                  <strong className="text-white font-extrabold text-base">{consultation.patientId}</strong>
+                </span>
+                <span className="text-slate-600 font-light">•</span>
+                <span className="flex items-center gap-2">
+                  <Stethoscope size={16} className="text-teal-300 drop-shadow-[0_0_8px_rgba(94,234,212,0.4)] stroke-[2.5]" />
+                  <span className="text-slate-300 font-medium">Bác sĩ ID:</span>
+                  <strong className="text-white font-extrabold text-base">{consultation.doctorId}</strong>
+                </span>
+                <span className="text-slate-600 font-light">•</span>
+                <span className="flex items-center gap-2">
+                  <Clock size={16} className="text-teal-300 drop-shadow-[0_0_8px_rgba(94,234,212,0.4)] stroke-[2.5]" />
+                  <span className="text-slate-300 font-medium">Bắt đầu:</span>
+                  <strong className="text-white font-extrabold text-base">{consultation.startedAt ? new Date(consultation.startedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : "—"}</strong>
+                </span>
+                <span className="text-slate-600 font-light">•</span>
+                <span className={`px-3.5 py-1 rounded-full text-xs font-black shadow-md tracking-wider uppercase bg-gradient-to-r ${consultation.status === "IN_PROGRESS" ? "from-teal-400 to-emerald-400 text-slate-950 shadow-[0_0_12px_rgba(45,212,191,0.5)]" : "from-emerald-400 to-green-400 text-slate-950 shadow-[0_0_12px_rgba(52,211,153,0.5)]"}`}>
+                  {consultation.status === "IN_PROGRESS" ? "ĐANG KHÁM" : consultation.status}
+                </span>
+              </div>
             </div>
           ) : undefined
         }

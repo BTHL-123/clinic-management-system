@@ -16,6 +16,10 @@ export default function DepartmentManagement() {
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
+  // pagination state
+  const [currentPage, setCurrentPage] = useState(0);
+  const PAGE_SIZE = 10;
+
   // form state
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState(EMPTY_FORM);
@@ -30,7 +34,8 @@ export default function DepartmentManagement() {
   const fetchDepartments = async () => {
     try {
       setLoading(true);
-      const res = await getDepartments();
+      // Fetch up to 1000 items to bypass default pagination limit of 10
+      const res = await getDepartments({ page: 0, size: 1000 });
       // res.data is a PageResponse, so the array is inside res.data.content
       setDepartments(res.data?.content ?? []);
       setError("");
@@ -45,11 +50,30 @@ export default function DepartmentManagement() {
     fetchDepartments();
   }, []);
 
+  // Reset to page 0 when search term changes
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [searchTerm]);
+
   /* ── Filter ────────────────────────────────────────────── */
   const filtered = departments.filter(
     (d) =>
       d.departmentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (d.description ?? "").toLowerCase().includes(searchTerm.toLowerCase()),
+  );
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+
+  // Automatically adjust current page if out of bounds after filtering or deletion
+  useEffect(() => {
+    if (totalPages > 0 && currentPage >= totalPages) {
+      setCurrentPage(totalPages - 1);
+    }
+  }, [filtered.length, totalPages, currentPage]);
+
+  const paginatedDepartments = filtered.slice(
+    currentPage * PAGE_SIZE,
+    (currentPage + 1) * PAGE_SIZE
   );
 
   /* ── Form handlers ─────────────────────────────────────── */
@@ -181,7 +205,7 @@ export default function DepartmentManagement() {
                   Đang tải dữ liệu...
                 </td>
               </tr>
-            ) : filtered.length === 0 ? (
+            ) : paginatedDepartments.length === 0 ? (
               <tr>
                 <td colSpan={6} className="empty-row">
                   {searchTerm
@@ -190,9 +214,9 @@ export default function DepartmentManagement() {
                 </td>
               </tr>
             ) : (
-              filtered.map((dept, idx) => (
+              paginatedDepartments.map((dept, idx) => (
                 <tr key={dept.departmentId}>
-                  <td>{idx + 1}</td>
+                  <td>{currentPage * PAGE_SIZE + idx + 1}</td>
                   <td className="cell-name">{dept.departmentName}</td>
                   <td className="cell-desc">
                     {dept.description || "—"}
@@ -233,6 +257,31 @@ export default function DepartmentManagement() {
           </tbody>
         </table>
       </div>
+
+      {/* ── Pagination ─────────────────────────────────── */}
+      {totalPages > 1 && (
+        <div className="pagination" style={{ marginTop: "16px" }}>
+          <button
+            className="ghost-button"
+            type="button"
+            disabled={currentPage === 0 || loading}
+            onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+          >
+            Trước
+          </button>
+          <span className="muted">
+            Trang {currentPage + 1} / {totalPages}
+          </span>
+          <button
+            className="ghost-button"
+            type="button"
+            disabled={currentPage + 1 >= totalPages || loading}
+            onClick={() => setCurrentPage((p) => p + 1)}
+          >
+            Sau
+          </button>
+        </div>
+      )}
 
       {/* ── Create / Edit Modal ────────────────────────── */}
       {showForm && (

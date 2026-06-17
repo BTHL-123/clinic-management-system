@@ -295,7 +295,7 @@ function AppointmentCard({
           </span>
         )}
 
-        {appt.status === "COMPLETED" && appt.patientName === currentUserFullName && !appt.hasReviewed && (
+        {appt.status === "COMPLETED" && !appt.hasReviewed && (
           <button
             onClick={() => onReviewRequest(appt.appointmentId)}
             className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 hover:text-amber-200 cursor-pointer text-[13px] font-semibold transition-all"
