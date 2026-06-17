@@ -13,3 +13,7 @@ export const deletePatient = (id) => axiosClient.delete(`/patients/${id}`);
 export const getMyPatientProfile = () => axiosClient.get("/patients/me");
 
 export const updateMyPatientProfile = (payload) => axiosClient.put("/patients/me", payload);
+
+export const getMyProfiles = () => axiosClient.get("/patients/my-profiles");
+
+export const createDependentProfile = (payload) => axiosClient.post("/patients/my-profiles", payload);

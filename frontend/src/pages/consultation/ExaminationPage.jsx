@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Stethoscope, Save, ArrowLeft, CheckCircle, Activity, FlaskConical, Pill, ExternalLink, User, Clock, AlertCircle } from "lucide-react";
+import { Stethoscope, Save, ArrowLeft, CheckCircle, Activity, FlaskConical, Pill, ExternalLink, User, Clock, AlertCircle, RefreshCw } from "lucide-react";
 import consultationService from "../../services/consultationService";
 import {
   createMedicalRecord,
@@ -12,6 +12,7 @@ import { createLabRequest, getLabRequestsByConsultationId } from "../../services
 import { getLabTests } from "../../services/labTestService";
 import { standardizeClinicalNote } from "../../services/aiChatService";
 import { Bot } from "lucide-react";
+import PatientRecordModal from "../../components/PatientRecordModal";
 import {
   createPrescription,
   getPrescriptionByConsultationId,
@@ -85,6 +86,7 @@ export default function ExaminationPage() {
 
   const [rawNote, setRawNote] = useState("");
   const [aiProcessing, setAiProcessing] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
 
   // Load consultation + bệnh án hiện có (nếu có)
   useEffect(() => {
@@ -218,11 +220,28 @@ export default function ExaminationPage() {
     }
   };
 
+  const handleRefreshLabRequests = async () => {
+    try {
+      const res = await getLabRequestsByConsultationId(consultationId);
+      setSavedLabRequests(res.data || []);
+      showToast("Đã cập nhật phiếu xét nghiệm và kết quả.");
+    } catch (err) {
+      showToast("Không thể tải lại phiếu xét nghiệm.", "error");
+    }
+  };
+
   // ── Prescription handlers ────────────────────────────────────────────────
   const handleRxItemChange = (index, field, value) => {
     setRxItems((prev) => {
       const updated = [...prev];
       updated[index] = { ...updated[index], [field]: value };
+      
+      if (field === "medicineId" && value) {
+        const selectedMed = medicines.find(m => m.medicineId.toString() === value.toString());
+        if (selectedMed && selectedMed.usageInstructions) {
+          updated[index].instructions = selectedMed.usageInstructions;
+        }
+      }
       return updated;
     });
   };
@@ -393,22 +412,30 @@ export default function ExaminationPage() {
         iconColor="text-white"
         subtitle={
           consultation ? (
-            <div className="mt-4 flex flex-wrap justify-center items-center gap-4 text-white/90 bg-white/10 backdrop-blur-md px-5 py-2 rounded-2xl border border-white/20 text-sm font-medium shadow-sm">
-              <span className="flex items-center gap-2">
-                <User size={16} className="text-emerald-300" /> Bệnh nhân ID: <strong className="text-white">{consultation.patientId}</strong>
-              </span>
-              <span className="opacity-50">•</span>
-              <span className="flex items-center gap-2">
-                <Stethoscope size={16} className="text-emerald-300" /> Bác sĩ ID: <strong className="text-white">{consultation.doctorId}</strong>
-              </span>
-              <span className="opacity-50">•</span>
-              <span className="flex items-center gap-2">
-                <Clock size={16} className="text-emerald-300" /> Bắt đầu: <strong className="text-white">{consultation.startedAt ? new Date(consultation.startedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : "—"}</strong>
-              </span>
-              <span className="opacity-50">•</span>
-              <span className={`px-2.5 py-1 rounded-full text-xs font-black shadow-sm ${consultation.status === "IN_PROGRESS" ? "bg-teal-500/20 text-teal-100 border border-teal-500/30" : "bg-emerald-500/20 text-emerald-100 border border-emerald-500/30"}`}>
-                {consultation.status === "IN_PROGRESS" ? "ĐANG KHÁM" : consultation.status}
-              </span>
+            <div className="mt-4 p-[1.5px] rounded-2xl bg-gradient-to-r from-teal-400 via-cyan-400 to-emerald-400 shadow-[0_8px_32px_rgba(20,184,166,0.25)]">
+              <div className="bg-slate-900/60 backdrop-blur-xl px-6 py-2.5 rounded-[15px] flex flex-wrap justify-center items-center gap-5 text-sm font-semibold text-white">
+                  <span className="flex items-center gap-2">
+                  <User size={16} className="text-teal-300 drop-shadow-[0_0_8px_rgba(94,234,212,0.4)] stroke-[2.5]" />
+                  <span className="text-slate-300 font-medium">Bệnh nhân ID:</span>
+                  <strong className="text-white font-extrabold text-base">{consultation.patientId}</strong>
+                </span>
+                <span className="text-slate-600 font-light">•</span>
+                <span className="flex items-center gap-2">
+                  <Stethoscope size={16} className="text-teal-300 drop-shadow-[0_0_8px_rgba(94,234,212,0.4)] stroke-[2.5]" />
+                  <span className="text-slate-300 font-medium">Bác sĩ ID:</span>
+                  <strong className="text-white font-extrabold text-base">{consultation.doctorId}</strong>
+                </span>
+                <span className="text-slate-600 font-light">•</span>
+                <span className="flex items-center gap-2">
+                  <Clock size={16} className="text-teal-300 drop-shadow-[0_0_8px_rgba(94,234,212,0.4)] stroke-[2.5]" />
+                  <span className="text-slate-300 font-medium">Bắt đầu:</span>
+                  <strong className="text-white font-extrabold text-base">{consultation.startedAt ? new Date(consultation.startedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : "—"}</strong>
+                </span>
+                <span className="text-slate-600 font-light">•</span>
+                <span className={`px-3.5 py-1 rounded-full text-xs font-black shadow-md tracking-wider uppercase bg-gradient-to-r ${consultation.status === "IN_PROGRESS" ? "from-teal-400 to-emerald-400 text-slate-950 shadow-[0_0_12px_rgba(45,212,191,0.5)]" : "from-emerald-400 to-green-400 text-slate-950 shadow-[0_0_12px_rgba(52,211,153,0.5)]"}`}>
+                  {consultation.status === "IN_PROGRESS" ? "ĐANG KHÁM" : consultation.status}
+                </span>
+              </div>
             </div>
           ) : undefined
         }
@@ -422,7 +449,33 @@ export default function ExaminationPage() {
         </div>
       )}
 
-      <div className="w-full flex flex-col gap-6 max-w-[960px]">
+      {showHistoryModal && (
+        <PatientRecordModal 
+          patientId={consultation.patientId} 
+          onClose={() => setShowHistoryModal(false)} 
+        />
+      )}
+
+      <div className="w-full flex flex-col gap-6 max-w-[960px] mt-6">
+
+        {/* Nút Mở Hồ sơ TO BẢN */}
+        <button 
+          onClick={() => setShowHistoryModal(true)}
+          className="w-full bg-gradient-to-r from-teal-500 to-sky-500 text-white rounded-2xl p-6 shadow-lg hover:shadow-[0_10px_40px_rgba(20,184,166,0.3)] hover:-translate-y-1 transition-all flex items-center justify-between group cursor-pointer border border-teal-400/30"
+        >
+          <div className="flex items-center gap-5">
+            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md group-hover:scale-110 transition-transform shadow-inner">
+              <Activity size={28} className="text-white" strokeWidth={2.5} />
+            </div>
+            <div className="text-left">
+              <h3 className="text-2xl font-black mb-1 drop-shadow-sm">Hồ sơ Bệnh án Tổng quan</h3>
+              <p className="text-teal-50 font-medium text-sm">Tra cứu nhóm máu, dị ứng, bệnh nền và toàn bộ lịch sử khám trước đây</p>
+            </div>
+          </div>
+          <div className="bg-white/20 text-white px-6 py-3 rounded-xl font-bold backdrop-blur-md group-hover:bg-white group-hover:text-teal-600 transition-colors shadow-sm hidden md:block">
+            Mở xem ngay
+          </div>
+        </button>
 
       {/* Vital Signs Section */}
       <div className="patient-glass-panel rounded-[2rem] p-8 shadow-xl border-0 w-full mb-6">
@@ -610,20 +663,88 @@ export default function ExaminationPage() {
         {/* Phiếu đã tạo */}
         {savedLabRequests.length > 0 && (
           <div className="mt-6 pt-5 border-t border-sky-900/10">
-            <p className="text-xs font-bold text-blue-800 mb-3">
-              Phiếu đã tạo ({savedLabRequests.length})
-            </p>
+            <div className="flex justify-between items-center mb-3">
+              <p className="text-xs font-bold text-blue-800">
+                Phiếu đã tạo ({savedLabRequests.length})
+              </p>
+              <button 
+                type="button" 
+                onClick={handleRefreshLabRequests}
+                className="flex items-center gap-1.5 text-xs font-bold text-sky-600 hover:text-sky-800 transition-colors bg-sky-50 px-3 py-1.5 rounded-lg border border-sky-200"
+              >
+                <RefreshCw size={14} /> Cập nhật kết quả
+              </button>
+            </div>
             <div className="flex flex-col gap-3">
               {savedLabRequests.map((req) => (
-                <div key={req.labRequestId} className="bg-white/80 border border-blue-200 rounded-xl p-3 shadow-sm">
-                  <div className="flex justify-between items-center mb-1">
-                    <strong className="text-sm font-extrabold text-blue-900">{req.requestCode}</strong>
+                <div key={req.labRequestId} className="bg-white/80 border border-blue-200 rounded-xl p-4 shadow-sm flex flex-col gap-3">
+                  <div className="flex justify-between items-center border-b border-sky-100 pb-2">
+                    <div className="flex items-center gap-2">
+                      <strong className="text-sm font-extrabold text-blue-900">{req.requestCode}</strong>
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${req.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-700' : req.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
+                        {req.status === 'COMPLETED' ? 'ĐÃ HOÀN THÀNH' : req.status === 'IN_PROGRESS' ? 'ĐANG XỬ LÝ' : 'CHỜ TIẾP NHẬN'}
+                      </span>
+                    </div>
                     <span className="text-xs font-semibold text-slate-500">
                       {new Date(req.requestedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
                     </span>
                   </div>
-                  <div className="text-xs font-medium text-slate-700">
-                    {req.items?.map((item) => item.testName).join(", ")}
+                  
+                  <div className="flex flex-col gap-2">
+                    {req.items?.map((item) => (
+                      <div key={item.labRequestItemId} className="bg-sky-50/50 rounded-lg p-3 border border-sky-100/50">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-xs font-bold text-slate-800">• {item.testName} <span className="text-slate-500 font-medium text-[10px]">({item.testCode})</span></span>
+                          {item.labResult ? (
+                            <span className="text-emerald-600 flex items-center gap-1 text-[10px] font-bold bg-emerald-100/50 px-2 py-0.5 rounded-full"><CheckCircle size={10}/> Đã có kết quả</span>
+                          ) : (
+                            <span className="text-amber-600 flex items-center gap-1 text-[10px] font-bold bg-amber-100/50 px-2 py-0.5 rounded-full">Đang chờ</span>
+                          )}
+                        </div>
+                        
+                        {item.labResult && (
+                          <div className="ml-2 mt-2 grid grid-cols-2 gap-2 bg-white rounded-md p-2 border border-sky-100">
+                            <div className="flex flex-col">
+                              <span className="text-[10px] text-slate-400 font-bold uppercase">Giá trị</span>
+                              <span className="text-xs font-extrabold text-slate-800">{item.labResult.resultValue} <span className="text-slate-500 font-medium">{item.labResult.resultUnit}</span></span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-[10px] text-slate-400 font-bold uppercase">CSBT</span>
+                              <span className="text-xs font-semibold text-slate-600">{item.labResult.normalRange || "—"}</span>
+                            </div>
+                            <div className="col-span-2 flex flex-col mt-1">
+                              <span className="text-[10px] text-slate-400 font-bold uppercase">Kết luận</span>
+                              <span className={`text-xs font-bold ${item.labResult.conclusion?.toLowerCase()?.includes('bất thường') ? 'text-rose-600' : 'text-emerald-700'}`}>{item.labResult.conclusion || "—"}</span>
+                            </div>
+                            {item.labResult.resultFileUrl && (
+                              <div className="col-span-2 mt-2">
+                                <a 
+                                  href={item.labResult.resultFileUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="group block overflow-hidden rounded-lg border border-slate-200 hover:border-teal-400 transition-all shadow-sm relative"
+                                >
+                                  <img 
+                                    src={item.labResult.resultFileUrl} 
+                                    alt="Ảnh kết quả xét nghiệm" 
+                                    className="w-full h-auto max-h-40 object-cover group-hover:scale-105 transition-transform duration-500" 
+                                    onError={(e) => { 
+                                      e.target.style.display = 'none'; 
+                                      if (e.target.nextSibling) {
+                                        e.target.nextSibling.style.display = 'flex'; 
+                                      }
+                                    }} 
+                                  />
+                                  <div className="hidden items-center justify-center gap-2 p-3 bg-slate-50 text-teal-600 text-xs font-bold group-hover:bg-teal-50 transition-colors">
+                                    <ExternalLink size={14} /> Mở file đính kèm
+                                  </div>
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}
@@ -714,6 +835,17 @@ export default function ExaminationPage() {
                         </option>
                       ))}
                     </select>
+                    {item.medicineId && (() => {
+                      const selectedMed = medicines.find(m => m.medicineId.toString() === item.medicineId.toString());
+                      if (selectedMed && (selectedMed.activeIngredient || selectedMed.description)) {
+                        return (
+                          <div className="text-[11px] text-pink-600 bg-pink-50 p-2 rounded-lg mt-1 border border-pink-100">
+                            <strong>Thành phần/Chức năng:</strong> {selectedMed.activeIngredient ? selectedMed.activeIngredient + " - " : ""}{selectedMed.description || ""}
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                   <div className="col-span-4 md:col-span-2 flex flex-col gap-1.5">
                     <label className="text-xs font-bold text-pink-800 ml-1">Số lượng <span className="text-rose-500">*</span></label>
@@ -756,6 +888,11 @@ export default function ExaminationPage() {
                     <label className="text-xs font-bold text-pink-800 ml-1">Tối</label>
                     <input type="text" value={item.nightDose} onChange={(e) => handleRxItemChange(index, "nightDose", e.target.value)}
                       placeholder="1" className="w-full bg-white border border-pink-200/50 rounded-xl px-3 py-2 text-xs text-slate-700 font-medium focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20 transition-all outline-none" />
+                  </div>
+                  <div className="col-span-10 flex flex-col gap-1.5 mt-2">
+                    <label className="text-xs font-bold text-pink-800 ml-1">Ghi chú riêng / Cách dùng</label>
+                    <input type="text" value={item.instructions} onChange={(e) => handleRxItemChange(index, "instructions", e.target.value)}
+                      placeholder="Uống sau ăn 30 phút..." className="w-full bg-white border border-pink-200/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 font-medium focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20 transition-all outline-none" />
                   </div>
                 </div>
                 {rxItems.length > 1 && (

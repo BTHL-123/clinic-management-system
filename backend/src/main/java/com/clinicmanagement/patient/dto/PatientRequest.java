@@ -11,6 +11,9 @@ import java.time.LocalDate;
 public record PatientRequest(
         Long userId,
 
+        @Pattern(regexp = "SELF|CHILD|PARENT|SPOUSE|OTHER", message = "Mối quan hệ không hợp lệ")
+        String relationshipToUser,
+
         @NotBlank(message = "MÃ£ bá»‡nh nhÃ¢n khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng")
         @Size(max = 30, message = "MÃ£ bá»‡nh nhÃ¢n khÃ´ng Ä‘Æ°á»£c vÆ°á»£t quÃ¡ 30 kÃ½ tá»±")
         String patientCode,

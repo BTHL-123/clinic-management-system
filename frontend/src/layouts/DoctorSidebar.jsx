@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/useAuth.js";
 import { 
-  Home, Users, CalendarDays, Stethoscope, Settings, Bell, LogOut, ChevronRight, ClipboardList
+  Home, Users, CalendarDays, Stethoscope, Settings, Bell, LogOut, ChevronRight, ClipboardList, FileText
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -26,6 +26,7 @@ export default function DoctorSidebar() {
     if (path.includes("doctor-appointments")) return "calendar";
     if (path.includes("consultation") || path.includes("examination")) return "examination";
     if (path.includes("doctor-leave-requests")) return "leave-requests";
+    if (path.includes("articles")) return "articles";
     if (path.includes("profile") || path.includes("change-password")) return "settings";
     return "home";
   };
@@ -43,6 +44,7 @@ export default function DoctorSidebar() {
     { id: "calendar", icon: <CalendarDays size={22} />, path: "/dashboard/doctor-appointments", label: "Lịch khám" },
     { id: "examination", icon: <Stethoscope size={22} />, path: "/dashboard/consultation", label: "Khám bệnh" },
     { id: "leave-requests", icon: <ClipboardList size={22} />, path: "/dashboard/doctor-leave-requests", label: "Nghỉ phép" },
+    { id: "articles", icon: <FileText size={22} />, path: "/dashboard/articles", label: "Bài viết y tế" },
     { id: "settings", icon: <Settings size={22} />, path: "/dashboard/profile", label: "Cài đặt" },
   ];
 

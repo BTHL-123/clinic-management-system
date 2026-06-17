@@ -32,8 +32,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long>,
            "LEFT JOIN a.doctor d " +
            "LEFT JOIN d.user du " +
            "WHERE (pu.userId = :userId OR du.userId = :userId) AND " +
-           "((:upcoming = true AND a.appointmentDate >= :currentDate) OR " +
-           " (:upcoming = false AND a.appointmentDate < :currentDate))")
+           "((:upcoming = true AND a.appointmentDate >= :currentDate AND a.status NOT IN ('COMPLETED', 'CANCELLED', 'NO_SHOW', 'RESCHEDULED')) OR " +
+           " (:upcoming = false AND (a.appointmentDate < :currentDate OR a.status IN ('COMPLETED', 'CANCELLED', 'NO_SHOW', 'RESCHEDULED'))))")
     Page<Appointment> findMyAppointments(
             @Param("userId") Long userId,
             @Param("upcoming") boolean upcoming,
@@ -120,5 +120,16 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long>,
     java.util.List<Appointment> findDoctorTodayAppointments(
             @Param("doctorId") Long doctorId,
             @Param("date") LocalDate date
+    );
+
+    @Query("SELECT a FROM Appointment a WHERE " +
+           "a.status = 'CONFIRMED' AND " +
+           "a.reminderSent = false AND " +
+           "a.appointmentDate = :date AND " +
+           "a.startTime BETWEEN :now AND :endTime")
+    java.util.List<Appointment> findAppointmentsForReminder(
+            @Param("date") LocalDate date,
+            @Param("now") LocalTime now,
+            @Param("endTime") LocalTime endTime
     );
 }

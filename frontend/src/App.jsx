@@ -38,6 +38,7 @@ import PatientDetailPage from "./pages/patient/PatientDetailPage.jsx";
 import ConsultationPage from "./pages/consultation/ConsultationPage.jsx";
 import ExaminationPage from "./pages/consultation/ExaminationPage.jsx";
 import LabRequestPage from "./pages/lab/LabRequestPage.jsx";
+import LabTestManagement from "./pages/lab/LabTestManagement.jsx";
 import PrescriptionDetailPage from "./pages/prescription/PrescriptionDetailPage.jsx";
 import PharmacistPrescriptionPage from "./pages/prescription/PharmacistPrescriptionPage.jsx";
 import PatientLabResultPage from "./pages/lab/PatientLabResultPage.jsx";
@@ -45,6 +46,7 @@ import ProfilePage from "./pages/profile/ProfilePage.jsx";
 import MyAppointmentsPage from "./pages/patient/MyAppointmentsPage.jsx";
 import AppointmentDetailPage from "./pages/appointment/AppointmentDetailPage.jsx";
 import PatientMedicalHistoryPage from "./pages/patient/PatientMedicalHistoryPage.jsx";
+import PatientDoctorsPage from "./pages/patient/PatientDoctorsPage.jsx";
 import ReviewManagement from "./pages/review/ReviewManagement.jsx";
 import ArticleManagement from "./pages/article/ArticleManagement.jsx";
 import PatientQueueStatusPage from "./pages/appointment/PatientQueueStatusPage.jsx";
@@ -141,11 +143,13 @@ export default function App() {
         <Route path="queue-status" element={<PatientQueueStatusPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="doctors" element={<DoctorManagement />} />
+        <Route path="our-doctors" element={<PatientDoctorsPage />} />
         <Route path="patients" element={<PatientManagement />} />
         <Route path="patients/:patientId" element={<PatientDetailPage />} />
         <Route path="consultation" element={<ConsultationPage />} />
         <Route path="examination/:consultationId" element={<ExaminationPage />} />
         <Route path="lab-requests" element={<LabRequestPage />} />
+        <Route path="lab-tests" element={<LabTestManagement />} />
         <Route path="prescriptions/:prescriptionId" element={<PrescriptionDetailPage />} />
         <Route path="pharmacist/prescriptions" element={<PharmacistPrescriptionPage />} />
         <Route path="my-lab-results" element={<PatientLabResultPage />} />

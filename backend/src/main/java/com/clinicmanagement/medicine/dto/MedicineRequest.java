@@ -14,5 +14,6 @@ public record MedicineRequest(
         String unit,
         String rxnormCode,
         String description,
+        String usageInstructions,
         String status
 ) {}

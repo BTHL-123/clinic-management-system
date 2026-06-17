@@ -13,6 +13,7 @@ public record MedicineResponse(
         String unit,
         String rxnormCode,
         String description,
+        String usageInstructions,
         String status,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
@@ -28,6 +29,7 @@ public record MedicineResponse(
                 medicine.getUnit(),
                 medicine.getRxnormCode(),
                 medicine.getDescription(),
+                medicine.getUsageInstructions(),
                 medicine.getStatus(),
                 medicine.getCreatedAt(),
                 medicine.getUpdatedAt()

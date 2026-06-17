@@ -70,6 +70,9 @@ public class Appointment {
     @Column(name = "deposit_amount", nullable = false)
     private BigDecimal depositAmount = BigDecimal.ZERO;
 
+    @Column(name = "reminder_sent", nullable = false)
+    private boolean reminderSent = false;
+
     @Column(name = "created_by")
     private Long createdBy;
 

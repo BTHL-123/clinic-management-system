@@ -45,9 +45,6 @@ public class PatientServiceImpl implements PatientService {
 
         User user = null;
         if (request.userId() != null) {
-            if (patientRepository.existsByUser_UserId(request.userId())) {
-                throw new BusinessException("Người dùng này đã được liên kết với một hồ sơ bệnh nhân khác");
-            }
             user = userRepository.findById(request.userId())
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + request.userId()));
         }
@@ -83,10 +80,6 @@ public class PatientServiceImpl implements PatientService {
         }
 
         if (request.userId() != null) {
-            if ((patient.getUser() == null || !patient.getUser().getUserId().equals(request.userId())) 
-                && patientRepository.existsByUser_UserId(request.userId())) {
-                throw new BusinessException("Người dùng này đã được liên kết với một hồ sơ bệnh nhân khác");
-            }
             User user = userRepository.findById(request.userId())
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + request.userId()));
             patient.setUser(user);
@@ -117,8 +110,15 @@ public class PatientServiceImpl implements PatientService {
     @Override
     @Transactional(readOnly = true)
     public PatientResponse getMyProfile(Long userId) {
-        Patient patient = patientRepository.findByUser_UserId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Tài khoản của bạn chưa được liên kết với hồ sơ bệnh nhân nào."));
+        java.util.List<Patient> patients = patientRepository.findListByUserUserId(userId);
+        if (patients.isEmpty()) {
+            throw new ResourceNotFoundException("Tài khoản của bạn chưa được liên kết với hồ sơ bệnh nhân nào.");
+        }
+        // Return the first one (usually SELF)
+        Patient patient = patients.stream()
+                .filter(p -> "SELF".equals(p.getRelationshipToUser()))
+                .findFirst()
+                .orElse(patients.get(0));
         return PatientResponse.from(patient);
     }
 
@@ -136,6 +136,45 @@ public class PatientServiceImpl implements PatientService {
         patient.setPhone(request.phone());
         patient.setEmail(request.email());
         patient.setAddress(request.address());
+        patient.setIdentityNumber(request.identityNumber());
+        patient.setInsuranceNumber(request.insuranceNumber());
+        patient.setEmergencyContactName(request.emergencyContactName());
+        patient.setEmergencyContactPhone(request.emergencyContactPhone());
+        patient.setBloodType(request.bloodType());
+        patient.setAllergies(request.allergies());
+        patient.setMedicalHistory(request.medicalHistory());
+
+        return PatientResponse.from(patientRepository.save(patient));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<PatientResponse> getMyProfiles(Long userId) {
+        java.util.List<Patient> patients = patientRepository.findListByUserUserId(userId);
+        return patients.stream().map(PatientResponse::from).toList();
+    }
+
+    @Override
+    @Transactional
+    public PatientResponse createDependentProfile(Long userId, PatientRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + userId));
+
+        if (patientRepository.existsByPatientCode(request.patientCode())) {
+            throw new BusinessException("Mã bệnh nhân đã tồn tại");
+        }
+
+        Patient patient = new Patient();
+        patient.setUser(user);
+        patient.setPatientCode(request.patientCode());
+        patient.setFullName(request.fullName());
+        patient.setGender(request.gender() != null ? request.gender() : "OTHER");
+        patient.setDateOfBirth(request.dateOfBirth());
+        patient.setPhone(request.phone());
+        patient.setEmail(request.email());
+        patient.setAddress(request.address());
+        patient.setRelationshipToUser(request.relationshipToUser() != null ? request.relationshipToUser() : "CHILD");
+        
         patient.setIdentityNumber(request.identityNumber());
         patient.setInsuranceNumber(request.insuranceNumber());
         patient.setEmergencyContactName(request.emergencyContactName());

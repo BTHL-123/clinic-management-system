@@ -26,7 +26,7 @@ export default function PageHeader({
 
   return (
     <div className={`w-full relative flex flex-col sm:flex-row justify-center items-center min-h-[80px] ${className}`}>
-      <div className="w-full sm:absolute sm:left-0 sm:top-1/2 sm:-translate-y-1/2 flex justify-start mb-4 sm:mb-0 px-4 sm:px-0 z-10">
+      <div className="w-auto sm:absolute sm:left-0 sm:top-1/2 sm:-translate-y-1/2 flex justify-start mb-4 sm:mb-0 px-4 sm:px-0 z-20">
         {showBackButton && (
           <button
             onClick={handleBack}
@@ -41,7 +41,7 @@ export default function PageHeader({
         )}
       </div>
 
-      <div className="flex flex-col items-center text-center mt-2 px-4 relative z-0">
+      <div className="flex flex-col items-center text-center mt-2 px-4 relative z-10">
         <h1 className={`inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight ${subtitle ? 'mb-4' : 'mb-0'}`}>
           {Icon && (
             <Icon size={32} className={`${resolvedIconColor} drop-shadow-md`} />
@@ -56,7 +56,7 @@ export default function PageHeader({
       </div>
 
       {rightContent && (
-        <div className="w-full sm:absolute sm:right-0 sm:top-1/2 sm:-translate-y-1/2 flex justify-end mt-4 sm:mt-0 px-4 sm:px-0 z-10">
+        <div className="w-auto sm:absolute sm:right-0 sm:top-1/2 sm:-translate-y-1/2 flex justify-end mt-4 sm:mt-0 px-4 sm:px-0 z-20">
           {rightContent}
         </div>
       )}

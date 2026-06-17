@@ -34,7 +34,7 @@ export default function LabRequestPage() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [filterStatus, setFilterStatus] = useState("IN_PROGRESS");
+  const [filterStatus, setFilterStatus] = useState("REQUESTED");
   const [actionLoading, setActionLoading] = useState(null);
 
   // Modal nhập kết quả
@@ -76,8 +76,8 @@ export default function LabRequestPage() {
   };
 
   const handleSaveResult = async () => {
-    if (!resultForm.resultValue.trim()) {
-      toast.error("Vui lòng nhập giá trị kết quả.", "Thiếu thông tin");
+    if (!resultForm.resultValue.trim() && !resultForm.conclusion.trim() && !resultForm.resultFileUrl.trim()) {
+      toast.error("Vui lòng nhập Giá trị kết quả, Kết luận, hoặc đính kèm file.", "Thiếu thông tin");
       return;
     }
     setSavingResult(true);
@@ -270,7 +270,7 @@ export default function LabRequestPage() {
 
             <div className="grid gap-4 mb-6">
               {[
-                { key: "resultValue", label: "Giá trị kết quả *", placeholder: "VD: 5.2" },
+                { key: "resultValue", label: "Giá trị kết quả", placeholder: "VD: 5.2" },
                 { key: "resultUnit", label: "Đơn vị", placeholder: "VD: mmol/L" },
                 { key: "normalRange", label: "Khoảng bình thường", placeholder: "VD: 3.9 - 6.1" },
                 { key: "conclusion", label: "Kết luận", placeholder: "Bình thường / Bất thường..." },

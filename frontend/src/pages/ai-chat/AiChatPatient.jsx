@@ -188,7 +188,7 @@ export default function AiChatPatient() {
         {/* Chat Controls */}
         <div className="bg-white/10 backdrop-blur-md border-b border-white/20 p-4 flex justify-between items-center shrink-0">
           <button
-            className="bg-white/20 hover:bg-white/30 text-white font-bold px-4 py-2 rounded-xl transition-all shadow-sm text-sm"
+            className="bg-white text-teal-700 hover:bg-teal-50 font-bold px-4 py-2 rounded-xl transition-all shadow-md text-sm"
             onClick={handleNewChat}
             disabled={loading}
           >

@@ -4,7 +4,9 @@ import { Clock, Search, CalendarDays, ArrowLeft, ShieldAlert, CheckCircle, UserR
 import { getAvailableSlotsForPatient, getSchedules, lockSlot, releaseLock } from "../../services/scheduleService";
 import { getDoctors } from "../../services/doctorService";
 import appointmentService from "../../services/appointmentService";
+import { getMyProfiles, createDependentProfile } from "../../services/patientService";
 import { useToast } from "../../context/useToast";
+import { useAuth } from "../../context/useAuth.js";
 
 interface TimeSlot {
   slotId: number;
@@ -45,10 +47,10 @@ export default function AvailableSlots() {
   const toast = useToast();
 
   const searchParams = new URLSearchParams(location.search);
-  const paramDoctorId = searchParams.get("doctorId") || "";
   const paramWorkDate = searchParams.get("workDate") || "";
+  const initialDoctorId = searchParams.get("doctorId") || String((location.state as any)?.prefillDoctorId || "");
 
-  const [doctorId, setDoctorId] = useState(paramDoctorId);
+  const [doctorId, setDoctorId] = useState(initialDoctorId);
   const [workDate, setWorkDate] = useState(paramWorkDate);
   const [doctorOptions, setDoctorOptions] = useState<DoctorOption[]>([]);
   const [scheduleOptions, setScheduleOptions] = useState<DoctorSchedule[]>([]);
@@ -63,10 +65,21 @@ export default function AvailableSlots() {
   const [timer, setTimer] = useState(0);
   const [isExpired, setIsExpired] = useState(false);
 
-  const [patientName, setPatientName] = useState("");
-  const [patientPhone, setPatientPhone] = useState("");
+  const { user } = useAuth();
+  const [profiles, setProfiles] = useState<any[]>([]);
+  const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null);
+  const [showAddProfile, setShowAddProfile] = useState(false);
+  const [newProfile, setNewProfile] = useState({
+    fullName: "",
+    gender: "OTHER",
+    dateOfBirth: "",
+    phone: "",
+    relationshipToUser: "CHILD",
+    patientCode: `PAT${Date.now()}`
+  });
+
   const [visitReason, setVisitReason] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("CASH");
+  const [paymentMethod, setPaymentMethod] = useState("BANK_TRANSFER");
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const prefillDepartmentName = (location.state as any)?.prefillDepartmentName;
 
@@ -89,14 +102,31 @@ export default function AvailableSlots() {
     return `${code} - ${doctor.fullName}`;
   };
 
-  const fetchSlots = useCallback(async (did: string, date: string) => {
+  const fetchSlots = useCallback(async (did: string, date: string, optionsList?: DoctorOption[]) => {
     setFetchState("loading");
     setErrorMsg("");
     setSlots([]);
     try {
-      const json: any = await getAvailableSlotsForPatient(Number(did), date);
-      const data: TimeSlot[] = Array.isArray(json.data) ? json.data : [];
-      setSlots(data);
+      if (did === "ANY" && optionsList) {
+        const promises = optionsList.map(async (doc) => {
+           try {
+              const json: any = await getAvailableSlotsForPatient(doc.doctorId, date);
+              const data: TimeSlot[] = Array.isArray(json.data) ? json.data : [];
+              return data.map(s => ({ ...s, doctorId: doc.doctorId, doctorName: doc.fullName }));
+           } catch (e) {
+              return [];
+           }
+        });
+        const allResults = await Promise.all(promises);
+        const merged: any[] = [];
+        allResults.forEach(res => merged.push(...res));
+        merged.sort((a, b) => a.startTime.localeCompare(b.startTime));
+        setSlots(merged);
+      } else {
+        const json: any = await getAvailableSlotsForPatient(Number(did), date);
+        const data: TimeSlot[] = Array.isArray(json.data) ? json.data : [];
+        setSlots(data);
+      }
       setFetchState("done");
     } catch (err: any) {
       setErrorMsg(err.message || "Không thể kết nối đến máy chủ.");
@@ -105,22 +135,34 @@ export default function AvailableSlots() {
   }, []);
 
   useEffect(() => {
+    if (bookingStep && user) {
+      getMyProfiles().then((res: any) => {
+        setProfiles(res.data);
+        if (res.data.length > 0 && !selectedProfileId) {
+          const selfProfile = res.data.find((p: any) => p.relationshipToUser === "SELF");
+          setSelectedProfileId(selfProfile ? selfProfile.patientId : res.data[0].patientId);
+        }
+      }).catch(console.error);
+    }
+  }, [bookingStep, user]);
+
+  useEffect(() => {
     if (doctorId && workDate) {
-      fetchSlots(doctorId, workDate);
+      if (doctorId === "ANY") {
+        fetchSlots("ANY", workDate, doctorOptions);
+      } else {
+        fetchSlots(doctorId, workDate);
+      }
     } else {
       setFetchState("idle");
       setSlots([]);
     }
-  }, [doctorId, workDate, fetchSlots]);
+  }, [doctorId, workDate, fetchSlots, doctorOptions]);
 
   useEffect(() => {
     let isActive = true;
 
     const fetchDoctorsByDate = async () => {
-      const keepDoctorId = paramDoctorId && workDate === paramWorkDate;
-      if (!keepDoctorId) {
-        setDoctorId("");
-      }
       setSlots([]);
       setFetchState("idle");
       setSelectedSlot(null);
@@ -156,6 +198,16 @@ export default function AvailableSlots() {
         setScheduleOptions(schedules);
         setDoctorOptions(availableDoctors);
         setDoctorFetchState("done");
+
+        setDoctorId((prev) => {
+          if (prev === "ANY") return "ANY";
+          const idToCheck = prev || initialDoctorId;
+          if (idToCheck) {
+            const isAvailable = availableDoctors.some(d => String(d.doctorId) === String(idToCheck));
+            if (isAvailable) return String(idToCheck);
+          }
+          return "";
+        });
       } catch (err: any) {
         if (!isActive) return;
         setDoctorOptions([]);
@@ -201,11 +253,14 @@ export default function AvailableSlots() {
     }
   }, [isExpired, doctorId, workDate, fetchSlots]);
 
-  const handleSelectSlot = async (slot: TimeSlot) => {
+  const handleSelectSlot = async (slot: any) => {
     if (slot.status === "LOCKED" || slot.status === "BOOKED" || slot.status === "BLOCKED") return;
     try {
       await lockSlot(slot.slotId);
       setSelectedSlot(slot);
+      if (slot.doctorId) {
+         setDoctorId(String(slot.doctorId));
+      }
       setBookingStep(true);
       setTimer(600);
       setIsExpired(false);
@@ -214,7 +269,8 @@ export default function AvailableSlots() {
       const apiMsg = err.response?.data?.message || err.message;
       toast.error(apiMsg || "Ca khám này đã được người khác giữ chỗ. Vui lòng chọn ca khác.", "Không thể giữ ca khám");
       if (doctorId && workDate) {
-        fetchSlots(doctorId, workDate);
+        if (doctorId === "ANY") fetchSlots("ANY", workDate, doctorOptions);
+        else fetchSlots(doctorId, workDate);
       }
     }
   };
@@ -230,21 +286,32 @@ export default function AvailableSlots() {
     setSelectedSlot(null);
     setIsExpired(false);
     if (doctorId && workDate) {
-      fetchSlots(doctorId, workDate);
+      if (doctorId === "ANY") fetchSlots("ANY", workDate, doctorOptions);
+      else fetchSlots(doctorId, workDate);
     }
   };
 
   const handleSubmitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!patientName.trim() || !patientPhone.trim()) {
-      toast.error("Vui lòng điền đầy đủ họ tên và số điện thoại.", "Thiếu thông tin");
-      return;
-    }
     if (!selectedSlot) return;
 
     try {
+      let finalPatientId = selectedProfileId;
+      if (showAddProfile) {
+        if (!newProfile.fullName.trim() || !newProfile.phone.trim()) {
+          toast.error("Vui lòng điền đầy đủ họ tên và số điện thoại người thân.", "Thiếu thông tin");
+          return;
+        }
+        const res: any = await createDependentProfile({
+           ...newProfile,
+           patientCode: `PAT${Date.now()}`
+        });
+        finalPatientId = res.data.patientId;
+      }
+
       await appointmentService.bookAppointment({
         slotId: selectedSlot.slotId,
+        patientId: finalPatientId,
         reasonForVisit: visitReason,
         paymentMethod: paymentMethod
       });
@@ -253,8 +320,7 @@ export default function AvailableSlots() {
       setTimeout(() => {
         setBookingStep(false);
         setSelectedSlot(null);
-        setPatientName("");
-        setPatientPhone("");
+        setShowAddProfile(false);
         setVisitReason("");
         if (doctorId && workDate) {
           fetchSlots(doctorId, workDate);
@@ -420,6 +486,37 @@ export default function AvailableSlots() {
                     gap: "10px",
                   }}
                 >
+                  <button
+                    type="button"
+                    onClick={() => setDoctorId("ANY")}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "12px",
+                      padding: "12px 14px",
+                      borderRadius: "14px",
+                      border: doctorId === "ANY" ? "1.5px solid #0f766e" : "1px solid rgba(0, 0, 0, 0.15)",
+                      background: doctorId === "ANY" ? "rgba(15, 118, 110, 0.15)" : "rgba(0, 0, 0, 0.05)",
+                      backdropFilter: "blur(8px)",
+                      boxShadow: doctorId === "ANY" ? "0 4px 12px rgba(15, 118, 110, 0.15)" : "none",
+                      color: "#0f172a",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    <span style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+                      <UserRound size={18} color={doctorId === "ANY" ? "#0f766e" : "#475569"} />
+                      <span style={{ minWidth: 0 }}>
+                        <strong style={{ display: "block", fontSize: "14px", fontWeight: 800 }}>Bác sĩ bất kỳ</strong>
+                        <span style={{ display: "block", fontSize: "12px", color: "#475569", fontWeight: 600 }}>
+                          Chọn giờ khám trước, hệ thống sẽ chỉ định bác sĩ.
+                        </span>
+                      </span>
+                    </span>
+                  </button>
+
                   {doctorOptions.map((doctor) => {
                     const isSelected = String(doctor.doctorId) === doctorId;
                     return (
@@ -470,27 +567,59 @@ export default function AvailableSlots() {
               )}
             </div>
 
-            {selectedDoctor && doctorId && (
-              <div className="patient-glass-card p-6 lg:p-8 animate-[fadeIn_0.3s_ease] w-full max-w-[450px] mx-auto lg:mx-0">
-                <h3 className="text-[1.1rem] patient-section-title mb-6 flex items-center gap-2">
-                  Chi tiết Bác sĩ
+            {selectedDoctor && doctorId && doctorId !== "ANY" && (
+              <div className="patient-glass-card p-6 lg:p-8 animate-[fadeIn_0.3s_ease] w-full max-w-[450px] mx-auto lg:mx-0 border border-teal-200/50 shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-teal-400/10 rounded-full blur-3xl"></div>
+                <h3 className="text-[1.2rem] patient-section-title mb-6 flex items-center gap-2">
+                  <ShieldAlert size={20} className="text-teal-600" /> Hồ sơ Bác sĩ
                 </h3>
-                <div className="flex gap-5 items-center">
-                  <div className="w-20 h-20 rounded-full bg-teal-900/50 flex-shrink-0 flex items-center justify-center border-2 border-teal-400/50 shadow-sm overflow-hidden">
+                <div className="flex gap-5 items-center mb-6 relative z-10">
+                  <div className="w-24 h-24 rounded-full bg-teal-50 flex-shrink-0 flex items-center justify-center border-4 border-white shadow-md overflow-hidden">
                     <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${selectedDoctor.doctorId}&backgroundColor=115e59`} alt="Avatar" className="w-full h-full object-cover" />
                   </div>
                   <div className="flex flex-col">
-                    <strong className="text-lg patient-data font-extrabold">{getDoctorLabel(selectedDoctor)}</strong>
-                    <span className="text-sm patient-data font-bold mb-2">{selectedDoctor.departmentName || "Khám tổng quát"}</span>
+                    <strong className="text-xl patient-data font-black text-slate-800">{getDoctorLabel(selectedDoctor)}</strong>
+                    <span className="text-sm text-teal-700 font-extrabold mb-1">{selectedDoctor.departmentName || "Khám tổng quát"}</span>
+                    <span className="text-xs bg-teal-100 text-teal-800 px-3 py-1 rounded-md font-bold self-start mb-3 border border-teal-200">
+                      Bằng cấp: {selectedDoctor.degree || "Bác sĩ Chuyên khoa"}
+                    </span>
                     <div className="flex items-center gap-1">
                       {[1, 2, 3, 4, 5].map(star => <Star key={star} size={14} className="fill-amber-400 text-amber-400" />)}
+                      <span className="text-xs font-bold text-slate-500 ml-1">4.9/5 (120+ đánh giá)</span>
                     </div>
                   </div>
                 </div>
+                
+                <div className="grid grid-cols-4 gap-2 mb-6 relative z-10">
+                   <div className="bg-white/80 p-2 rounded-xl border border-teal-100 shadow-sm text-center flex flex-col justify-center">
+                      <div className="text-[1.1rem] font-black text-slate-700">{selectedDoctor.yearsOfExperience ? 25 + selectedDoctor.yearsOfExperience : "35"}</div>
+                      <div className="text-[9px] font-bold text-slate-500 uppercase mt-0.5">Tuổi</div>
+                   </div>
+                   <div className="bg-white/80 p-2 rounded-xl border border-teal-100 shadow-sm text-center flex flex-col justify-center">
+                      <div className="text-[1.1rem] font-black text-teal-600">{selectedDoctor.yearsOfExperience || "10"}</div>
+                      <div className="text-[9px] font-bold text-slate-500 uppercase mt-0.5">Năm KN</div>
+                   </div>
+                   <div className="bg-white/80 p-2 rounded-xl border border-teal-100 shadow-sm text-center flex flex-col justify-center">
+                      <div className="text-[1.1rem] font-black text-blue-600">98%</div>
+                      <div className="text-[9px] font-bold text-slate-500 uppercase mt-0.5">Hài Lòng</div>
+                   </div>
+                   <div className="bg-white/80 p-2 rounded-xl border border-teal-100 shadow-sm text-center flex flex-col justify-center">
+                      <div className="text-[1.1rem] font-black text-emerald-600">1.5k+</div>
+                      <div className="text-[9px] font-bold text-slate-500 uppercase mt-0.5">Ca khám</div>
+                   </div>
+                </div>
+
+                <div className="bg-white/50 p-4 rounded-xl border border-slate-100 shadow-sm relative z-10">
+                  <h4 className="text-sm font-bold text-slate-800 mb-2 flex items-center gap-1"><CheckCircle size={14} className="text-teal-500"/> Tiểu sử & Chuyên môn</h4>
+                  <p className="text-xs font-medium text-slate-600 leading-relaxed">
+                    {selectedDoctor.biography || `Bác sĩ ${selectedDoctor.fullName} là chuyên gia giàu kinh nghiệm trong lĩnh vực ${selectedDoctor.departmentName || "y tế"}. Luôn tận tâm với nghề và đặt sức khỏe bệnh nhân lên hàng đầu, bác sĩ đã điều trị thành công hàng ngàn ca bệnh phức tạp.`}
+                  </p>
+                </div>
+
                 {getDoctorScheduleText(selectedDoctor.doctorId) && (
-                  <div className="mt-6 flex justify-end">
-                    <span className="text-xs font-bold text-teal-900 bg-teal-100 border border-teal-300 px-4 py-2 rounded-full shadow-sm tracking-wide">
-                      {getDoctorScheduleText(selectedDoctor.doctorId)}
+                  <div className="mt-6 flex justify-end relative z-10">
+                    <span className="text-xs font-extrabold text-teal-800 bg-teal-100/80 border border-teal-300 px-4 py-2 rounded-full shadow-sm tracking-wide">
+                      Ca làm việc: {getDoctorScheduleText(selectedDoctor.doctorId)}
                     </span>
                   </div>
                 )}
@@ -587,7 +716,7 @@ export default function AvailableSlots() {
                   const isLocked = slot.status === "LOCKED" || slot.status === "BOOKED" || slot.status === "BLOCKED";
                   return (
                     <button
-                      key={slot.slotId}
+                      key={`${slot.slotId}-${slot.doctorId || 's'}`}
                       disabled={isLocked}
                       onClick={() => handleSelectSlot(slot)}
                       className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-full font-bold text-[13px] tracking-wide transition-all duration-200 ${isLocked
@@ -597,6 +726,7 @@ export default function AvailableSlots() {
                     >
                       <Clock size={15} strokeWidth={2.5} />
                       {formatTime(slot.startTime)} – {formatTime(slot.endTime)}
+                      {slot.doctorName && ` (${slot.doctorName})`}
                       {slot.status === "LOCKED" && " (Đang giữ)"}
                       {slot.status === "BOOKED" && " (Đã đặt)"}
                       {slot.status === "BLOCKED" && " (Tạm đóng)"}
@@ -671,37 +801,90 @@ export default function AvailableSlots() {
               </div>
 
               <div className="flex flex-col gap-4 mb-8">
-                <div className="flex flex-col gap-2">
-                  <label htmlFor="bk-name" className="patient-label text-[13px]">
-                    Họ tên Bệnh nhân <span className="text-rose-600 font-bold">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="bk-name"
-                    required
-                    placeholder="Nhập đầy đủ họ tên bệnh nhân"
-                    value={patientName}
-                    onChange={(e) => setPatientName(e.target.value)}
-                    disabled={isExpired}
-                    className="w-full px-4 py-3 patient-glass-input placeholder:text-slate-500 disabled:opacity-50"
-                  />
+                <div className="flex flex-col gap-3">
+                  <label className="patient-label text-[13px]">Chọn Hồ sơ Bệnh nhân</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
+                    {profiles.map(p => (
+                      <label key={p.patientId} className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${selectedProfileId === p.patientId && !showAddProfile ? 'border-teal-500 bg-teal-50/50' : 'border-slate-200 hover:border-teal-200'}`}>
+                        <input
+                          type="radio"
+                          name="profile"
+                          checked={selectedProfileId === p.patientId && !showAddProfile}
+                          onChange={() => {
+                            setSelectedProfileId(p.patientId);
+                            setShowAddProfile(false);
+                          }}
+                          disabled={isExpired}
+                          className="w-4 h-4 text-teal-600 focus:ring-teal-500/30"
+                        />
+                        <div className="flex flex-col">
+                          <span className="font-bold text-[14px] text-slate-800">{p.fullName}</span>
+                          <span className="text-[12px] text-slate-500">{p.relationshipToUser === 'SELF' ? 'Bản thân' : p.relationshipToUser} • {p.phone}</span>
+                        </div>
+                      </label>
+                    ))}
+                    
+                    <label className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${showAddProfile ? 'border-teal-500 bg-teal-50/50' : 'border-slate-200 hover:border-teal-200'}`}>
+                        <input
+                          type="radio"
+                          name="profile"
+                          checked={showAddProfile}
+                          onChange={() => setShowAddProfile(true)}
+                          disabled={isExpired}
+                          className="w-4 h-4 text-teal-600 focus:ring-teal-500/30"
+                        />
+                        <div className="flex flex-col">
+                          <span className="font-bold text-[14px] text-teal-700">+ Thêm người thân</span>
+                          <span className="text-[12px] text-slate-500">Tạo hồ sơ mới</span>
+                        </div>
+                    </label>
+                  </div>
                 </div>
 
-                <div className="flex flex-col gap-2">
-                  <label htmlFor="bk-phone" className="patient-label text-[13px]">
-                    Số điện thoại liên hệ <span className="text-rose-600 font-bold">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    id="bk-phone"
-                    required
-                    placeholder="Nhập số điện thoại liên hệ"
-                    value={patientPhone}
-                    onChange={(e) => setPatientPhone(e.target.value)}
-                    disabled={isExpired}
-                    className="w-full px-4 py-3 patient-glass-input placeholder:text-slate-500 disabled:opacity-50"
-                  />
-                </div>
+                {showAddProfile && (
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col gap-4 animate-in fade-in slide-in-from-top-2">
+                    <div className="flex flex-col gap-2">
+                      <label className="patient-label text-[13px]">Họ tên Bệnh nhân <span className="text-rose-600 font-bold">*</span></label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Nhập đầy đủ họ tên"
+                        value={newProfile.fullName}
+                        onChange={(e) => setNewProfile({...newProfile, fullName: e.target.value})}
+                        disabled={isExpired}
+                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl placeholder:text-slate-400"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-2">
+                        <label className="patient-label text-[13px]">Mối quan hệ <span className="text-rose-600 font-bold">*</span></label>
+                        <select
+                          value={newProfile.relationshipToUser}
+                          onChange={(e) => setNewProfile({...newProfile, relationshipToUser: e.target.value})}
+                          disabled={isExpired}
+                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl"
+                        >
+                          <option value="CHILD">Con cái</option>
+                          <option value="PARENT">Bố/Mẹ</option>
+                          <option value="SPOUSE">Vợ/Chồng</option>
+                          <option value="OTHER">Khác</option>
+                        </select>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <label className="patient-label text-[13px]">Số điện thoại <span className="text-rose-600 font-bold">*</span></label>
+                        <input
+                          type="tel"
+                          required
+                          placeholder="Số điện thoại"
+                          value={newProfile.phone}
+                          onChange={(e) => setNewProfile({...newProfile, phone: e.target.value})}
+                          disabled={isExpired}
+                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl placeholder:text-slate-400"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex flex-col gap-2">
                   <label htmlFor="bk-reason" className="patient-label text-[13px]">
@@ -720,31 +903,18 @@ export default function AvailableSlots() {
 
                 <div className="flex flex-col gap-2 mt-2">
                   <label className="patient-label text-[13px]">Phương thức thanh toán</label>
-                  <div className="flex gap-6 mt-1">
-                    <label className="flex items-center gap-2.5 cursor-pointer group">
-                      <input
-                        type="radio"
-                        name="payment"
-                        value="CASH"
-                        checked={paymentMethod === "CASH"}
-                        onChange={() => setPaymentMethod("CASH")}
-                        disabled={isExpired}
-                        className="w-4 h-4 text-teal-600 border-slate-350 focus:ring-teal-500/30 focus:ring-2 disabled:opacity-50"
-                      />
-                      <span className="text-[14px] font-bold patient-data group-hover:text-teal-700 transition-colors">Tiền mặt tại quầy</span>
-                    </label>
-                    <label className="flex items-center gap-2.5 cursor-pointer group">
-                      <input
-                        type="radio"
-                        name="payment"
-                        value="BANK"
-                        checked={paymentMethod === "BANK"}
-                        onChange={() => setPaymentMethod("BANK")}
-                        disabled={isExpired}
-                        className="w-4 h-4 text-teal-600 border-slate-350 focus:ring-teal-500/30 focus:ring-2 disabled:opacity-50"
-                      />
-                      <span className="text-[14px] font-bold patient-data group-hover:text-teal-700 transition-colors">Chuyển khoản (NH)</span>
-                    </label>
+                  <div className="bg-teal-50 border border-teal-200 rounded-xl p-4 flex flex-col gap-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[14px] font-bold text-teal-900">Thanh toán Online (Chuyển khoản)</span>
+                      <span className="text-[11px] uppercase tracking-wider font-bold bg-teal-200/50 text-teal-800 px-2 py-0.5 rounded-md">Bắt buộc</span>
+                    </div>
+                    <div className="text-[13px] text-teal-800/80 font-medium leading-snug">
+                      Để giữ ca khám, bạn cần thanh toán phí khám ban đầu. Sau khi xác nhận, hệ thống sẽ tạo lịch và hướng dẫn thanh toán.
+                    </div>
+                    <div className="flex justify-between items-center mt-2 pt-3 border-t border-teal-200">
+                      <span className="text-[14px] font-bold text-teal-900">Phí giữ chỗ (Khấu trừ vào tiền khám)</span>
+                      <span className="text-[18px] font-black text-rose-600">50.000 VNĐ</span>
+                    </div>
                   </div>
                 </div>
               </div>
