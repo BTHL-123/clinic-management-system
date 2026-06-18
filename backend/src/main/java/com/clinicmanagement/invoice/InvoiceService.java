@@ -28,4 +28,6 @@ public interface InvoiceService {
     InvoiceResponse cancel(Long id);
 
     PageResponse<InvoiceResponse> getMyInvoices(User currentUser, Pageable pageable);
+
+    InvoiceResponse generateFromConsultation(Long consultationId);
 }

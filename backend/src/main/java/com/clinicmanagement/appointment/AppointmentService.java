@@ -20,9 +20,14 @@ public interface AppointmentService {
 
     AppointmentResponse getAppointmentById(Long id, Long currentUserId, boolean isPatientOrDoctor);
 
+    AppointmentResponse getAppointmentBySlotId(Long slotId, Long userId, boolean isPrivileged);
+
     PageResponse<AppointmentResponse> getMyAppointments(
             Long userId,
-            boolean upcoming,
+            String keyword,
+            Long doctorId,
+            Long departmentId,
+            Boolean upcoming,
             Pageable pageable
     );
 

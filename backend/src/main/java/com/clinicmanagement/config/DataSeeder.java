@@ -40,6 +40,7 @@ public class DataSeeder implements CommandLineRunner {
         seedPatient();
         seedMedicalRecords();
         seedLabTests();
+        seedMedicalServices();
         syncPostgresSequences();
     }
 
@@ -63,6 +64,24 @@ public class DataSeeder implements CommandLineRunner {
                 "XN05", "Siêu âm bụng", "Kiểm tra tổng quát nội tạng", 200000.00, "ACTIVE");
     }
 
+    private void seedMedicalServices() {
+        String[] codes = {"SV_CONSULT", "SV_XRAY", "SV_ECHO", "SV_ENDO", "SV_ECG", "SV_DENT"};
+        String[] names = {"Khám bệnh chuyên khoa", "Chụp X-Quang Phổi", "Siêu âm thai 4D", "Nội soi dạ dày", "Điện tâm đồ (ECG)", "Cạo vôi răng"};
+        String[] descs = {"Phí khám lâm sàng ban đầu", "Chụp X-quang kỹ thuật số lồng ngực", "Siêu âm đánh giá hình thái thai nhi", "Nội soi thực quản, dạ dày, tá tràng", "Ghi lại hoạt động điện của tim", "Làm sạch mảng bám, vôi răng"};
+        String[] types = {"CONSULTATION", "IMAGING", "IMAGING", "PROCEDURE", "TESTING", "PROCEDURE"};
+        double[] prices = {200000.00, 150000.00, 400000.00, 800000.00, 100000.00, 250000.00};
+
+        for (int i = 0; i < codes.length; i++) {
+            List<Long> existing = jdbcTemplate.query(
+                    "SELECT service_id FROM medical_services WHERE service_code = ?",
+                    (rs, rowNum) -> rs.getLong("service_id"), codes[i]);
+            if (existing.isEmpty()) {
+                jdbcTemplate.update("INSERT INTO medical_services (service_code, service_name, description, service_type, price, status, created_at) VALUES (?, ?, ?, ?, ?, 'ACTIVE', CURRENT_TIMESTAMP)",
+                        codes[i], names[i], descs[i], types[i], prices[i]);
+            }
+        }
+    }
+
     private void migrateCheckConstraint() {
         jdbcTemplate.execute((org.springframework.jdbc.core.ConnectionCallback<Void>) connection -> {
             if ("PostgreSQL".equalsIgnoreCase(connection.getMetaData().getDatabaseProductName())) {
@@ -72,6 +91,9 @@ public class DataSeeder implements CommandLineRunner {
 
                     statement.execute("ALTER TABLE medicine_batches DROP CONSTRAINT IF EXISTS medicine_batches_status_check");
                     statement.execute("ALTER TABLE medicine_batches ADD CONSTRAINT medicine_batches_status_check CHECK (status IN ('AVAILABLE', 'LOW_STOCK', 'EXPIRED', 'OUT_OF_STOCK', 'CANCELLED'))");
+
+                    statement.execute("ALTER TABLE medical_services DROP CONSTRAINT IF EXISTS medical_services_service_type_check");
+                    statement.execute("ALTER TABLE medical_services ADD CONSTRAINT medical_services_service_type_check CHECK (service_type IN ('CONSULTATION', 'LAB_TEST', 'PACKAGE', 'OTHER', 'IMAGING', 'TESTING', 'PROCEDURE'))");
                 } catch (Exception e) {
                     System.err.println("Migration of check constraints failed: " + e.getMessage());
                 }
@@ -274,6 +296,7 @@ public class DataSeeder implements CommandLineRunner {
         syncPostgresSequence("consultation_sessions", "consultation_id");
         syncPostgresSequence("medical_records", "medical_record_id");
         syncPostgresSequence("lab_tests", "lab_test_id");
+        syncPostgresSequence("medical_services", "service_id");
     }
 
     private void syncPostgresSequence(String tableName, String idColumn) {

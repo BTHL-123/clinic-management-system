@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/useAuth.js";
 import { 
   Home, CalendarPlus, CalendarDays, FileText, Activity, 
-  Settings, LogOut, ChevronRight, ListOrdered, MessageSquare, Users
+  Settings, LogOut, ChevronRight, ListOrdered, MessageSquare, Users, Tag
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -29,6 +29,7 @@ export default function PatientSidebar() {
     if (path.includes("my-lab-results")) return "labs";
     if (path.includes("queue-status")) return "queue";
     if (path.includes("our-doctors")) return "doctors";
+    if (path.includes("service-prices")) return "prices";
     if (path.includes("ai-chat")) return "ai-chat";
     if (path.includes("profile") || path.includes("change-password") || path.includes("notifications")) return "settings";
     return "home";
@@ -49,6 +50,7 @@ export default function PatientSidebar() {
     { id: "history", icon: <FileText size={22} />, path: "/dashboard/my-medical-history", label: "Bệnh án" },
     { id: "labs", icon: <Activity size={22} />, path: "/dashboard/my-lab-results", label: "Xét nghiệm" },
     { id: "doctors", icon: <Users size={22} />, path: "/dashboard/our-doctors", label: "Bác sĩ" },
+    { id: "prices", icon: <Tag size={22} />, path: "/dashboard/service-prices", label: "Bảng giá" },
     { id: "ai-chat", icon: <MessageSquare size={22} />, path: "/dashboard/ai-chat", label: "Trợ lý AI" },
     { id: "settings", icon: <Settings size={22} />, path: "/dashboard/profile", label: "Cài đặt" },
   ];

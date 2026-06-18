@@ -13,6 +13,7 @@ import { getDoctors } from "../../services/doctorService";
 import { getSchedules, getSlotsByScheduleId, blockSlot, unblockSlot } from "../../services/scheduleService";
 import walkInService from "../../services/walkInService";
 import { getPatients } from "../../services/patientService";
+import { getActiveMedicalServices } from "../../services/medicalServiceService";
 import QueueGrid from "./QueueGrid";
 import { useToast } from "../../context/useToast";
 import PageHeader from "../../components/PageHeader";
@@ -150,6 +151,9 @@ export default function WalkInAppointmentPage() {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [apiError, setApiError] = useState("");
+  const [consultationFee, setConsultationFee] = useState(50000);
+  const [specialtyServices, setSpecialtyServices] = useState([]);
+  const [showPriceModal, setShowPriceModal] = useState(false);
   const [result, setResult] = useState(null);
   
   const [selectedDoctorObj, setSelectedDoctorObj] = useState(null);
@@ -186,6 +190,25 @@ export default function WalkInAppointmentPage() {
 
     return () => clearTimeout(timeoutId);
   }, [patientSearch]);
+
+  useEffect(() => {
+    fetchData();
+
+    // Fetch consultation fee and specialty services
+    getActiveMedicalServices().then((res) => {
+      if (res.data && Array.isArray(res.data)) {
+        const consultService = res.data.find(s => s.serviceType === "CONSULTATION");
+        if (consultService && consultService.price) {
+          setConsultationFee(consultService.price);
+        }
+        const others = res.data.filter((s) => s.serviceType !== "CONSULTATION");
+        setSpecialtyServices(others);
+      }
+    }).catch(console.error);
+
+    const intv = setInterval(fetchData, 15000);
+    return () => clearInterval(intv);
+  }, [selectedDate, fetchData]);
 
   const handleSelectExistingPatient = (p) => {
     setSelectedExistingPatient(p);
@@ -540,6 +563,21 @@ export default function WalkInAppointmentPage() {
                 </div>
               </div>
 
+              <div style={{ padding: "14px 16px", background: "#f0fdf4", borderRadius: "12px", border: "1px solid #bbf7d0", marginBottom: "20px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                  <span style={{ fontSize: "14px", fontWeight: 700, color: "#166534" }}>Phí khám bệnh</span>
+                  <span style={{ fontSize: "16px", fontWeight: 700, color: "#166534" }}>{consultationFee.toLocaleString("vi-VN")} VNĐ</span>
+                </div>
+                <div style={{ fontSize: "12px", color: "#15803d", display: "flex", gap: "4px" }}>
+                  <AlertCircle size={14} /> Báo bệnh nhân thanh toán phí tại quầy để lấy số thứ tự.
+                </div>
+                <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "8px" }}>
+                  <button type="button" onClick={() => setShowPriceModal(true)} style={{ background: "transparent", border: "none", fontSize: "12px", fontWeight: 700, color: "#0f766e", cursor: "pointer", textDecoration: "underline", padding: 0 }}>
+                    Xem bảng giá dịch vụ chuyên khoa
+                  </button>
+                </div>
+              </div>
+
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", borderTop: "1px solid #f1f5f9", paddingTop: "20px" }}>
                 <button type="button" onClick={() => setShowModal(false)}
                         style={{ padding: "10px 20px", borderRadius: "8px", border: "1px solid #cbd5e1", background: "#fff", fontWeight: 600, color: "#475569", cursor: "pointer" }}>
@@ -551,6 +589,43 @@ export default function WalkInAppointmentPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Price List Modal */}
+      {showPriceModal && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center",
+          background: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(4px)"
+        }}>
+          <div style={{
+            background: "#fff", borderRadius: "16px", width: "100%", maxWidth: "500px",
+            maxHeight: "80vh", display: "flex", flexDirection: "col", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)"
+          }}>
+            <div style={{ width: "100%", display: "flex", flexDirection: "column", height: "100%" }}>
+              <div style={{ padding: "16px 24px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc", borderRadius: "16px 16px 0 0" }}>
+                <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "#1e293b" }}>Bảng giá tham khảo dịch vụ</h3>
+                <button onClick={() => setShowPriceModal(false)} style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer" }}><X size={20} /></button>
+              </div>
+              <div style={{ padding: "24px", overflowY: "auto", flex: 1 }}>
+                {specialtyServices.length === 0 ? (
+                  <div style={{ textAlign: "center", color: "#64748b", fontSize: "14px", padding: "16px 0" }}>Đang cập nhật bảng giá...</div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                    {specialtyServices.map(s => (
+                      <div key={s.serviceId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", border: "1px solid #f1f5f9", borderRadius: "12px" }}>
+                        <div style={{ display: "flex", flexDirection: "column" }}>
+                          <span style={{ fontSize: "14px", fontWeight: 700, color: "#334155" }}>{s.serviceName}</span>
+                          {s.description && <span style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>{s.description}</span>}
+                        </div>
+                        <span style={{ fontSize: "14px", fontWeight: 900, color: "#0f766e", marginLeft: "16px" }}>{s.price.toLocaleString("vi-VN")} đ</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}

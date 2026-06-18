@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Clock, Search, CalendarDays, ArrowLeft, ShieldAlert, CheckCircle, UserRound, Star } from "lucide-react";
+import { Clock, Search, CalendarDays, ArrowLeft, ShieldAlert, CheckCircle, UserRound, Star, X, Building, CalendarHeart } from "lucide-react";
 import { getAvailableSlotsForPatient, getSchedules, lockSlot, releaseLock } from "../../services/scheduleService";
 import { getDoctors } from "../../services/doctorService";
 import appointmentService from "../../services/appointmentService";
 import { getMyProfiles, createDependentProfile } from "../../services/patientService";
+import { getActiveMedicalServices } from "../../services/medicalServiceService";
+import { getActiveDepartments } from "../../services/departmentService";
 import { useToast } from "../../context/useToast";
 import { useAuth } from "../../context/useAuth.js";
 
@@ -28,6 +30,7 @@ interface DoctorSchedule {
 interface DoctorOption {
   doctorId: number;
   fullName: string;
+  departmentId?: number;
   departmentName?: string;
   doctorCode?: string;
   degree?: string;
@@ -49,9 +52,23 @@ export default function AvailableSlots() {
   const searchParams = new URLSearchParams(location.search);
   const paramWorkDate = searchParams.get("workDate") || "";
   const initialDoctorId = searchParams.get("doctorId") || String((location.state as any)?.prefillDoctorId || "");
+  const prefillDepartmentName = (location.state as any)?.prefillDepartmentName;
+
+  // Mode Selection
+  // If prefillDoctorId, default to DOCTOR mode. If prefillDepartmentName, default to DEPARTMENT.
+  const [bookingMode, setBookingMode] = useState<"DATE" | "DOCTOR" | "DEPARTMENT" | null>(
+    initialDoctorId ? "DOCTOR" : prefillDepartmentName ? "DEPARTMENT" : null
+  );
 
   const [doctorId, setDoctorId] = useState(initialDoctorId);
   const [workDate, setWorkDate] = useState(paramWorkDate);
+  const [departmentId, setDepartmentId] = useState("");
+  
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [allDoctors, setAllDoctors] = useState<DoctorOption[]>([]); // For DOCTOR and DEPARTMENT mode
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
+  const [datesFetchState, setDatesFetchState] = useState<FetchState>("idle");
+
   const [doctorOptions, setDoctorOptions] = useState<DoctorOption[]>([]);
   const [scheduleOptions, setScheduleOptions] = useState<DoctorSchedule[]>([]);
   const [doctorFetchState, setDoctorFetchState] = useState<FetchState>("idle");
@@ -59,6 +76,9 @@ export default function AvailableSlots() {
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [fetchState, setFetchState] = useState<FetchState>("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [consultationFee, setConsultationFee] = useState<number>(50000); // default to 50k
+  const [specialtyServices, setSpecialtyServices] = useState<any[]>([]);
+  const [showPriceModal, setShowPriceModal] = useState(false);
 
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [bookingStep, setBookingStep] = useState(false);
@@ -81,13 +101,15 @@ export default function AvailableSlots() {
   const [visitReason, setVisitReason] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("BANK_TRANSFER");
   const [bookingSuccess, setBookingSuccess] = useState(false);
-  const prefillDepartmentName = (location.state as any)?.prefillDepartmentName;
 
   const today = new Date().toISOString().split("T")[0];
 
-  const selectedDoctor = doctorOptions.find((doctor) => String(doctor.doctorId) === doctorId);
+  const selectedDoctor = bookingMode === "DATE" 
+    ? doctorOptions.find((doctor) => String(doctor.doctorId) === doctorId)
+    : allDoctors.find((doctor) => String(doctor.doctorId) === doctorId);
 
   const getDoctorScheduleText = (id: number) => {
+    if (bookingMode !== "DATE") return ""; // Tránh tính text gộp ở mode khác vì hiển thị date riêng
     const schedules = scheduleOptions.filter((schedule) => schedule.doctorId === id);
     if (schedules.length === 0) return "";
     const first = schedules[0];
@@ -161,6 +183,60 @@ export default function AvailableSlots() {
 
   useEffect(() => {
     let isActive = true;
+    const fetchBaseData = async () => {
+      try {
+        const [depRes, docRes]: any[] = await Promise.all([
+          getActiveDepartments(),
+          getDoctors({ page: 0, size: 200, status: "ACTIVE", sortBy: "doctorId", direction: "asc" }),
+        ]);
+        if (isActive) {
+          const deps = depRes.data || [];
+          setDepartments(deps);
+          setAllDoctors(docRes.data?.content || []);
+          
+          if (prefillDepartmentName) {
+            const matchedDep = deps.find((d: any) => d.departmentName === prefillDepartmentName);
+            if (matchedDep) setDepartmentId(String(matchedDep.departmentId));
+          }
+        }
+      } catch (err) {
+        // ignore
+      }
+    };
+    fetchBaseData();
+    return () => { isActive = false; };
+  }, [prefillDepartmentName]);
+
+  useEffect(() => {
+    let isActive = true;
+    if ((bookingMode === "DOCTOR" || bookingMode === "DEPARTMENT") && doctorId && doctorId !== "ANY") {
+      const fetchDates = async () => {
+        setDatesFetchState("loading");
+        setAvailableDates([]);
+        try {
+          const fromDate = new Date().toISOString().split("T")[0];
+          const toDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+          const res: any = await getSchedules({ doctorId, fromDate, toDate, status: "AVAILABLE" });
+          if (isActive) {
+            const schedules = Array.isArray(res.data) ? res.data : [];
+            const uniqueDates = Array.from(new Set(schedules.map((s: any) => s.workDate))).sort();
+            setAvailableDates(uniqueDates as string[]);
+            setDatesFetchState("done");
+          }
+        } catch (e) {
+          if (isActive) setDatesFetchState("error");
+        }
+      };
+      fetchDates();
+    } else {
+      setAvailableDates([]);
+      setDatesFetchState("idle");
+    }
+    return () => { isActive = false; };
+  }, [doctorId, bookingMode]);
+
+  useEffect(() => {
+    let isActive = true;
 
     const fetchDoctorsByDate = async () => {
       setSlots([]);
@@ -168,9 +244,28 @@ export default function AvailableSlots() {
       setSelectedSlot(null);
       setBookingStep(false);
 
+      // Load active medical services to get consultation fee
+      const fetchServices = async () => {
+        try {
+          const res: any = await getActiveMedicalServices();
+          if (res.data && Array.isArray(res.data)) {
+            const consultService = res.data.find((s: any) => s.serviceType === "CONSULTATION");
+            if (consultService && consultService.price) {
+              setConsultationFee(consultService.price);
+            }
+            const otherServices = res.data.filter((s: any) => s.serviceType !== "CONSULTATION");
+            setSpecialtyServices(otherServices);
+          }
+        } catch (err) {
+          console.error("Failed to fetch medical services:", err);
+        }
+      };
+
+      fetchServices();
+
       if (!workDate) {
-        setDoctorOptions([]);
         setScheduleOptions([]);
+        setDoctorOptions([]);
         setDoctorFetchState("idle");
         setDoctorErrorMsg("");
         return;
@@ -179,20 +274,18 @@ export default function AvailableSlots() {
       setDoctorFetchState("loading");
       setDoctorErrorMsg("");
       try {
-        const [scheduleJson, doctorJson]: any[] = await Promise.all([
-          getSchedules({ fromDate: workDate, toDate: workDate, status: "AVAILABLE" }),
-          getDoctors({ page: 0, size: 200, status: "ACTIVE", sortBy: "doctorId", direction: "asc" }),
-        ]);
+        const scheduleJson: any = await getSchedules({ fromDate: workDate, toDate: workDate, status: "AVAILABLE" });
 
         if (!isActive) return;
 
         const schedules: DoctorSchedule[] = Array.isArray(scheduleJson.data) ? scheduleJson.data : [];
-        const doctors: DoctorOption[] = Array.isArray(doctorJson.data?.content) ? doctorJson.data.content : [];
         const scheduledDoctorIds = new Set(schedules.map((schedule) => schedule.doctorId));
-        let availableDoctors = doctors.filter((doctor) => scheduledDoctorIds.has(doctor.doctorId));
+        let availableDoctors = allDoctors.filter((doctor) => scheduledDoctorIds.has(doctor.doctorId));
 
-        if (prefillDepartmentName) {
-          availableDoctors = availableDoctors.filter((doctor) => doctor.departmentName === prefillDepartmentName);
+        if (bookingMode === "DEPARTMENT" && departmentId) {
+           availableDoctors = availableDoctors.filter((doctor) => String(doctor.departmentId) === departmentId);
+        } else if (bookingMode === "DATE" && prefillDepartmentName) {
+           availableDoctors = availableDoctors.filter((doctor) => doctor.departmentName === prefillDepartmentName);
         }
 
         setScheduleOptions(schedules);
@@ -302,6 +395,13 @@ export default function AvailableSlots() {
           toast.error("Vui lòng điền đầy đủ họ tên và số điện thoại người thân.", "Thiếu thông tin");
           return;
         }
+        
+        // Validation
+        if (!/^(0|\+84)[0-9]{8,10}$/.test(newProfile.phone.trim())) {
+          toast.error("Số điện thoại không hợp lệ (phải bắt đầu bằng 0 hoặc +84 và có 9-11 chữ số).", "Lỗi");
+          return;
+        }
+
         const res: any = await createDependentProfile({
            ...newProfile,
            patientCode: `PAT${Date.now()}`
@@ -362,7 +462,15 @@ export default function AvailableSlots() {
               if (selectedSlot && !bookingSuccess) {
                 releaseLock(selectedSlot.slotId).catch(() => { });
               }
-              navigate("/dashboard", { state: { activeClusterId: "booking" } });
+              if (!bookingStep && bookingMode) {
+                setBookingMode(null);
+                setDoctorId("");
+                setWorkDate("");
+                setDepartmentId("");
+                setSlots([]);
+              } else {
+                navigate("/dashboard", { state: { activeClusterId: "booking" } });
+              }
             }}
             className="bg-white/10 hover:bg-white/20 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm"
           >
@@ -372,73 +480,241 @@ export default function AvailableSlots() {
         </div>
         <div className="flex flex-col items-center text-center mt-2 px-4">
           <h1 className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-4">
-            <Search size={32} className="text-teal-400 drop-shadow-md" />
-            <span className="drop-shadow-md">Tìm kiếm ca khám trống</span>
+            <CalendarHeart size={32} className="text-teal-400 drop-shadow-md" />
+            <span className="drop-shadow-md">Đặt Lịch Khám</span>
           </h1>
           <p className="text-white/80 font-medium drop-shadow-sm text-[16px] max-w-[600px]">
-            Chọn ngày khám, sau đó chọn bác sĩ có lịch làm việc trong ngày để xem các khung giờ còn trống.
+            {!bookingMode && "Vui lòng chọn một trong các phương thức đặt lịch dưới đây."}
+            {bookingMode === "DATE" && "Chọn ngày khám để xem danh sách bác sĩ có lịch làm việc, sau đó chọn ca khám trống."}
+            {bookingMode === "DOCTOR" && "Chọn bác sĩ bạn muốn khám để xem các ngày bác sĩ có lịch làm việc, sau đó chọn ca khám trống."}
+            {bookingMode === "DEPARTMENT" && "Chọn chuyên khoa bạn muốn khám để xem danh sách bác sĩ, sau đó chọn ca khám trống."}
           </p>
         </div>
       </div>
 
-      {prefillDepartmentName && (
+      {prefillDepartmentName && bookingMode === "DATE" && (
         <div style={{ padding: "12px", background: "#f0fdf4", color: "#166534", borderRadius: "8px", marginBottom: "16px", border: "1px solid #bbf7d0", fontSize: "14px" }}>
           Đang lọc bác sĩ theo chuyên khoa AI đề xuất: <strong>{prefillDepartmentName}</strong>
         </div>
       )}
 
-      {!bookingStep ? (
+      {!bookingMode ? (
+        <div className="flex flex-col gap-6 w-full items-center max-w-[900px] mx-auto animate-[fadeIn_0.3s_ease]">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+            <button
+              onClick={() => setBookingMode("DATE")}
+              className="flex flex-col items-center gap-4 bg-white/10 backdrop-blur-md p-8 rounded-2xl border border-white/20 shadow-lg hover:bg-white/20 hover:-translate-y-2 transition-all text-white text-center group"
+            >
+              <CalendarDays size={48} className="text-teal-400 group-hover:scale-110 transition-transform" />
+              <h3 className="text-xl font-bold">Theo Ngày</h3>
+              <p className="text-sm text-white/70">Tôi đã biết ngày muốn khám và muốn xem bác sĩ nào có lịch.</p>
+            </button>
+            <button
+              onClick={() => setBookingMode("DOCTOR")}
+              className="flex flex-col items-center gap-4 bg-white/10 backdrop-blur-md p-8 rounded-2xl border border-white/20 shadow-lg hover:bg-white/20 hover:-translate-y-2 transition-all text-white text-center group"
+            >
+              <UserRound size={48} className="text-blue-400 group-hover:scale-110 transition-transform" />
+              <h3 className="text-xl font-bold">Theo Bác sĩ</h3>
+              <p className="text-sm text-white/70">Tôi muốn khám với một bác sĩ cụ thể mà tôi đã biết.</p>
+            </button>
+            <button
+              onClick={() => setBookingMode("DEPARTMENT")}
+              className="flex flex-col items-center gap-4 bg-white/10 backdrop-blur-md p-8 rounded-2xl border border-white/20 shadow-lg hover:bg-white/20 hover:-translate-y-2 transition-all text-white text-center group"
+            >
+              <Building size={48} className="text-emerald-400 group-hover:scale-110 transition-transform" />
+              <h3 className="text-xl font-bold">Theo Chuyên khoa</h3>
+              <p className="text-sm text-white/70">Tôi cần khám chuyên khoa và muốn chọn bác sĩ phù hợp.</p>
+            </button>
+          </div>
+        </div>
+      ) : !bookingStep ? (
         <div className="flex flex-col gap-10 w-full items-center">
+          <button
+            onClick={() => {
+              setBookingMode(null);
+              setDoctorId("");
+              setWorkDate("");
+              setDepartmentId("");
+              setSlots([]);
+            }}
+            className="text-white hover:text-teal-300 font-bold underline transition-colors"
+          >
+            Đổi phương thức đặt lịch
+          </button>
           <div className={`flex flex-col lg:flex-row justify-center gap-8 items-start w-full transition-all duration-500`}>
             <div className="patient-glass-card p-6 md:p-8 w-full max-w-[600px] mx-auto lg:mx-0">
               <div className="flex flex-col gap-5">
-                <div className="flex flex-col gap-2">
-                  <label htmlFor="as-workDate" className="patient-label text-[14px]">Ngày khám</label>
-                  <input
-                    type="date"
-                    id="as-workDate"
-                    min={today}
-                    value={workDate}
-                    className="w-full px-4 py-3 patient-glass-input"
-                    onChange={(e) => {
-                      setWorkDate(e.target.value);
-                      setDoctorId("");
-                      setSlots([]);
-                      setFetchState("idle");
-                    }}
-                  />
-                </div>
+                {bookingMode === "DEPARTMENT" && (
+                  <div className="flex flex-col gap-2">
+                    <label htmlFor="as-departmentId" className="patient-label text-[14px]">Chọn Chuyên khoa</label>
+                    <select
+                      id="as-departmentId"
+                      value={departmentId}
+                      className="w-full px-4 py-3 patient-glass-input"
+                      onChange={(e) => {
+                        setDepartmentId(e.target.value);
+                        setDoctorId("");
+                        setWorkDate("");
+                        setSlots([]);
+                      }}
+                    >
+                      <option value="">Chọn một chuyên khoa</option>
+                      {departments.map(d => (
+                        <option key={d.departmentId} value={d.departmentId}>{d.departmentName}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
-                <div className="flex flex-col gap-2">
-                  <label htmlFor="as-doctorId" className="patient-label text-[14px]">Bác sĩ có lịch trong ngày</label>
-                  <select
-                    id="as-doctorId"
-                    value={doctorId}
-                    className="w-full px-4 py-3 patient-glass-input disabled:opacity-50 disabled:cursor-not-allowed"
-                    onChange={(e) => setDoctorId(e.target.value)}
-                    disabled={!workDate || doctorFetchState === "loading" || doctorOptions.length === 0}
-                  >
-                    <option value="">
-                      {!workDate
-                        ? "Chọn ngày khám trước"
-                        : doctorFetchState === "loading"
-                          ? "Đang tải bác sĩ..."
-                          : doctorOptions.length === 0
-                            ? "Không có bác sĩ phù hợp"
-                            : "Chọn bác sĩ"}
-                    </option>
-                    {doctorOptions.map((doctor) => (
-                      <option key={doctor.doctorId} value={doctor.doctorId}>
-                        {getDoctorLabel(doctor)}
-                        {doctor.departmentName ? ` - ${doctor.departmentName}` : ""}
-                        {getDoctorScheduleText(doctor.doctorId) ? ` (${getDoctorScheduleText(doctor.doctorId)})` : ""}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {(bookingMode === "DOCTOR" || (bookingMode === "DEPARTMENT" && departmentId)) && (
+                  <div className="flex flex-col gap-2">
+                    <label className="patient-label text-[14px]">
+                      {bookingMode === "DEPARTMENT" ? "Chọn Bác sĩ thuộc chuyên khoa này" : "Chọn Bác sĩ"}
+                    </label>
+                    <div className="grid gap-2 mt-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDoctorId("ANY");
+                          setWorkDate("");
+                          setSlots([]);
+                        }}
+                        className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
+                          doctorId === "ANY" 
+                            ? "bg-teal-50 border-teal-500 shadow-sm" 
+                            : "bg-black/5 border-slate-200 hover:border-teal-300"
+                        }`}
+                      >
+                        <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center shrink-0">
+                          <UserRound size={18} className={doctorId === "ANY" ? "text-teal-600" : "text-slate-500"} />
+                        </div>
+                        <div>
+                          <strong className="block text-[14px] font-bold text-slate-800">Bác sĩ bất kỳ {bookingMode === "DEPARTMENT" ? "trong khoa này" : ""}</strong>
+                          <span className="block text-[12px] text-slate-500 font-medium">Hệ thống sẽ chỉ định bác sĩ phù hợp</span>
+                        </div>
+                      </button>
+                      
+                      {allDoctors
+                        .filter(d => bookingMode === "DOCTOR" || (bookingMode === "DEPARTMENT" && String(d.departmentId) === departmentId))
+                        .map((doctor) => {
+                          const isSelected = String(doctor.doctorId) === doctorId;
+                          return (
+                            <button
+                              key={doctor.doctorId}
+                              type="button"
+                              onClick={() => {
+                                setDoctorId(String(doctor.doctorId));
+                                setWorkDate("");
+                                setSlots([]);
+                              }}
+                              className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
+                                isSelected 
+                                  ? "bg-teal-50 border-teal-500 shadow-sm" 
+                                  : "bg-black/5 border-slate-200 hover:border-teal-300"
+                              }`}
+                            >
+                              <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center shrink-0 overflow-hidden border border-white">
+                                <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${doctor.doctorId}&backgroundColor=e2e8f0`} alt="Avatar" className="w-full h-full object-cover" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <strong className="block text-[14px] font-bold text-slate-800 truncate">{getDoctorLabel(doctor)}</strong>
+                                <span className="block text-[12px] text-slate-500 font-medium truncate">
+                                  {[doctor.departmentName, doctor.specialization].filter(Boolean).join(" - ") || "Chưa có chuyên khoa"}
+                                </span>
+                              </div>
+                            </button>
+                          );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {(bookingMode === "DOCTOR" || bookingMode === "DEPARTMENT") && doctorId && (
+                  <div className="flex flex-col gap-2 mt-2">
+                    <label className="patient-label text-[14px]">Chọn Ngày khám</label>
+                    {datesFetchState === "loading" ? (
+                      <div className="text-sm font-bold text-teal-800 bg-teal-50 p-3 rounded-lg border border-teal-200">
+                        Đang tải lịch làm việc của bác sĩ...
+                      </div>
+                    ) : availableDates.length === 0 ? (
+                      <div className="text-sm font-bold text-rose-800 bg-rose-50 p-3 rounded-lg border border-rose-200">
+                        Bác sĩ này hiện không có lịch làm việc trống trong 30 ngày tới.
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {availableDates.map(date => {
+                          const [y, m, d] = date.split("-");
+                          const displayDate = `${d}/${m}/${y}`;
+                          return (
+                            <button
+                              key={date}
+                              onClick={() => setWorkDate(date)}
+                              className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all ${
+                                workDate === date 
+                                  ? "bg-teal-600 text-white border-teal-700 shadow-md transform scale-105" 
+                                  : "bg-white text-slate-700 border-slate-300 hover:border-teal-500 hover:text-teal-700"
+                              }`}
+                            >
+                              {displayDate}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {bookingMode === "DATE" && (
+                  <>
+                    <div className="flex flex-col gap-2">
+                      <label htmlFor="as-workDate" className="patient-label text-[14px]">Ngày khám</label>
+                      <input
+                        type="date"
+                        id="as-workDate"
+                        min={today}
+                        value={workDate}
+                        className="w-full px-4 py-3 patient-glass-input"
+                        onChange={(e) => {
+                          setWorkDate(e.target.value);
+                          setDoctorId("");
+                          setSlots([]);
+                          setFetchState("idle");
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <label htmlFor="as-doctorId" className="patient-label text-[14px]">Bác sĩ có lịch trong ngày</label>
+                      <select
+                        id="as-doctorId"
+                        value={doctorId}
+                        className="w-full px-4 py-3 patient-glass-input disabled:opacity-50 disabled:cursor-not-allowed"
+                        onChange={(e) => setDoctorId(e.target.value)}
+                        disabled={!workDate || doctorFetchState === "loading" || doctorOptions.length === 0}
+                      >
+                        <option value="">
+                          {!workDate
+                            ? "Chọn ngày khám trước"
+                            : doctorFetchState === "loading"
+                              ? "Đang tải bác sĩ..."
+                              : doctorOptions.length === 0
+                                ? "Không có bác sĩ phù hợp"
+                                : "Chọn bác sĩ"}
+                        </option>
+                        {doctorOptions.map((doctor) => (
+                          <option key={doctor.doctorId} value={doctor.doctorId}>
+                            {getDoctorLabel(doctor)}
+                            {doctor.departmentName ? ` - ${doctor.departmentName}` : ""}
+                            {getDoctorScheduleText(doctor.doctorId) ? ` (${getDoctorScheduleText(doctor.doctorId)})` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                )}
               </div>
 
-              {doctorFetchState === "loading" && (
+              {bookingMode === "DATE" && doctorFetchState === "loading" && (
                 <div
                   style={{
                     marginTop: "16px",
@@ -455,13 +731,13 @@ export default function AvailableSlots() {
                 </div>
               )}
 
-              {doctorFetchState === "error" && (
+              {bookingMode === "DATE" && doctorFetchState === "error" && (
                 <div className="error-box" style={{ marginTop: "16px" }}>
                   {doctorErrorMsg}
                 </div>
               )}
 
-              {workDate && doctorFetchState === "done" && doctorOptions.length === 0 && (
+              {bookingMode === "DATE" && workDate && doctorFetchState === "done" && doctorOptions.length === 0 && (
                 <div
                   style={{
                     marginTop: "16px",
@@ -478,7 +754,7 @@ export default function AvailableSlots() {
                 </div>
               )}
 
-              {workDate && doctorOptions.length > 0 && (
+              {bookingMode === "DATE" && workDate && doctorOptions.length > 0 && (
                 <div
                   style={{
                     marginTop: "16px",
@@ -905,16 +1181,26 @@ export default function AvailableSlots() {
                   <label className="patient-label text-[13px]">Phương thức thanh toán</label>
                   <div className="bg-teal-50 border border-teal-200 rounded-xl p-4 flex flex-col gap-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-[14px] font-bold text-teal-900">Thanh toán Online (Chuyển khoản)</span>
-                      <span className="text-[11px] uppercase tracking-wider font-bold bg-teal-200/50 text-teal-800 px-2 py-0.5 rounded-md">Bắt buộc</span>
+                      <span className="text-[14px] font-bold text-teal-900">Phí khám bệnh</span>
+                      <span className="text-[15px] font-bold text-teal-900">{consultationFee.toLocaleString("vi-VN")} VNĐ</span>
                     </div>
-                    <div className="text-[13px] text-teal-800/80 font-medium leading-snug">
-                      Để giữ ca khám, bạn cần thanh toán phí khám ban đầu. Sau khi xác nhận, hệ thống sẽ tạo lịch và hướng dẫn thanh toán.
-                    </div>
-                    <div className="flex justify-between items-center mt-2 pt-3 border-t border-teal-200">
-                      <span className="text-[14px] font-bold text-teal-900">Phí giữ chỗ (Khấu trừ vào tiền khám)</span>
+                    <div className="flex justify-between items-center mt-1 pt-2 border-t border-teal-200/50">
+                      <div className="flex flex-col">
+                        <span className="text-[14px] font-bold text-teal-900 flex items-center gap-2">
+                          Phí giữ chỗ (Thanh toán trước)
+                          <span className="text-[10px] uppercase tracking-wider font-bold bg-teal-200/50 text-teal-800 px-2 py-0.5 rounded-md">Bắt buộc</span>
+                        </span>
+                        <span className="text-[12px] text-teal-800/80 font-medium leading-snug mt-1 max-w-[250px]">
+                          Phí này sẽ được khấu trừ vào tổng hóa đơn khi bạn đến khám.
+                        </span>
+                      </div>
                       <span className="text-[18px] font-black text-rose-600">50.000 VNĐ</span>
                     </div>
+                  </div>
+                  <div className="flex justify-end mt-2 pr-1">
+                    <button type="button" onClick={() => setShowPriceModal(true)} className="text-[12px] font-bold text-teal-600 hover:text-teal-700 underline underline-offset-2 transition-colors">
+                      Xem bảng giá dịch vụ chuyên khoa dự kiến
+                    </button>
                   </div>
                 </div>
               </div>
@@ -938,6 +1224,37 @@ export default function AvailableSlots() {
               </div>
             </form>
           )}
+        </div>
+      )}
+
+      {/* Price List Modal */}
+      {showPriceModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-[fadeIn_0.2s_ease]">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h3 className="text-lg font-bold text-slate-800">Bảng giá tham khảo dịch vụ</h3>
+              <button onClick={() => setShowPriceModal(false)} className="text-slate-400 hover:text-rose-500 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+              {specialtyServices.length === 0 ? (
+                <div className="text-center text-slate-500 text-sm py-4">Đang cập nhật bảng giá...</div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {specialtyServices.map(s => (
+                    <div key={s.serviceId} className="flex justify-between items-center p-3 rounded-xl border border-slate-100 bg-white hover:border-teal-100 hover:shadow-sm transition-all">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-[14px] text-slate-700">{s.serviceName}</span>
+                        {s.description && <span className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{s.description}</span>}
+                      </div>
+                      <span className="font-black text-[15px] text-teal-600 shrink-0 ml-4">{s.price.toLocaleString("vi-VN")} đ</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 

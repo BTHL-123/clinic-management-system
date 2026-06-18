@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { FlaskConical, RefreshCw, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowLeft } from "lucide-react";
+import { FlaskConical, RefreshCw, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowLeft, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getMyLabRequests } from "../../services/labRequestService";
 import PageHeader from "../../components/PageHeader";
@@ -66,7 +66,7 @@ function LabRequestRow({ req }) {
             <table className="w-full border-collapse text-[13px] text-left">
               <thead>
                 <tr className="bg-black/5 border-b border-slate-300">
-                  {["Tên xét nghiệm", "Mã XN", "Kết quả", "Đơn vị", "Khoảng bình thường", "Kết luận", "Trạng thái"].map((h) => (
+                  {["Tên xét nghiệm", "Mã XN", "Kết quả", "Đơn vị", "Khoảng bình thường", "Kết luận", "Đính kèm", "Trạng thái"].map((h) => (
                     <th key={h} className="p-2.5 font-bold patient-label whitespace-nowrap">
                       {h}
                     </th>
@@ -87,12 +87,21 @@ function LabRequestRow({ req }) {
                         <td className="p-2.5 text-slate-700 font-medium">{item.labResult.normalRange || "—"}</td>
                         <td className="p-2.5 text-slate-700 font-medium">{item.labResult.conclusion || "—"}</td>
                         <td className="p-2.5">
+                          {item.labResult.resultFileUrl ? (
+                            <a href={item.labResult.resultFileUrl} target="_blank" rel="noopener noreferrer" className="text-teal-600 hover:text-teal-800 flex items-center gap-1 font-bold text-[11px] bg-teal-50 px-2 py-1.5 rounded-lg border border-teal-100 w-max transition-colors">
+                              <ExternalLink size={12} /> Xem ảnh
+                            </a>
+                          ) : (
+                            <span className="text-slate-400 font-medium">—</span>
+                          )}
+                        </td>
+                        <td className="p-2.5">
                           <StatusBadge status={item.status} />
                         </td>
                       </>
                     ) : (
                       <>
-                        <td colSpan={4} className="p-2.5 text-slate-500 italic">
+                        <td colSpan={5} className="p-2.5 text-slate-500 italic">
                           Chưa có kết quả
                         </td>
                         <td className="p-2.5">

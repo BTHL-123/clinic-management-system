@@ -77,6 +77,7 @@ class AppointmentRetrievalTest {
         patient.setPatientCode("PAT_" + uniqueSuffix);
         patient.setFullName("Test Patient");
         patient.setGender("MALE");
+        patient.setRelationshipToUser("SELF");
         patient.setDateOfBirth(LocalDate.of(1995, 5, 5));
         patient.setPhone("09" + uniqueSuffix.substring(uniqueSuffix.length() - 8));
         patient.setEmail(user.getEmail());
@@ -215,7 +216,7 @@ class AppointmentRetrievalTest {
     void testGetMyAppointmentsUpcoming() {
         Pageable pageable = PageRequest.of(0, 10);
         PageResponse<AppointmentResponse> result = appointmentService.getMyAppointments(
-                savedUser.getUserId(), true, pageable
+                savedUser.getUserId(), null, null, null, true, pageable
         );
         assertNotNull(result);
         assertEquals(1, result.content().size());
@@ -226,7 +227,7 @@ class AppointmentRetrievalTest {
     void testGetMyAppointmentsPast() {
         Pageable pageable = PageRequest.of(0, 10);
         PageResponse<AppointmentResponse> result = appointmentService.getMyAppointments(
-                savedUser.getUserId(), false, pageable
+                savedUser.getUserId(), null, null, null, false, pageable
         );
         assertNotNull(result);
         assertEquals(1, result.content().size());

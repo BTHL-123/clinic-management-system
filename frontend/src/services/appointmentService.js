@@ -1,8 +1,8 @@
 import axiosClient from "./axiosClient.js";
 
 const appointmentService = {
-  getMyAppointments(upcoming, page = 0, size = 10) {
-    const params = { page, size, sortBy: "appointmentDate", direction: upcoming ? "ASC" : "DESC" };
+  getMyAppointments(upcoming, page = 0, size = 10, filters = {}) {
+    const params = { page, size, sortBy: "appointmentDate", direction: upcoming ? "ASC" : "DESC", ...filters };
     if (upcoming !== null && upcoming !== undefined) {
       params.upcoming = upcoming;
     }
@@ -11,6 +11,10 @@ const appointmentService = {
 
   getAppointmentById(id) {
     return axiosClient.get(`/appointments/${id}`);
+  },
+
+  getAppointmentBySlotId(slotId) {
+    return axiosClient.get(`/appointments/by-slot/${slotId}`);
   },
 
   getAppointments(filters = {}, page = 0, size = 10) {

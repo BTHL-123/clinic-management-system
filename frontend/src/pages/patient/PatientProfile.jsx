@@ -17,6 +17,15 @@ const INITIAL_FORM = {
   bloodType: "",
   allergies: "",
   medicalHistory: "",
+  ethnicity: "",
+  occupation: "",
+  heightCm: "",
+  weightKg: "",
+  familyHistory: "",
+  surgicalHistory: "",
+  currentMedications: "",
+  lifestyleHabits: "",
+  avatarUrl: "",
 };
 
 export default function PatientProfile() {
@@ -50,6 +59,15 @@ export default function PatientProfile() {
           bloodType: data.bloodType || "",
           allergies: data.allergies || "",
           medicalHistory: data.medicalHistory || "",
+          ethnicity: data.ethnicity || "",
+          occupation: data.occupation || "",
+          heightCm: data.heightCm || "",
+          weightKg: data.weightKg || "",
+          familyHistory: data.familyHistory || "",
+          surgicalHistory: data.surgicalHistory || "",
+          currentMedications: data.currentMedications || "",
+          lifestyleHabits: data.lifestyleHabits || "",
+          avatarUrl: data.avatarUrl || "",
         });
         setError("");
         setNotFound(false);
@@ -73,6 +91,29 @@ export default function PatientProfile() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validation
+    if (formData.phone && !/^(0|\+84)[0-9]{8,10}$/.test(formData.phone)) {
+      setError("Số điện thoại không hợp lệ (phải bắt đầu bằng 0 hoặc +84 và có 9-11 chữ số).");
+      return;
+    }
+    if (formData.identityNumber && !/^[0-9]{12}$/.test(formData.identityNumber)) {
+      setError("CCCD/CMND phải bao gồm chính xác 12 chữ số.");
+      return;
+    }
+    if (formData.insuranceNumber && formData.insuranceNumber.length !== 15) {
+      setError("Mã BHYT phải bao gồm chính xác 15 ký tự.");
+      return;
+    }
+    if (formData.dateOfBirth) {
+      const dob = new Date(formData.dateOfBirth);
+      const today = new Date();
+      if (dob > today) {
+        setError("Ngày sinh không được ở trong tương lai.");
+        return;
+      }
+    }
+
     try {
       setSubmitting(true);
       setError("");
@@ -120,10 +161,21 @@ export default function PatientProfile() {
       {successMsg && <div style={{ padding: "12px 16px", background: "#e6f4ea", color: "#1e8e3e", borderRadius: 8, marginBottom: 16, border: "1px solid #ceead6" }}>{successMsg}</div>}
 
       <div className="patient-glass-card p-6 md:p-8">
+        {formData.avatarUrl && (
+          <div className="flex justify-center mb-8">
+            <img src={formData.avatarUrl} alt="Avatar" className="w-32 h-32 rounded-full object-cover border-4 border-white/20 shadow-xl" />
+          </div>
+        )}
         <form className="form-stack" onSubmit={handleSubmit}>
           
           <div style={{ marginBottom: 20 }}>
             <h3 className="patient-section-title" style={{ borderBottom: "1px solid rgba(255,255,255,0.3)", paddingBottom: 8, marginBottom: 16 }}>Thông tin cơ bản</h3>
+            
+            <div className="field mb-4">
+              <label>Ảnh đại diện (URL)</label>
+              <input name="avatarUrl" className="patient-glass-input" value={formData.avatarUrl} onChange={handleChange} placeholder="Nhập đường dẫn hình ảnh..." />
+            </div>
+
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               
               <div className="field">
@@ -149,6 +201,16 @@ export default function PatientProfile() {
               <div className="field">
                 <label>Ngày sinh</label>
                 <input type="date" name="dateOfBirth" className="patient-glass-input" value={formData.dateOfBirth} onChange={handleChange} />
+              </div>
+              
+              <div className="field">
+                <label>Dân tộc</label>
+                <input name="ethnicity" className="patient-glass-input" value={formData.ethnicity} onChange={handleChange} />
+              </div>
+
+              <div className="field">
+                <label>Nghề nghiệp</label>
+                <input name="occupation" className="patient-glass-input" value={formData.occupation} onChange={handleChange} />
               </div>
               
               <div className="field">
@@ -195,15 +257,57 @@ export default function PatientProfile() {
           <div style={{ marginBottom: 20 }}>
             <h3 className="patient-section-title" style={{ borderBottom: "1px solid rgba(255,255,255,0.3)", paddingBottom: 8, marginBottom: 16 }}>Thông tin y tế</h3>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-              <div className="field">
-                <label>Nhóm máu</label>
-                <select name="bloodType" className="patient-glass-input" value={formData.bloodType} onChange={handleChange}>
-                  <option value="">-- Chưa xác định --</option>
-                  <option value="A">A</option>
-                  <option value="B">B</option>
-                  <option value="AB">AB</option>
-                  <option value="O">O</option>
-                </select>
+              <div className="field" style={{ gridColumn: "span 2" }}>
+                <label style={{ marginBottom: 8 }}>Nhóm máu</label>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  {["", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((type) => (
+                    <label key={type} style={{
+                      padding: "8px 16px",
+                      borderRadius: "8px",
+                      background: formData.bloodType === type ? "rgba(20, 184, 166, 0.2)" : "rgba(255, 255, 255, 0.05)",
+                      border: formData.bloodType === type ? "1px solid #14b8a6" : "1px solid rgba(255, 255, 255, 0.2)",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      color: formData.bloodType === type ? "#14b8a6" : "#fff",
+                      fontWeight: formData.bloodType === type ? "bold" : "normal",
+                      transition: "all 0.2s"
+                    }}>
+                      <input 
+                        type="radio" 
+                        name="bloodType" 
+                        value={type} 
+                        checked={formData.bloodType === type}
+                        onChange={handleChange}
+                        style={{ display: "none" }}
+                      />
+                      {type === "" ? "Chưa xác định" : type}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="field" style={{ gridColumn: "span 2" }}>
+                <label>Chỉ số cơ thể</label>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs text-white/70">Chiều cao (cm)</label>
+                    <input type="number" name="heightCm" className="patient-glass-input" value={formData.heightCm} onChange={handleChange} placeholder="Ví dụ: 170" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs text-white/70">Cân nặng (kg)</label>
+                    <input type="number" name="weightKg" className="patient-glass-input" value={formData.weightKg} onChange={handleChange} step="0.1" placeholder="Ví dụ: 65" />
+                  </div>
+                  <div className="flex flex-col gap-1.5 justify-center">
+                    <label className="text-xs text-white/70">Chỉ số BMI</label>
+                    <div className="font-bold text-teal-400 text-lg">
+                      {formData.heightCm && formData.weightKg 
+                        ? (formData.weightKg / Math.pow(formData.heightCm / 100, 2)).toFixed(1) 
+                        : "—"}
+                    </div>
+                  </div>
+                </div>
               </div>
               
               <div className="field" style={{ gridColumn: "span 2" }}>
@@ -212,8 +316,28 @@ export default function PatientProfile() {
               </div>
               
               <div className="field" style={{ gridColumn: "span 2" }}>
-                <label>Tiền sử bệnh</label>
-                <textarea name="medicalHistory" className="patient-glass-input" value={formData.medicalHistory} onChange={handleChange} rows={3} placeholder="Nhập các bệnh mãn tính hoặc phẫu thuật từng thực hiện..." />
+                <label>Tiền sử bệnh (Bản thân)</label>
+                <textarea name="medicalHistory" className="patient-glass-input" value={formData.medicalHistory} onChange={handleChange} rows={2} placeholder="Nhập các bệnh mãn tính từng mắc phải..." />
+              </div>
+
+              <div className="field" style={{ gridColumn: "span 2" }}>
+                <label>Tiền sử gia đình</label>
+                <textarea name="familyHistory" className="patient-glass-input" value={formData.familyHistory} onChange={handleChange} rows={2} placeholder="Các bệnh di truyền trong gia đình..." />
+              </div>
+
+              <div className="field" style={{ gridColumn: "span 2" }}>
+                <label>Tiền sử phẫu thuật</label>
+                <textarea name="surgicalHistory" className="patient-glass-input" value={formData.surgicalHistory} onChange={handleChange} rows={2} placeholder="Các phẫu thuật từng thực hiện..." />
+              </div>
+
+              <div className="field" style={{ gridColumn: "span 2" }}>
+                <label>Thuốc đang sử dụng</label>
+                <textarea name="currentMedications" className="patient-glass-input" value={formData.currentMedications} onChange={handleChange} rows={2} placeholder="Các loại thuốc đang uống (để phòng tránh tương tác thuốc)..." />
+              </div>
+
+              <div className="field" style={{ gridColumn: "span 2" }}>
+                <label>Thói quen sinh hoạt (Rượu, bia, thuốc lá...)</label>
+                <textarea name="lifestyleHabits" className="patient-glass-input" value={formData.lifestyleHabits} onChange={handleChange} rows={2} placeholder="Tần suất sử dụng rượu bia, thuốc lá..." />
               </div>
             </div>
           </div>

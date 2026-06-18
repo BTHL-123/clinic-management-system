@@ -100,6 +100,18 @@ public class WalkInAppointmentServiceImpl implements WalkInAppointmentService {
         // ── 7. Find or create patient by phone ────────────────────────────────
         Patient patient = findOrCreatePatient(request);
 
+        // ── 7.5. Validate patient overlap ─────────────────────────────────────
+        boolean hasOverlap = appointmentRepository.existsOverlappingAppointmentForPatient(
+                patient.getPatientId(),
+                request.appointmentDate(),
+                slot.getStartTime(),
+                slot.getEndTime(),
+                null
+        );
+        if (hasOverlap) {
+            throw new BusinessException("Bệnh nhân đã có một lịch hẹn khác trong khoảng thời gian này. Vui lòng chọn ca khám khác.");
+        }
+
         // ── 8. Mark slot as BOOKED ────────────────────────────────────────────
         slot.setStatus("BOOKED");
         slot.setLockedUntil(null);

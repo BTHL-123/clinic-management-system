@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import queueService from "../../services/queueService";
 import PageHeader from "../../components/PageHeader";
+import { Client } from "@stomp/stompjs";
+import SockJS from "sockjs-client/dist/sockjs";
 
 const STATUS_CONFIG = {
   WAITING: {
@@ -98,10 +100,67 @@ export default function PatientQueueStatusPage() {
 
   useEffect(() => {
     fetchStatus();
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(fetchStatus, 30000);
-    return () => clearInterval(interval);
+
+    const socketUrl = import.meta.env.VITE_API_URL 
+      ? import.meta.env.VITE_API_URL.replace("/api", "") + "/ws-queue" 
+      : "http://localhost:8080/ws-queue";
+
+    const client = new Client({
+      webSocketFactory: () => new SockJS(socketUrl),
+      reconnectDelay: 5000,
+      onConnect: () => {
+        console.log("Connected to STOMP for queue updates");
+        client.subscribe("/topic/queue", (message) => {
+          if (message.body === "QUEUE_UPDATED") {
+            fetchStatus();
+          }
+        });
+      },
+      onStompError: (frame) => {
+        console.error("Broker reported error: " + frame.headers["message"]);
+      },
+    });
+
+    client.activate();
+
+    // Request browser notification permission
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+
+    return () => {
+      client.deactivate();
+    };
   }, [fetchStatus]);
+
+  // Effect to trigger notification when status changes to CALLED
+  useEffect(() => {
+    if (data?.queueStatus === "CALLED") {
+      // Create a beep sound using AudioContext
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.type = "sine";
+        oscillator.frequency.value = 800; // 800Hz beep
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // Lower volume
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.3); // 300ms beep
+      } catch (e) {
+        console.error("Audio beep failed", e);
+      }
+
+      // Show browser notification
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification("Đến lượt bạn rồi!", {
+          body: `Bạn đã được gọi vào phòng khám của bác sĩ ${data.doctorName}. Vui lòng vào phòng khám ngay.`,
+          icon: "/favicon.ico"
+        });
+      }
+    }
+  }, [data?.queueStatus]);
 
   const statusCfg = data ? (STATUS_CONFIG[data.queueStatus] || STATUS_CONFIG["WAITING"]) : null;
   const isNoQueue = error?.toLowerCase().includes("no active queue");
@@ -223,8 +282,9 @@ export default function PatientQueueStatusPage() {
             </div>
 
             {/* Auto-refresh note */}
-            <p className="text-center text-xs text-slate-500 mt-2">
-              Tự động cập nhật mỗi 30 giây. Nhấn <strong>Làm mới</strong> để cập nhật ngay.
+            <p className="text-center text-xs text-slate-500 mt-2 flex items-center justify-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Kết nối thời gian thực (Real-time). Tự động cập nhật khi có thay đổi.
             </p>
           </div>
         )}

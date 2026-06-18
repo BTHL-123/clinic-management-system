@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ClipboardList, ArrowLeft } from "lucide-react";
 import doctorLeaveRequestService from "../../services/doctorLeaveRequestService.js";
 import { useToast } from "../../context/useToast.js";
@@ -45,11 +45,13 @@ function StatusBadge({ status }) {
 export default function DoctorLeaveRequestPage() {
   const toast = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const today = new Date().toISOString().split("T")[0];
+  const prefillDate = location.state?.prefillDate || today;
 
   const [form, setForm] = useState({
     requestType: "LEAVE",
-    leaveDate: today,
+    leaveDate: prefillDate,
     startTime: "08:00",
     endTime: "17:00",
     reason: "",
