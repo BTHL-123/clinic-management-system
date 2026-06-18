@@ -13,8 +13,10 @@ import com.clinicmanagement.patient.PatientRepository;
 import com.clinicmanagement.user.User;
 import com.clinicmanagement.user.UserRepository;
 import com.clinicmanagement.email.EmailService;
+import com.clinicmanagement.consultation.ConsultationSessionRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
@@ -41,6 +43,8 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final ReviewRepository reviewRepository;
     private final PaymentRepository paymentRepository;
     private final EmailService emailService;
+    private final ConsultationSessionRepository consultationSessionRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     public AppointmentServiceImpl(
             AppointmentRepository appointmentRepository,
@@ -52,7 +56,9 @@ public class AppointmentServiceImpl implements AppointmentService {
             NotificationService notificationService,
             ReviewRepository reviewRepository,
             PaymentRepository paymentRepository,
-            EmailService emailService
+            EmailService emailService,
+            ConsultationSessionRepository consultationSessionRepository,
+            SimpMessagingTemplate messagingTemplate
     ) {
         this.appointmentRepository = appointmentRepository;
         this.timeSlotRepository = timeSlotRepository;
@@ -64,6 +70,8 @@ public class AppointmentServiceImpl implements AppointmentService {
         this.reviewRepository = reviewRepository;
         this.paymentRepository = paymentRepository;
         this.emailService = emailService;
+        this.consultationSessionRepository = consultationSessionRepository;
+        this.messagingTemplate = messagingTemplate;
     }
 
     @Override
@@ -106,14 +114,35 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
+    public AppointmentResponse getAppointmentBySlotId(Long slotId, Long userId, boolean isPrivileged) {
+        Appointment appointment = appointmentRepository.findActiveByTimeSlotId(slotId)
+                .orElseThrow(() -> new ResourceNotFoundException("No active appointment found for slot id: " + slotId));
+
+        if (!isPrivileged) {
+            boolean isOwner = (appointment.getPatient() != null && appointment.getPatient().getUser() != null &&
+                    appointment.getPatient().getUser().getUserId().equals(userId)) ||
+                    (appointment.getDoctor() != null && appointment.getDoctor().getUser() != null &&
+                    appointment.getDoctor().getUser().getUserId().equals(userId));
+            if (!isOwner) {
+                throw new BusinessException("You do not have permission to view this appointment");
+            }
+        }
+
+        return mapToResponse(appointment);
+    }
+
+    @Override
     public PageResponse<AppointmentResponse> getMyAppointments(
             Long userId,
-            boolean upcoming,
+            String keyword,
+            Long doctorId,
+            Long departmentId,
+            Boolean upcoming,
             Pageable pageable
     ) {
         LocalDate currentDate = LocalDate.now();
-        Page<Appointment> appointments = appointmentRepository.findMyAppointments(
-                userId, upcoming, currentDate, pageable
+        Page<Appointment> appointments = appointmentRepository.findMyFilteredAppointments(
+                userId, keyword, doctorId, departmentId, upcoming, currentDate, pageable
         );
         return PageResponse.from(appointments.map(this::mapToResponse));
     }
@@ -197,6 +226,18 @@ public class AppointmentServiceImpl implements AppointmentService {
                 p.setRelationshipToUser("SELF");
                 patient = patientRepository.save(p);
             }
+        }
+
+        // Kiểm tra xem bệnh nhân có bị trùng lịch hẹn với ca khám đang đặt không
+        boolean hasOverlap = appointmentRepository.existsOverlappingAppointmentForPatient(
+                patient.getPatientId(),
+                slot.getDoctorSchedule().getWorkDate(),
+                slot.getStartTime(),
+                slot.getEndTime(),
+                null // Booking mới, không có ID để exclude
+        );
+        if (hasOverlap) {
+            throw new BusinessException("Bệnh nhân đã có một lịch hẹn khác trong khoảng thời gian này. Vui lòng chọn ca khám khác.");
         }
 
         if ("LOCKED".equals(slotStatus)) {
@@ -409,6 +450,18 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         if (!"AVAILABLE".equals(newSlot.getStatus())) {
             throw new BusinessException("Ca khám mới không còn khả dụng.");
+        }
+
+        // Kiểm tra trùng lịch của bệnh nhân (ngoại trừ lịch hẹn hiện tại đang dời)
+        boolean hasOverlap = appointmentRepository.existsOverlappingAppointmentForPatient(
+                appointment.getPatient().getPatientId(),
+                newSlot.getDoctorSchedule().getWorkDate(),
+                newSlot.getStartTime(),
+                newSlot.getEndTime(),
+                appointment.getAppointmentId()
+        );
+        if (hasOverlap) {
+            throw new BusinessException("Bệnh nhân đã có một lịch hẹn khác trong khoảng thời gian này. Vui lòng chọn ca khám khác.");
         }
 
         // Release old slot

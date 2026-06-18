@@ -14,6 +14,8 @@ import queueService from "../../services/queueService";
 import { getDoctors } from "../../services/doctorService";
 import { useToast } from "../../context/useToast.js";
 import PageHeader from "../../components/PageHeader";
+import { Client } from "@stomp/stompjs";
+import SockJS from "sockjs-client/dist/sockjs";
 
 export default function QueueManagementPage() {
   const toast = useToast();
@@ -64,6 +66,32 @@ export default function QueueManagementPage() {
 
   useEffect(() => {
     fetchQueue();
+
+    const socketUrl = import.meta.env.VITE_API_URL 
+      ? import.meta.env.VITE_API_URL.replace("/api", "") + "/ws-queue" 
+      : "http://localhost:8080/ws-queue";
+
+    const client = new Client({
+      webSocketFactory: () => new SockJS(socketUrl),
+      reconnectDelay: 5000,
+      onConnect: () => {
+        console.log("Connected to STOMP for queue management updates");
+        client.subscribe("/topic/queue", (message) => {
+          if (message.body === "QUEUE_UPDATED") {
+            fetchQueue();
+          }
+        });
+      },
+      onStompError: (frame) => {
+        console.error("Broker reported error: " + frame.headers["message"]);
+      },
+    });
+
+    client.activate();
+
+    return () => {
+      client.deactivate();
+    };
   }, [fetchQueue]);
 
   // Actions
@@ -128,10 +156,20 @@ export default function QueueManagementPage() {
         icon={Users}
         iconColor="text-white"
         rightContent={
-          <button className="bg-white/10 hover:bg-white/20 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm" onClick={fetchQueue}>
-            <RefreshCw size={16} className={loading ? "spin-animation" : ""} />
-            Làm mới
-          </button>
+          <div className="flex items-center gap-3">
+            <span className="text-[12px] text-teal-600 font-semibold bg-teal-50 px-3 py-1.5 rounded-lg flex items-center gap-1.5 border border-teal-100">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Real-time Sync
+            </span>
+            <button
+              onClick={fetchQueue}
+              disabled={loading}
+              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-[13px] shadow-md shadow-teal-500/20 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+              Làm mới
+            </button>
+          </div>
         }
       />
 

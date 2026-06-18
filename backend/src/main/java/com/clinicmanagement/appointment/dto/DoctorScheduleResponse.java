@@ -10,5 +10,7 @@ public record DoctorScheduleResponse(
         LocalTime startTime,
         LocalTime endTime,
         Integer maxPatients,
-        String status
+        String status,
+        Integer bookedSlots,
+        Integer totalSlots
 ) {}

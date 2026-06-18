@@ -25,6 +25,7 @@ import ReceptionistAppointmentsPage from "./pages/appointment/ReceptionistAppoin
 import QueueManagementPage from "./pages/appointment/QueueManagementPage.jsx";
 import DoctorTodayAppointments from "./pages/doctor/DoctorTodayAppointments.jsx";
 import DoctorLeaveRequestPage from "./pages/doctor/DoctorLeaveRequestPage.jsx";
+import DoctorSchedulePage from "./pages/doctor/DoctorSchedulePage.jsx";
 import AdminDoctorLeaveRequestPage from "./pages/doctor/AdminDoctorLeaveRequestPage.jsx";
 import NotificationsPage from "./pages/notification/NotificationsPage.jsx";
 import DoctorManagement from "./pages/doctor/DoctorManagement.jsx";
@@ -47,6 +48,7 @@ import MyAppointmentsPage from "./pages/patient/MyAppointmentsPage.jsx";
 import AppointmentDetailPage from "./pages/appointment/AppointmentDetailPage.jsx";
 import PatientMedicalHistoryPage from "./pages/patient/PatientMedicalHistoryPage.jsx";
 import PatientDoctorsPage from "./pages/patient/PatientDoctorsPage.jsx";
+import PatientServicePricesPage from "./pages/patient/PatientServicePricesPage.jsx";
 import ReviewManagement from "./pages/review/ReviewManagement.jsx";
 import ArticleManagement from "./pages/article/ArticleManagement.jsx";
 import PatientQueueStatusPage from "./pages/appointment/PatientQueueStatusPage.jsx";
@@ -144,6 +146,7 @@ export default function App() {
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="doctors" element={<DoctorManagement />} />
         <Route path="our-doctors" element={<PatientDoctorsPage />} />
+        <Route path="service-prices" element={<PatientServicePricesPage />} />
         <Route path="patients" element={<PatientManagement />} />
         <Route path="patients/:patientId" element={<PatientDetailPage />} />
         <Route path="consultation" element={<ConsultationPage />} />
@@ -158,6 +161,7 @@ export default function App() {
         <Route path="audit-logs" element={<AdminOnly><AuditLogPage /></AdminOnly>} />
         <Route path="system-settings" element={<AdminOnly><SystemSettingsPage /></AdminOnly>} />
         <Route path="doctor-leave-requests" element={<DoctorLeaveRequestPage />} />
+        <Route path="doctor-schedule" element={<DoctorSchedulePage />} />
         <Route path="admin/doctor-leave-requests" element={<AdminDoctorLeaveRequestPage />} />
       </Route>
     </Routes>

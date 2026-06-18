@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { 
   CalendarDays, FileText, Activity, Settings,
   HeartPulse, Sparkles, UserCircle, CalendarPlus, ListOrdered, Bell,
-  QrCode, ArrowRight, ActivitySquare, ShieldCheck, Star, ThumbsUp, GraduationCap, X
+  QrCode, ArrowRight, ActivitySquare, ShieldCheck, Star, ThumbsUp, GraduationCap, X,
+  Clock, AlertCircle
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/useAuth.js";
@@ -221,8 +222,29 @@ export default function PatientHome() {
               </div>
 
               <div className="flex-1 w-full">
-                <h3 className="text-2xl font-black text-white mb-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]">Trợ lý Sức khỏe AI</h3>
-                <p className="text-white/95 font-extrabold mb-5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.3)]">Hệ thống AI sẽ phân tích triệu chứng và đề xuất chuyên khoa phù hợp nhất cho bạn.</p>
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-2xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]">Trợ lý Sức khỏe AI</h3>
+                  <button 
+                    onClick={() => navigate('/dashboard/ai-chat')}
+                    className="text-white/80 hover:text-white text-sm font-bold flex items-center gap-1 transition-colors bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full"
+                  >
+                    <Clock size={14} /> Lịch sử tư vấn
+                  </button>
+                </div>
+                
+                <p className="text-white/95 font-extrabold mb-3 drop-shadow-[0_1px_3px_rgba(0,0,0,0.3)]">
+                  Mô tả triệu chứng của bạn, AI sẽ phân tích và đề xuất chuyên khoa phù hợp.
+                </p>
+                
+                <div className="bg-white/10 rounded-xl p-3 mb-4 border border-white/20 backdrop-blur-sm">
+                  <p className="text-white/90 text-xs font-semibold mb-2 flex items-center gap-1">
+                    <Sparkles size={12} className="text-teal-200" /> Ví dụ bạn có thể hỏi:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={() => setAiQuery("Tôi bị đau đầu kéo dài và buồn nôn vào buổi sáng")} className="text-xs bg-white/20 hover:bg-white/30 text-white px-2.5 py-1.5 rounded-lg transition-colors text-left">"Tôi bị đau đầu kéo dài và buồn nôn vào buổi sáng"</button>
+                    <button onClick={() => setAiQuery("Trẻ em bị sốt cao 39 độ và nổi mẩn đỏ thì khám khoa nào?")} className="text-xs bg-white/20 hover:bg-white/30 text-white px-2.5 py-1.5 rounded-lg transition-colors text-left">"Trẻ em bị sốt cao 39 độ và nổi mẩn đỏ..."</button>
+                  </div>
+                </div>
                 
                 <form 
                   onSubmit={(e) => {
@@ -250,6 +272,11 @@ export default function PatientHome() {
                     </button>
                   </div>
                 </form>
+
+                <div className="mt-3 flex items-start gap-1.5 text-white/70 text-[11px] font-medium bg-black/10 p-2 rounded-lg border border-white/5">
+                  <AlertCircle size={14} className="shrink-0 text-amber-300/80" />
+                  <p><strong>Lưu ý:</strong> Trợ lý AI chỉ mang tính chất tham khảo định hướng chuyên khoa, KHÔNG thay thế cho chẩn đoán và chỉ định điều trị của bác sĩ chuyên môn.</p>
+                </div>
               </div>
             </div>
           </div>
@@ -259,56 +286,7 @@ export default function PatientHome() {
         {/* RIGHT COLUMN: ASYMMETRIC BENTO GRID */}
         <div className="xl:col-span-4 flex flex-col gap-6 h-full">
           
-          {/* WELLNESS SCORE WIDGET */}
-          <div className="patient-glass-panel patient-glass-panel-clear rounded-[3rem] p-8 flex flex-col relative overflow-hidden flex-shrink-0 hover:shadow-[0_12px_40px_rgba(0,0,0,0.22)] transition-all">
-            <h3 className="text-white font-black text-xl mb-8 flex items-center gap-2 drop-shadow-[0_1px_3px_rgba(0,0,0,0.3)]">
-              <ActivitySquare className="text-teal-200" /> Điểm Sức Khỏe
-            </h3>
-            
-            <div className="flex justify-center mb-6">
-              <div className="relative w-48 h-48">
-                <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
-                  <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(148,163,184,0.25)" strokeWidth="8" />
-                  <circle 
-                    cx="50" cy="50" r="45" fill="none" 
-                    stroke="url(#wellnessGradient)" strokeWidth="8" 
-                    strokeDasharray="283" strokeDashoffset="42" /* 85% */
-                    strokeLinecap="round" 
-                  />
-                  <defs>
-                    <linearGradient id="wellnessGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#14b8a6" />
-                      <stop offset="100%" stopColor="#0891b2" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-5xl font-black text-white tracking-tighter drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]">85</span>
-                  <span className="text-teal-200 font-extrabold text-sm uppercase tracking-widest mt-1 drop-shadow-sm">Tốt</span>
-                </div>
-              </div>
-            </div>
 
-            {/* Micro Area Chart */}
-            <div className="h-20 w-full mt-auto relative">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={heartRateData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorHeart" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#2dd4bf" stopOpacity={0.4}/>
-                      <stop offset="95%" stopColor="#2dd4bf" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <Area type="monotone" dataKey="value" stroke="#2dd4bf" strokeWidth={3} fillOpacity={1} fill="url(#colorHeart)" />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: 'rgba(15,23,42,0.9)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}
-                    itemStyle={{ fontWeight: 'bold', color: '#2dd4bf' }}
-                    labelStyle={{ display: 'none' }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
 
           {/* ASYMMETRIC ACTION BLOCKS */}
           <div className="grid grid-cols-2 gap-4 flex-1">
@@ -334,6 +312,23 @@ export default function PatientHome() {
                 <ActivitySquare size={26} />
               </div>
               <div className="text-white font-black text-xl leading-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.3)]">Kết quả<br/>Xét nghiệm</div>
+            </motion.div>
+
+            <motion.div
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => navigate("/dashboard/service-prices")}
+              className="patient-glass-panel-sm patient-glass-panel-sm-clear rounded-[2.5rem] p-6 cursor-pointer transition-all flex flex-col justify-between group hover:-translate-y-0.5 hover:shadow-[0_8px_28px_rgba(0,0,0,0.18)] col-span-2 flex-row items-center"
+            >
+              <div className="flex items-center gap-6">
+                <div className="w-14 h-14 rounded-2xl bg-amber-400/25 text-amber-200 flex items-center justify-center shadow-sm group-hover:-translate-y-1 transition-transform border border-amber-300/20 shrink-0">
+                  <ListOrdered size={26} />
+                </div>
+                <div className="text-white font-black text-xl leading-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.3)]">Bảng giá<br/>Dịch vụ y tế</div>
+              </div>
+              <div className="text-amber-200/50 group-hover:text-amber-200 transition-colors">
+                <ArrowRight size={24} />
+              </div>
             </motion.div>
           </div>
 

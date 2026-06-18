@@ -65,6 +65,15 @@ public class PatientServiceImpl implements PatientService {
         patient.setBloodType(request.bloodType());
         patient.setAllergies(request.allergies());
         patient.setMedicalHistory(request.medicalHistory());
+        patient.setEthnicity(request.ethnicity());
+        patient.setOccupation(request.occupation());
+        patient.setHeightCm(request.heightCm());
+        patient.setWeightKg(request.weightKg());
+        patient.setFamilyHistory(request.familyHistory());
+        patient.setSurgicalHistory(request.surgicalHistory());
+        patient.setCurrentMedications(request.currentMedications());
+        patient.setLifestyleHabits(request.lifestyleHabits());
+        patient.setAvatarUrl(request.avatarUrl());
 
         return PatientResponse.from(patientRepository.save(patient));
     }
@@ -103,6 +112,15 @@ public class PatientServiceImpl implements PatientService {
         patient.setBloodType(request.bloodType());
         patient.setAllergies(request.allergies());
         patient.setMedicalHistory(request.medicalHistory());
+        patient.setEthnicity(request.ethnicity());
+        patient.setOccupation(request.occupation());
+        patient.setHeightCm(request.heightCm());
+        patient.setWeightKg(request.weightKg());
+        patient.setFamilyHistory(request.familyHistory());
+        patient.setSurgicalHistory(request.surgicalHistory());
+        patient.setCurrentMedications(request.currentMedications());
+        patient.setLifestyleHabits(request.lifestyleHabits());
+        patient.setAvatarUrl(request.avatarUrl());
 
         return PatientResponse.from(patientRepository.save(patient));
     }
@@ -143,6 +161,15 @@ public class PatientServiceImpl implements PatientService {
         patient.setBloodType(request.bloodType());
         patient.setAllergies(request.allergies());
         patient.setMedicalHistory(request.medicalHistory());
+        patient.setEthnicity(request.ethnicity());
+        patient.setOccupation(request.occupation());
+        patient.setHeightCm(request.heightCm());
+        patient.setWeightKg(request.weightKg());
+        patient.setFamilyHistory(request.familyHistory());
+        patient.setSurgicalHistory(request.surgicalHistory());
+        patient.setCurrentMedications(request.currentMedications());
+        patient.setLifestyleHabits(request.lifestyleHabits());
+        patient.setAvatarUrl(request.avatarUrl());
 
         return PatientResponse.from(patientRepository.save(patient));
     }
@@ -182,6 +209,15 @@ public class PatientServiceImpl implements PatientService {
         patient.setBloodType(request.bloodType());
         patient.setAllergies(request.allergies());
         patient.setMedicalHistory(request.medicalHistory());
+        patient.setEthnicity(request.ethnicity());
+        patient.setOccupation(request.occupation());
+        patient.setHeightCm(request.heightCm());
+        patient.setWeightKg(request.weightKg());
+        patient.setFamilyHistory(request.familyHistory());
+        patient.setSurgicalHistory(request.surgicalHistory());
+        patient.setCurrentMedications(request.currentMedications());
+        patient.setLifestyleHabits(request.lifestyleHabits());
+        patient.setAvatarUrl(request.avatarUrl());
 
         return PatientResponse.from(patientRepository.save(patient));
     }

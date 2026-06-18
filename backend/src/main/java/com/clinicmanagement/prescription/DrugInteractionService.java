@@ -3,6 +3,8 @@ package com.clinicmanagement.prescription;
 import com.clinicmanagement.common.exception.ResourceNotFoundException;
 import com.clinicmanagement.prescription.dto.DrugInteractionResponse;
 import com.clinicmanagement.prescription.dto.DrugInteractionResponse.InteractionDetail;
+import com.clinicmanagement.medicine.Medicine;
+import com.clinicmanagement.medicine.MedicineRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ import java.util.Map;
 public class DrugInteractionService {
 
     private final PrescriptionRepository prescriptionRepository;
+    private final MedicineRepository medicineRepository;
 
     private static final Map<String, List<String[]>> MOCK_INTERACTIONS;
 
@@ -124,6 +127,38 @@ public class DrugInteractionService {
 
         return new DrugInteractionResponse(
                 prescriptionId,
+                warningLevel,
+                warningMessage,
+                interactions,
+                true
+        );
+    }
+
+    public DrugInteractionResponse checkInteractionDraft(List<Long> medicineIds) {
+        List<Medicine> medicines = medicineRepository.findAllById(medicineIds);
+        List<InteractionDetail> interactions = new ArrayList<>();
+
+        List<String> ingredients = medicines.stream()
+                .map(m -> {
+                    String ing = m.getActiveIngredient();
+                    return ing != null
+                            ? ing.toLowerCase().trim()
+                            : m.getMedicineName().toLowerCase().trim();
+                })
+                .toList();
+
+        for (int i = 0; i < ingredients.size(); i++) {
+            for (int j = i + 1; j < ingredients.size(); j++) {
+                checkPair(ingredients.get(i), ingredients.get(j), interactions);
+                checkPair(ingredients.get(j), ingredients.get(i), interactions);
+            }
+        }
+
+        String warningLevel = determineWarningLevel(interactions);
+        String warningMessage = buildWarningMessage(interactions, warningLevel);
+
+        return new DrugInteractionResponse(
+                null, // No prescriptionId yet
                 warningLevel,
                 warningMessage,
                 interactions,

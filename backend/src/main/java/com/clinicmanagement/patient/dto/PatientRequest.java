@@ -52,7 +52,28 @@ public record PatientRequest(
 
         String allergies,
 
-        String medicalHistory
+        String medicalHistory,
+
+        @Size(max = 50, message = "Dân tộc không được vượt quá 50 ký tự")
+        String ethnicity,
+
+        @Size(max = 100, message = "Nghề nghiệp không được vượt quá 100 ký tự")
+        String occupation,
+
+        Double heightCm,
+
+        Double weightKg,
+
+        String familyHistory,
+
+        String surgicalHistory,
+
+        String currentMedications,
+
+        String lifestyleHabits,
+
+        @Size(max = 500, message = "URL ảnh đại diện không được vượt quá 500 ký tự")
+        String avatarUrl
 ) {
 }
 

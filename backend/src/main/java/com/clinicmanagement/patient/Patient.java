@@ -75,6 +75,33 @@ public class Patient {
     @Column(name = "medical_history", columnDefinition = "TEXT")
     private String medicalHistory;
 
+    @Column(length = 50)
+    private String ethnicity;
+
+    @Column(length = 100)
+    private String occupation;
+
+    @Column(name = "height_cm")
+    private Double heightCm;
+
+    @Column(name = "weight_kg")
+    private Double weightKg;
+
+    @Column(name = "family_history", columnDefinition = "TEXT")
+    private String familyHistory;
+
+    @Column(name = "surgical_history", columnDefinition = "TEXT")
+    private String surgicalHistory;
+
+    @Column(name = "current_medications", columnDefinition = "TEXT")
+    private String currentMedications;
+
+    @Column(name = "lifestyle_habits", columnDefinition = "TEXT")
+    private String lifestyleHabits;
+
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
     private User createdBy;

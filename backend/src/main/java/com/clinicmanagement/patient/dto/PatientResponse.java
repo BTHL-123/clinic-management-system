@@ -24,6 +24,15 @@ public record PatientResponse(
         String bloodType,
         String allergies,
         String medicalHistory,
+        String ethnicity,
+        String occupation,
+        Double heightCm,
+        Double weightKg,
+        String familyHistory,
+        String surgicalHistory,
+        String currentMedications,
+        String lifestyleHabits,
+        String avatarUrl,
         LocalDateTime createdAt
 ) {
     public static PatientResponse from(Patient p) {
@@ -46,6 +55,15 @@ public record PatientResponse(
                 p.getBloodType(),
                 p.getAllergies(),
                 p.getMedicalHistory(),
+                p.getEthnicity(),
+                p.getOccupation(),
+                p.getHeightCm(),
+                p.getWeightKg(),
+                p.getFamilyHistory(),
+                p.getSurgicalHistory(),
+                p.getCurrentMedications(),
+                p.getLifestyleHabits(),
+                p.getAvatarUrl(),
                 p.getCreatedAt()
         );
     }

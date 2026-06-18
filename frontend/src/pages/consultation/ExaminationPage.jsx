@@ -17,8 +17,11 @@ import {
   createPrescription,
   getPrescriptionByConsultationId,
   checkDrugInteractions,
+  checkInteractionsDraft,
 } from "../../services/prescriptionService";
 import { getMedicines } from "../../services/medicineService";
+import { getPatientById } from "../../services/patientService";
+import { getDoctorById } from "../../services/doctorService";
 import { useToast } from "../../context/useToast.js";
 import PageHeader from "../../components/PageHeader";
 
@@ -62,6 +65,8 @@ export default function ExaminationPage() {
   const navigate = useNavigate();
 
   const [consultation, setConsultation] = useState(null);
+  const [patientInfo, setPatientInfo] = useState(null);
+  const [doctorInfo, setDoctorInfo] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [existingRecordId, setExistingRecordId] = useState(null);
   const [vitals, setVitals] = useState(EMPTY_VITALS);
@@ -104,6 +109,19 @@ export default function ExaminationPage() {
       .then(async ([consultRes, vitalsRes, labTestsRes, labReqRes, medicinesRes, rxRes]) => {
         const c = consultRes.data;
         setConsultation(c);
+        
+        // Lấy thêm thông tin Bệnh nhân và Bác sĩ
+        try {
+          const [pRes, dRes] = await Promise.all([
+            getPatientById(c.patientId),
+            getDoctorById(c.doctorId)
+          ]);
+          setPatientInfo(pRes.data);
+          setDoctorInfo(dRes.data);
+        } catch (err) {
+          console.error("Không thể tải thông tin bệnh nhân/bác sĩ", err);
+        }
+
         setSavedVitals(vitalsRes.data || []);
         setLabTests(labTestsRes.data?.content || []);
         setSavedLabRequests(labReqRes.data || []);
@@ -164,6 +182,23 @@ export default function ExaminationPage() {
       showToast("Vui lòng nhập ít nhất một chỉ số.", "error");
       return;
     }
+
+    // Validation
+    if (vitals.temperatureC) {
+      const temp = parseFloat(vitals.temperatureC);
+      if (temp < 30 || temp > 45) {
+        showToast("Nhiệt độ không hợp lệ (phải từ 30°C đến 45°C).", "error");
+        return;
+      }
+    }
+    if (vitals.heartRate) {
+      const hr = parseInt(vitals.heartRate);
+      if (hr < 20 || hr > 300) {
+        showToast("Nhịp tim không hợp lệ (phải từ 20 đến 300 lần/phút).", "error");
+        return;
+      }
+    }
+
     setSavingVitals(true);
     try {
       const payload = {
@@ -259,6 +294,21 @@ export default function ExaminationPage() {
     }
     setSavingRx(true);
     try {
+      // 1. Gọi API kiểm tra tương tác nháp
+      const draftIds = validItems.map(i => Number(i.medicineId));
+      if (draftIds.length > 1) {
+        const interactionRes = await checkInteractionsDraft(draftIds);
+        const { warningLevel, warningMessage } = interactionRes.data;
+        if (warningLevel !== "NONE") {
+          const confirmMsg = `Phát hiện tương tác thuốc nguy hiểm (Mức độ: ${warningLevel}):\n\n${warningMessage}\n\nBạn có chắc chắn muốn tiếp tục kê đơn này không?`;
+          if (!window.confirm(confirmMsg)) {
+             setSavingRx(false);
+             return;
+          }
+        }
+      }
+
+      // 2. Lưu đơn thuốc thật
       const res = await createPrescription({
         consultationId: Number(consultationId),
         patientId: consultation.patientId,
@@ -312,6 +362,18 @@ export default function ExaminationPage() {
       setError("Chẩn đoán không được để trống.");
       return false;
     }
+    
+    // Validation
+    if (form.followUpDate) {
+      const followUpDate = new Date(form.followUpDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset time to compare dates only
+      if (followUpDate < today) {
+        setError("Ngày tái khám không được ở trong quá khứ.");
+        return false;
+      }
+    }
+
     setSaving(true);
     setError("");
     try {
@@ -416,14 +478,18 @@ export default function ExaminationPage() {
               <div className="bg-slate-900/60 backdrop-blur-xl px-6 py-2.5 rounded-[15px] flex flex-wrap justify-center items-center gap-5 text-sm font-semibold text-white">
                   <span className="flex items-center gap-2">
                   <User size={16} className="text-teal-300 drop-shadow-[0_0_8px_rgba(94,234,212,0.4)] stroke-[2.5]" />
-                  <span className="text-slate-300 font-medium">Bệnh nhân ID:</span>
-                  <strong className="text-white font-extrabold text-base">{consultation.patientId}</strong>
+                  <span className="text-slate-300 font-medium">Bệnh nhân:</span>
+                  <strong className="text-white font-extrabold text-base">
+                    {patientInfo ? `${patientInfo.fullName} (${patientInfo.gender === 'MALE' ? 'Nam' : patientInfo.gender === 'FEMALE' ? 'Nữ' : 'Khác'})` : `ID: ${consultation.patientId}`}
+                  </strong>
                 </span>
                 <span className="text-slate-600 font-light">•</span>
                 <span className="flex items-center gap-2">
                   <Stethoscope size={16} className="text-teal-300 drop-shadow-[0_0_8px_rgba(94,234,212,0.4)] stroke-[2.5]" />
-                  <span className="text-slate-300 font-medium">Bác sĩ ID:</span>
-                  <strong className="text-white font-extrabold text-base">{consultation.doctorId}</strong>
+                  <span className="text-slate-300 font-medium">Bác sĩ:</span>
+                  <strong className="text-white font-extrabold text-base">
+                    {doctorInfo ? doctorInfo.fullName : `ID: ${consultation.doctorId}`}
+                  </strong>
                 </span>
                 <span className="text-slate-600 font-light">•</span>
                 <span className="flex items-center gap-2">
