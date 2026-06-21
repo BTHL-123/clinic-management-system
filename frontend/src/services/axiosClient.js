@@ -16,11 +16,30 @@ axiosClient.interceptors.request.use((config) => {
   return config;
 });
 
+function sanitizeErrorMessage(message) {
+  if (!message) return "Đã xảy ra lỗi. Vui lòng thử lại.";
+  // Hide raw SQL/JDBC errors
+  if (
+    message.includes("JDBC") ||
+    message.includes("SQL") ||
+    message.includes("hibernate") ||
+    message.includes("JPA") ||
+    message.includes("column") ||
+    message.includes("table") ||
+    message.includes("relation") ||
+    message.includes("Internal server error")
+  ) {
+    return "Đã xảy ra lỗi kết nối dữ liệu. Vui lòng thử lại sau.";
+  }
+  return message;
+}
+
 axiosClient.interceptors.response.use(
   (response) => response.data,
   (error) => {
     const data = error.response?.data;
-    const message = data?.message || error.message || "Request failed";
+    const rawMessage = data?.message || error.message || "Request failed";
+    const message = sanitizeErrorMessage(rawMessage);
     const err = new Error(message);
     err.status = error.response?.status;
     err.response = error.response;

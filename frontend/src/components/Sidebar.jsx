@@ -39,6 +39,7 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import Logo from "./Logo.jsx";
 import { getActiveAlerts } from "../services/inventoryService";
+import { motion, useScroll, useSpring } from "framer-motion";
 
 const menuItems = [
   { to: "/dashboard", label: "Trang chủ", icon: LayoutDashboard, end: true },
@@ -223,6 +224,9 @@ export default function Sidebar() {
     });
   }, [activeAdminGroup]);
 
+  const { scrollY } = useScroll();
+  const springY = useSpring(scrollY, { stiffness: 100, damping: 18, mass: 0.4 });
+
   const toggleAdminGroup = (groupKey) => {
     setOpenAdminGroups((current) => {
       const next = new Set(current);
@@ -236,7 +240,8 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className={`dashboard-sidebar ${isAdmin ? `admin-sidebar ${adminSidebarExpanded ? "admin-sidebar-expanded" : "admin-sidebar-collapsed"}` : ""}`}>
+    <motion.div style={{ y: springY }} className="hidden md:block relative h-[calc(100vh-104px)] z-[100] self-start flex-none">
+      <aside className={`dashboard-sidebar ${isAdmin ? `admin-sidebar ${adminSidebarExpanded ? "admin-sidebar-expanded" : "admin-sidebar-collapsed"}` : ""} h-full`}>
       <div className="sidebar-brand" onClick={() => navigate('/dashboard')} title="Trang chủ">
         <Logo size={42} showText={!isAdmin || adminSidebarExpanded} />
         {isAdmin && adminSidebarExpanded && (
@@ -353,6 +358,7 @@ export default function Sidebar() {
           )}
         </div>
       </div>
-    </aside>
+      </aside>
+    </motion.div>
   );
 }

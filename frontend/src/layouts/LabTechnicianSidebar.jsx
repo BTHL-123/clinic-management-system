@@ -5,7 +5,7 @@ import {
   LayoutDashboard, FlaskConical, Settings, LogOut, ChevronRight,
   FileText, ActivitySquare, Bell, UserSquare, KeyRound
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useScroll, useSpring } from "framer-motion";
 
 export default function LabTechnicianSidebar() {
   const { logout } = useAuth();
@@ -18,6 +18,9 @@ export default function LabTechnicianSidebar() {
   React.useEffect(() => {
     localStorage.setItem("labSidebarExpanded", isExpanded);
   }, [isExpanded]);
+
+  const { scrollY } = useScroll();
+  const springY = useSpring(scrollY, { stiffness: 100, damping: 18, mass: 0.4 });
 
   const getActiveNav = () => {
     const path = location.pathname;
@@ -45,12 +48,13 @@ export default function LabTechnicianSidebar() {
   ];
 
   return (
-    <motion.nav
-      initial={{ x: -100, opacity: 0 }}
-      animate={{ x: 0, opacity: 1, width: isExpanded ? 240 : 70 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className="hidden md:flex flex-col justify-between patient-glass-panel rounded-[2rem] py-6 h-[calc(100vh-104px)] sticky top-[80px] z-[100]"
-    >
+    <motion.div style={{ y: springY }} className="hidden md:block relative h-[calc(100vh-104px)] z-[100] self-start">
+      <motion.nav
+        initial={{ x: -100, opacity: 0 }}
+        animate={{ x: 0, opacity: 1, width: isExpanded ? 240 : 70 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="flex flex-col justify-between patient-glass-panel rounded-[2rem] py-6 h-full w-full"
+      >
       <div className="flex flex-col gap-4 w-full px-3 relative h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
         <button
           onClick={() => setIsExpanded(!isExpanded)}
@@ -110,5 +114,6 @@ export default function LabTechnicianSidebar() {
         </div>
       </div>
     </motion.nav>
+    </motion.div>
   );
 }

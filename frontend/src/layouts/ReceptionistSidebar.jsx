@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, useScroll, useSpring } from "framer-motion";
 import {
   CalendarDays,
   ChevronRight,
@@ -38,19 +38,23 @@ export default function ReceptionistSidebar() {
     localStorage.setItem("receptionistSidebarExpanded", isExpanded);
   }, [isExpanded]);
 
+  const { scrollY } = useScroll();
+  const springY = useSpring(scrollY, { stiffness: 100, damping: 18, mass: 0.4 });
+
   const handleLogout = async () => {
     await logout();
     navigate("/login", { replace: true });
   };
 
   return (
-    <motion.nav
-      initial={{ x: -80, opacity: 0 }}
-      animate={{ x: 0, opacity: 1, width: isExpanded ? 244 : 70 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
-      className="hidden md:flex flex-col justify-between patient-glass-panel rounded-[2rem] py-6 h-[calc(100vh-104px)] sticky top-[80px] z-[100]"
-      aria-label="Điều hướng lễ tân"
-    >
+    <motion.div style={{ y: springY }} className="hidden md:block relative h-[calc(100vh-104px)] z-[100] self-start">
+      <motion.nav
+        initial={{ x: -80, opacity: 0 }}
+        animate={{ x: 0, opacity: 1, width: isExpanded ? 244 : 70 }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
+        className="flex flex-col justify-between patient-glass-panel rounded-[2rem] py-6 h-full w-full"
+        aria-label="Điều hướng lễ tân"
+      >
       <div className="flex flex-col gap-4 w-full px-3 h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
         <button
           type="button"
@@ -110,5 +114,6 @@ export default function ReceptionistSidebar() {
         </div>
       </div>
     </motion.nav>
+    </motion.div>
   );
 }

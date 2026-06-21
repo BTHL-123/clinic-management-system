@@ -62,15 +62,15 @@ function AccountProfileCard({ isPatientMode }) {
   };
 
   return (
-    <section className={`${isPatientMode ? "patient-glass-panel rounded-[2rem]" : "patient-glass-card"} p-6 md:p-8 w-full shadow-2xl`}>
+    <section className={`${isPatientMode ? "patient-clean-card" : "patient-glass-card"} p-6 md:p-8 w-full shadow-sm`}>
       <div className="flex flex-col md:flex-row items-center gap-6 mb-8">
-        <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/20 shrink-0 bg-black/5 flex items-center justify-center text-3xl font-extrabold text-slate-900 shadow-lg">
+        <div className={`w-24 h-24 rounded-full overflow-hidden border-4 ${isPatientMode ? "border-slate-100" : "border-white/20"} shrink-0 bg-slate-100 flex items-center justify-center text-3xl font-extrabold text-slate-800 shadow-md`}>
           {avatarUrl ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" /> : <span>{initials}</span>}
         </div>
         <div className="flex-1 text-center md:text-left">
-          <h2 className="text-2xl font-bold patient-section-title mb-1">Thông tin tài khoản</h2>
-          <p className="text-slate-700 mb-4 text-sm font-semibold">Thông tin này áp dụng cho mọi vai trò đăng nhập.</p>
-          <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-300 bg-black/5 hover:bg-black/10 text-slate-900 transition-colors cursor-pointer text-sm font-bold w-fit mx-auto md:mx-0">
+          <h2 className={`text-xl font-bold mb-1 ${isPatientMode ? "text-slate-900" : "text-teal-700"}`}>Thông tin tài khoản</h2>
+          <p className={`mb-4 text-sm font-semibold ${isPatientMode ? "text-slate-500" : "text-slate-700"}`}>Thông tin này áp dụng cho mọi vai trò đăng nhập.</p>
+          <label className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border ${isPatientMode ? "border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700" : "border-slate-300 bg-black/5 hover:bg-black/10 text-slate-900"} transition-colors cursor-pointer text-sm font-bold w-fit mx-auto md:mx-0`}>
             <Camera size={16} />
             {uploadingAvatar ? "Đang tải ảnh..." : "Chọn avatar"}
             <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleAvatarChange} disabled={uploadingAvatar} className="hidden" />
@@ -84,35 +84,35 @@ function AccountProfileCard({ isPatientMode }) {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="accountFullName" className="text-sm font-bold patient-label">Họ và tên</label>
+            <label htmlFor="accountFullName" className={`text-sm font-bold ${isPatientMode ? "text-slate-700" : "patient-label"}`}>Họ và tên</label>
             <input
               id="accountFullName"
-              className="patient-glass-input px-4 py-2.5 focus:border-teal-400 !text-black"
+              className={`patient-glass-input px-4 py-2.5 !text-black ${isPatientMode ? "focus:border-blue-500" : "focus:border-teal-400"}`}
               value={form.fullName}
               onChange={(event) => setForm({ ...form, fullName: event.target.value })}
               required
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="accountPhone" className="text-sm font-bold patient-label">Số điện thoại</label>
+            <label htmlFor="accountPhone" className={`text-sm font-bold ${isPatientMode ? "text-slate-700" : "patient-label"}`}>Số điện thoại</label>
             <input
               id="accountPhone"
-              className="patient-glass-input px-4 py-2.5 focus:border-teal-400 !text-black"
+              className={`patient-glass-input px-4 py-2.5 !text-black ${isPatientMode ? "focus:border-blue-500" : "focus:border-teal-400"}`}
               value={form.phone}
               onChange={(event) => setForm({ ...form, phone: event.target.value })}
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="accountEmail" className="text-sm font-bold patient-label">Email</label>
+            <label htmlFor="accountEmail" className={`text-sm font-bold ${isPatientMode ? "text-slate-700" : "patient-label"}`}>Email</label>
             <input id="accountEmail" className="patient-glass-input px-4 py-2.5 disabled:opacity-60" value={user?.email || ""} disabled />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="accountRoles" className="text-sm font-bold patient-label">Vai trò</label>
+            <label htmlFor="accountRoles" className={`text-sm font-bold ${isPatientMode ? "text-slate-700" : "patient-label"}`}>Vai trò</label>
             <input id="accountRoles" className="patient-glass-input px-4 py-2.5 disabled:opacity-60" value={user?.roles?.join(", ") || ""} disabled />
           </div>
         </div>
         <div className="flex justify-end mt-2">
-          <button className="px-6 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-white font-bold transition-colors shadow-lg shadow-teal-500/30 flex items-center gap-2 disabled:opacity-50" type="submit" disabled={submitting}>
+          <button className={`px-6 py-2.5 rounded-xl ${isPatientMode ? "bg-blue-600 hover:bg-blue-700 shadow-blue-500/20" : "bg-teal-500 hover:bg-teal-400 shadow-teal-500/30"} text-white font-bold transition-colors shadow-lg flex items-center gap-2 disabled:opacity-50`} type="submit" disabled={submitting}>
             <Save size={18} />
             {submitting ? "Đang lưu..." : "Lưu hồ sơ"}
           </button>
@@ -134,35 +134,33 @@ export default function ProfilePage() {
   const usePatientVisualShell = isPatientOnly || isAdminShell || isPharmacist || isLabTechnician;
 
   return (
-    <div className={usePatientVisualShell ? "max-w-[1100px] mx-auto w-full flex flex-col items-center pb-10" : "max-w-[1100px] mx-auto w-full flex flex-col items-center pb-10"}>
-      <style>{`
-        .field label {
-          color: #0f766e !important;
-          font-weight: 700 !important;
-        }
-        .patient-glass-card h3, .patient-glass-panel h3 {
-          color: #0f766e !important;
-        }
-        .patient-glass-input, .patient-glass-input-clear input, .patient-glass-input select, .patient-glass-input textarea {
-          color: #000000 !important;
-        }
-        .page-title, .page-title span, h2.inline-flex span, h2 span {
-          color: #0f766e !important;
-        }
-      `}</style>
+    <div className={`w-full min-h-full p-6 flex flex-col gap-6 ${usePatientVisualShell ? "patient-clean-page" : ""}`}>
+      {!usePatientVisualShell && (
+        <style>{`
+          .field label {
+            color: #0f766e !important;
+            font-weight: 700 !important;
+          }
+          .patient-glass-card h3, .patient-glass-panel h3 {
+            color: #0f766e !important;
+          }
+          .patient-glass-input, .patient-glass-input-clear input, .patient-glass-input select, .patient-glass-input textarea {
+            color: #000000 !important;
+          }
+          .page-title, .page-title span, h2.inline-flex span, h2 span {
+            color: #0f766e !important;
+          }
+        `}</style>
+      )}
       <PageHeader
         title="Hồ sơ của tôi"
         icon={UserSquare}
-        iconColor="text-teal-400"
-        subtitle={
-          <span className={usePatientVisualShell ? "text-white/80 font-bold" : "text-white/70 font-medium"}>
-            Cập nhật thông tin cá nhân, avatar và xem hồ sơ theo vai trò.
-          </span>
-        }
+        iconColor={usePatientVisualShell ? "text-blue-600" : "text-teal-400"}
+        subtitle="Cập nhật thông tin cá nhân, avatar và xem hồ sơ theo vai trò."
         onBack={() => navigate("/dashboard", { state: { activeClusterId: "settings" } })}
       />
 
-      <div className={usePatientVisualShell ? "w-full max-w-[800px] flex flex-col gap-8 mb-10" : "w-full max-w-[800px] flex flex-col gap-8"}>
+      <div className="w-full max-w-[900px] mx-auto flex flex-col gap-8 mb-10">
         <AccountProfileCard isPatientMode={usePatientVisualShell} />
         {roles.includes("PATIENT") && <PatientProfile />}
         {roles.includes("DOCTOR") && <DoctorProfile />}

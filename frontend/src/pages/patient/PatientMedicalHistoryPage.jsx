@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { History, ArrowLeft, User, Heart, Shield, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getMyPatientProfile } from "../../services/patientService";
@@ -97,7 +97,7 @@ export default function PatientMedicalHistoryPage() {
   );
 
   return (
-    <div className="max-w-[1600px] w-[95%] mx-auto flex flex-col items-center">
+    <div className="w-full min-h-full p-6 flex flex-col gap-6 patient-clean-page">
       <PageHeader
         title="Hồ sơ Bệnh án"
         icon={History}

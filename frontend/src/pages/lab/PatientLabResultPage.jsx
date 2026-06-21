@@ -32,7 +32,7 @@ function LabRequestRow({ req }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="patient-glass-subcard mb-3 overflow-hidden shadow-sm hover:shadow-md transition-all">
+    <div className="patient-clean-subcard mb-3 overflow-hidden shadow-sm hover:shadow-md transition-all">
       {/* Header row */}
       <div
         onClick={() => setExpanded((v) => !v)}
@@ -145,7 +145,7 @@ export default function PatientLabResultPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   return (
-    <div className="max-w-[1100px] mx-auto w-full flex flex-col items-center">
+    <div className="w-full min-h-full p-6 flex flex-col gap-6 patient-clean-page">
       <PageHeader
         title="Kết quả xét nghiệm"
         icon={FlaskConical}
@@ -154,7 +154,7 @@ export default function PatientLabResultPage() {
         onBack={() => navigate("/dashboard", { state: { activeClusterId: "records" } })}
       />
 
-      <div className="patient-glass-card p-6 md:p-8 w-full max-w-[800px] mx-auto mb-10">
+      <div className="patient-clean-card p-6 md:p-8 w-full max-w-[800px] mx-auto mb-10">
         <div className="flex justify-end mb-5">
           <button
             className="flex items-center gap-1.5 px-4 py-2 bg-black/5 hover:bg-black/10 text-slate-900 font-bold rounded-xl transition-colors border border-slate-300"
@@ -164,7 +164,7 @@ export default function PatientLabResultPage() {
           </button>
         </div>
 
-      {error && <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>}
+      {error && <div className="error-box" style={{ marginBottom: 16 }}>{error && error.length > 120 ? "Đã xảy ra lỗi kết nối. Vui lòng thử lại sau." : error}</div>}
 
       {loading ? (
         <div className="p-8 text-slate-600 text-center font-bold">

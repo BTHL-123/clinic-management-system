@@ -4,7 +4,7 @@ import { useAuth } from "../context/useAuth.js";
 import {
   Home, Pill, Truck, ArrowRightLeft, Package, AlertTriangle, ClipboardPlus, Settings, Bell, LogOut, ChevronRight
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useSpring } from "framer-motion";
 
 export default function PharmacistSidebar() {
   const { logout } = useAuth();
@@ -17,6 +17,9 @@ export default function PharmacistSidebar() {
   React.useEffect(() => {
     localStorage.setItem("pharmacistSidebarExpanded", isExpanded);
   }, [isExpanded]);
+
+  const { scrollY } = useScroll();
+  const springY = useSpring(scrollY, { stiffness: 100, damping: 18, mass: 0.4 });
 
   // Determine active nav based on URL path
   const getActiveNav = () => {
@@ -51,12 +54,13 @@ export default function PharmacistSidebar() {
   ];
 
   return (
-    <motion.nav
-      initial={{ x: -100, opacity: 0 }}
-      animate={{ x: 0, opacity: 1, width: isExpanded ? 230 : 70 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className="hidden md:flex flex-col justify-between patient-glass-panel bg-white/10 shadow-xl border border-white/20 rounded-[2rem] py-6 h-[calc(100vh-104px)] sticky top-[80px] z-[100]"
-    >
+    <motion.div style={{ y: springY }} className="hidden md:block relative h-[calc(100vh-104px)] z-[100] self-start">
+      <motion.nav
+        initial={{ x: -100, opacity: 0 }}
+        animate={{ x: 0, opacity: 1, width: isExpanded ? 230 : 70 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="flex flex-col justify-between patient-glass-panel bg-white/10 shadow-xl border border-white/20 rounded-[2rem] py-6 h-full w-full"
+      >
       <div className="flex flex-col gap-3 w-full px-3 relative h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
         {/* Expand Toggle Button */}
         <button 
@@ -134,5 +138,6 @@ export default function PharmacistSidebar() {
         </button>
       </div>
     </motion.nav>
+    </motion.div>
   );
 }

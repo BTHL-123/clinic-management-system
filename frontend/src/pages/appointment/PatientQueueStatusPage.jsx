@@ -213,7 +213,7 @@ export default function PatientQueueStatusPage() {
         {!loading && error && !isNoQueue && (
           <div className="bg-rose-500/20 border border-rose-500/30 text-rose-800 p-4 rounded-xl flex items-center gap-3 text-sm font-medium">
             <AlertCircle size={20} />
-            {error}
+            {error && error.length > 120 ? "Đã xảy ra lỗi kết nối. Vui lòng thử lại sau." : error}
           </div>
         )}
 

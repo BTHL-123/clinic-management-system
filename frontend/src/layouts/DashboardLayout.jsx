@@ -50,7 +50,7 @@ export default function DashboardLayout() {
   const usePatientVisualShell = isPatientOnly || isAdminShell || isPharmacist || isLabTechnician || isDoctor || isReceptionist;
 
   return (
-    <div className={`flex flex-col min-h-screen w-full relative selection:bg-teal-200 selection:text-teal-900 font-sans overflow-y-auto overflow-x-hidden ${usePatientVisualShell ? "patient-shell" : ""} ${isAdminShell ? "admin-shell" : ""} ${isReceptionist ? "receptionist-shell" : ""}`}>
+    <div className={`flex flex-col min-h-screen w-full relative selection:bg-teal-200 selection:text-teal-900 font-sans ${usePatientVisualShell ? "patient-shell" : ""} ${isAdminShell ? "admin-shell" : ""} ${isReceptionist ? "receptionist-shell" : ""}`}>
       {/* Global Background */}
       {usePatientVisualShell ? (
         <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#0a3d38]">
@@ -161,15 +161,8 @@ export default function DashboardLayout() {
         </div>
       </header>
 
-      <motion.div
-        key={location.pathname}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.25, ease: "easeOut" }}
-        className="flex-1 w-full relative z-10 flex flex-col"
-      >
-        <main className="flex-1 w-full max-w-[1700px] mx-auto pt-[80px] px-4 md:px-6 pb-4 md:pb-6 flex gap-6 h-full">
+      <div className="flex-1 w-full relative z-10 flex flex-col">
+        <main className="flex-1 w-full max-w-[1700px] mx-auto pt-[80px] px-4 md:px-6 pb-4 md:pb-6 flex gap-6">
           {isAdminShell ? (
             <AdminSidebar />
           ) : roles.includes("DOCTOR") ? (
@@ -186,11 +179,18 @@ export default function DashboardLayout() {
             <Sidebar />
           )}
 
-          <div className="flex-1 min-w-0 flex flex-col h-full">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="flex-1 min-w-0 flex flex-col"
+          >
             <Outlet />
-          </div>
+          </motion.div>
         </main>
-      </motion.div>
+      </div>
     </div>
   );
 }

@@ -1,11 +1,12 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { 
-  Search, Filter, UserCircle, Star, ShieldCheck, GraduationCap, Activity, FileText, ThumbsUp, X
+  Search, Filter, UserCircle, Star, ShieldCheck, GraduationCap, Activity, FileText, ThumbsUp, X, Stethoscope
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getDoctors } from "../../services/doctorService";
 import { getDepartments } from "../../services/departmentService";
 import { motion, AnimatePresence } from "framer-motion";
+import PageHeader from "../../components/PageHeader";
 
 export default function PatientDoctorsPage() {
   const navigate = useNavigate();
@@ -45,10 +46,11 @@ export default function PatientDoctorsPage() {
   return (
     <div className="w-full min-h-full p-6 flex flex-col gap-6 patient-clean-page">
       {/* Header section */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-black text-slate-900 mb-2">Đội ngũ Bác sĩ & Chuyên khoa</h1>
-        <p className="text-slate-500 font-medium text-lg">Tìm kiếm và lựa chọn bác sĩ phù hợp với nhu cầu sức khỏe của bạn.</p>
-      </div>
+      <PageHeader
+        title="Đội ngũ Bác sĩ & Chuyên khoa"
+        icon={Stethoscope}
+        subtitle="Tìm kiếm và lựa chọn bác sĩ phù hợp với nhu cầu sức khỏe của bạn."
+      />
 
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-4 mb-8">
@@ -159,9 +161,9 @@ export default function PatientDoctorsPage() {
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
               </div>
 
-              <div className="px-8 pb-8 relative -mt-20">
+              <div className="px-8 pb-8 relative -mt-16 bg-white rounded-t-[2rem] pt-6 z-10">
                 <div className="flex flex-col md:flex-row gap-6 items-center md:items-end mb-8">
-                  <div className="w-40 h-40 rounded-full bg-white p-2 shadow-xl shrink-0">
+                  <div className="w-40 h-40 rounded-full bg-white p-2 shadow-xl shrink-0 -mt-20 z-20">
                     <div className="w-full h-full rounded-full overflow-hidden bg-teal-50 flex items-center justify-center">
                       {selectedDoctor.avatarUrl ? (
                         <img src={selectedDoctor.avatarUrl} alt={selectedDoctor.fullName} className="w-full h-full object-cover" />

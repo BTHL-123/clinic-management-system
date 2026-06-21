@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { UserSquare, Save } from "lucide-react";
 import { getMyPatientProfile, updateMyPatientProfile } from "../../services/patientService";
 import { useAuth } from "../../context/useAuth";
@@ -149,12 +149,12 @@ export default function PatientProfile() {
 
   return (
     <>
-      <div className="mb-10 mt-6 flex flex-col items-center text-center px-4">
-        <h2 className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-4">
-          <UserSquare size={32} className="text-teal-400 drop-shadow-md" />
-          <span className="drop-shadow-md">Hồ sơ cá nhân</span>
+      <div className="mb-4 mt-2">
+        <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+          <UserSquare size={20} className="text-blue-600" />
+          Hồ sơ cá nhân
         </h2>
-        <p className="text-white/70 font-medium drop-shadow-sm text-[16px] max-w-[600px]">
+        <p className="text-slate-500 text-sm">
           Quản lý và cập nhật thông tin sức khỏe của bạn.
         </p>
       </div>
@@ -171,7 +171,7 @@ export default function PatientProfile() {
         <form className="form-stack" onSubmit={handleSubmit}>
           
           <div style={{ marginBottom: 20 }}>
-            <h3 className="patient-section-title" style={{ borderBottom: "1px solid rgba(255,255,255,0.3)", paddingBottom: 8, marginBottom: 16 }}>Thông tin cơ bản</h3>
+            <h3 className="text-base font-bold text-slate-800 border-b border-slate-100 pb-2 mb-4">Thông tin cơ bản</h3>
             
             <div className="field mb-4">
               <label>Ảnh đại diện (URL)</label>
@@ -243,7 +243,7 @@ export default function PatientProfile() {
           </div>
           
           <div style={{ marginBottom: 20 }}>
-            <h3 className="patient-section-title" style={{ borderBottom: "1px solid rgba(255,255,255,0.3)", paddingBottom: 8, marginBottom: 16 }}>Liên hệ khẩn cấp</h3>
+            <h3 className="text-base font-bold text-slate-800 border-b border-slate-100 pb-2 mb-4">Liên hệ khẩn cấp</h3>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <div className="field">
                 <label>Tên người liên hệ</label>
@@ -257,32 +257,25 @@ export default function PatientProfile() {
           </div>
           
           <div style={{ marginBottom: 20 }}>
-            <h3 className="patient-section-title" style={{ borderBottom: "1px solid rgba(255,255,255,0.3)", paddingBottom: 8, marginBottom: 16 }}>Thông tin y tế</h3>
+            <h3 className="text-base font-bold text-slate-800 border-b border-slate-100 pb-2 mb-4">Thông tin y tế</h3>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <div className="field" style={{ gridColumn: "span 2" }}>
                 <label style={{ marginBottom: 8 }}>Nhóm máu</label>
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                   {["", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((type) => (
-                    <label key={type} style={{
-                      padding: "8px 16px",
-                      borderRadius: "8px",
-                      background: formData.bloodType === type ? "rgba(20, 184, 166, 0.2)" : "rgba(255, 255, 255, 0.05)",
-                      border: formData.bloodType === type ? "1px solid #14b8a6" : "1px solid rgba(255, 255, 255, 0.2)",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      color: formData.bloodType === type ? "#14b8a6" : "#fff",
-                      fontWeight: formData.bloodType === type ? "bold" : "normal",
-                      transition: "all 0.2s"
-                    }}>
+                    <label key={type} className={`
+                      px-4 py-2 rounded-lg border transition-all cursor-pointer flex items-center gap-2 text-sm font-semibold
+                      ${formData.bloodType === type 
+                        ? "bg-blue-50 border-blue-600 text-blue-600 font-bold" 
+                        : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"}
+                    `}>
                       <input 
                         type="radio" 
                         name="bloodType" 
                         value={type} 
                         checked={formData.bloodType === type}
                         onChange={handleChange}
-                        style={{ display: "none" }}
+                        className="hidden"
                       />
                       {type === "" ? "Chưa xác định" : type}
                     </label>
@@ -294,16 +287,16 @@ export default function PatientProfile() {
                 <label>Chỉ số cơ thể</label>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs text-white/70">Chiều cao (cm)</label>
+                    <label className="text-xs text-slate-500 font-bold">Chiều cao (cm)</label>
                     <input type="number" name="heightCm" className="patient-glass-input" value={formData.heightCm} onChange={handleChange} placeholder="Ví dụ: 170" />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs text-white/70">Cân nặng (kg)</label>
+                    <label className="text-xs text-slate-500 font-bold">Cân nặng (kg)</label>
                     <input type="number" name="weightKg" className="patient-glass-input" value={formData.weightKg} onChange={handleChange} step="0.1" placeholder="Ví dụ: 65" />
                   </div>
                   <div className="flex flex-col gap-1.5 justify-center">
-                    <label className="text-xs text-white/70">Chỉ số BMI</label>
-                    <div className="font-bold text-teal-400 text-lg">
+                    <label className="text-xs text-slate-500 font-bold">Chỉ số BMI</label>
+                    <div className="font-bold text-blue-600 text-lg">
                       {formData.heightCm && formData.weightKg 
                         ? (formData.weightKg / Math.pow(formData.heightCm / 100, 2)).toFixed(1) 
                         : "—"}
@@ -344,8 +337,8 @@ export default function PatientProfile() {
             </div>
           </div>
           
-          <div className="form-actions" style={{ justifyContent: "flex-end" }}>
-            <button type="submit" className="primary-button" disabled={submitting}>
+          <div className="flex justify-end mt-6">
+            <button type="submit" className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all shadow-lg shadow-blue-500/20 flex items-center gap-2 disabled:opacity-50" disabled={submitting}>
               <Save size={16} />
               {submitting ? "Đang lưu..." : "Lưu thay đổi"}
             </button>

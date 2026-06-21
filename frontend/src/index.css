@@ -5,6 +5,10 @@
 
 @custom-variant dark (&:is(.dark *));
 
+html, body {
+  overflow-x: clip;
+}
+
 :root {
   color: #1f2933;
   background: #f6f7f9;
@@ -5314,11 +5318,9 @@ a {
 }
 
 .admin-floating-sidebar {
-  position: sticky;
-  top: 80px;
-  z-index: 46;
-  height: calc(100dvh - 104px);
-  flex: 0 0 auto;
+  display: flex;
+  height: 100%;
+  width: 100%;
   flex-direction: column;
   gap: 12px;
   border: 1px solid rgba(255, 255, 255, 0.58);
@@ -6208,3 +6210,427 @@ a {
     flex-direction: column;
   }
 }
+
+/* ── Patient Dashboard Alignment Styles (SaaS Professional Spec) ────────────────── */
+.patient-clean-page {
+  background: #f8fafc !important;
+  background-image: none !important;
+  position: relative !important;
+  border-radius: 0px !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 1.5rem !important;
+  width: 100% !important;
+  min-height: calc(100vh - 104px) !important;
+  flex: 1 1 0% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.patient-clean-page::before {
+  display: none !important;
+}
+
+.patient-clean-page > * {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+.patient-clean-page .field > label {
+  color: #475569 !important;
+  font-weight: 700 !important;
+  font-size: 0.875rem !important;
+  margin-bottom: 0.375rem !important;
+  display: inline-block !important;
+}
+
+.patient-clean-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  color: #334155 !important;
+}
+
+.patient-clean-subcard {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 6px !important;
+  color: #475569 !important;
+  box-shadow: none !important;
+}
+
+/* Rounded borders override inside patient clean page */
+.patient-clean-page [class*="rounded-[2rem]"],
+.patient-clean-page [class*="rounded-[3rem]"],
+.patient-clean-page [class*="rounded-[2.5rem]"],
+.patient-clean-page [class*="rounded-[1.5rem]"],
+.patient-clean-page [class*="rounded-2xl"],
+.patient-clean-page [class*="rounded-3xl"] {
+  border-radius: 8px !important;
+}
+
+/* Glass card override inside patient clean page */
+.patient-clean-page .patient-glass-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  color: #334155 !important;
+}
+
+.patient-clean-page .patient-glass-subcard {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 6px !important;
+  color: #475569 !important;
+  box-shadow: none !important;
+}
+
+.patient-clean-page .patient-glass-input {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  border-radius: 6px !important;
+}
+
+.patient-clean-page .patient-glass-input::placeholder {
+  color: #94a3b8 !important;
+}
+
+.patient-clean-page .patient-glass-input:focus {
+  background: #ffffff !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
+}
+
+/* PageHeader dynamic overrides (Minimalist, No Glass background) */
+.patient-clean-page h1.text-white,
+.patient-clean-page h1.text-white span,
+.patient-clean-page h1 span {
+  color: #0f172a !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  padding: 0 !important;
+}
+
+.patient-clean-page .flex-col-center h1,
+.patient-clean-page .inline-flex.items-center {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  padding: 0 !important;
+}
+
+.patient-clean-page p.text-white\/70,
+.patient-clean-page p.text-white\/80 {
+  color: #475569 !important;
+}
+
+.patient-clean-page button.bg-white\/10 {
+  background: #ffffff !important;
+  color: #334155 !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+}
+
+.patient-clean-page button.bg-white\/10:hover {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+.patient-clean-page button.bg-white\/10 svg {
+  color: #2563eb !important;
+}
+
+/* Accent overrides to Medical Blue */
+.patient-clean-page .text-teal-600 {
+  color: #2563eb !important;
+}
+
+.patient-clean-page .bg-teal-600 {
+  background: #2563eb !important;
+  background-image: none !important;
+}
+
+.patient-clean-page .bg-teal-600:hover {
+  background: #1d4ed8 !important;
+}
+
+.patient-clean-page .hover\:text-teal-700:hover {
+  color: #1d4ed8 !important;
+}
+
+.patient-clean-page .border-teal-200 {
+  border-color: #bfdbfe !important;
+}
+
+.patient-clean-page .border-teal-500 {
+  border-color: #3b82f6 !important;
+}
+
+.patient-clean-page .bg-teal-50 {
+  background: #eff6ff !important;
+}
+
+.patient-clean-page .text-teal-700 {
+  color: #2563eb !important;
+}
+
+/* SaaS Grid Buttons (e.g. Booking modes selection) */
+.patient-clean-page .grid button {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+  color: #334155 !important;
+  padding: 1.5rem !important;
+  transition: all 0.2s ease !important;
+}
+
+.patient-clean-page .grid button:hover {
+  border-color: #3b82f6 !important;
+  background: #eff6ff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08) !important;
+}
+
+.patient-clean-page .grid button svg {
+  color: #2563eb !important;
+}
+
+.patient-clean-page .grid button p {
+  color: #64748b !important;
+}
+
+/* Tab styling overrides */
+.patient-clean-page button[class*="bg-teal-700"],
+.patient-clean-page button[class*="bg-teal-600"],
+.patient-clean-page button[class*="bg-teal-500"],
+.patient-clean-page button[class*="bg-gradient-to-r"],
+.patient-clean-page button.bg-teal-50,
+.patient-clean-page button.border-teal-400 {
+  background: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+  color: #2563eb !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+.patient-clean-page button.bg-slate-50,
+.patient-clean-page button.bg-white\/10,
+.patient-clean-page button.border-white\/20 {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #475569 !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+}
+
+.patient-clean-page button.bg-slate-50:hover,
+.patient-clean-page button.bg-white\/10:hover,
+.patient-clean-page button.border-white\/20:hover {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Status Badges */
+.patient-clean-page span[class*="text-sky-800"],
+.patient-clean-page span[class*="text-amber-800"],
+.patient-clean-page span[class*="text-purple-800"] {
+  background: #fffbeb !important;
+  color: #d97706 !important;
+  border: 1px solid #fde68a !important;
+  border-radius: 4px !important;
+  padding: 2px 8px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+}
+
+.patient-clean-page span[class*="text-emerald-800"],
+.patient-clean-page span[class*="text-teal-700"] {
+  background: #f0fdf4 !important;
+  color: #16a34a !important;
+  border: 1px solid #bbf7d0 !important;
+  border-radius: 4px !important;
+  padding: 2px 8px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+}
+
+.patient-clean-page span[class*="text-rose-800"],
+.patient-clean-page span[class*="text-red-600"] {
+  background: #fef2f2 !important;
+  color: #dc2626 !important;
+  border: 1px solid #fecaca !important;
+  border-radius: 4px !important;
+  padding: 2px 8px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+}
+
+/* Clean Professional Workspace Table */
+.patient-clean-page table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+}
+
+.patient-clean-page th {
+  background: #f8fafc !important;
+  border-bottom: 2px solid #e2e8f0 !important;
+  color: #334155 !important;
+  font-weight: 700 !important;
+  padding: 10px 12px !important;
+  font-size: 13px !important;
+  text-align: left;
+}
+
+.patient-clean-page td {
+  border-bottom: 1px solid #e2e8f0 !important;
+  color: #475569 !important;
+  padding: 10px 12px !important;
+  font-size: 13px !important;
+}
+
+.patient-clean-page tr:hover td {
+  background: #f8fafc !important;
+}
+
+/* Background grid changes for calendar and list filters */
+.patient-clean-page .bg-white\/20 {
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+.patient-clean-page .bg-white\/40 {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+
+.patient-clean-page select, 
+.patient-clean-page input {
+  color: #0f172a !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 6px !important;
+}
+
+.patient-clean-page select option {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* Date picker calendar styling */
+.patient-clean-page .bg-slate-900\/60 {
+  color: #0f172a !important;
+  background: #ffffff !important;
+}
+
+.patient-clean-page .bg-slate-900\/60 span {
+  color: #2563eb !important;
+}
+
+.patient-clean-page .bg-white\/5 {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+.patient-clean-page .bg-white\/5 span {
+  color: #94a3b8 !important;
+}
+
+.patient-clean-page .bg-white\/10 span {
+  color: #0f172a !important;
+}
+
+.patient-clean-page .bg-white\/15 span {
+  color: #0f172a !important;
+}
+
+.patient-clean-page .bg-white\/15:hover {
+  background: #eff6ff !important;
+}
+
+.patient-clean-page .h-28.bg-teal-500\/20 {
+  background: #eff6ff !important;
+  border-color: #bfdbfe !important;
+}
+
+.patient-clean-page .h-28.bg-teal-500\/20 span {
+  color: #2563eb !important;
+}
+
+.patient-clean-card .patient-clean-subcard:hover {
+  background: #f1f5f9 !important;
+}
+
+/* ── Service Price Card SaaS Border & Text Visibility Overrides ── */
+.patient-clean-page div[class*="bg-white/10"] {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important; /* Visible border check */
+  border-radius: 8px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+.patient-clean-page div[class*="bg-white/10"]:hover {
+  background: #f8fafc !important;
+  border-color: #3b82f6 !important;
+}
+
+/* top filter wrapper border */
+.patient-clean-page div[class*="bg-white/10"][class*="backdrop-blur-sm"] {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Inner elements dark slate readability check */
+.patient-clean-page div[class*="bg-white/10"] h3[class*="text-white"],
+.patient-clean-page div[class*="bg-white/10"] h3 {
+  color: #0f172a !important; /* dark header text */
+}
+
+.patient-clean-page div[class*="bg-white/10"] p[class*="text-white/60"],
+.patient-clean-page div[class*="bg-white/10"] p {
+  color: #475569 !important; /* dark slate body */
+}
+
+.patient-clean-page div[class*="bg-white/10"] span[class*="text-white/40"],
+.patient-clean-page div[class*="bg-white/10"] span {
+  color: #64748b !important; /* labels */
+}
+
+.patient-clean-page div[class*="bg-white/10"] span[class*="text-teal-300"],
+.patient-clean-page div[class*="bg-white/10"] span[class*="text-teal-600"] {
+  color: #2563eb !important; /* clinical blue prices */
+}
+
+/* Icon box bg inside cards */
+.patient-clean-page div[class*="bg-white/10"] div[class*="bg-white/10"],
+.patient-clean-page div[class*="bg-white/10"] div[class*="w-11"] {
+  background: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+  color: #2563eb !important;
+}
+
+.patient-clean-page div[class*="bg-white/10"] svg {
+  color: #2563eb !important;
+}
+
+/* Category Badge color */
+.patient-clean-page div[class*="bg-white/10"] span[class*="bg-white/10"],
+.patient-clean-page div[class*="bg-white/10"] span[class*="bg-white"] {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #475569 !important;
+}
+
+

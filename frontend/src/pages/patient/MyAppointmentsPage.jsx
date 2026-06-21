@@ -611,7 +611,7 @@ export default function MyAppointmentsPage() {
           padding: "14px 18px", color: "#dc2626", fontSize: "14px",
         }}>
           <AlertCircle size={16} />
-          {error}
+          {error && error.length > 120 ? "Đã xảy ra lỗi kết nối. Vui lòng thử lại sau." : error}
         </div>
       )}
 

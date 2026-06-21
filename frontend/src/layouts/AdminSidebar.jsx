@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useScroll, useSpring } from "framer-motion";
 import {
   CalendarDays,
   ChevronDown,
@@ -125,6 +125,9 @@ export default function AdminSidebar() {
     localStorage.setItem("adminSidebarOpenGroups", JSON.stringify(openGroups));
   }, [openGroups]);
 
+  const { scrollY } = useScroll();
+  const springY = useSpring(scrollY, { stiffness: 100, damping: 18, mass: 0.4 });
+
   useEffect(() => {
     if (activeGroup) {
       setOpenGroups((prev) => ({ ...prev, [activeGroup]: true }));
@@ -137,13 +140,14 @@ export default function AdminSidebar() {
   };
 
   return (
-    <motion.nav
-      initial={{ x: -80, opacity: 0 }}
-      animate={{ x: 0, opacity: 1, width: isExpanded ? 260 : 70 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
-      className="admin-floating-sidebar hidden md:flex"
-      aria-label="Điều hướng quản trị"
-    >
+    <motion.div style={{ y: springY }} className="hidden md:block relative h-[calc(100vh-104px)] z-[100] self-start flex-none">
+      <motion.nav
+        initial={{ x: -80, opacity: 0 }}
+        animate={{ x: 0, opacity: 1, width: isExpanded ? 260 : 70 }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
+        className="admin-floating-sidebar flex h-full w-full"
+        aria-label="Điều hướng quản trị"
+      >
       <button
         type="button"
         className={`admin-sidebar-expand ${isExpanded ? "expanded" : ""}`}
@@ -210,6 +214,7 @@ export default function AdminSidebar() {
         <LogOut size={21} />
         {isExpanded && <span>Đăng xuất</span>}
       </button>
-    </motion.nav>
+      </motion.nav>
+    </motion.div>
   );
 }

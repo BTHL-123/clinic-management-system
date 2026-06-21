@@ -454,7 +454,7 @@ export default function AvailableSlots() {
   const isError = fetchState === "error";
 
   return (
-    <div className="max-w-[1100px] mx-auto w-full flex flex-col items-center">
+    <div className="w-full min-h-full p-6 flex flex-col gap-6 patient-clean-page">
       <div className="w-full mb-10 relative flex flex-col sm:flex-row justify-center items-center min-h-[80px]">
         <div className="w-full sm:absolute sm:left-0 sm:top-4 flex justify-start mb-4 sm:mb-0 px-4 sm:px-0">
           <button

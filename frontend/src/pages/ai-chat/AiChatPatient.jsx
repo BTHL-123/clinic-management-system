@@ -165,37 +165,37 @@ export default function AiChatPatient() {
   };
 
   return (
-    <div className="max-w-[1100px] mx-auto w-full flex flex-col items-center pb-10 h-[calc(100vh-104px)] overflow-hidden">
+    <div className="w-full flex flex-col gap-6 patient-clean-page h-[calc(100vh-104px)] overflow-hidden">
       
       {/* Header */}
       <PageHeader
         title="Trợ lý y tế AI"
         icon={MessageSquare}
-        iconColor="text-teal-400"
+        iconColor="text-blue-600"
         subtitle="Hệ thống phân tích triệu chứng thông minh giúp bạn tìm kiếm chuyên khoa nhanh chóng."
         onBack={() => navigate("/dashboard")}
       />
 
       {error && (
-        <div className="w-full bg-rose-500/20 border border-rose-500/50 text-rose-200 p-4 rounded-xl mb-4 font-bold flex items-center gap-2">
-          <AlertCircle size={18} /> {error}
+        <div className="w-full bg-rose-500/20 border border-rose-500/50 text-rose-800 p-4 rounded-xl mb-4 font-bold flex items-center gap-2">
+          <AlertCircle size={18} /> {error && error.length > 120 ? "Đã xảy ra lỗi kết nối. Vui lòng thử lại sau." : error}
         </div>
       )}
 
       {/* Main Chat Interface */}
-      <div className="w-full patient-glass-panel rounded-[2rem] flex flex-col flex-1 overflow-hidden shadow-2xl border-0">
+      <div className="w-full patient-clean-card flex flex-col flex-1 overflow-hidden shadow-sm border border-slate-200 rounded-lg">
         
         {/* Chat Controls */}
-        <div className="bg-white/10 backdrop-blur-md border-b border-white/20 p-4 flex justify-between items-center shrink-0">
+        <div className="bg-slate-50 border-b border-slate-200 p-4 flex justify-between items-center shrink-0">
           <button
-            className="bg-white text-teal-700 hover:bg-teal-50 font-bold px-4 py-2 rounded-xl transition-all shadow-md text-sm"
+            className="bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 font-bold px-4 py-2 rounded-xl transition-all shadow-sm text-sm"
             onClick={handleNewChat}
             disabled={loading}
           >
             + Bắt đầu mới
           </button>
           <button
-            className="bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-400 hover:to-fuchsia-400 text-white font-bold px-5 py-2 rounded-xl transition-all shadow-lg flex items-center gap-2 text-sm disabled:opacity-50"
+            className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold px-5 py-2 rounded-xl transition-all shadow-md flex items-center gap-2 text-sm disabled:opacity-50"
             onClick={handleGetSuggestion}
             disabled={loading || !sessionId || messages.length < 2}
           >
@@ -204,7 +204,7 @@ export default function AiChatPatient() {
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-white/5">
+        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-slate-50">
           <div className="flex flex-col gap-6 max-w-4xl mx-auto w-full">
             {messages.map((msg, idx) => (
               <div 
@@ -214,19 +214,19 @@ export default function AiChatPatient() {
                 <div className={`flex gap-3 max-w-[85%] md:max-w-[75%] ${msg.sender === "USER" ? "flex-row-reverse" : "flex-row"}`}>
                   
                   {/* Avatar */}
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-md border-2 ${
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm border ${
                     msg.sender === "USER" 
-                      ? "bg-teal-500 text-white border-teal-300" 
-                      : "bg-gradient-to-br from-violet-400 to-fuchsia-500 text-white border-violet-300"
+                      ? "bg-blue-600 text-white border-blue-400" 
+                      : "bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white border-violet-300"
                   }`}>
-                    {msg.sender === "USER" ? <User size={20} /> : <Bot size={20} />}
+                    {msg.sender === "USER" ? <User size={18} /> : <Bot size={18} />}
                   </div>
 
                   {/* Bubble */}
                   <div className={`p-4 rounded-2xl shadow-sm text-[15px] font-medium leading-relaxed ${
                     msg.sender === "USER" 
-                      ? "bg-teal-600 text-white rounded-tr-sm" 
-                      : "bg-white/80 backdrop-blur-md text-slate-800 rounded-tl-sm border border-white/40"
+                      ? "bg-blue-600 text-white rounded-tr-sm" 
+                      : "bg-white text-slate-800 rounded-tl-sm border border-slate-200"
                   }`}>
                     {msg.text}
                   </div>
@@ -238,14 +238,14 @@ export default function AiChatPatient() {
             {loading && !suggestion && (
               <div className="flex justify-start w-full">
                 <div className="flex gap-3 max-w-[75%]">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-md border-2 bg-gradient-to-br from-violet-400 to-fuchsia-500 text-white border-violet-300">
-                    <Bot size={20} />
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm border bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white border-violet-300">
+                    <Bot size={18} />
                   </div>
-                  <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-md text-slate-800 rounded-tl-sm border border-white/40 shadow-sm flex items-center gap-3">
+                  <div className="p-4 rounded-2xl bg-white text-slate-800 rounded-tl-sm border border-slate-200 shadow-sm flex items-center gap-3">
                     <span className="flex gap-1">
-                      <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                      <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                      <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                      <span className="w-2 h-2 bg-violet-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                      <span className="w-2 h-2 bg-violet-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                      <span className="w-2 h-2 bg-violet-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
                     </span>
                     <span className="text-sm font-bold text-violet-600">Đang phân tích...</span>
                   </div>
@@ -256,11 +256,11 @@ export default function AiChatPatient() {
             {suggestion && (
               <div className="flex justify-start w-full mt-4">
                 <div className="flex gap-3 w-full max-w-3xl">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-md border-2 bg-gradient-to-br from-violet-400 to-fuchsia-500 text-white border-violet-300">
-                    <Stethoscope size={20} />
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm border bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white border-violet-300">
+                    <Stethoscope size={18} />
                   </div>
                   
-                  <div className="p-6 rounded-2xl bg-white/95 backdrop-blur-xl text-slate-800 rounded-tl-sm border border-fuchsia-200 shadow-xl w-full">
+                  <div className="p-6 rounded-2xl bg-white text-slate-800 rounded-tl-sm border border-fuchsia-200 shadow-md w-full">
                     <h4 className="text-lg font-black text-fuchsia-700 flex items-center gap-2 mb-4 border-b border-fuchsia-100 pb-2">
                       <Sparkles size={20} className="text-fuchsia-500" /> Kết quả phân tích AI
                     </h4>
@@ -273,7 +273,7 @@ export default function AiChatPatient() {
                           </div>
                         )}
                         {suggestion.recommendations.map((rec, idx) => (
-                          <div key={idx} className="p-5 bg-gradient-to-r from-white to-violet-50/50 border border-violet-100 rounded-xl flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
+                          <div key={idx} className="p-5 bg-slate-50 border border-slate-200 rounded-xl flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
                             <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-2">
                               <strong className="text-xl font-extrabold text-violet-900">{rec.departmentName}</strong>
                               <span className="bg-violet-100 text-violet-700 px-3 py-1 rounded-full text-sm font-black border border-violet-200">
@@ -284,7 +284,7 @@ export default function AiChatPatient() {
                             <button
                               onClick={() => handleAcceptSuggestion(rec)}
                               disabled={loading}
-                              className="bg-violet-600 hover:bg-violet-500 text-white font-bold py-2.5 px-5 rounded-xl mt-2 transition-all flex items-center gap-2 w-fit shadow-lg shadow-violet-500/30"
+                              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-5 rounded-xl mt-2 transition-all flex items-center gap-2 w-fit shadow-md shadow-blue-500/20"
                             >
                               <Stethoscope size={18} /> Đặt khám khoa {rec.departmentName}
                             </button>
@@ -299,7 +299,7 @@ export default function AiChatPatient() {
                           </div>
                         )}
                         {suggestion.departmentName && (
-                          <div className="p-5 bg-gradient-to-r from-white to-violet-50/50 border border-violet-100 rounded-xl flex flex-col gap-3 shadow-sm">
+                          <div className="p-5 bg-slate-50 border border-slate-200 rounded-xl flex flex-col gap-3 shadow-sm">
                             <div className="flex justify-between items-center">
                               <span className="text-slate-500 font-bold uppercase text-xs tracking-wider">Chuyên khoa đề xuất</span>
                               <span className="bg-violet-100 text-violet-700 px-3 py-1 rounded-full text-xs font-black border border-violet-200">
@@ -311,7 +311,7 @@ export default function AiChatPatient() {
                             <button
                               onClick={() => handleAcceptSuggestion(null)}
                               disabled={loading}
-                              className="bg-violet-600 hover:bg-violet-500 text-white font-bold py-2.5 px-5 rounded-xl mt-2 transition-all flex items-center gap-2 w-fit shadow-lg shadow-violet-500/30"
+                              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-5 rounded-xl mt-2 transition-all flex items-center gap-2 w-fit shadow-md shadow-blue-500/20"
                             >
                               <Stethoscope size={18} /> Đặt khám chuyên khoa này
                             </button>
@@ -329,8 +329,8 @@ export default function AiChatPatient() {
         </div>
 
         {/* Input Form */}
-        <div className="bg-white/10 backdrop-blur-xl p-4 border-t border-white/20 shrink-0">
-          <form onSubmit={handleSend} className="max-w-4xl mx-auto w-full relative flex items-center bg-white/90 rounded-full p-1.5 shadow-lg border border-teal-100">
+        <div className="bg-slate-50 p-4 border-t border-slate-200 shrink-0">
+          <form onSubmit={handleSend} className="max-w-4xl mx-auto w-full relative flex items-center bg-white rounded-full p-1.5 shadow-sm border border-slate-200 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
             <input
               type="text"
               value={inputText}
@@ -342,12 +342,12 @@ export default function AiChatPatient() {
             <button
               type="submit"
               disabled={!inputText.trim() || loading || !sessionId}
-              className="w-12 h-12 bg-teal-500 hover:bg-teal-400 disabled:bg-slate-300 text-white rounded-full flex items-center justify-center shrink-0 transition-all shadow-md group disabled:shadow-none"
+              className="w-12 h-12 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 text-white disabled:text-slate-400 rounded-full flex items-center justify-center shrink-0 transition-all shadow-sm group disabled:shadow-none"
             >
-              <Send size={20} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              <Send size={18} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
             </button>
           </form>
-          <div className="text-center mt-3 text-white/70 text-xs font-semibold">
+          <div className="text-center mt-3 text-slate-500 text-xs font-semibold">
             AI có thể mắc lỗi. Luôn tham khảo ý kiến bác sĩ để có chẩn đoán chính xác nhất.
           </div>
         </div>
