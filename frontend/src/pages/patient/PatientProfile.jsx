@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { UserSquare, Save } from "lucide-react";
 import { getMyPatientProfile, updateMyPatientProfile } from "../../services/patientService";
 import { useAuth } from "../../context/useAuth";
@@ -133,6 +133,7 @@ export default function PatientProfile() {
 
   if (notFound) {
     return (
+      <div className="w-full min-h-full p-6 flex flex-col gap-6 patient-clean-page">
       <div className="mb-10 mt-6 flex flex-col items-center text-center px-4">
         <h2 className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-4">
           <UserSquare size={32} className="text-teal-400 drop-shadow-md" />
@@ -141,6 +142,7 @@ export default function PatientProfile() {
         <p className="text-red-400 font-bold drop-shadow-sm text-[16px] max-w-[600px] mt-2">
           Tài khoản của bạn chưa được liên kết với bất kỳ hồ sơ bệnh nhân nào. Vui lòng liên hệ với lễ tân để được hỗ trợ.
         </p>
+      </div>
       </div>
     );
   }
@@ -160,7 +162,7 @@ export default function PatientProfile() {
       {error && <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>}
       {successMsg && <div style={{ padding: "12px 16px", background: "#e6f4ea", color: "#1e8e3e", borderRadius: 8, marginBottom: 16, border: "1px solid #ceead6" }}>{successMsg}</div>}
 
-      <div className="patient-glass-card p-6 md:p-8">
+      <div className="patient-clean-card p-6 md:p-8">
         {formData.avatarUrl && (
           <div className="flex justify-center mb-8">
             <img src={formData.avatarUrl} alt="Avatar" className="w-32 h-32 rounded-full object-cover border-4 border-white/20 shadow-xl" />

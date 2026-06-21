@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+﻿import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Clock,
@@ -166,7 +166,7 @@ export default function PatientQueueStatusPage() {
   const isNoQueue = error?.toLowerCase().includes("no active queue");
 
   return (
-    <div className="max-w-[1100px] mx-auto w-full flex flex-col items-center">
+    <div className="w-full min-h-full p-6 flex flex-col gap-6 patient-clean-page">
       <PageHeader
         title="Trạng thái hàng đợi"
         icon={Activity}
@@ -175,7 +175,7 @@ export default function PatientQueueStatusPage() {
         onBack={() => navigate("/dashboard")}
       />
 
-      <div className="patient-glass-card p-6 md:p-8 w-full max-w-[800px] mx-auto mb-10">
+      <div className="patient-clean-card p-6 md:p-8 w-full max-w-[800px] mx-auto mb-10">
         <div className="flex justify-end mb-6">
           <button
             className="bg-black/5 hover:bg-black/10 text-slate-900 border border-slate-300 font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-2"
@@ -197,7 +197,7 @@ export default function PatientQueueStatusPage() {
 
         {/* No Active Queue */}
         {!loading && isNoQueue && (
-          <div className="flex flex-col items-center justify-center min-h-[320px] gap-4 bg-black/5 backdrop-blur-md rounded-3xl border-2 border-dashed border-slate-300 p-12 text-center">
+          <div className="flex flex-col items-center justify-center min-h-[320px] gap-4 bg-black/5 backdrop-blur-md rounded-xl border-2 border-dashed border-slate-300 p-12 text-center">
             <div className="w-20 h-20 rounded-full bg-black/5 flex items-center justify-center">
               <Users size={40} className="text-teal-600" />
             </div>
@@ -222,7 +222,7 @@ export default function PatientQueueStatusPage() {
           <div className="flex flex-col gap-6">
 
             {/* Status Banner */}
-            <div className={`bg-gradient-to-br ${statusCfg.gradient} backdrop-blur-md border-2 ${statusCfg.border} rounded-3xl p-8 flex flex-col gap-4 shadow-xl`}>
+            <div className={`bg-gradient-to-br ${statusCfg.gradient} backdrop-blur-md border-2 ${statusCfg.border} rounded-xl p-8 flex flex-col gap-4 shadow-xl`}>
               <div className="flex items-center gap-3">
                 <span className={`${statusCfg.bg} ${statusCfg.color} border ${statusCfg.border} rounded-full px-4 py-1.5 text-sm font-extrabold uppercase tracking-wide`}>
                   {statusCfg.label}
@@ -233,7 +233,7 @@ export default function PatientQueueStatusPage() {
               </p>
 
               {/* Appointment info */}
-              <div className="mt-2 p-5 bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="mt-2 p-5 bg-white/40 backdrop-blur-md border border-white/50 rounded-lg grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <span className="text-xs font-bold patient-label uppercase tracking-wider">Bệnh nhân</span>
                   <p className="mt-1 text-lg patient-data truncate">{data.patientName}</p>

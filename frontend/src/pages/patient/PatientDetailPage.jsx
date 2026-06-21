@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, User, History, Phone, Mail, MapPin, Heart, Shield, AlertTriangle } from "lucide-react";
 import { getPatientById } from "../../services/patientService";
@@ -43,7 +43,7 @@ export default function PatientDetailPage() {
           iconColor="text-white"
           onBack={() => navigate("/dashboard/patients")}
         />
-        <div className="patient-glass-card p-6 md:p-8 w-full mt-4 text-center text-slate-500 font-semibold">
+        <div className="patient-clean-card p-6 md:p-8 w-full mt-4 text-center text-slate-500 font-semibold">
           Đang tải thông tin bệnh nhân...
         </div>
       </div>
@@ -58,7 +58,7 @@ export default function PatientDetailPage() {
           iconColor="text-white"
           onBack={() => navigate("/dashboard/patients")}
         />
-        <div className="patient-glass-card p-6 md:p-8 w-full mt-4 text-center text-red-600 font-semibold">
+        <div className="patient-clean-card p-6 md:p-8 w-full mt-4 text-center text-red-600 font-semibold">
           {error}
         </div>
       </div>
@@ -79,7 +79,7 @@ export default function PatientDetailPage() {
   const renderInfoTab = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Thông tin cơ bản */}
-      <div className="bg-white/60 backdrop-blur-xl border border-white/60 p-6 rounded-3xl shadow-sm">
+      <div className="bg-white border border-slate-200/70 p-6 rounded-xl shadow-sm">
         <h3 className="text-lg font-bold text-slate-800 mb-5 flex items-center gap-2">
           <User size={20} className="text-teal-600" /> Thông tin cơ bản
         </h3>
@@ -94,7 +94,7 @@ export default function PatientDetailPage() {
       </div>
 
       {/* Liên hệ */}
-      <div className="bg-white/60 backdrop-blur-xl border border-white/60 p-6 rounded-3xl shadow-sm">
+      <div className="bg-white border border-slate-200/70 p-6 rounded-xl shadow-sm">
         <h3 className="text-lg font-bold text-slate-800 mb-5 flex items-center gap-2">
           <Phone size={20} className="text-sky-600" /> Thông tin liên hệ
         </h3>
@@ -113,22 +113,22 @@ export default function PatientDetailPage() {
       </div>
 
       {/* Thông tin y tế - full width */}
-      <div className="md:col-span-2 bg-white/60 backdrop-blur-xl border border-white/60 p-6 rounded-3xl shadow-sm">
+      <div className="md:col-span-2 bg-white border border-slate-200/70 p-6 rounded-xl shadow-sm">
         <h3 className="text-lg font-bold text-slate-800 mb-5 flex items-center gap-2">
           <Heart size={20} className="text-rose-500" /> Thông tin y tế
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white/40 p-4 rounded-2xl border border-white/50">
+          <div className="bg-white/40 p-4 rounded-lg border border-white/50">
             <p className="text-sm font-semibold text-slate-500 mb-2">Nhóm máu</p>
             <p className="font-bold text-2xl text-rose-600">{patient.bloodType || "—"}</p>
           </div>
-          <div className="md:col-span-2 bg-white/40 p-4 rounded-2xl border border-white/50">
+          <div className="md:col-span-2 bg-white/40 p-4 rounded-lg border border-white/50">
             <p className="text-sm font-semibold text-slate-500 mb-2 flex items-center gap-2">
               <AlertTriangle size={16} className="text-amber-500" /> Tiền sử dị ứng
             </p>
             <p className="text-slate-700 whitespace-pre-wrap">{patient.allergies || "Không có thông tin"}</p>
           </div>
-          <div className="md:col-span-3 bg-white/40 p-4 rounded-2xl border border-white/50">
+          <div className="md:col-span-3 bg-white/40 p-4 rounded-lg border border-white/50">
             <p className="text-sm font-semibold text-slate-500 mb-2 flex items-center gap-2">
               <Shield size={16} className="text-teal-600" /> Tiền sử bệnh
             </p>
@@ -138,7 +138,7 @@ export default function PatientDetailPage() {
       </div>
 
       {/* Tài khoản liên kết */}
-      <div className="md:col-span-2 flex justify-between items-center bg-gradient-to-r from-sky-50 to-white/60 backdrop-blur-xl p-5 rounded-3xl border border-sky-100 shadow-sm">
+      <div className="md:col-span-2 flex justify-between items-center bg-gradient-to-r from-sky-50 to-white/60 backdrop-blur-xl p-5 rounded-xl border border-sky-100 shadow-sm">
         <span className="text-sm font-medium text-slate-700">
           Tài khoản liên kết: {patient.userName ? <strong className="text-sky-700 ml-1 bg-sky-100 px-2 py-0.5 rounded-full">{patient.userName}</strong> : <em className="text-slate-400 ml-1">Không có</em>}
         </span>
@@ -150,7 +150,7 @@ export default function PatientDetailPage() {
   );
 
   const renderHistoryTab = () => (
-    <div className="bg-white/60 backdrop-blur-xl border border-white/60 rounded-3xl overflow-hidden shadow-sm">
+    <div className="bg-white border border-slate-200/70 rounded-xl overflow-hidden shadow-sm">
       <MedicalHistory patientId={Number(patientId)} inline />
     </div>
   );

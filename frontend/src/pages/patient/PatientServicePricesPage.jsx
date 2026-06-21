@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { ArrowLeft, Search, Activity, Stethoscope, FileHeart, Syringe } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getActiveMedicalServices } from "../../services/medicalServiceService";
@@ -69,9 +69,9 @@ export default function PatientServicePricesPage() {
         </div>
       </div>
 
-      <div className="p-4 md:p-8 max-w-4xl mx-auto w-full">
+      <div className="w-full min-h-full p-6 flex flex-col gap-6 patient-clean-page">
         {/* Search & Tabs */}
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6 flex flex-col gap-4">
+        <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 mb-6 flex flex-col gap-4">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
             <input 
@@ -112,7 +112,7 @@ export default function PatientServicePricesPage() {
             <div className="animate-spin w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full"></div>
           </div>
         ) : filteredServices.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-2xl border border-slate-100 shadow-sm">
+          <div className="text-center py-20 bg-white rounded-lg border border-slate-100 shadow-sm">
             <Activity className="w-16 h-16 mx-auto text-slate-200 mb-4" />
             <p className="text-slate-500 font-medium">Không tìm thấy dịch vụ nào phù hợp.</p>
           </div>
@@ -121,7 +121,7 @@ export default function PatientServicePricesPage() {
             {filteredServices.map((service) => (
               <div 
                 key={service.serviceId} 
-                className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-teal-100 transition-all flex flex-col justify-between gap-4 group"
+                className="bg-white p-5 rounded-lg border border-slate-100 shadow-sm hover:shadow-md hover:border-teal-100 transition-all flex flex-col justify-between gap-4 group"
               >
                 <div className="flex gap-4 items-start">
                   <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100 group-hover:scale-110 transition-transform">

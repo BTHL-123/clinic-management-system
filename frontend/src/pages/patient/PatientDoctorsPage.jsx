@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { 
   Search, Filter, UserCircle, Star, ShieldCheck, GraduationCap, Activity, FileText, ThumbsUp, X
 } from "lucide-react";
@@ -43,7 +43,7 @@ export default function PatientDoctorsPage() {
   });
 
   return (
-    <div className="w-full h-[calc(100vh-104px)] flex flex-col px-6 py-8 overflow-y-auto custom-scrollbar">
+    <div className="w-full min-h-full p-6 flex flex-col gap-6 patient-clean-page">
       {/* Header section */}
       <div className="mb-8">
         <h1 className="text-3xl font-black text-slate-900 mb-2">Đội ngũ Bác sĩ & Chuyên khoa</h1>
@@ -61,7 +61,7 @@ export default function PatientDoctorsPage() {
             placeholder="Tìm theo tên bác sĩ hoặc chuyên khoa..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white shadow-sm font-medium"
+            className="w-full pl-12 pr-4 py-3.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white shadow-sm font-medium"
           />
         </div>
         <div className="relative w-full md:w-64 shrink-0">
@@ -71,7 +71,7 @@ export default function PatientDoctorsPage() {
           <select 
             value={selectedDepartment}
             onChange={(e) => setSelectedDepartment(e.target.value)}
-            className="w-full pl-12 pr-10 py-3.5 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white shadow-sm appearance-none font-medium text-slate-700 cursor-pointer"
+            className="w-full pl-12 pr-10 py-3.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white shadow-sm appearance-none font-medium text-slate-700 cursor-pointer"
           >
             <option value="">Tất cả chuyên khoa</option>
             {departments.map(dept => (
@@ -87,7 +87,7 @@ export default function PatientDoctorsPage() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
         </div>
       ) : filteredDoctors.length === 0 ? (
-        <div className="text-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
+        <div className="text-center py-20 bg-white rounded-xl border border-slate-100 shadow-sm">
           <UserCircle size={64} className="mx-auto text-slate-300 mb-4" />
           <h3 className="text-xl font-bold text-slate-700 mb-2">Không tìm thấy bác sĩ nào</h3>
           <p className="text-slate-500">Vui lòng thử lại với từ khóa hoặc chuyên khoa khác.</p>
@@ -188,7 +188,7 @@ export default function PatientDoctorsPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                  <div className="bg-slate-50 rounded-2xl p-4 flex items-center gap-4 border border-slate-100">
+                  <div className="bg-slate-50 rounded-lg p-4 flex items-center gap-4 border border-slate-100">
                     <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
                       <GraduationCap size={24} />
                     </div>
@@ -197,7 +197,7 @@ export default function PatientDoctorsPage() {
                       <p className="font-bold text-slate-900">{selectedDoctor.degree || "Bác sĩ Chuyên khoa"}</p>
                     </div>
                   </div>
-                  <div className="bg-slate-50 rounded-2xl p-4 flex items-center gap-4 border border-slate-100">
+                  <div className="bg-slate-50 rounded-lg p-4 flex items-center gap-4 border border-slate-100">
                     <div className="w-12 h-12 rounded-xl bg-teal-100 text-teal-600 flex items-center justify-center shrink-0">
                       <Activity size={24} />
                     </div>
@@ -206,7 +206,7 @@ export default function PatientDoctorsPage() {
                       <p className="font-bold text-slate-900">{selectedDoctor.yearsOfExperience || 0} năm</p>
                     </div>
                   </div>
-                  <div className="bg-slate-50 rounded-2xl p-4 flex items-center gap-4 border border-slate-100">
+                  <div className="bg-slate-50 rounded-lg p-4 flex items-center gap-4 border border-slate-100">
                     <div className="w-12 h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
                       <Star size={24} />
                     </div>
@@ -222,7 +222,7 @@ export default function PatientDoctorsPage() {
                     <h3 className="text-xl font-black text-slate-900 mb-3 flex items-center gap-2">
                       <FileText className="text-teal-500" /> Tiểu sử & Chuyên môn
                     </h3>
-                    <div className="text-slate-600 font-medium leading-relaxed bg-white p-5 rounded-2xl border border-slate-100">
+                    <div className="text-slate-600 font-medium leading-relaxed bg-white p-5 rounded-lg border border-slate-100">
                       {selectedDoctor.biography ? (
                         <p>{selectedDoctor.biography}</p>
                       ) : (
@@ -236,11 +236,11 @@ export default function PatientDoctorsPage() {
                       <ThumbsUp className="text-blue-500" /> Hiệu suất & Thành tựu
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50">
+                      <div className="bg-blue-50/50 p-4 rounded-lg border border-blue-100/50">
                         <div className="text-3xl font-black text-blue-600 mb-1">98%</div>
                         <div className="text-sm font-bold text-slate-600">Bệnh nhân hài lòng</div>
                       </div>
-                      <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100/50">
+                      <div className="bg-emerald-50/50 p-4 rounded-lg border border-emerald-100/50">
                         <div className="text-3xl font-black text-emerald-600 mb-1">1,500+</div>
                         <div className="text-sm font-bold text-slate-600">Ca khám thành công</div>
                       </div>

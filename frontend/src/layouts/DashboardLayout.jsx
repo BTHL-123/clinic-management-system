@@ -93,24 +93,24 @@ export default function DashboardLayout() {
 
       {/* Floating Context Pill (Top Right) */}
       <header className="fixed top-6 right-6 z-50 flex justify-end">
-        <div className={`${usePatientVisualShell ? "patient-glass-panel" : "bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.08)]"} py-2.5 px-5 rounded-[2rem] flex items-center gap-4 md:gap-6`}>
+        <div className={`${usePatientVisualShell ? "bg-slate-800/80 backdrop-blur-xl border border-slate-700/50 shadow-[0_4px_20px_rgba(0,0,0,0.25)]" : "bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.08)]"} py-2 px-4 rounded-2xl flex items-center gap-3 md:gap-4`}>
 
           <button
-            className={`w-10 h-10 flex items-center justify-center rounded-full transition-all group ${usePatientVisualShell ? "patient-header-icon-btn" : "bg-white/80 border border-white hover:bg-teal-50 hover:border-teal-100 text-slate-500 hover:text-teal-600 shadow-sm"}`}
+            className="w-9 h-9 flex items-center justify-center rounded-xl transition-all group bg-white/20 hover:bg-white/35 border border-white/30 text-white shadow-sm"
             aria-label="Home"
             onClick={() => navigate('/dashboard')}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-y-0.5 transition-transform"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-y-0.5 transition-transform"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
           </button>
 
           <NotificationBell />
 
-          <div className={`hidden md:block h-8 w-[2px] rounded-full ${usePatientVisualShell ? "bg-white/20" : "bg-slate-200/60"}`}></div>
+          <div className="hidden md:block h-7 w-px rounded-full bg-white/25"></div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <div className="hidden md:flex flex-col items-end">
-              <strong className={`text-[14px] font-extrabold leading-tight ${usePatientVisualShell ? "text-white" : "text-slate-800"}`}>{user?.fullName || "Clinic Admin"}</strong>
-              <span className={`text-[10px] font-bold uppercase tracking-wider ${usePatientVisualShell ? "text-teal-200" : "text-teal-600"}`}>{rolesText}</span>
+              <strong className="text-[13px] font-bold leading-tight text-white">{user?.fullName || "Clinic Admin"}</strong>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-white/60">{rolesText}</span>
             </div>
             {isAdminShell ? (
               <div className="admin-account-menu">
@@ -151,11 +151,11 @@ export default function DashboardLayout() {
 
           {!isAdminShell && (
             <button
-              className={`w-10 h-10 flex items-center justify-center rounded-full transition-all group ${usePatientVisualShell ? "patient-header-icon-btn patient-header-icon-btn-danger" : "bg-white/80 border border-white hover:bg-rose-50 hover:border-rose-100 text-slate-400 hover:text-rose-500 shadow-sm"}`}
+              className="w-9 h-9 flex items-center justify-center rounded-xl transition-all group bg-white/20 hover:bg-rose-500/30 border border-white/30 hover:border-rose-400/40 text-white/80 hover:text-white shadow-sm"
               aria-label="Logout"
               onClick={handleLogout}
             >
-              <LogOut size={18} strokeWidth={2.5} className="group-hover:-translate-x-0.5 transition-transform" />
+              <LogOut size={16} strokeWidth={2.5} className="group-hover:-translate-x-0.5 transition-transform" />
             </button>
           )}
         </div>

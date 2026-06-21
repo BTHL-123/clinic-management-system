@@ -19,7 +19,6 @@ export default function PatientSidebar() {
     localStorage.setItem("patientSidebarExpanded", isExpanded);
   }, [isExpanded]);
 
-  // Determine active nav based on URL path
   const getActiveNav = () => {
     const path = location.pathname;
     if (path === "/dashboard") return "home";
@@ -43,84 +42,105 @@ export default function PatientSidebar() {
   };
 
   const navItems = [
-    { id: "home", icon: <Home size={22} />, path: "/dashboard", label: "Tổng quan" },
-    { id: "booking", icon: <CalendarPlus size={22} />, path: "/dashboard/available-slots", label: "Đặt lịch" },
-    { id: "appointments", icon: <CalendarDays size={22} />, path: "/dashboard/my-appointments", label: "Lịch hẹn" },
-    { id: "queue", icon: <ListOrdered size={22} />, path: "/dashboard/queue-status", label: "Hàng đợi" },
-    { id: "history", icon: <FileText size={22} />, path: "/dashboard/my-medical-history", label: "Bệnh án" },
-    { id: "labs", icon: <Activity size={22} />, path: "/dashboard/my-lab-results", label: "Xét nghiệm" },
-    { id: "doctors", icon: <Users size={22} />, path: "/dashboard/our-doctors", label: "Bác sĩ" },
-    { id: "prices", icon: <Tag size={22} />, path: "/dashboard/service-prices", label: "Bảng giá" },
-    { id: "ai-chat", icon: <MessageSquare size={22} />, path: "/dashboard/ai-chat", label: "Trợ lý AI" },
-    { id: "settings", icon: <Settings size={22} />, path: "/dashboard/profile", label: "Cài đặt" },
+    { id: "home",         icon: <Home size={18} />,         path: "/dashboard",                    label: "Tổng quan" },
+    { id: "booking",      icon: <CalendarPlus size={18} />, path: "/dashboard/available-slots",    label: "Đặt lịch" },
+    { id: "appointments", icon: <CalendarDays size={18} />, path: "/dashboard/my-appointments",    label: "Lịch hẹn" },
+    { id: "queue",        icon: <ListOrdered size={18} />,  path: "/dashboard/queue-status",       label: "Hàng đợi" },
+    { id: "history",      icon: <FileText size={18} />,     path: "/dashboard/my-medical-history", label: "Bệnh án" },
+    { id: "labs",         icon: <Activity size={18} />,     path: "/dashboard/my-lab-results",     label: "Xét nghiệm" },
+    { id: "doctors",      icon: <Users size={18} />,        path: "/dashboard/our-doctors",        label: "Bác sĩ" },
+    { id: "prices",       icon: <Tag size={18} />,          path: "/dashboard/service-prices",     label: "Bảng giá" },
+    { id: "ai-chat",      icon: <MessageSquare size={18} />,path: "/dashboard/ai-chat",            label: "Trợ lý AI" },
+    { id: "settings",     icon: <Settings size={18} />,     path: "/dashboard/profile",            label: "Cài đặt" },
   ];
 
   return (
-    <motion.nav 
-      initial={{ x: -100, opacity: 0 }}
-      animate={{ x: 0, opacity: 1, width: isExpanded ? 240 : 70 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className="hidden md:flex flex-col justify-between patient-glass-panel rounded-[2rem] py-6 h-[calc(100vh-104px)] sticky top-[80px] z-[100]"
+    <motion.nav
+      initial={{ x: -60, opacity: 0 }}
+      animate={{ x: 0, opacity: 1, width: isExpanded ? 220 : 64 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+      className="hidden md:flex flex-col rounded-2xl py-4 h-[calc(100vh-104px)] sticky top-[80px] z-[100] overflow-hidden"
+      style={{
+        background: "linear-gradient(180deg, #0f172a 0%, #0b1329 55%, #0d1f3c 100%)",
+        boxShadow: "2px 0 20px rgba(13,148,136,0.10), inset -1px 0 0 rgba(94,234,212,0.08)",
+        border: "1px solid rgba(94,234,212,0.08)",
+      }}
     >
-      <div className="flex flex-col gap-4 w-full px-3 relative h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
-        {/* Expand Toggle Button */}
-        <button 
+      {/* Dot-grid texture */}
+      <div className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: "radial-gradient(circle, rgba(94,234,212,0.06) 1px, transparent 1px)",
+          backgroundSize: "18px 18px",
+        }}
+      />
+      {/* Top teal hairline */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-teal-400/50 to-transparent" />
+
+      <div className="flex flex-col gap-3 w-full px-2.5 relative h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
+
+        {/* Toggle */}
+        <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white hover:bg-white/20 hover:text-white transition-all shrink-0 drop-shadow-md ${isExpanded ? "self-end mr-1" : "mx-auto"}`}
+          className={`w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 hover:text-teal-400 hover:bg-teal-500/10 transition-all shrink-0 border border-slate-700/40 hover:border-teal-500/25 ${isExpanded ? "self-end" : "mx-auto"}`}
         >
-          <ChevronRight size={22} className={`transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
+          <ChevronRight size={16} className={`transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
         </button>
 
-        <div className="flex flex-col gap-1.5 w-full mt-2 flex-1">
-          {navItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => navigate(item.path)}
-              className={`relative flex items-center h-12 rounded-2xl transition-all duration-300 group overflow-hidden shrink-0 ${
-                activeNav === item.id 
-                  ? "text-white font-extrabold drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]" 
-                  : "text-white/95 font-extrabold hover:text-white hover:bg-white/20 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]"
-              } ${isExpanded ? "px-4" : "justify-center"}`}
-              title={!isExpanded ? item.label : ""}
-            >
-              {/* Active Indicator Background */}
-              {activeNav === item.id && (
-                <motion.div 
-                  layoutId="activePatientNav"
-                  className="absolute inset-0 bg-white/25 border border-white/45 rounded-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]"
-                  initial={false}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                />
-              )}
-              
-              <div className={`relative z-10 flex items-center ${isExpanded ? "gap-4" : ""}`}>
-                <div className={`group-hover:scale-110 transition-transform duration-300`}>
-                  {item.icon}
-                </div>
-                {isExpanded && (
-                  <motion.span 
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    className="whitespace-nowrap text-[15px] tracking-wide"
-                  >
-                    {item.label}
-                  </motion.span>
+        {/* Nav items */}
+        <div className="flex flex-col gap-0.5 w-full flex-1">
+          {navItems.map((item) => {
+            const isActive = activeNav === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => navigate(item.path)}
+                title={!isExpanded ? item.label : ""}
+                className={`relative flex items-center h-10 rounded-xl transition-all duration-200 group overflow-hidden shrink-0 ${
+                  isExpanded ? "px-3 gap-3" : "justify-center"
+                } ${isActive ? "text-teal-300" : "text-slate-500 hover:text-slate-200 hover:bg-white/[0.05]"}`}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="activePatientNav"
+                    className="absolute inset-0 rounded-xl"
+                    style={{
+                      background: "linear-gradient(135deg, rgba(13,148,136,0.22) 0%, rgba(14,165,233,0.10) 100%)",
+                      borderLeft: "2px solid #2dd4bf",
+                      boxShadow: "0 0 12px rgba(13,148,136,0.12)",
+                    }}
+                    initial={false}
+                    transition={{ type: "spring", stiffness: 350, damping: 35 }}
+                  />
                 )}
-              </div>
-            </button>
-          ))}
+
+                <div className={`relative z-10 flex items-center ${isExpanded ? "gap-3" : ""}`}>
+                  <span className={isActive ? "text-teal-400 drop-shadow-[0_0_5px_rgba(45,212,191,0.5)]" : ""}>
+                    {item.icon}
+                  </span>
+                  {isExpanded && (
+                    <motion.span
+                      initial={{ opacity: 0, x: -6 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="whitespace-nowrap text-sm font-medium"
+                    >
+                      {item.label}
+                    </motion.span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Logout Button at bottom */}
-        <div className="w-full mt-auto pt-4 border-t border-white/25">
+        {/* Logout */}
+        <div className="mt-auto pt-3 border-t border-slate-700/40">
           <button
             onClick={handleLogout}
-            className={`w-full flex items-center h-12 rounded-2xl text-rose-100 font-extrabold hover:text-white hover:bg-rose-500/20 drop-shadow-md transition-all duration-300 group ${isExpanded ? "px-4 gap-4" : "justify-center"}`}
             title={!isExpanded ? "Đăng xuất" : ""}
+            className={`w-full flex items-center h-10 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all border border-transparent hover:border-rose-500/20 group ${isExpanded ? "px-3 gap-3" : "justify-center"}`}
           >
-            <LogOut size={22} className="group-hover:-translate-x-1 transition-transform" />
-            {isExpanded && <span className="whitespace-nowrap tracking-wide text-[15px]">Đăng xuất</span>}
+            <LogOut size={18} className="group-hover:-translate-x-0.5 transition-transform" />
+            {isExpanded && <span className="whitespace-nowrap text-sm font-medium">Đăng xuất</span>}
           </button>
         </div>
       </div>

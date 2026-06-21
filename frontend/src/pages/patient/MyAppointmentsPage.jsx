@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { CalendarDays, Clock, CheckCircle, XCircle, RefreshCw, AlertCircle, ChevronLeft, ChevronRight, Star, MessageSquarePlus, ArrowLeft } from "lucide-react";
 import appointmentService from "../../services/appointmentService.js";
@@ -199,7 +199,7 @@ function AppointmentCard({
     : false;
 
   return (
-    <div className="patient-glass-subcard p-5 flex flex-col gap-3 hover:bg-white/10 transition-all">
+    <div className="patient-clean-subcard p-5 flex flex-col gap-3 hover:bg-white/10 transition-all">
       <div className="flex justify-between items-start">
         <div>
           <div className="font-bold text-[0.95rem] patient-data">
@@ -216,34 +216,34 @@ function AppointmentCard({
 
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <div className="text-[11px] patient-label uppercase tracking-wide mb-0.5">Ngày khám</div>
-          <div className="text-[13px] patient-data">{date}</div>
+          <div className="text-[11px] text-slate-400 uppercase tracking-wide uppercase tracking-wide mb-0.5">Ngày khám</div>
+          <div className="text-[13px] text-slate-800 font-medium">{date}</div>
         </div>
         <div>
-          <div className="text-[11px] patient-label uppercase tracking-wide mb-0.5">Giờ khám</div>
-          <div className="text-[13px] patient-data">{time} – {endTime}</div>
+          <div className="text-[11px] text-slate-400 uppercase tracking-wide uppercase tracking-wide mb-0.5">Giờ khám</div>
+          <div className="text-[13px] text-slate-800 font-medium">{time} – {endTime}</div>
         </div>
         <div>
-          <div className="text-[11px] patient-label uppercase tracking-wide mb-0.5">Lý do khám</div>
-          <div className="text-[13px] patient-data">{appt.reasonForVisit || "—"}</div>
+          <div className="text-[11px] text-slate-400 uppercase tracking-wide uppercase tracking-wide mb-0.5">Lý do khám</div>
+          <div className="text-[13px] text-slate-800 font-medium">{appt.reasonForVisit || "—"}</div>
         </div>
         <div>
-          <div className="text-[11px] patient-label uppercase tracking-wide mb-0.5">Hình thức</div>
-          <div className="text-[13px] patient-data">{appt.bookingType === "ONLINE" ? "Trực tuyến" : "Trực tiếp"}</div>
+          <div className="text-[11px] text-slate-400 uppercase tracking-wide uppercase tracking-wide mb-0.5">Hình thức</div>
+          <div className="text-[13px] text-slate-800 font-medium">{appt.bookingType === "ONLINE" ? "Trực tuyến" : "Trực tiếp"}</div>
         </div>
         <div className="col-span-2 grid grid-cols-2 gap-2 mt-1">
           <div>
-            <div className="text-[11px] patient-label uppercase tracking-wide mb-0.5">Bệnh nhân</div>
-            <div className="text-[13px] patient-data">{appt.patientName || "—"}</div>
+            <div className="text-[11px] text-slate-400 uppercase tracking-wide uppercase tracking-wide mb-0.5">Bệnh nhân</div>
+            <div className="text-[13px] text-slate-800 font-medium">{appt.patientName || "—"}</div>
           </div>
           <div>
-            <div className="text-[11px] patient-label uppercase tracking-wide mb-0.5">Bác sĩ</div>
-            <div className="text-[13px] patient-data">{appt.doctorName || "—"}</div>
+            <div className="text-[11px] text-slate-400 uppercase tracking-wide uppercase tracking-wide mb-0.5">Bác sĩ</div>
+            <div className="text-[13px] text-slate-800 font-medium">{appt.doctorName || "—"}</div>
           </div>
         </div>
         {appt.status === "CANCELLED" && appt.cancellationReason && (
           <div className="col-span-2 mt-1">
-            <div className="text-[11px] patient-label uppercase tracking-wide mb-0.5">Lý do hủy</div>
+            <div className="text-[11px] text-slate-400 uppercase tracking-wide uppercase tracking-wide mb-0.5">Lý do hủy</div>
             <div className="text-[13px] text-red-600 font-semibold">{appt.cancellationReason}</div>
           </div>
         )}
@@ -535,7 +535,7 @@ export default function MyAppointmentsPage() {
   const monthNames = ["Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6", "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"];
 
   return (
-    <div className="max-w-[1100px] mx-auto w-full flex flex-col items-center">
+    <div className="w-full min-h-full p-6 flex flex-col gap-6 patient-clean-page">
       <PageHeader
         title="Lịch hẹn của tôi"
         icon={CalendarDays}
@@ -544,7 +544,7 @@ export default function MyAppointmentsPage() {
         onBack={() => navigate("/dashboard", { state: { activeClusterId: "booking" } })}
       />
 
-      <div className="patient-glass-card p-6 md:p-8 w-full max-w-[800px] mx-auto mb-10">
+      <div className="patient-clean-card p-6 md:p-8 w-full max-w-[800px] mx-auto mb-10">
         <div className="flex flex-wrap gap-3 mb-8">
         {tabs.map((t) => (
           <button
@@ -553,7 +553,7 @@ export default function MyAppointmentsPage() {
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-bold tracking-wide transition-all duration-200 shadow-sm ${
               tab === t.key 
                 ? "bg-teal-700/80 backdrop-blur-md text-white border border-teal-800/40" 
-                : "bg-white/30 backdrop-blur-sm border border-white/30 text-teal-950 hover:bg-white/50 hover:text-teal-900"
+                : "bg-slate-50 border border-slate-200 text-teal-950 hover:bg-white/50 hover:text-teal-900"
             }`}
           >
             {t.icon}
@@ -678,7 +678,7 @@ export default function MyAppointmentsPage() {
       )}
 
       {!loading && !error && tab === "calendar" && (
-        <div className="bg-white/10 p-4 md:p-6 rounded-2xl border border-white/20 shadow-inner">
+        <div className="bg-white/10 p-4 md:p-6 rounded-lg border border-white/20 shadow-inner">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-bold text-teal-400">
               {monthNames[currentMonth.getMonth()]} Năm {currentMonth.getFullYear()}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { History, ArrowLeft, User, Heart, Shield, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getMyPatientProfile } from "../../services/patientService";
@@ -55,7 +55,7 @@ export default function PatientMedicalHistoryPage() {
   const renderOverviewTab = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
       {/* Thông tin cơ bản */}
-      <div className="patient-glass-card p-6 md:p-8">
+      <div className="patient-clean-card p-6 md:p-8">
         <h3 className="text-lg font-bold text-slate-800 mb-5 flex items-center gap-2">
           <User size={20} className="text-teal-600" /> Thông tin Hành chính
         </h3>
@@ -70,22 +70,22 @@ export default function PatientMedicalHistoryPage() {
       </div>
 
       {/* Thông tin y tế */}
-      <div className="patient-glass-card p-6 md:p-8">
+      <div className="patient-clean-card p-6 md:p-8">
         <h3 className="text-lg font-bold text-slate-800 mb-5 flex items-center gap-2">
           <Heart size={20} className="text-rose-500" /> Hồ sơ Sức khỏe
         </h3>
         <div className="flex flex-col gap-6">
-          <div className="bg-white/40 p-4 rounded-2xl border border-white/50 shadow-sm flex justify-between items-center">
+          <div className="bg-white/40 p-4 rounded-lg border border-white/50 shadow-sm flex justify-between items-center">
             <span className="text-sm font-semibold text-slate-500">Nhóm máu</span>
             <span className="font-bold text-2xl text-rose-600">{patient.bloodType || "—"}</span>
           </div>
-          <div className="bg-white/40 p-4 rounded-2xl border border-white/50 shadow-sm">
+          <div className="bg-white/40 p-4 rounded-lg border border-white/50 shadow-sm">
             <p className="text-sm font-semibold text-slate-500 mb-2 flex items-center gap-2">
               <AlertTriangle size={16} className="text-amber-500" /> Tiền sử dị ứng
             </p>
             <p className="text-slate-700 font-medium whitespace-pre-wrap">{patient.allergies || "Chưa ghi nhận"}</p>
           </div>
-          <div className="bg-white/40 p-4 rounded-2xl border border-white/50 shadow-sm">
+          <div className="bg-white/40 p-4 rounded-lg border border-white/50 shadow-sm">
             <p className="text-sm font-semibold text-slate-500 mb-2 flex items-center gap-2">
               <Shield size={16} className="text-teal-600" /> Tiền sử bệnh lý (bệnh nền)
             </p>
@@ -124,7 +124,7 @@ export default function PatientMedicalHistoryPage() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-[15px] transition-all border shadow-sm ${
+                    className={`flex items-center gap-2 px-6 py-3.5 rounded-lg font-bold text-[15px] transition-all border shadow-sm ${
                       isActive 
                         ? "border-teal-400 text-teal-800 bg-teal-50" 
                         : "border-white/20 text-white/80 bg-white/10 hover:bg-white/20 hover:text-white"
@@ -140,7 +140,7 @@ export default function PatientMedicalHistoryPage() {
             {/* Tab Content */}
             {activeTab === "overview" && renderOverviewTab()}
             {activeTab === "history" && (
-              <div className="patient-glass-card p-6 md:p-8">
+              <div className="patient-clean-card p-6 md:p-8">
                 <MedicalHistory patientId={patient.patientId} inline={true} isPatientView={true} />
               </div>
             )}
