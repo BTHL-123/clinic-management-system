@@ -191,25 +191,6 @@ export default function WalkInAppointmentPage() {
     return () => clearTimeout(timeoutId);
   }, [patientSearch]);
 
-  useEffect(() => {
-    fetchData();
-
-    // Fetch consultation fee and specialty services
-    getActiveMedicalServices().then((res) => {
-      if (res.data && Array.isArray(res.data)) {
-        const consultService = res.data.find(s => s.serviceType === "CONSULTATION");
-        if (consultService && consultService.price) {
-          setConsultationFee(consultService.price);
-        }
-        const others = res.data.filter((s) => s.serviceType !== "CONSULTATION");
-        setSpecialtyServices(others);
-      }
-    }).catch(console.error);
-
-    const intv = setInterval(fetchData, 15000);
-    return () => clearInterval(intv);
-  }, [selectedDate, fetchData]);
-
   const handleSelectExistingPatient = (p) => {
     setSelectedExistingPatient(p);
     setPatientSearch(""); // Clear search bar
@@ -261,7 +242,23 @@ export default function WalkInAppointmentPage() {
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+
+    // Fetch consultation fee and specialty services
+    getActiveMedicalServices().then((res) => {
+      if (res.data && Array.isArray(res.data)) {
+        const consultService = res.data.find(s => s.serviceType === "CONSULTATION");
+        if (consultService && consultService.price) {
+          setConsultationFee(consultService.price);
+        }
+        const others = res.data.filter((s) => s.serviceType !== "CONSULTATION");
+        setSpecialtyServices(others);
+      }
+    }).catch(console.error);
+
+    const intv = setInterval(fetchData, 15000);
+    return () => clearInterval(intv);
+  }, [selectedDate, fetchData]);
+
 
   // ── Handlers ──────────────────────────────────────────────────
   const handleSlotClick = (doctor, schedule, slot) => {
