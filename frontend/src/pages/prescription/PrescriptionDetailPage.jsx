@@ -55,7 +55,7 @@ export default function PrescriptionDetailPage() {
 
   return (
     <div className="max-w-[1400px] w-[95%] mx-auto">
-      <div className={`${isPatientMode ? "patient-glass-card" : "light-glass-card"} p-6 md:p-8 w-full mb-10`}>
+      <div className={`${isPatientMode ? "bg-white rounded-2xl border border-slate-200 shadow-sm" : "light-glass-card"} p-6 md:p-8 w-full mb-10`}>
       {/* Header */}
       <PageHeader
         title="Chi tiết đơn thuốc"

@@ -121,7 +121,7 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
         boolean hasPrescription = record.getConsultationId() != null
                 && prescriptionRepository.existsByConsultationId(record.getConsultationId());
         boolean hasLabResult = record.getConsultationId() != null
-                && labRequestRepository.existsCompletedResultByConsultationId(record.getConsultationId());
+                && !labRequestRepository.findByConsultationId(record.getConsultationId()).isEmpty();
 
         return MedicalRecordResponse.from(record, doctorName, departmentName, hasPrescription, hasLabResult);
     }

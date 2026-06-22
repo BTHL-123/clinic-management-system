@@ -48,7 +48,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long>,
            "LEFT JOIN d.user du " +
            "LEFT JOIN d.department dp " +
            "WHERE (pu.userId = :userId OR du.userId = :userId) " +
-           "AND (:keyword IS NULL OR LOWER(du.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(dp.departmentName) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:keyword IS NULL OR LOWER(du.fullName) LIKE CONCAT('%', LOWER(CAST(:keyword AS string)), '%') OR LOWER(p.fullName) LIKE CONCAT('%', LOWER(CAST(:keyword AS string)), '%') OR LOWER(dp.departmentName) LIKE CONCAT('%', LOWER(CAST(:keyword AS string)), '%')) " +
            "AND (:doctorId IS NULL OR d.doctorId = :doctorId) " +
            "AND (:departmentId IS NULL OR dp.departmentId = :departmentId) " +
            "AND (:upcoming IS NULL OR " +

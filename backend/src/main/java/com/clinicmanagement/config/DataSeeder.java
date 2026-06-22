@@ -210,8 +210,8 @@ public class DataSeeder implements CommandLineRunner {
         patient.setRoles(Set.of(patientRole));
         User savedUser = userRepository.save(patient);
 
-        jdbcTemplate.update("INSERT INTO patients (user_id, patient_code, full_name, gender, phone, email, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
-                savedUser.getUserId(), "PAT000001", "Nguyễn Văn Test", "MALE", "0911222333", email);
+        jdbcTemplate.update("INSERT INTO patients (user_id, patient_code, full_name, gender, phone, email, relationship_to_user, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                savedUser.getUserId(), "PAT000001", "Nguyễn Văn Test", "MALE", "0911222333", email, "SELF");
     }
 
     private void seedMedicalRecords() {
@@ -246,10 +246,10 @@ public class DataSeeder implements CommandLineRunner {
             Long deptId1 = jdbcTemplate.queryForObject("SELECT department_id FROM doctors WHERE doctor_id = ?", Long.class, doctorId1);
             Long deptId2 = jdbcTemplate.queryForObject("SELECT department_id FROM doctors WHERE doctor_id = ?", Long.class, doctorId2);
             
-            jdbcTemplate.update("INSERT INTO appointments (appointment_id, appointment_code, patient_id, doctor_id, department_id, appointment_date, start_time, end_time, booking_type, status, deposit_amount, created_at, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_DATE, '08:00', '08:30', 'ONLINE', 'COMPLETED', 0.0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", 1001, "APP1001", patientId, doctorId1, deptId1);
+            jdbcTemplate.update("INSERT INTO appointments (appointment_id, appointment_code, patient_id, doctor_id, department_id, appointment_date, start_time, end_time, booking_type, status, deposit_amount, reminder_sent, created_at, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_DATE, '08:00', '08:30', 'ONLINE', 'COMPLETED', 0.0, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", 1001, "APP1001", patientId, doctorId1, deptId1);
             jdbcTemplate.update("INSERT INTO consultation_sessions (consultation_id, appointment_id, patient_id, doctor_id, status, created_at, updated_at) VALUES (?, ?, ?, ?, 'COMPLETED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", 1001, 1001, patientId, doctorId1);
 
-            jdbcTemplate.update("INSERT INTO appointments (appointment_id, appointment_code, patient_id, doctor_id, department_id, appointment_date, start_time, end_time, booking_type, status, deposit_amount, created_at, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_DATE, '09:00', '09:30', 'ONLINE', 'COMPLETED', 0.0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", 1002, "APP1002", patientId, doctorId2, deptId2);
+            jdbcTemplate.update("INSERT INTO appointments (appointment_id, appointment_code, patient_id, doctor_id, department_id, appointment_date, start_time, end_time, booking_type, status, deposit_amount, reminder_sent, created_at, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_DATE, '09:00', '09:30', 'ONLINE', 'COMPLETED', 0.0, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", 1002, "APP1002", patientId, doctorId2, deptId2);
             jdbcTemplate.update("INSERT INTO consultation_sessions (consultation_id, appointment_id, patient_id, doctor_id, status, created_at, updated_at) VALUES (?, ?, ?, ?, 'COMPLETED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", 1002, 1002, patientId, doctorId2);
         }
 
