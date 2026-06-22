@@ -1,6 +1,7 @@
 import React from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/useAuth.js";
 
 export default function PageHeader({
   title,
@@ -14,7 +15,22 @@ export default function PageHeader({
   className = "mb-10",
 }) {
   const navigate = useNavigate();
-  const resolvedIconColor = iconColor === "text-white" ? "text-teal-400" : iconColor;
+  const { user } = useAuth();
+
+  const roles = (user?.roles || []).map((r) => {
+    const roleName = typeof r === "string" ? r : r?.roleName;
+    return roleName?.replace(/^ROLE_/, "").toUpperCase();
+  }).filter(Boolean);
+
+  const isPatientOnly =
+    roles.includes("PATIENT") &&
+    !roles.includes("DOCTOR") &&
+    !roles.includes("PHARMACIST") &&
+    !roles.includes("LAB_TECHNICIAN") &&
+    !roles.includes("RECEPTIONIST") &&
+    !roles.includes("ADMIN");
+
+  const resolvedIconColor = iconColor === "text-white" ? "text-teal-500" : iconColor;
 
   const handleBack = () => {
     if (onBack) {
@@ -23,6 +39,38 @@ export default function PageHeader({
       navigate(-1);
     }
   };
+
+  if (isPatientOnly) {
+    return (
+      <div className={`mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 w-full ${className}`}>
+        <div>
+          <div className="flex items-center gap-3 mb-1">
+            {Icon && (
+              <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center border border-teal-100/50 shrink-0">
+                <Icon size={22} className="text-teal-600" />
+              </div>
+            )}
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{title}</h1>
+          </div>
+          {subtitle && (
+            <p className="text-slate-500 text-sm font-medium ml-[52px]">{subtitle}</p>
+          )}
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          {rightContent}
+          {showBackButton && (
+            <button
+              onClick={handleBack}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium hover:bg-slate-50 transition-colors text-sm shadow-sm"
+            >
+              <ArrowLeft size={16} />
+              {backText}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`w-full relative flex flex-col sm:flex-row justify-center items-center min-h-[80px] ${className}`}>
@@ -63,3 +111,4 @@ export default function PageHeader({
     </div>
   );
 }
+

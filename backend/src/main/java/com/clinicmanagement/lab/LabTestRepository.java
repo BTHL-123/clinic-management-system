@@ -19,8 +19,8 @@ public interface LabTestRepository extends JpaRepository<LabTest, Long> {
     @Query("""
             SELECT t FROM LabTest t
             WHERE (:status IS NULL OR t.status = :status)
-              AND (:keyword IS NULL OR LOWER(t.testName) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))
-                                   OR LOWER(t.testCode) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
+              AND (:keyword IS NULL OR LOWER(t.testName) LIKE CONCAT('%', LOWER(CAST(:keyword AS string)), '%')
+                                   OR LOWER(t.testCode) LIKE CONCAT('%', LOWER(CAST(:keyword AS string)), '%'))
             """)
     Page<LabTest> findByFilters(
             @Param("status")  String status,

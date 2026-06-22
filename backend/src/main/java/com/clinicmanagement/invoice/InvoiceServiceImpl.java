@@ -217,7 +217,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         return "INV-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 
-    @Transactional
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     @Override
     public InvoiceResponse generateFromConsultation(Long consultationId) {
         ConsultationSession session = consultationSessionRepository.findById(consultationId)

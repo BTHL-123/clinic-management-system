@@ -43,58 +43,50 @@ export default function PatientSidebar() {
   };
 
   const navItems = [
-    { id: "home", icon: <Home size={22} />, path: "/dashboard", label: "Tổng quan" },
-    { id: "booking", icon: <CalendarPlus size={22} />, path: "/dashboard/available-slots", label: "Đặt lịch" },
-    { id: "appointments", icon: <CalendarDays size={22} />, path: "/dashboard/my-appointments", label: "Lịch hẹn" },
-    { id: "queue", icon: <ListOrdered size={22} />, path: "/dashboard/queue-status", label: "Hàng đợi" },
-    { id: "history", icon: <FileText size={22} />, path: "/dashboard/my-medical-history", label: "Bệnh án" },
-    { id: "labs", icon: <Activity size={22} />, path: "/dashboard/my-lab-results", label: "Xét nghiệm" },
-    { id: "doctors", icon: <Users size={22} />, path: "/dashboard/our-doctors", label: "Bác sĩ" },
-    { id: "prices", icon: <Tag size={22} />, path: "/dashboard/service-prices", label: "Bảng giá" },
-    { id: "ai-chat", icon: <MessageSquare size={22} />, path: "/dashboard/ai-chat", label: "Trợ lý AI" },
-    { id: "settings", icon: <Settings size={22} />, path: "/dashboard/profile", label: "Cài đặt" },
+    { id: "home", icon: <Home size={20} />, path: "/dashboard", label: "Tổng quan" },
+    { id: "booking", icon: <CalendarPlus size={20} />, path: "/dashboard/available-slots", label: "Đặt lịch" },
+    { id: "appointments", icon: <CalendarDays size={20} />, path: "/dashboard/my-appointments", label: "Lịch hẹn" },
+    { id: "queue", icon: <ListOrdered size={20} />, path: "/dashboard/queue-status", label: "Hàng đợi" },
+    { id: "history", icon: <FileText size={20} />, path: "/dashboard/my-medical-history", label: "Bệnh án" },
+    { id: "labs", icon: <Activity size={20} />, path: "/dashboard/my-medical-history?tab=history", label: "Xét nghiệm" },
+    { id: "doctors", icon: <Users size={20} />, path: "/dashboard/our-doctors", label: "Bác sĩ" },
+    { id: "prices", icon: <Tag size={20} />, path: "/dashboard/service-prices", label: "Bảng giá" },
+    { id: "ai-chat", icon: <MessageSquare size={20} />, path: "/dashboard/ai-chat", label: "Trợ lý AI" },
+    { id: "settings", icon: <Settings size={20} />, path: "/dashboard/profile", label: "Cài đặt" },
   ];
 
   return (
     <motion.nav 
       initial={{ x: -100, opacity: 0 }}
-      animate={{ x: 0, opacity: 1, width: isExpanded ? 240 : 70 }}
+      animate={{ x: 0, opacity: 1, width: isExpanded ? 240 : 68 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="hidden md:flex flex-col justify-between patient-glass-panel rounded-[2rem] py-6 h-[calc(100vh-104px)] sticky top-[80px] z-[100]"
+      className="hidden md:flex flex-col justify-between bg-white border-r border-slate-200/80 py-4 h-[calc(100vh-68px)] sticky top-[68px] z-[100] shadow-[1px_0_8px_rgba(0,0,0,0.03)]"
     >
-      <div className="flex flex-col gap-4 w-full px-3 relative h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
+      <div className="flex flex-col gap-2 w-full px-2.5 relative h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
         {/* Expand Toggle Button */}
         <button 
           onClick={() => setIsExpanded(!isExpanded)}
-          className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white hover:bg-white/20 hover:text-white transition-all shrink-0 drop-shadow-md ${isExpanded ? "self-end mr-1" : "mx-auto"}`}
+          className={`w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all shrink-0 ${isExpanded ? "self-end mr-0.5" : "mx-auto"}`}
         >
-          <ChevronRight size={22} className={`transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
+          <ChevronRight size={18} className={`transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
         </button>
 
-        <div className="flex flex-col gap-1.5 w-full mt-2 flex-1">
+        <div className="flex flex-col gap-1 w-full mt-1 flex-1">
           {navItems.map(item => (
             <button
               key={item.id}
               onClick={() => navigate(item.path)}
-              className={`relative flex items-center h-12 rounded-2xl transition-all duration-300 group overflow-hidden shrink-0 ${
+              className={`relative flex items-center h-11 transition-all duration-200 group overflow-hidden shrink-0 ${
                 activeNav === item.id 
-                  ? "text-white font-extrabold drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]" 
-                  : "text-white/95 font-extrabold hover:text-white hover:bg-white/20 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]"
-              } ${isExpanded ? "px-4" : "justify-center"}`}
+                  ? "bg-[#0A604E] text-white font-bold rounded-full shadow-[0_4px_12px_rgba(10,96,78,0.15)]" 
+                  : "text-[#4A5D59] font-medium hover:text-slate-850 hover:bg-[#F0F9F7] rounded-xl"
+              } ${isExpanded ? "px-3" : "justify-center"}`}
               title={!isExpanded ? item.label : ""}
             >
-              {/* Active Indicator Background */}
-              {activeNav === item.id && (
-                <motion.div 
-                  layoutId="activePatientNav"
-                  className="absolute inset-0 bg-white/25 border border-white/45 rounded-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]"
-                  initial={false}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                />
-              )}
-              
-              <div className={`relative z-10 flex items-center ${isExpanded ? "gap-4" : ""}`}>
-                <div className={`group-hover:scale-110 transition-transform duration-300`}>
+              <div className={`relative z-10 flex items-center ${isExpanded ? "gap-3" : ""}`}>
+                <div className={`transition-colors duration-200 ${
+                  activeNav === item.id ? "text-white" : "text-[#4A5D59]/75 group-hover:text-slate-850"
+                }`}>
                   {item.icon}
                 </div>
                 {isExpanded && (
@@ -102,7 +94,7 @@ export default function PatientSidebar() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -10 }}
-                    className="whitespace-nowrap text-[15px] tracking-wide"
+                    className="whitespace-nowrap text-[14px] tracking-wide"
                   >
                     {item.label}
                   </motion.span>
@@ -113,14 +105,14 @@ export default function PatientSidebar() {
         </div>
 
         {/* Logout Button at bottom */}
-        <div className="w-full mt-auto pt-4 border-t border-white/25">
+        <div className="w-full mt-auto pt-3 border-t border-slate-100">
           <button
             onClick={handleLogout}
-            className={`w-full flex items-center h-12 rounded-2xl text-rose-100 font-extrabold hover:text-white hover:bg-rose-500/20 drop-shadow-md transition-all duration-300 group ${isExpanded ? "px-4 gap-4" : "justify-center"}`}
+            className={`w-full flex items-center h-11 rounded-xl text-slate-400 font-medium hover:text-rose-600 hover:bg-rose-50 transition-all duration-200 group ${isExpanded ? "px-3 gap-3" : "justify-center"}`}
             title={!isExpanded ? "Đăng xuất" : ""}
           >
-            <LogOut size={22} className="group-hover:-translate-x-1 transition-transform" />
-            {isExpanded && <span className="whitespace-nowrap tracking-wide text-[15px]">Đăng xuất</span>}
+            <LogOut size={20} className="group-hover:-translate-x-0.5 transition-transform" />
+            {isExpanded && <span className="whitespace-nowrap tracking-wide text-[14px]">Đăng xuất</span>}
           </button>
         </div>
       </div>

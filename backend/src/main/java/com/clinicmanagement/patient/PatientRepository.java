@@ -18,9 +18,9 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
     Optional<Patient> findByUser_UserId(Long userId);
 
     @Query("SELECT p FROM Patient p WHERE " +
-           "(LOWER(p.fullName) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) " +
-           "OR LOWER(p.patientCode) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) " +
-           "OR LOWER(p.phone) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))")
+           "(LOWER(p.fullName) LIKE CONCAT('%', LOWER(CAST(:keyword AS string)), '%') " +
+           "OR LOWER(p.patientCode) LIKE CONCAT('%', LOWER(CAST(:keyword AS string)), '%') " +
+           "OR LOWER(p.phone) LIKE CONCAT('%', LOWER(CAST(:keyword AS string)), '%'))")
     Page<Patient> searchPatients(@Param("keyword") String keyword, Pageable pageable);
 
     boolean existsByPatientCode(String patientCode);

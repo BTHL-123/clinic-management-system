@@ -68,12 +68,12 @@ const STATUS_CONFIG = {
 
 function StatCard({ icon: Icon, label, value, color }) {
   return (
-    <div className="bg-white/30 backdrop-blur-md border border-white/40 rounded-[1.5rem] p-6 shadow-xl flex flex-col items-center gap-2 hover:-translate-y-1 hover:shadow-2xl transition-all duration-300">
-      <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-black/5 border border-black/5 ${color}`}>
+    <div className="bg-white border border-slate-200 rounded-[1.5rem] p-6 shadow-sm flex flex-col items-center gap-2 hover:-translate-y-1 hover:shadow-md transition-all duration-300">
+      <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-slate-50 border border-slate-100 ${color}`}>
         <Icon size={24} />
       </div>
-      <span className="text-sm font-semibold patient-label text-center">{label}</span>
-      <span className="text-4xl font-extrabold leading-none mt-1 patient-data">{value ?? "—"}</span>
+      <span className="text-sm font-semibold patient-label text-center text-slate-500">{label}</span>
+      <span className="text-4xl font-extrabold leading-none mt-1 text-slate-800">{value ?? "—"}</span>
     </div>
   );
 }
@@ -166,16 +166,16 @@ export default function PatientQueueStatusPage() {
   const isNoQueue = error?.toLowerCase().includes("no active queue");
 
   return (
-    <div className="max-w-[1100px] mx-auto w-full flex flex-col items-center">
+    <div className="w-full flex flex-col h-[calc(100vh-104px)] overflow-y-auto custom-scrollbar pb-8 pr-2">
       <PageHeader
         title="Trạng thái hàng đợi"
         icon={Activity}
-        iconColor="text-teal-400"
+        iconColor="text-teal-600"
         subtitle="Theo dõi số thứ tự khám của bạn hôm nay và thời gian chờ ước tính."
         onBack={() => navigate("/dashboard")}
       />
 
-      <div className="patient-glass-card p-6 md:p-8 w-full max-w-[800px] mx-auto mb-10">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8 w-full mb-10 mt-6">
         <div className="flex justify-end mb-6">
           <button
             className="bg-black/5 hover:bg-black/10 text-slate-900 border border-slate-300 font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-2"
@@ -197,12 +197,12 @@ export default function PatientQueueStatusPage() {
 
         {/* No Active Queue */}
         {!loading && isNoQueue && (
-          <div className="flex flex-col items-center justify-center min-h-[320px] gap-4 bg-black/5 backdrop-blur-md rounded-3xl border-2 border-dashed border-slate-300 p-12 text-center">
-            <div className="w-20 h-20 rounded-full bg-black/5 flex items-center justify-center">
+          <div className="flex flex-col items-center justify-center min-h-[320px] gap-4 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-300 p-12 text-center">
+            <div className="w-20 h-20 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center">
               <Users size={40} className="text-teal-600" />
             </div>
-            <h2 className="text-2xl patient-card-title m-0">Không có lịch hẹn hôm nay</h2>
-            <p className="text-base patient-data m-0 max-w-[380px] font-semibold leading-relaxed">
+            <h2 className="text-2xl text-slate-800 font-bold m-0">Không có lịch hẹn hôm nay</h2>
+            <p className="text-base text-slate-600 m-0 max-w-[380px] font-semibold leading-relaxed">
               Bạn chưa có lịch khám nào được check-in hôm nay.
               Vui lòng đặt lịch hoặc liên hệ lễ tân để check-in.
             </p>
@@ -222,7 +222,7 @@ export default function PatientQueueStatusPage() {
           <div className="flex flex-col gap-6">
 
             {/* Status Banner */}
-            <div className={`bg-gradient-to-br ${statusCfg.gradient} backdrop-blur-md border-2 ${statusCfg.border} rounded-3xl p-8 flex flex-col gap-4 shadow-xl`}>
+            <div className={`bg-white border-2 ${statusCfg.border} rounded-3xl p-8 flex flex-col gap-4 shadow-sm`}>
               <div className="flex items-center gap-3">
                 <span className={`${statusCfg.bg} ${statusCfg.color} border ${statusCfg.border} rounded-full px-4 py-1.5 text-sm font-extrabold uppercase tracking-wide`}>
                   {statusCfg.label}
@@ -233,18 +233,18 @@ export default function PatientQueueStatusPage() {
               </p>
 
               {/* Appointment info */}
-              <div className="mt-2 p-5 bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="mt-2 p-5 bg-slate-50 border border-slate-200 rounded-2xl grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <span className="text-xs font-bold patient-label uppercase tracking-wider">Bệnh nhân</span>
-                  <p className="mt-1 text-lg patient-data truncate">{data.patientName}</p>
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Bệnh nhân</span>
+                  <p className="mt-1 text-lg font-bold text-slate-800 truncate">{data.patientName}</p>
                 </div>
                 <div>
-                  <span className="text-xs font-bold patient-label uppercase tracking-wider">Bác sĩ</span>
-                  <p className="mt-1 text-lg patient-data truncate">{data.doctorName}</p>
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Bác sĩ</span>
+                  <p className="mt-1 text-lg font-bold text-slate-800 truncate">{data.doctorName}</p>
                 </div>
                 <div>
-                  <span className="text-xs font-bold patient-label uppercase tracking-wider">Mã lịch hẹn</span>
-                  <p className="mt-1 text-lg patient-data truncate">{data.appointmentCode || "—"}</p>
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Mã lịch hẹn</span>
+                  <p className="mt-1 text-lg font-bold text-slate-800 truncate">{data.appointmentCode || "—"}</p>
                 </div>
               </div>
             </div>
