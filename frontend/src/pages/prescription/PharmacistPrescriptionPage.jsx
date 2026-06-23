@@ -6,23 +6,17 @@ import { useToast } from "../../context/useToast.js";
 import PageHeader from "../../components/PageHeader";
 
 const STATUS_MAP = {
-  CREATED: { label: "Chờ cấp phát", color: "#d97706", bg: "#fef3c7" },
-  CHECKED: { label: "Đã kiểm tra", color: "#2563eb", bg: "#dbeafe" },
-  DISPENSED: { label: "Đã cấp phát", color: "#16a34a", bg: "#dcfce7" },
-  CANCELLED: { label: "Đã hủy", color: "#dc2626", bg: "#fee2e2" },
+  CREATED: { label: "Chờ cấp phát", color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-100" },
+  CHECKED: { label: "Đã kiểm tra", color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
+  DISPENSED: { label: "Đã cấp phát", color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100" },
+  CANCELLED: { label: "Đã hủy", color: "text-rose-500", bg: "bg-rose-50", border: "border-rose-100" },
 };
 
 function StatusBadge({ status }) {
-  const s = STATUS_MAP[status] || { label: status };
-
-  let badgeClass = "bg-white/10 text-white/50 border-white/20"; // default
-  if (status === "CREATED") badgeClass = "bg-amber-500/20 text-amber-300 border-amber-500/30";
-  if (status === "CHECKED") badgeClass = "bg-sky-500/20 text-sky-300 border-sky-500/30";
-  if (status === "DISPENSED") badgeClass = "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
-  if (status === "CANCELLED") badgeClass = "bg-rose-500/20 text-rose-300 border-rose-500/30";
+  const s = STATUS_MAP[status] || { label: status, color: "text-slate-600", bg: "bg-slate-50", border: "border-slate-100" };
 
   return (
-    <span className={`px-3 py-1 rounded-full text-xs font-bold border whitespace-nowrap ${badgeClass}`}>
+    <span className={`${s.bg} ${s.color} ${s.border} border px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap shadow-sm`}>
       {s.label}
     </span>
   );
@@ -80,34 +74,37 @@ export default function PharmacistPrescriptionPage() {
   };
 
   return (
-    <div className="w-full flex flex-col items-center">
+    <div className="max-w-[1100px] mx-auto w-full flex flex-col items-center pb-10 px-4 sm:px-6">
       {/* Header */}
       <PageHeader
         title="Quản lý cấp phát thuốc"
         icon={Pill}
-        iconColor="text-white"
+        iconColor="text-teal-500"
         subtitle="Kiểm tra và cấp phát thuốc theo đơn của bác sĩ."
         onBack={() => navigate("/dashboard")}
       />
 
-      {error && <div className="bg-rose-500/20 border border-rose-500/50 text-rose-200 p-4 rounded-xl mb-6 w-full">{error}</div>}
+      {error && <div className="w-full bg-rose-50 border border-rose-100 text-rose-600 p-4 rounded-2xl shadow-sm font-semibold mb-6">{error}</div>}
 
       {/* Main Content Box */}
-      <div className="patient-glass-panel patient-glass-panel-clear rounded-[3rem] p-8 md:p-10 shadow-[0_12px_40px_rgba(0,0,0,0.22)] border-0 w-full">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 w-full">
         {/* Filters */}
-        <div className="flex flex-wrap gap-4 mb-6 items-center">
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="bg-slate-900/10 border border-slate-900/10 text-slate-900 font-bold text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:border-violet-500/50 transition-colors [&>option]:bg-white"
-          >
-            <option value="">Tất cả trạng thái</option>
-            <option value="CREATED">Chờ cấp phát</option>
-            <option value="CHECKED">Đã kiểm tra</option>
-            <option value="DISPENSED">Đã cấp phát</option>
-          </select>
+        <div className="flex flex-wrap gap-4 mb-6 items-center justify-between w-full">
+          <div className="flex items-center gap-3">
+            <label className="text-slate-500 font-extrabold uppercase tracking-wider text-[11px] whitespace-nowrap">Trạng thái:</label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 font-semibold transition-all"
+            >
+              <option value="">Tất cả trạng thái</option>
+              <option value="CREATED">Chờ cấp phát</option>
+              <option value="CHECKED">Đã kiểm tra</option>
+              <option value="DISPENSED">Đã cấp phát</option>
+            </select>
+          </div>
           <button
-            className="px-4 py-2.5 rounded-xl border border-slate-900/10 bg-slate-900/5 hover:bg-slate-900/10 text-slate-900 transition-colors flex items-center gap-2 font-bold"
+            className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold rounded-xl px-4 py-2.5 transition-all flex items-center gap-2 shadow-sm text-sm"
             onClick={fetchData}
           >
             <RefreshCw size={16} className={loading ? "animate-spin" : ""} /> Làm mới
@@ -116,61 +113,61 @@ export default function PharmacistPrescriptionPage() {
 
         {/* Table */}
         <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-900/10 text-white text-sm">
-                <th className="p-4 font-bold pb-3">Mã đơn thuốc</th>
-                <th className="p-4 font-bold pb-3 w-[140px]">Trạng thái</th>
-                <th className="p-4 font-bold pb-3 w-[100px] text-center">Số thuốc</th>
-                <th className="p-4 font-bold pb-3 w-[160px]">Tương tác thuốc</th>
-                <th className="p-4 font-bold pb-3 w-[180px]">Ngày tạo</th>
-                <th className="p-4 font-bold pb-3 text-center">Thao tác</th>
+          <table className="w-full text-left text-sm whitespace-nowrap">
+            <thead className="bg-slate-50/75 border-b border-slate-100">
+              <tr>
+                <th className="p-4 font-extrabold text-slate-500 uppercase tracking-wider text-[11px] pl-6 w-48">Mã đơn thuốc</th>
+                <th className="p-4 font-extrabold text-slate-500 uppercase tracking-wider text-[11px] w-36">Trạng thái</th>
+                <th className="p-4 font-extrabold text-slate-500 uppercase tracking-wider text-[11px] w-24 text-center">Số thuốc</th>
+                <th className="p-4 font-extrabold text-slate-500 uppercase tracking-wider text-[11px] w-48">Tương tác thuốc</th>
+                <th className="p-4 font-extrabold text-slate-500 uppercase tracking-wider text-[11px] w-44">Ngày tạo</th>
+                <th className="p-4 font-extrabold text-slate-500 uppercase tracking-wider text-[11px] text-center pr-6 w-48">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="text-slate-900">
+            <tbody className="text-slate-600 font-medium">
               {loading ? (
-                <tr><td colSpan={6} className="p-8 text-center text-slate-800 font-bold">Đang tải...</td></tr>
+                <tr><td colSpan={6} className="p-8 text-center text-slate-400 font-semibold">Đang tải...</td></tr>
               ) : prescriptions.length === 0 ? (
-                <tr><td colSpan={6} className="p-8 text-center text-slate-900 font-bold">Không có đơn thuốc nào.</td></tr>
+                <tr><td colSpan={6} className="p-8 text-center text-slate-400 font-semibold">Không có đơn thuốc nào.</td></tr>
               ) : (
                 prescriptions.map((rx) => {
                   const isDispensing = dispensingId === rx.prescriptionId;
                   return (
-                    <tr key={rx.prescriptionId} className="border-b border-slate-900/5 hover:bg-slate-900/5 transition-colors group">
-                      <td className="p-4">
-                        <div className="font-bold text-violet-700">{rx.prescriptionCode}</div>
-                        <div className="text-xs text-slate-600 mt-1 font-bold">Ca khám #{rx.consultationId}</div>
+                    <tr key={rx.prescriptionId} className="border-b border-slate-100 hover:bg-slate-50/30 transition-colors duration-200">
+                      <td className="p-4 pl-6">
+                        <div className="font-bold text-[#1DB896]">{rx.prescriptionCode}</div>
+                        <div className="text-[11px] text-slate-400 mt-0.5 font-medium">Ca khám #{rx.consultationId}</div>
                       </td>
                       <td className="p-4"><StatusBadge status={rx.status} /></td>
-                      <td className="p-4 text-center font-medium">{rx.items?.length || 0}</td>
+                      <td className="p-4 text-center font-semibold text-slate-700">{rx.items?.length || 0}</td>
                       <td className="p-4">
                         {rx.drugInteractionChecked ? (
                           rx.interactionWarning && !rx.interactionWarning.includes("No dangerous") ? (
-                            <span className="inline-flex items-center gap-1.5 text-amber-700 text-xs font-bold bg-amber-500/20 px-2 py-1 rounded-md border border-amber-500/30">
-                              <AlertTriangle size={14} /> Có cảnh báo
+                            <span className="inline-flex items-center gap-1.5 text-amber-600 text-[11px] font-bold bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-100 shadow-sm">
+                              <AlertTriangle size={12} /> Có cảnh báo
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 text-emerald-700 text-xs font-bold bg-emerald-500/20 px-2 py-1 rounded-md border border-emerald-500/30">
-                              <ShieldCheck size={14} /> An toàn
+                            <span className="inline-flex items-center gap-1.5 text-emerald-600 text-[11px] font-bold bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100 shadow-sm">
+                              <ShieldCheck size={12} /> An toàn
                             </span>
                           )
                         ) : (
-                          <span className="text-slate-500 font-bold text-xs italic">Chưa kiểm tra</span>
+                          <span className="text-slate-400 font-semibold text-xs italic">Chưa kiểm tra</span>
                         )}
                       </td>
-                      <td className="p-4 text-slate-800 font-bold text-sm">
+                      <td className="p-4 text-xs font-semibold text-slate-500">
                         {new Date(rx.createdAt).toLocaleString("vi-VN", {
                           day: "2-digit", month: "2-digit", year: "numeric",
                           hour: "2-digit", minute: "2-digit",
                         })}
                       </td>
-                      <td className="p-4">
+                      <td className="p-4 pr-6">
                         <div className="flex gap-2 justify-center">
                           {/* Xem chi tiết */}
                           <button
                             onClick={() => navigate(`/dashboard/prescriptions/${rx.prescriptionId}`)}
                             title="Xem chi tiết"
-                            className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors flex items-center gap-2 text-xs font-semibold"
+                            className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold rounded-xl px-3 py-1.5 transition-all flex items-center gap-1.5 text-xs shadow-sm cursor-pointer"
                           >
                             <Eye size={14} /> Xem
                           </button>
@@ -181,7 +178,7 @@ export default function PharmacistPrescriptionPage() {
                               onClick={() => handleDispense(rx.prescriptionId, rx.prescriptionCode)}
                               disabled={isDispensing}
                               title="Cấp phát thuốc"
-                              className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2 text-xs font-semibold ${isDispensing ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 cursor-wait" : "bg-emerald-500 hover:bg-emerald-400 text-white shadow-lg shadow-emerald-500/20"}`}
+                              className={`bg-[#1DB896] hover:bg-[#159a7c] text-white font-bold rounded-xl px-3 py-1.5 transition-all shadow-md shadow-teal-500/10 text-xs flex items-center gap-1.5 cursor-pointer ${isDispensing ? "opacity-50 cursor-not-allowed" : ""}`}
                             >
                               <CheckCircle size={14} />
                               {isDispensing ? "Đang xử lý..." : "Cấp phát"}
@@ -189,7 +186,7 @@ export default function PharmacistPrescriptionPage() {
                           )}
 
                           {rx.status === "DISPENSED" && (
-                            <span className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold flex items-center gap-1.5">
+                            <span className="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 text-xs font-bold flex items-center gap-1">
                               ✓ Đã cấp
                             </span>
                           )}
@@ -207,17 +204,17 @@ export default function PharmacistPrescriptionPage() {
         {totalPages > 1 && (
           <div className="flex justify-center items-center gap-4 mt-6">
             <button
-              className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white transition-colors disabled:opacity-30 text-sm font-medium"
+              className="px-4 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold transition-all disabled:opacity-30 disabled:pointer-events-none text-xs shadow-sm cursor-pointer"
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0}
             >
               ← Trước
             </button>
-            <span className="text-white/60 text-sm font-medium bg-white/5 px-4 py-2 rounded-xl border border-white/5">
-              Trang <span className="text-white font-bold">{page + 1}</span> / {totalPages}
+            <span className="text-slate-500 text-xs font-semibold bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
+              Trang <span className="text-slate-800 font-bold">{page + 1}</span> / {totalPages}
             </span>
             <button
-              className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white transition-colors disabled:opacity-30 text-sm font-medium"
+              className="px-4 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold transition-all disabled:opacity-30 disabled:pointer-events-none text-xs shadow-sm cursor-pointer"
               onClick={() => setPage((p) => p + 1)}
               disabled={page >= totalPages - 1}
             >

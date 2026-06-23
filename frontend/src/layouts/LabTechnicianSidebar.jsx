@@ -49,12 +49,12 @@ export default function LabTechnicianSidebar() {
       initial={{ x: -100, opacity: 0 }}
       animate={{ x: 0, opacity: 1, width: isExpanded ? 240 : 70 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="hidden md:flex flex-col justify-between patient-glass-panel rounded-[2rem] py-6 h-[calc(100vh-104px)] sticky top-[80px] z-[100]"
+      className="hidden md:flex flex-col justify-between bg-white shadow-sm border border-slate-100 rounded-[2rem] py-6 h-[calc(100vh-104px)] sticky top-[80px] z-[100]"
     >
       <div className="flex flex-col gap-4 w-full px-3 relative h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white hover:bg-white/20 hover:text-white transition-all shrink-0 drop-shadow-md ${isExpanded ? "self-end mr-1" : "mx-auto"}`}
+          className={`w-11 h-11 rounded-2xl flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-slate-700 transition-all shrink-0 ${isExpanded ? "self-end mr-1" : "mx-auto"}`}
         >
           <ChevronRight size={22} className={`transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
         </button>
@@ -65,15 +65,15 @@ export default function LabTechnicianSidebar() {
               key={item.id}
               onClick={() => navigate(item.path)}
               className={`relative flex items-center h-12 rounded-2xl transition-all duration-300 group overflow-hidden shrink-0 ${activeNav === item.id
-                  ? "text-white font-extrabold drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]"
-                  : "text-white/95 font-extrabold hover:text-white hover:bg-white/20 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]"
+                  ? "text-[#0A604E] font-extrabold"
+                  : "text-slate-500 font-bold hover:text-[#0A604E] hover:bg-[#F0F9F7]"
                 } ${isExpanded ? "px-4" : "justify-center"}`}
               title={!isExpanded ? item.label : ""}
             >
               {activeNav === item.id && (
                 <motion.div
                   layoutId="activeLabNav"
-                  className="absolute inset-0 bg-white/25 border border-white/45 rounded-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]"
+                  className="absolute inset-0 bg-[#E2F2EE] border border-[#1DB896]/20 rounded-2xl"
                   initial={false}
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
@@ -98,10 +98,10 @@ export default function LabTechnicianSidebar() {
           ))}
         </div>
 
-        <div className="w-full mt-auto pt-4 border-t border-white/25">
+        <div className="w-full mt-auto pt-4 border-t border-slate-100">
           <button
             onClick={handleLogout}
-            className={`w-full flex items-center h-12 rounded-2xl text-rose-100 font-extrabold hover:text-white hover:bg-rose-500/20 drop-shadow-md transition-all duration-300 group ${isExpanded ? "px-4 gap-4" : "justify-center"}`}
+            className={`w-full flex items-center h-12 rounded-2xl text-rose-500 font-extrabold hover:bg-rose-50 hover:text-rose-600 transition-all duration-300 group ${isExpanded ? "px-4 gap-4" : "justify-center"}`}
             title={!isExpanded ? "Đăng xuất" : ""}
           >
             <LogOut size={22} className="group-hover:-translate-x-1 transition-transform" />
