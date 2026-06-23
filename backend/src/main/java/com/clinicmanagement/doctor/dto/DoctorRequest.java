@@ -20,6 +20,10 @@ public record DoctorRequest(
 
         Integer yearsOfExperience,
 
+        Integer yearOfBirth,
+
+        String hometown,
+
         String biography,
 
         java.math.BigDecimal consultationFee,

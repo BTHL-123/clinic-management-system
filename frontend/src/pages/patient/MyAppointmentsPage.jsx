@@ -677,8 +677,11 @@ export default function MyAppointmentsPage() {
                             </div>
                             
                             {/* Short bio if available */}
-                            {selectedDocDetails?.biography && (
-                              <p className="text-[10px] text-slate-500 font-medium leading-relaxed mt-2.5 line-clamp-2 border-t border-slate-200/50 pt-2">
+                            {(selectedDocDetails?.biography || selectedDocDetails?.yearOfBirth || selectedDocDetails?.hometown) && (
+                              <p className="text-[10px] text-slate-500 font-medium leading-relaxed mt-2.5 border-t border-slate-200/50 pt-2">
+                                {selectedDocDetails?.yearOfBirth && <span className="font-bold text-[#1DB896] mr-2">Sinh năm: {selectedDocDetails.yearOfBirth}</span>}
+                                {selectedDocDetails?.hometown && <span className="font-bold text-[#1DB896] mr-2">Quê quán: {selectedDocDetails.hometown}</span>}
+                                {selectedDocDetails?.yearOfBirth || selectedDocDetails?.hometown ? <br/> : null}
                                 {selectedDocDetails.biography}
                               </p>
                             )}

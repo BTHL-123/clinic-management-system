@@ -17,6 +17,8 @@ const EMPTY_FORM = {
   degree: "",
   specialization: "",
   yearsOfExperience: 0,
+  yearOfBirth: "",
+  hometown: "",
   biography: "",
   consultationFee: 0,
   status: "ACTIVE",
@@ -99,7 +101,9 @@ export default function DoctorManagement() {
       degree: doctor.degree || "",
       specialization: doctor.specialization || "",
       yearsOfExperience: doctor.yearsOfExperience || 0,
-      biography: "", // Usually fetch detail here if biography isn't in list
+      yearOfBirth: doctor.yearOfBirth || "",
+      hometown: doctor.hometown || "",
+      biography: doctor.biography || "", 
       consultationFee: doctor.consultationFee || 0,
       status: doctor.status || "ACTIVE",
     });
@@ -336,6 +340,16 @@ export default function DoctorManagement() {
                   <input type="number" name="yearsOfExperience" min="0" value={formData.yearsOfExperience} onChange={handleChange} />
                 </div>
                 
+                <div className="field">
+                  <label>Năm sinh</label>
+                  <input type="number" name="yearOfBirth" min="1900" max={new Date().getFullYear()} value={formData.yearOfBirth} onChange={handleChange} />
+                </div>
+
+                <div className="field">
+                  <label>Quê quán</label>
+                  <input name="hometown" value={formData.hometown} onChange={handleChange} placeholder="VD: Hà Nội" />
+                </div>
+
                 <div className="field">
                   <label>Phí khám bệnh (VND)</label>
                   <input type="number" name="consultationFee" min="0" value={formData.consultationFee} onChange={handleChange} />

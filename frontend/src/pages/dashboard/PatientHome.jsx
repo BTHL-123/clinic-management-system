@@ -497,6 +497,8 @@ export default function PatientHome() {
                       <FileText className="text-[#1DB896]" size={15} /> Giới thiệu chuyên môn
                     </h3>
                     <div className="text-slate-600 font-semibold leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100 text-xs">
+                      {selectedDoctor.yearOfBirth && <p className="mb-1"><span className="font-bold text-[#0A604E] mr-1">Sinh năm:</span> {selectedDoctor.yearOfBirth}</p>}
+                      {selectedDoctor.hometown && <p className="mb-2"><span className="font-bold text-[#0A604E] mr-1">Quê quán:</span> {selectedDoctor.hometown}</p>}
                       {selectedDoctor.biography ? (
                         <p>{selectedDoctor.biography}</p>
                       ) : (

@@ -44,6 +44,8 @@ interface DoctorOption {
   status?: string;
   biography?: string;
   yearsOfExperience?: number;
+  yearOfBirth?: number;
+  hometown?: string;
 }
 
 type FetchState = "idle" | "loading" | "done" | "error";
@@ -757,6 +759,9 @@ export default function AvailableSlots() {
                             Chuyên khoa {doc.departmentName || doc.specialization || "Khám Tổng quát"}
                           </p>
                           <p className="text-xs text-[#4A5D59] font-medium leading-relaxed mb-4 line-clamp-2 max-w-[650px]">
+                            {doc.yearOfBirth && <span className="font-bold text-[#198E75] mr-2">Sinh năm: {doc.yearOfBirth}</span>}
+                            {doc.hometown && <span className="font-bold text-[#198E75] mr-2">Quê quán: {doc.hometown}</span>}
+                            {doc.yearOfBirth || doc.hometown ? <br/> : null}
                             {doc.biography || `Bác sĩ ${doc.fullName} là chuyên gia y tế uy tín, giàu kinh nghiệm trong hoạt động điều trị các ca bệnh và tư vấn lâm sàng.`}
                           </p>
                         </div>

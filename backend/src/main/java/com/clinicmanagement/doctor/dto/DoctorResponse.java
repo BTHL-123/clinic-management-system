@@ -13,6 +13,8 @@ public record DoctorResponse(
         String degree,
         String specialization,
         Integer yearsOfExperience,
+        Integer yearOfBirth,
+        String hometown,
         String biography,
         java.math.BigDecimal consultationFee,
         String status
@@ -29,6 +31,8 @@ public record DoctorResponse(
                 d.getDegree(),
                 d.getSpecialization(),
                 d.getYearsOfExperience(),
+                d.getYearOfBirth(),
+                d.getHometown(),
                 d.getBiography(),
                 d.getConsultationFee(),
                 d.getStatus()
