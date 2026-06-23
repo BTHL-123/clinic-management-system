@@ -7,7 +7,7 @@ import {
   updateDoctor,
 } from "../../services/doctorService";
 import { getActiveDepartments } from "../../services/departmentService";
-import { getUsers } from "../../services/userService";
+import { getUsers, getUsersEligibleForDoctor } from "../../services/userService";
 import PageHeader from "../../components/PageHeader";
 
 const EMPTY_FORM = {
@@ -47,10 +47,10 @@ export default function DoctorManagement() {
     try {
       const [deptRes, userRes] = await Promise.all([
         getActiveDepartments(),
-        getUsers({ size: 100 }), // Mocking for now to get a list of users
+        getUsersEligibleForDoctor(),
       ]);
       setDepartments(deptRes.data ?? []);
-      setUsers(userRes.data?.content ?? []);
+      setUsers(userRes.data ?? []);
     } catch (err) {
       console.error("Failed to load options", err);
     }
@@ -93,7 +93,7 @@ export default function DoctorManagement() {
 
   const openEdit = (doctor) => {
     setFormData({
-      userId: "", // Typically editing shouldn't easily change user, or we mock it
+      userId: doctor.userId || "",
       departmentId: doctor.departmentId || "",
       doctorCode: doctor.doctorCode || "",
       degree: doctor.degree || "",
@@ -104,6 +104,19 @@ export default function DoctorManagement() {
       status: doctor.status || "ACTIVE",
     });
     setEditingId(doctor.doctorId);
+    
+    // If we're editing, the user might not be in the 'eligible' list anymore because they are already a doctor.
+    // We should make sure the current user is added to the users list if not already there, 
+    // but the simplest way is to just let the select box show the user's ID if it matches an existing user.
+    // However, if the user isn't in `users`, the select box won't show the name properly.
+    // Let's add the current doctor's user info to the options if missing.
+    setUsers(prev => {
+        if (!prev.find(u => u.userId === doctor.userId) && doctor.userId) {
+            return [...prev, { userId: doctor.userId, fullName: doctor.fullName, email: "Tài khoản hiện tại" }];
+        }
+        return prev;
+    });
+
     setFormError("");
     setShowForm(true);
   };
@@ -125,9 +138,7 @@ export default function DoctorManagement() {
     try {
       setSubmitting(true);
       if (editingId) {
-        // Need to provide userId for update as per DTO, but usually might skip in UI
         const payload = { ...formData };
-        if (!payload.userId) payload.userId = 1; // Mocking if user doesn't pick
         await updateDoctor(editingId, payload);
       } else {
         await createDoctor(formData);
