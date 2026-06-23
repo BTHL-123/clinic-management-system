@@ -1,5 +1,6 @@
 package com.clinicmanagement.patient;
 
+import java.time.LocalDate;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +23,21 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
            "OR LOWER(p.patientCode) LIKE CONCAT('%', LOWER(CAST(:keyword AS string)), '%') " +
            "OR LOWER(p.phone) LIKE CONCAT('%', LOWER(CAST(:keyword AS string)), '%'))")
     Page<Patient> searchPatients(@Param("keyword") String keyword, Pageable pageable);
+
+    @Query("SELECT DISTINCT p FROM Patient p " +
+           "JOIN Appointment a ON a.patient.patientId = p.patientId " +
+           "WHERE a.doctor.user.userId = :doctorUserId " +
+           "AND ((a.appointmentDate = :currentDate) OR " +
+           "     (a.appointmentDate > :currentDate AND a.status NOT IN ('CANCELLED', 'NO_SHOW', 'COMPLETED', 'RESCHEDULED'))) " +
+           "AND (LOWER(p.fullName) LIKE CONCAT('%', LOWER(CAST(:keyword AS string)), '%') " +
+           "     OR LOWER(p.patientCode) LIKE CONCAT('%', LOWER(CAST(:keyword AS string)), '%') " +
+           "     OR LOWER(p.phone) LIKE CONCAT('%', LOWER(CAST(:keyword AS string)), '%'))")
+    Page<Patient> searchDoctorPatients(
+            @Param("keyword") String keyword,
+            @Param("doctorUserId") Long doctorUserId,
+            @Param("currentDate") LocalDate currentDate,
+            Pageable pageable
+    );
 
     boolean existsByPatientCode(String patientCode);
     
