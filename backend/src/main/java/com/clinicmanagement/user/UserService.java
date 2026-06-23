@@ -26,4 +26,6 @@ public interface UserService {
     void unlockUser(Long userId);
 
     void deleteUser(Long userId);
+
+    java.util.List<UserSummaryResponse> getUsersEligibleForDoctor();
 }

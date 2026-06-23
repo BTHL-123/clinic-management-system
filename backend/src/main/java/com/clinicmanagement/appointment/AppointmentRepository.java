@@ -173,4 +173,15 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long>,
             @Param("now") LocalTime now,
             @Param("endTime") LocalTime endTime
     );
+
+    @Query("SELECT COUNT(a) > 0 FROM Appointment a WHERE " +
+           "a.doctor.user.userId = :doctorUserId AND " +
+           "a.patient.patientId = :patientId AND " +
+           "((a.appointmentDate = :currentDate) OR " +
+           " (a.appointmentDate > :currentDate AND a.status NOT IN ('CANCELLED', 'NO_SHOW', 'COMPLETED', 'RESCHEDULED')))")
+    boolean existsUpcomingAppointmentForDoctorAndPatient(
+            @Param("doctorUserId") Long doctorUserId,
+            @Param("patientId") Long patientId,
+            @Param("currentDate") LocalDate currentDate
+    );
 }

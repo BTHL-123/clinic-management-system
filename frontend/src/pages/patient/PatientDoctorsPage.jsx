@@ -246,6 +246,8 @@ export default function PatientDoctorsPage() {
                       <FileText className="text-[#1DB896]" size={18} /> Tiểu sử & Chuyên môn
                     </h3>
                     <div className="text-xs font-semibold text-slate-600 leading-relaxed bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                      {selectedDoctor.yearOfBirth && <p className="mb-1.5"><span className="font-bold text-[#1DB896] mr-1">Năm sinh:</span> {selectedDoctor.yearOfBirth}</p>}
+                      {selectedDoctor.hometown && <p className="mb-3"><span className="font-bold text-[#1DB896] mr-1">Quê quán:</span> {selectedDoctor.hometown}</p>}
                       {selectedDoctor.biography ? (
                         <p>{selectedDoctor.biography}</p>
                       ) : (

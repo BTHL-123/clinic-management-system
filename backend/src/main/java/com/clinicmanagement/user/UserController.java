@@ -40,6 +40,12 @@ public class UserController {
         return ApiResponse.success(PageResponse.from(userService.getUsers(keyword, status, role, pageable)));
     }
 
+    @GetMapping("/eligible-for-doctor")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<java.util.List<UserSummaryResponse>> getUsersEligibleForDoctor() {
+        return ApiResponse.success(userService.getUsersEligibleForDoctor());
+    }
+
     @GetMapping("/{userId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<UserSummaryResponse> getUserById(@PathVariable Long userId) {
