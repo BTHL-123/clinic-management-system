@@ -250,7 +250,7 @@ public class GeminiService {
         return null;
     }
 
-    private String chatWithGroq(List<AiChatMessage> history, String newMessage) {
+    private String chatWithGroq(List<AiChatMessage> history, String newMessage, String activeDepartmentsStr) {
         if (groqApiKey == null || groqApiKey.isBlank()) {
             log.info("AI_RESPONSE_SOURCE=MOCK_CHAT due to GROQ_API_KEY_MISSING");
             return mockChatReply(history, newMessage);
@@ -262,7 +262,7 @@ public class GeminiService {
                 "1. PHẠM VI: Nếu ngoài y tế (code, toán, kể chuyện...), từ chối: 'Xin lỗi bạn, tôi là trợ lý y tế nên chỉ hỗ trợ các vấn đề sức khỏe.'\n" +
                 "2. QUY TRÌNH HỘI THOẠI:\n" +
                 "   - CHƯA ĐỦ DỮ LIỆU: Nhận định ngắn gọn -> Hỏi 1-2 câu quan trọng nhất để làm rõ triệu chứng. Tiếp tục khai thác, không kết thúc sớm.\n" +
-                "   - KHI ĐÃ ĐỦ DỮ LIỆU TỐI THIỂU: Phải đưa ra: (A) Đánh giá sơ bộ. (B) Khuyên khám CHUYÊN KHOA CỤ THỂ (VD: Tiêu hóa, Thần kinh, Tai Mũi Họng...). TUYỆT ĐỐI KHÔNG nói chung chung 'nên đi khám bác sĩ'. (C) Nêu mức độ ưu tiên khám. (D) Câu chốt: 'Bạn cũng có thể sử dụng chức năng [Nhận gợi ý chuyên khoa] để được hệ thống hỗ trợ thêm.'\n" +
+                "   - KHI ĐÃ ĐỦ DỮ LIỆU TỐI THIỂU: Phải đưa ra: (A) Đánh giá sơ bộ. (B) Khuyên khám CHUYÊN KHOA CỤ THỂ CHỈ NẰM TRONG DANH SÁCH SAU (" + activeDepartmentsStr + "). TUYỆT ĐỐI KHÔNG nói chung chung 'nên đi khám bác sĩ' hay khuyên các khoa ngoài danh sách. (C) Nêu mức độ ưu tiên khám. (D) Câu chốt: 'Bạn cũng có thể sử dụng chức năng [Nhận gợi ý chuyên khoa] để được hệ thống hỗ trợ thêm.'\n" +
                 "3. KHẨN CẤP: Đau dữ dội, kéo dài, khó thở, ngất... -> Cảnh báo cấp cứu/khám ngay lập tức + Vẫn phải gợi ý chuyên khoa phù hợp.\n" +
                 "4. CHỐNG LẶP: KHÔNG nhắc lại nguyên văn lời user. KHÔNG dùng câu sáo rỗng 'có thể do nhiều nguyên nhân'. KHÔNG hỏi lại câu y hệt.\n" +
                 "5. GIỚI HẠN & VĂN PHONG: Tối đa 120 từ. Chia đoạn ngắn. Không chẩn đoán chắc chắn, không kê đơn. Luôn kết thúc bằng 'Thông tin chỉ mang tính tham khảo.' khi có tư vấn bệnh."));
@@ -294,7 +294,7 @@ public class GeminiService {
         return mockChatReply(history, newMessage);
     }
 
-    private String analyzeSymptomsWithGroq(List<AiChatMessage> history) {
+    private String analyzeSymptomsWithGroq(List<AiChatMessage> history, String activeDepartmentsStr) {
         if (groqApiKey == null || groqApiKey.isBlank()) {
             log.info("AI_RESPONSE_SOURCE=MOCK_CHAT due to GROQ_API_KEY_MISSING");
             return mockSpecialtySuggestion(history);
@@ -310,10 +310,10 @@ public class GeminiService {
                 "  \"message\": \"\"\n" +
                 "}\n" +
                 "Quy tắc:\n" +
-                "1. Trả về tối đa 3 chuyên khoa phù hợp (Tim mạch, Hô hấp, Tiêu hóa, Da liễu, Thần kinh, Tai Mũi Họng, Nội khoa, Ngoại khoa, Nhi khoa, Sản phụ khoa, Răng Hàm Mặt, Mắt, Cơ xương khớp, Khám tổng quát, Tâm lý).\n" +
-                "2. Nếu có nhiều hệ cơ quan, hãy trả về 2-3 khoa (VD: đau ngực ho kéo dài khó thở -> Tim mạch, Hô hấp).\n" +
+                "1. Trả về tối đa 3 chuyên khoa phù hợp NHẤT. BẮT BUỘC CHỈ ĐƯỢC CHỌN TỪ DANH SÁCH CÁC KHOA ĐANG CÓ SAU: " + activeDepartmentsStr + ".\n" +
+                "2. Nếu có nhiều hệ cơ quan, hãy trả về 2-3 khoa trong danh sách trên.\n" +
                 "3. Nếu thông tin mơ hồ (VD: 'tôi mệt'), không ép chọn khoa. Trả về mảng recommendations rỗng và message: 'Thông tin triệu chứng chưa đủ rõ để gợi ý chuyên khoa. Vui lòng mô tả thêm triệu chứng cụ thể.'\n" +
-                "4. Nếu input phi y khoa (VD: buồn vì chia tay), trả recommendations rỗng (hoặc Tâm lý) và message định hướng lịch sự.\n" +
+                "4. Nếu input phi y khoa (VD: buồn vì chia tay), trả recommendations rỗng (hoặc Khoa Tâm lý nếu có trong danh sách) và message định hướng lịch sự.\n" +
                 "Chỉ trả về JSON hợp lệ, không chứa markdown."));
 
         StringBuilder combinedText = new StringBuilder();
@@ -337,7 +337,7 @@ public class GeminiService {
     private String standardizeClinicalNoteWithGroq(String rawNote) {
         if (groqApiKey == null || groqApiKey.isBlank()) {
             log.info("AI_RESPONSE_SOURCE=MOCK_CHAT due to GROQ_API_KEY_MISSING");
-            return mockStandardizeClinicalNote(rawNote);
+            throw new com.clinicmanagement.common.exception.BusinessException("Lỗi: Không tìm thấy GROQ_API_KEY. Vui lòng kiểm tra lại cấu hình biến môi trường.");
         }
 
         List<Map<String, String>> messages = new ArrayList<>();
@@ -361,14 +361,14 @@ public class GeminiService {
         if (result != null) {
             return result[0].trim();
         }
-        return mockStandardizeClinicalNote(rawNote);
+        throw new com.clinicmanagement.common.exception.BusinessException("Lỗi: Không thể kết nối tới Groq API. Vui lòng kiểm tra lại kết nối mạng hoặc API Key.");
     }
 
     // ==================== PUBLIC ENTRY POINTS ====================
 
-    public String chat(List<AiChatMessage> history, String newMessage) {
+    public String chat(List<AiChatMessage> history, String newMessage, String activeDepartmentsStr) {
         if ("groq".equalsIgnoreCase(aiProvider)) {
-            return chatWithGroq(history, newMessage);
+            return chatWithGroq(history, newMessage, activeDepartmentsStr);
         }
         if (apiKey == null || apiKey.isBlank()) {
             log.info("AI_RESPONSE_SOURCE=MOCK_CHAT due to API_KEY_MISSING");
@@ -384,7 +384,7 @@ public class GeminiService {
                 "1. PHẠM VI: Nếu ngoài y tế (code, toán, kể chuyện...), từ chối: 'Xin lỗi bạn, tôi là trợ lý y tế nên chỉ hỗ trợ các vấn đề sức khỏe.'\n" +
                 "2. QUY TRÌNH HỘI THOẠI:\n" +
                 "   - CHƯA ĐỦ DỮ LIỆU: Nhận định ngắn gọn -> Hỏi 1-2 câu quan trọng nhất để làm rõ triệu chứng. Tiếp tục khai thác, không kết thúc sớm.\n" +
-                "   - KHI ĐÃ ĐỦ DỮ LIỆU TỐI THIỂU: Phải đưa ra: (A) Đánh giá sơ bộ. (B) Khuyên khám CHUYÊN KHOA CỤ THỂ (VD: Tiêu hóa, Thần kinh, Tai Mũi Họng...). TUYỆT ĐỐI KHÔNG nói chung chung 'nên đi khám bác sĩ'. (C) Nêu mức độ ưu tiên khám. (D) Câu chốt: 'Bạn cũng có thể sử dụng chức năng [Nhận gợi ý chuyên khoa] để được hệ thống hỗ trợ thêm.'\n" +
+                "   - KHI ĐÃ ĐỦ DỮ LIỆU TỐI THIỂU: Phải đưa ra: (A) Đánh giá sơ bộ. (B) Khuyên khám CHUYÊN KHOA CỤ THỂ CHỈ NẰM TRONG DANH SÁCH SAU (" + activeDepartmentsStr + "). TUYỆT ĐỐI KHÔNG nói chung chung 'nên đi khám bác sĩ' hay khuyên các khoa ngoài danh sách. (C) Nêu mức độ ưu tiên khám. (D) Câu chốt: 'Bạn cũng có thể sử dụng chức năng [Nhận gợi ý chuyên khoa] để được hệ thống hỗ trợ thêm.'\n" +
                 "3. KHẨN CẤP: Đau dữ dội, kéo dài, khó thở, ngất... -> Cảnh báo cấp cứu/khám ngay lập tức + Vẫn phải gợi ý chuyên khoa phù hợp.\n" +
                 "4. CHỐNG LẶP: KHÔNG nhắc lại nguyên văn lời user. KHÔNG dùng câu sáo rỗng 'có thể do nhiều nguyên nhân'. KHÔNG hỏi lại câu y hệt.\n" +
                 "5. GIỚI HẠN & VĂN PHONG: Tối đa 120 từ. Chia đoạn ngắn. Không chẩn đoán chắc chắn, không kê đơn. Luôn kết thúc bằng 'Thông tin chỉ mang tính tham khảo.' khi có tư vấn bệnh.");
@@ -430,9 +430,9 @@ public class GeminiService {
         return mockChatReply(history, newMessage);
     }
 
-    public String analyzeSymptoms(List<AiChatMessage> history) {
+    public String analyzeSymptoms(List<AiChatMessage> history, String activeDepartmentsStr) {
         if ("groq".equalsIgnoreCase(aiProvider)) {
-            return analyzeSymptomsWithGroq(history);
+            return analyzeSymptomsWithGroq(history, activeDepartmentsStr);
         }
         if (apiKey == null || apiKey.isBlank()) {
             log.info("AI_RESPONSE_SOURCE=MOCK_CHAT due to API_KEY_MISSING");
@@ -452,10 +452,10 @@ public class GeminiService {
                 "  \"message\": \"\"\n" +
                 "}\n" +
                 "Quy tắc:\n" +
-                "1. Trả về tối đa 3 chuyên khoa phù hợp (Tim mạch, Hô hấp, Tiêu hóa, Da liễu, Thần kinh, Tai Mũi Họng, Nội khoa, Ngoại khoa, Nhi khoa, Sản phụ khoa, Răng Hàm Mặt, Mắt, Cơ xương khớp, Khám tổng quát, Tâm lý).\n" +
-                "2. Nếu có nhiều hệ cơ quan, hãy trả về 2-3 khoa (VD: đau ngực ho kéo dài khó thở -> Tim mạch, Hô hấp).\n" +
+                "1. Trả về tối đa 3 chuyên khoa phù hợp NHẤT. BẮT BUỘC CHỈ ĐƯỢC CHỌN TỪ DANH SÁCH CÁC KHOA ĐANG CÓ SAU: " + activeDepartmentsStr + ".\n" +
+                "2. Nếu có nhiều hệ cơ quan, hãy trả về 2-3 khoa trong danh sách trên.\n" +
                 "3. Nếu thông tin mơ hồ (VD: 'tôi mệt'), không ép chọn khoa. Trả về mảng recommendations rỗng và message: 'Thông tin triệu chứng chưa đủ rõ để gợi ý chuyên khoa. Vui lòng mô tả thêm triệu chứng cụ thể.'\n" +
-                "4. Nếu input phi y khoa (VD: buồn vì chia tay), trả recommendations rỗng (hoặc Tâm lý) và message định hướng lịch sự.\n" +
+                "4. Nếu input phi y khoa (VD: buồn vì chia tay), trả recommendations rỗng (hoặc Khoa Tâm lý nếu có trong danh sách) và message định hướng lịch sự.\n" +
                 "Chỉ trả về JSON hợp lệ, không chứa markdown.");
         systemInstruction.put("parts", List.of(systemParts));
         requestBody.put("system_instruction", systemInstruction);
@@ -488,7 +488,7 @@ public class GeminiService {
         }
         if (apiKey == null || apiKey.isBlank()) {
             log.info("AI_RESPONSE_SOURCE=MOCK_CHAT due to API_KEY_MISSING");
-            return mockStandardizeClinicalNote(rawNote);
+            throw new com.clinicmanagement.common.exception.BusinessException("Lỗi: Không tìm thấy GEMINI_API_KEY. Vui lòng kiểm tra lại cấu hình biến môi trường.");
         }
 
         Map<String, Object> requestBody = new HashMap<>();
@@ -525,7 +525,7 @@ public class GeminiService {
             return result[0].trim();
         }
 
-        return mockStandardizeClinicalNote(rawNote);
+        throw new com.clinicmanagement.common.exception.BusinessException("Lỗi: Không thể kết nối tới Gemini API. Vui lòng kiểm tra lại kết nối mạng hoặc API Key.");
     }
 
     private String mockChatReply(List<AiChatMessage> history, String newMessage) {

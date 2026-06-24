@@ -14,5 +14,8 @@ export const createPrescription = (data) => api.post("/prescriptions", data);
 export const checkDrugInteractions = (prescriptionId) =>
   api.post(`/prescriptions/${prescriptionId}/check-interactions`);
 
+export const checkInteractionsDraft = (medicineIds) =>
+  api.post("/prescriptions/check-interactions-draft", medicineIds);
+
 export const dispensePrescription = (prescriptionId) =>
   api.post(`/prescriptions/${prescriptionId}/dispense`);

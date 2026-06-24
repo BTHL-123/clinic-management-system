@@ -6,6 +6,7 @@ import {
   ChevronRight,
   CreditCard,
   FileClock,
+  FileText,
   HeartPulse,
   LayoutDashboard,
   LogOut,
@@ -39,6 +40,7 @@ const groups = [
       { path: "/dashboard/lab-requests", label: "Xét nghiệm" },
       { path: "/dashboard/queue-management", label: "Hàng đợi" },
       { path: "/dashboard/admin/doctor-leave-requests", label: "Duyệt nghỉ phép" },
+      { path: "/dashboard/articles", label: "Bài viết y tế" },
     ],
   },
   {
@@ -84,6 +86,7 @@ const quickItems = [
   { path: "/dashboard/appointments", label: "Lịch khám", icon: CalendarDays },
   { path: "/dashboard/patients", label: "Bệnh nhân", icon: Users },
   { path: "/dashboard/doctors", label: "Bác sĩ", icon: UserRound },
+  { path: "/dashboard/articles", label: "Bài viết", icon: FileText },
   { path: "/dashboard/users", label: "Tài khoản", icon: UsersRound },
   { path: "/dashboard/medicines", label: "Thuốc", icon: Pill },
   { path: "/dashboard/inventory/batches", label: "Kho thuốc", icon: PackageOpen },

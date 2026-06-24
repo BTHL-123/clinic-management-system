@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/useAuth.js";
 import { 
-  Home, Users, CalendarDays, Stethoscope, Settings, Bell, LogOut, ChevronRight, ClipboardList
+  Home, Users, CalendarDays, Stethoscope, Settings, Bell, LogOut, ChevronRight, ClipboardList, FileText
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -23,9 +23,11 @@ export default function DoctorSidebar() {
     const path = location.pathname;
     if (path === "/dashboard") return "home";
     if (path.includes("patients")) return "patients";
+    if (path.includes("doctor-schedule")) return "schedule";
     if (path.includes("doctor-appointments")) return "calendar";
     if (path.includes("consultation") || path.includes("examination")) return "examination";
     if (path.includes("doctor-leave-requests")) return "leave-requests";
+    if (path.includes("articles")) return "articles";
     if (path.includes("profile") || path.includes("change-password")) return "settings";
     return "home";
   };
@@ -40,9 +42,11 @@ export default function DoctorSidebar() {
   const navItems = [
     { id: "home", icon: <Home size={22} />, path: "/dashboard", label: "Trang chủ" },
     { id: "patients", icon: <Users size={22} />, path: "/dashboard/patients", label: "Bệnh nhân" },
-    { id: "calendar", icon: <CalendarDays size={22} />, path: "/dashboard/doctor-appointments", label: "Lịch khám" },
+    { id: "schedule", icon: <CalendarDays size={22} />, path: "/dashboard/doctor-schedule", label: "Lịch làm việc" },
+    { id: "calendar", icon: <CalendarDays size={22} />, path: "/dashboard/doctor-appointments", label: "Ca trực hôm nay" },
     { id: "examination", icon: <Stethoscope size={22} />, path: "/dashboard/consultation", label: "Khám bệnh" },
     { id: "leave-requests", icon: <ClipboardList size={22} />, path: "/dashboard/doctor-leave-requests", label: "Nghỉ phép" },
+    { id: "articles", icon: <FileText size={22} />, path: "/dashboard/articles", label: "Bài viết y tế" },
     { id: "settings", icon: <Settings size={22} />, path: "/dashboard/profile", label: "Cài đặt" },
   ];
 

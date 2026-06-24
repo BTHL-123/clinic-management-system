@@ -9,6 +9,8 @@ import com.clinicmanagement.inventory.StockTransaction;
 import com.clinicmanagement.inventory.StockTransactionRepository;
 import com.clinicmanagement.medicine.Medicine;
 import com.clinicmanagement.medicine.MedicineRepository;
+import com.clinicmanagement.patient.Patient;
+import com.clinicmanagement.patient.PatientRepository;
 import com.clinicmanagement.prescription.dto.CreatePrescriptionRequest;
 import com.clinicmanagement.prescription.dto.PrescriptionResponse;
 import com.clinicmanagement.user.User;
@@ -30,6 +32,7 @@ public class PrescriptionService {
     private final MedicineRepository medicineRepository;
     private final MedicineBatchRepository medicineBatchRepository;
     private final StockTransactionRepository stockTransactionRepository;
+    private final PatientRepository patientRepository;
 
     // ── GET ALL (for pharmacist) ───────────────────────────────────────────────
     @Transactional(readOnly = true)
@@ -77,10 +80,40 @@ public class PrescriptionService {
                 .status("CREATED")
                 .build();
 
+        Patient patient = patientRepository.findById(request.patientId())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bệnh nhân #" + request.patientId()));
+
         for (var itemReq : request.items()) {
             Medicine medicine = medicineRepository.findById(itemReq.medicineId())
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Không tìm thấy thuốc #" + itemReq.medicineId()));
+
+            // 1. Kiểm tra tồn kho hợp lệ (ưu tiên FEFO, loại bỏ hết hạn)
+            List<MedicineBatch> usableBatches = medicineBatchRepository.findUsableFefoBatches(itemReq.medicineId(), LocalDate.now());
+            int totalUsable = usableBatches.stream().mapToInt(MedicineBatch::getCurrentQuantity).sum();
+            if (totalUsable < itemReq.quantity()) {
+                throw new BusinessException("Thuốc [" + medicine.getMedicineName() + "] không đủ tồn kho hợp lệ. Yêu cầu: " + itemReq.quantity() + ", Khả dụng: " + totalUsable);
+            }
+
+            // 2. Kiểm tra dị ứng
+            if (patient.getAllergies() != null && !patient.getAllergies().isBlank()) {
+                String allergies = patient.getAllergies().toLowerCase();
+                String activeIng = medicine.getActiveIngredient() != null ? medicine.getActiveIngredient().toLowerCase() : "";
+                String medName = medicine.getMedicineName().toLowerCase();
+                if ((!activeIng.isEmpty() && allergies.contains(activeIng)) || allergies.contains(medName)) {
+                    throw new BusinessException("Phát hiện nguy cơ dị ứng nghiêm trọng! Bệnh nhân có tiền sử dị ứng với thành phần trong thuốc [" + medicine.getMedicineName() + "].");
+                }
+            }
+
+            // 3. Giới hạn Liều dùng Tối đa
+            int morning = parseDose(itemReq.morningDose());
+            int noon = parseDose(itemReq.noonDose());
+            int evening = parseDose(itemReq.eveningDose());
+            int night = parseDose(itemReq.nightDose());
+            int dailyDose = morning + noon + evening + night;
+            if (dailyDose > 12) {
+                throw new BusinessException("Tổng liều dùng trong ngày của thuốc [" + medicine.getMedicineName() + "] là " + dailyDose + " đơn vị, vượt quá ngưỡng an toàn cho phép (tối đa 12).");
+            }
 
             PrescriptionItem item = PrescriptionItem.builder()
                     .prescription(prescription)
@@ -123,7 +156,7 @@ public class PrescriptionService {
 
             // Lấy các lô còn hàng, ưu tiên lô gần hết hạn nhất (FEFO)
             List<MedicineBatch> batches = medicineBatchRepository
-                    .findByMedicineMedicineIdAndStatus(medicineId, "AVAILABLE");
+                    .findUsableFefoBatches(medicineId, LocalDate.now());
 
             int remaining = required;
             for (MedicineBatch batch : batches) {
@@ -169,5 +202,18 @@ public class PrescriptionService {
     // ── EXISTS CHECK ──────────────────────────────────────────────────────────
     public boolean existsByConsultationId(Long consultationId) {
         return prescriptionRepository.existsByConsultationId(consultationId);
+    }
+
+    private int parseDose(String doseStr) {
+        if (doseStr == null || doseStr.isBlank()) return 0;
+        try {
+            String[] parts = doseStr.split("[^0-9]+");
+            for (String p : parts) {
+                if (!p.isEmpty()) return Integer.parseInt(p);
+            }
+        } catch (Exception e) {
+            return 0;
+        }
+        return 0;
     }
 }

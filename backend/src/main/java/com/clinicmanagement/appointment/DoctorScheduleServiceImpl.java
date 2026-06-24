@@ -301,7 +301,9 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
                 schedule.getStartTime(),
                 schedule.getEndTime(),
                 schedule.getMaxPatients(),
-                "CANCELLED"
+                "CANCELLED",
+                0,
+                0
         );
 
         doctorScheduleRepository.delete(schedule);
@@ -473,6 +475,16 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     }
 
     private DoctorScheduleResponse mapToResponse(DoctorSchedule schedule) {
+        int bookedSlots = 0;
+        int totalSlots = 0;
+        if (schedule.getTimeSlots() != null) {
+            totalSlots = schedule.getTimeSlots().size();
+            for (TimeSlot ts : schedule.getTimeSlots()) {
+                if ("BOOKED".equals(ts.getStatus())) {
+                    bookedSlots++;
+                }
+            }
+        }
         return new DoctorScheduleResponse(
                 schedule.getId(),
                 schedule.getDoctorId(),
@@ -480,7 +492,9 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
                 schedule.getStartTime(),
                 schedule.getEndTime(),
                 schedule.getMaxPatients(),
-                schedule.getStatus()
+                schedule.getStatus(),
+                bookedSlots,
+                totalSlots
         );
     }
 

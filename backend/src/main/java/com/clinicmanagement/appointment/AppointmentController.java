@@ -67,10 +67,29 @@ public class AppointmentController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    @GetMapping("/by-slot/{slotId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'PATIENT', 'DOCTOR')")
+    public ResponseEntity<ApiResponse<AppointmentResponse>> getAppointmentBySlotId(
+            @PathVariable Long slotId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        boolean isPrivileged = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_RECEPTIONIST"));
+        AppointmentResponse response = appointmentService.getAppointmentBySlotId(
+                slotId,
+                userDetails.getUser().getUserId(),
+                isPrivileged
+        );
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<PageResponse<AppointmentResponse>>> getMyAppointments(
-            @RequestParam(defaultValue = "true") boolean upcoming,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long doctorId,
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) Boolean upcoming,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "appointmentDate") String sortBy,
@@ -83,7 +102,7 @@ public class AppointmentController {
         );
         Pageable pageable = PageRequest.of(page, size, sort);
         PageResponse<AppointmentResponse> response = appointmentService.getMyAppointments(
-                userDetails.getUser().getUserId(), upcoming, pageable
+                userDetails.getUser().getUserId(), keyword, doctorId, departmentId, upcoming, pageable
         );
         return ResponseEntity.ok(ApiResponse.success(response));
     }

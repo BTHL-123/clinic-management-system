@@ -8,6 +8,11 @@ import com.clinicmanagement.patient.dto.PatientRequest;
 import com.clinicmanagement.patient.dto.PatientResponse;
 import com.clinicmanagement.user.User;
 import com.clinicmanagement.user.UserRepository;
+import com.clinicmanagement.appointment.AppointmentRepository;
+import com.clinicmanagement.security.CustomUserDetails;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,10 +25,72 @@ public class PatientServiceImpl implements PatientService {
 
     private final PatientRepository patientRepository;
     private final UserRepository userRepository;
+    private final AppointmentRepository appointmentRepository;
+
+    private CustomUserDetails getCurrentUserDetails() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof CustomUserDetails) {
+            return (CustomUserDetails) auth.getPrincipal();
+        }
+        return null;
+    }
+
+    private void validateAccess(Long patientId) {
+        CustomUserDetails currentUser = getCurrentUserDetails();
+        if (currentUser == null) {
+            throw new BusinessException("Không thể xác thực thông tin người dùng.");
+        }
+        
+        boolean isAdminOrReceptionist = currentUser.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_RECEPTIONIST"));
+        if (isAdminOrReceptionist) {
+            return;
+        }
+
+        boolean isDoctor = currentUser.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_DOCTOR"));
+        if (isDoctor) {
+            Long userId = currentUser.getUser().getUserId();
+            LocalDate today = LocalDate.now();
+            boolean hasAppointment = appointmentRepository.existsUpcomingAppointmentForDoctorAndPatient(
+                    userId, patientId, today
+            );
+            if (!hasAppointment) {
+                throw new BusinessException("Bạn không có quyền xem thông tin của bệnh nhân này.");
+            }
+            return;
+        }
+
+        boolean isPatient = currentUser.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_PATIENT"));
+        if (isPatient) {
+            Long userId = currentUser.getUser().getUserId();
+            boolean belongsToUser = patientRepository.findById(patientId)
+                    .map(p -> p.getUser() != null && p.getUser().getUserId().equals(userId))
+                    .orElse(false);
+            if (!belongsToUser) {
+                throw new BusinessException("Bạn không có quyền truy cập thông tin của bệnh nhân khác.");
+            }
+            return;
+        }
+        
+        throw new BusinessException("Bạn không có quyền truy cập thông tin bệnh nhân.");
+    }
 
     @Override
     @Transactional(readOnly = true)
     public PageResponse<PatientResponse> getAll(String keyword, Pageable pageable) {
+        CustomUserDetails currentUser = getCurrentUserDetails();
+        if (currentUser != null) {
+            boolean isDoctor = currentUser.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_DOCTOR"));
+            if (isDoctor) {
+                Long doctorUserId = currentUser.getUser().getUserId();
+                LocalDate today = LocalDate.now();
+                Page<Patient> page = patientRepository.searchDoctorPatients(keyword, doctorUserId, today, pageable);
+                return PageResponse.from(page.map(PatientResponse::from));
+            }
+        }
         Page<Patient> page = patientRepository.searchPatients(keyword, pageable);
         return PageResponse.from(page.map(PatientResponse::from));
     }
@@ -31,6 +98,7 @@ public class PatientServiceImpl implements PatientService {
     @Override
     @Transactional(readOnly = true)
     public PatientResponse getById(Long id) {
+        validateAccess(id);
         Patient patient = patientRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bệnh nhân với ID: " + id));
         return PatientResponse.from(patient);
@@ -45,9 +113,6 @@ public class PatientServiceImpl implements PatientService {
 
         User user = null;
         if (request.userId() != null) {
-            if (patientRepository.existsByUser_UserId(request.userId())) {
-                throw new BusinessException("Người dùng này đã được liên kết với một hồ sơ bệnh nhân khác");
-            }
             user = userRepository.findById(request.userId())
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + request.userId()));
         }
@@ -68,6 +133,15 @@ public class PatientServiceImpl implements PatientService {
         patient.setBloodType(request.bloodType());
         patient.setAllergies(request.allergies());
         patient.setMedicalHistory(request.medicalHistory());
+        patient.setEthnicity(request.ethnicity());
+        patient.setOccupation(request.occupation());
+        patient.setHeightCm(request.heightCm());
+        patient.setWeightKg(request.weightKg());
+        patient.setFamilyHistory(request.familyHistory());
+        patient.setSurgicalHistory(request.surgicalHistory());
+        patient.setCurrentMedications(request.currentMedications());
+        patient.setLifestyleHabits(request.lifestyleHabits());
+        patient.setAvatarUrl(request.avatarUrl());
 
         return PatientResponse.from(patientRepository.save(patient));
     }
@@ -83,10 +157,6 @@ public class PatientServiceImpl implements PatientService {
         }
 
         if (request.userId() != null) {
-            if ((patient.getUser() == null || !patient.getUser().getUserId().equals(request.userId())) 
-                && patientRepository.existsByUser_UserId(request.userId())) {
-                throw new BusinessException("Người dùng này đã được liên kết với một hồ sơ bệnh nhân khác");
-            }
             User user = userRepository.findById(request.userId())
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + request.userId()));
             patient.setUser(user);
@@ -110,6 +180,15 @@ public class PatientServiceImpl implements PatientService {
         patient.setBloodType(request.bloodType());
         patient.setAllergies(request.allergies());
         patient.setMedicalHistory(request.medicalHistory());
+        patient.setEthnicity(request.ethnicity());
+        patient.setOccupation(request.occupation());
+        patient.setHeightCm(request.heightCm());
+        patient.setWeightKg(request.weightKg());
+        patient.setFamilyHistory(request.familyHistory());
+        patient.setSurgicalHistory(request.surgicalHistory());
+        patient.setCurrentMedications(request.currentMedications());
+        patient.setLifestyleHabits(request.lifestyleHabits());
+        patient.setAvatarUrl(request.avatarUrl());
 
         return PatientResponse.from(patientRepository.save(patient));
     }
@@ -117,8 +196,15 @@ public class PatientServiceImpl implements PatientService {
     @Override
     @Transactional(readOnly = true)
     public PatientResponse getMyProfile(Long userId) {
-        Patient patient = patientRepository.findByUser_UserId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Tài khoản của bạn chưa được liên kết với hồ sơ bệnh nhân nào."));
+        java.util.List<Patient> patients = patientRepository.findListByUserUserId(userId);
+        if (patients.isEmpty()) {
+            throw new ResourceNotFoundException("Tài khoản của bạn chưa được liên kết với hồ sơ bệnh nhân nào.");
+        }
+        // Return the first one (usually SELF)
+        Patient patient = patients.stream()
+                .filter(p -> "SELF".equals(p.getRelationshipToUser()))
+                .findFirst()
+                .orElse(patients.get(0));
         return PatientResponse.from(patient);
     }
 
@@ -143,6 +229,63 @@ public class PatientServiceImpl implements PatientService {
         patient.setBloodType(request.bloodType());
         patient.setAllergies(request.allergies());
         patient.setMedicalHistory(request.medicalHistory());
+        patient.setEthnicity(request.ethnicity());
+        patient.setOccupation(request.occupation());
+        patient.setHeightCm(request.heightCm());
+        patient.setWeightKg(request.weightKg());
+        patient.setFamilyHistory(request.familyHistory());
+        patient.setSurgicalHistory(request.surgicalHistory());
+        patient.setCurrentMedications(request.currentMedications());
+        patient.setLifestyleHabits(request.lifestyleHabits());
+        patient.setAvatarUrl(request.avatarUrl());
+
+        return PatientResponse.from(patientRepository.save(patient));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<PatientResponse> getMyProfiles(Long userId) {
+        java.util.List<Patient> patients = patientRepository.findListByUserUserId(userId);
+        return patients.stream().map(PatientResponse::from).toList();
+    }
+
+    @Override
+    @Transactional
+    public PatientResponse createDependentProfile(Long userId, PatientRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + userId));
+
+        if (patientRepository.existsByPatientCode(request.patientCode())) {
+            throw new BusinessException("Mã bệnh nhân đã tồn tại");
+        }
+
+        Patient patient = new Patient();
+        patient.setUser(user);
+        patient.setPatientCode(request.patientCode());
+        patient.setFullName(request.fullName());
+        patient.setGender(request.gender() != null ? request.gender() : "OTHER");
+        patient.setDateOfBirth(request.dateOfBirth());
+        patient.setPhone(request.phone());
+        patient.setEmail(request.email());
+        patient.setAddress(request.address());
+        patient.setRelationshipToUser(request.relationshipToUser() != null ? request.relationshipToUser() : "CHILD");
+        
+        patient.setIdentityNumber(request.identityNumber());
+        patient.setInsuranceNumber(request.insuranceNumber());
+        patient.setEmergencyContactName(request.emergencyContactName());
+        patient.setEmergencyContactPhone(request.emergencyContactPhone());
+        patient.setBloodType(request.bloodType());
+        patient.setAllergies(request.allergies());
+        patient.setMedicalHistory(request.medicalHistory());
+        patient.setEthnicity(request.ethnicity());
+        patient.setOccupation(request.occupation());
+        patient.setHeightCm(request.heightCm());
+        patient.setWeightKg(request.weightKg());
+        patient.setFamilyHistory(request.familyHistory());
+        patient.setSurgicalHistory(request.surgicalHistory());
+        patient.setCurrentMedications(request.currentMedications());
+        patient.setLifestyleHabits(request.lifestyleHabits());
+        patient.setAvatarUrl(request.avatarUrl());
 
         return PatientResponse.from(patientRepository.save(patient));
     }

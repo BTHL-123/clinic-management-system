@@ -20,16 +20,16 @@ public class Article {
     @Column(name = "article_id")
     private Long articleId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 1000)
     private String title;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 1000)
     private String slug;
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
-    @Column(name = "thumbnail_url", length = 500)
+    @Column(name = "thumbnail_url", columnDefinition = "TEXT")
     private String thumbnailUrl;
 
     @Column(nullable = false, length = 20)

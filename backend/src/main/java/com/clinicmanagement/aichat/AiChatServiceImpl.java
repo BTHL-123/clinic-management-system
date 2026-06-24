@@ -77,7 +77,9 @@ public class AiChatServiceImpl implements AiChatService {
         AiChatMessage savedPatientMsg = messageRepository.save(patientMsg);
 
         // 2. Call Gemini API for AI Response
-        String aiReplyText = geminiService.chat(session.getMessages(), request.messageText());
+        List<Department> departments = departmentRepository.findAll();
+        String activeDepartmentsStr = departments.stream().map(Department::getDepartmentName).collect(java.util.stream.Collectors.joining(", "));
+        String aiReplyText = geminiService.chat(session.getMessages(), request.messageText(), activeDepartmentsStr);
 
         // 3. Save AI message
         AiChatMessage aiMsg = new AiChatMessage();
@@ -116,9 +118,10 @@ public class AiChatServiceImpl implements AiChatService {
         if (departments.isEmpty()) {
             throw new BusinessException("Hệ thống chưa cấu hình danh mục chuyên khoa.");
         }
+        String activeDepartmentsStr = departments.stream().map(Department::getDepartmentName).collect(java.util.stream.Collectors.joining(", "));
 
         // Call Gemini to get JSON
-        String jsonResult = geminiService.analyzeSymptoms(session.getMessages());
+        String jsonResult = geminiService.analyzeSymptoms(session.getMessages(), activeDepartmentsStr);
         
         String departmentName = "Khám tổng quát";
         java.math.BigDecimal score = java.math.BigDecimal.valueOf(75.0);

@@ -777,7 +777,7 @@ CREATE TABLE medicine_batches (
     current_quantity INT NOT NULL CHECK (current_quantity >= 0),
 
     status VARCHAR(20) NOT NULL DEFAULT 'AVAILABLE'
-        CHECK (status IN ('AVAILABLE', 'LOW_STOCK', 'EXPIRED', 'OUT_OF_STOCK')),
+        CHECK (status IN ('AVAILABLE', 'LOW_STOCK', 'EXPIRED', 'OUT_OF_STOCK', 'CANCELLED')),
 
     imported_by BIGINT,
     imported_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

@@ -17,6 +17,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/prescriptions")
 @RequiredArgsConstructor
@@ -84,6 +86,18 @@ public class PrescriptionController {
             @PathVariable Long prescriptionId) {
         return ResponseEntity.ok(ApiResponse.success("Kiểm tra tương tác thuốc hoàn tất",
                 drugInteractionService.checkInteraction(prescriptionId)));
+    }
+
+    /**
+     * POST /api/prescriptions/check-interactions-draft
+     * DOCTOR
+     */
+    @PostMapping("/check-interactions-draft")
+    @PreAuthorize("hasRole('DOCTOR')")
+    public ResponseEntity<ApiResponse<DrugInteractionResponse>> checkInteractionsDraft(
+            @RequestBody List<Long> medicineIds) {
+        return ResponseEntity.ok(ApiResponse.success("Kiểm tra tương tác nháp hoàn tất",
+                drugInteractionService.checkInteractionDraft(medicineIds)));
     }
 
     /**

@@ -226,7 +226,7 @@ export default function ConsultationPage() {
                             <ActionBtn
                               icon={<PhoneCall size={14} />}
                               label="Gọi vào"
-                              colorClass="text-blue-300 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30"
+                              colorClass="text-blue-950 bg-blue-100 hover:bg-blue-200 border border-blue-300"
                               loading={isActing}
                               onClick={() => handleAction(ticket.queueTicketId, "call", "Gọi bệnh nhân")}
                             />
@@ -236,7 +236,7 @@ export default function ConsultationPage() {
                             <ActionBtn
                               icon={<Play size={14} />}
                               label="Bắt đầu khám"
-                              colorClass="text-purple-300 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30"
+                              colorClass="text-purple-950 bg-purple-100 hover:bg-purple-200 border border-purple-300"
                               loading={isActing}
                               onClick={() => handleAction(ticket.queueTicketId, "start", "Bắt đầu khám")}
                             />
@@ -246,7 +246,7 @@ export default function ConsultationPage() {
                             <ActionBtn
                               icon={<Stethoscope size={14} />}
                               label="Vào phòng khám"
-                              colorClass="text-purple-300 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30"
+                              colorClass="text-purple-950 bg-purple-100 hover:bg-purple-200 border border-purple-300"
                               loading={isActing}
                               onClick={() => navigate(`/dashboard/examination/${ticket.consultationId}`)}
                             />
@@ -256,7 +256,7 @@ export default function ConsultationPage() {
                             <ActionBtn
                               icon={<CheckCircle size={14} />}
                               label="Hoàn thành"
-                              colorClass="text-emerald-300 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30"
+                              colorClass="text-emerald-950 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300"
                               loading={isActing}
                               onClick={() => handleAction(ticket.queueTicketId, "done", "Hoàn thành")}
                             />
@@ -266,7 +266,7 @@ export default function ConsultationPage() {
                             <ActionBtn
                               icon={<SkipForward size={14} />}
                               label="Bỏ qua"
-                              colorClass="text-slate-300 bg-slate-500/20 hover:bg-slate-500/30 border border-slate-500/30"
+                              colorClass="text-slate-950 bg-slate-100 hover:bg-slate-200 border border-slate-300"
                               loading={isActing}
                               onClick={() => handleAction(ticket.queueTicketId, "skip", "Bỏ qua")}
                             />

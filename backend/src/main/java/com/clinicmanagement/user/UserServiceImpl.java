@@ -54,6 +54,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public java.util.List<UserSummaryResponse> getUsersEligibleForDoctor() {
+        return userRepository.findUsersEligibleForDoctor().stream()
+                .map(UserMapper::toSummary)
+                .toList();
+    }
+
+    @Override
     public UserSummaryResponse getUserById(Long userId) {
         return UserMapper.toSummary(findUser(userId));
     }

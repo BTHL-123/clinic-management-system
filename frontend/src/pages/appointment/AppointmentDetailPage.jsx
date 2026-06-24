@@ -129,7 +129,7 @@ export default function AppointmentDetailPage() {
         onBack={() => navigate(-1)}
       />
 
-      <div className={`${isPatientMode ? "patient-glass-card" : "light-glass-card"} p-6 md:p-8 w-full max-w-[600px] mx-auto`}>
+      <div className={`${isPatientMode ? "bg-white rounded-2xl border border-slate-200 shadow-sm" : "light-glass-card"} p-6 md:p-8 w-full max-w-[600px] mx-auto`}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
           <h2 className={isPatientMode ? "patient-section-title" : ""} style={{ margin: 0, fontSize: "1.25rem", color: isPatientMode ? undefined : "#0f172a", fontWeight: 800 }}>Chi tiết lịch hẹn</h2>
           <span style={{ padding: "4px 12px", borderRadius: "20px", background: appt.status === "CANCELLED" ? "#fee2e2" : "#e0f2fe", color: appt.status === "CANCELLED" ? "#991b1b" : "#0284c7", fontSize: "12px", fontWeight: 600 }}>

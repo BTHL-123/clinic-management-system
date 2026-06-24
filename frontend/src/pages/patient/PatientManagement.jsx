@@ -28,6 +28,15 @@ const EMPTY_FORM = {
   bloodType: "",
   allergies: "",
   medicalHistory: "",
+  ethnicity: "",
+  occupation: "",
+  heightCm: "",
+  weightKg: "",
+  familyHistory: "",
+  surgicalHistory: "",
+  currentMedications: "",
+  lifestyleHabits: "",
+  avatarUrl: "",
 };
 
 export default function PatientManagement() {
@@ -119,6 +128,15 @@ export default function PatientManagement() {
       bloodType: patient.bloodType || "",
       allergies: patient.allergies || "",
       medicalHistory: patient.medicalHistory || "",
+      ethnicity: patient.ethnicity || "",
+      occupation: patient.occupation || "",
+      heightCm: patient.heightCm || "",
+      weightKg: patient.weightKg || "",
+      familyHistory: patient.familyHistory || "",
+      surgicalHistory: patient.surgicalHistory || "",
+      currentMedications: patient.currentMedications || "",
+      lifestyleHabits: patient.lifestyleHabits || "",
+      avatarUrl: patient.avatarUrl || "",
     });
     setEditingId(patient.patientId);
     setFormError("");
@@ -139,6 +157,29 @@ export default function PatientManagement() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validation
+    if (formData.phone && !/^(0|\+84)[0-9]{8,10}$/.test(formData.phone)) {
+      setFormError("Số điện thoại không hợp lệ (phải bắt đầu bằng 0 hoặc +84 và có 9-11 chữ số).");
+      return;
+    }
+    if (formData.identityNumber && !/^[0-9]{12}$/.test(formData.identityNumber)) {
+      setFormError("CCCD/CMND phải bao gồm chính xác 12 chữ số.");
+      return;
+    }
+    if (formData.insuranceNumber && formData.insuranceNumber.length !== 15) {
+      setFormError("Mã BHYT phải bao gồm chính xác 15 ký tự.");
+      return;
+    }
+    if (formData.dateOfBirth) {
+      const dob = new Date(formData.dateOfBirth);
+      const today = new Date();
+      if (dob > today) {
+        setFormError("Ngày sinh không được ở trong tương lai.");
+        return;
+      }
+    }
+
     try {
       setSubmitting(true);
       const payload = { ...formData };
@@ -212,7 +253,7 @@ export default function PatientManagement() {
       <div className="flex-1 patient-glass-panel rounded-[3rem] p-8 md:p-10 shadow-[0_12px_40px_rgba(0,0,0,0.22)] border-0 w-full flex flex-col min-h-0 overflow-hidden">
         <div className="flex-1 overflow-auto custom-scrollbar">
           <table className="receptionist-patient-table w-full text-left border-collapse whitespace-nowrap">
-            <thead className="admin-patient-table-head text-sm sticky top-0 z-10">
+            <thead className="bg-white/5 border-b border-slate-900/10 text-[#0f766e] text-sm sticky top-0 z-10 backdrop-blur-md">
               <tr>
                 <th className="p-5">Mã BN</th>
                 <th className="p-5">Họ và tên</th>
@@ -355,19 +396,28 @@ export default function PatientManagement() {
                     <input type="email" name="email" value={formData.email} onChange={handleChange} className="bg-slate-900/40 border border-white/10 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-400/50 transition-colors" />
                   </div>
 
-                  <div className="flex flex-col gap-1.5">
+                  <div className="flex flex-col gap-2 md:col-span-2">
                     <label className="text-sm text-white/80 font-medium">Nhóm máu</label>
-                    <select name="bloodType" value={formData.bloodType} onChange={handleChange} className="bg-slate-900/40 border border-white/10 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-400/50 transition-colors [&>option]:bg-slate-800">
-                      <option value="">-- Chọn nhóm máu --</option>
-                      <option value="A+">A+</option>
-                      <option value="A-">A-</option>
-                      <option value="B+">B+</option>
-                      <option value="B-">B-</option>
-                      <option value="AB+">AB+</option>
-                      <option value="AB-">AB-</option>
-                      <option value="O+">O+</option>
-                      <option value="O-">O-</option>
-                    </select>
+                    <div className="flex flex-wrap gap-2">
+                      {["", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((type) => (
+                        <label key={type} className={`
+                          px-4 py-2 rounded-xl border cursor-pointer flex items-center gap-2 text-sm transition-all
+                          ${formData.bloodType === type 
+                            ? 'bg-teal-500/20 border-teal-400 text-teal-300 font-bold shadow-[0_0_10px_rgba(45,212,191,0.2)]' 
+                            : 'bg-slate-900/40 border-white/10 text-white/80 hover:bg-white/5'}
+                        `}>
+                          <input 
+                            type="radio" 
+                            name="bloodType" 
+                            value={type} 
+                            checked={formData.bloodType === type}
+                            onChange={handleChange}
+                            className="hidden"
+                          />
+                          {type === "" ? "Chưa xác định" : type}
+                        </label>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="flex flex-col gap-1.5 md:col-span-2">
@@ -399,10 +449,39 @@ export default function PatientManagement() {
                     <label className="text-sm text-white/80 font-medium">Dị ứng (Nếu có)</label>
                     <textarea name="allergies" rows={2} value={formData.allergies} onChange={handleChange} placeholder="Thuốc, thực phẩm..." className="bg-slate-900/40 border border-white/10 text-white placeholder-white/30 rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-400/50 transition-colors resize-none" />
                   </div>
+                  
+                  <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <label className="text-sm text-white/80 font-medium">Dân tộc</label>
+                    <input name="ethnicity" value={formData.ethnicity} onChange={handleChange} className="bg-slate-900/40 border border-white/10 text-white placeholder-white/30 rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-400/50 transition-colors" />
+                  </div>
+                  <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <label className="text-sm text-white/80 font-medium">Nghề nghiệp</label>
+                    <input name="occupation" value={formData.occupation} onChange={handleChange} className="bg-slate-900/40 border border-white/10 text-white placeholder-white/30 rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-400/50 transition-colors" />
+                  </div>
 
                   <div className="flex flex-col gap-1.5 md:col-span-2">
-                    <label className="text-sm text-white/80 font-medium">Tiền sử bệnh lý</label>
-                    <textarea name="medicalHistory" rows={3} value={formData.medicalHistory} onChange={handleChange} placeholder="Các bệnh từng mắc, phẫu thuật..." className="bg-slate-900/40 border border-white/10 text-white placeholder-white/30 rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-400/50 transition-colors resize-none" />
+                    <label className="text-sm text-white/80 font-medium">Tiền sử bệnh lý (Bản thân)</label>
+                    <textarea name="medicalHistory" rows={2} value={formData.medicalHistory} onChange={handleChange} placeholder="Các bệnh từng mắc, phẫu thuật..." className="bg-slate-900/40 border border-white/10 text-white placeholder-white/30 rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-400/50 transition-colors resize-none" />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <label className="text-sm text-white/80 font-medium">Tiền sử gia đình</label>
+                    <textarea name="familyHistory" rows={2} value={formData.familyHistory} onChange={handleChange} className="bg-slate-900/40 border border-white/10 text-white placeholder-white/30 rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-400/50 transition-colors resize-none" />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <label className="text-sm text-white/80 font-medium">Tiền sử phẫu thuật</label>
+                    <textarea name="surgicalHistory" rows={2} value={formData.surgicalHistory} onChange={handleChange} className="bg-slate-900/40 border border-white/10 text-white placeholder-white/30 rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-400/50 transition-colors resize-none" />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <label className="text-sm text-white/80 font-medium">Thuốc đang sử dụng</label>
+                    <textarea name="currentMedications" rows={2} value={formData.currentMedications} onChange={handleChange} className="bg-slate-900/40 border border-white/10 text-white placeholder-white/30 rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-400/50 transition-colors resize-none" />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <label className="text-sm text-white/80 font-medium">Thói quen (Rượu, bia, thuốc lá...)</label>
+                    <textarea name="lifestyleHabits" rows={2} value={formData.lifestyleHabits} onChange={handleChange} className="bg-slate-900/40 border border-white/10 text-white placeholder-white/30 rounded-xl px-4 py-2.5 focus:outline-none focus:border-teal-400/50 transition-colors resize-none" />
                   </div>
                 </div>
 

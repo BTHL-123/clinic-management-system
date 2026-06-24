@@ -62,7 +62,7 @@ function AccountProfileCard({ isPatientMode }) {
   };
 
   return (
-    <section className={`${isPatientMode ? "patient-glass-panel rounded-[2rem]" : "patient-glass-card"} p-6 md:p-8 w-full shadow-2xl`}>
+    <section className={`${isPatientMode ? "bg-white rounded-3xl border border-slate-200 shadow-sm" : "patient-glass-card"} p-6 md:p-8 w-full`}>
       <div className="flex flex-col md:flex-row items-center gap-6 mb-8">
         <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/20 shrink-0 bg-black/5 flex items-center justify-center text-3xl font-extrabold text-slate-900 shadow-lg">
           {avatarUrl ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" /> : <span>{initials}</span>}
@@ -87,7 +87,7 @@ function AccountProfileCard({ isPatientMode }) {
             <label htmlFor="accountFullName" className="text-sm font-bold patient-label">Họ và tên</label>
             <input
               id="accountFullName"
-              className="patient-glass-input px-4 py-2.5 focus:border-teal-400 !text-black"
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 text-slate-800"
               value={form.fullName}
               onChange={(event) => setForm({ ...form, fullName: event.target.value })}
               required
@@ -97,18 +97,18 @@ function AccountProfileCard({ isPatientMode }) {
             <label htmlFor="accountPhone" className="text-sm font-bold patient-label">Số điện thoại</label>
             <input
               id="accountPhone"
-              className="patient-glass-input px-4 py-2.5 focus:border-teal-400 !text-black"
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 text-slate-800"
               value={form.phone}
               onChange={(event) => setForm({ ...form, phone: event.target.value })}
             />
           </div>
           <div className="flex flex-col gap-1.5">
             <label htmlFor="accountEmail" className="text-sm font-bold patient-label">Email</label>
-            <input id="accountEmail" className="patient-glass-input px-4 py-2.5 disabled:opacity-60" value={user?.email || ""} disabled />
+            <input id="accountEmail" className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed" value={user?.email || ""} disabled />
           </div>
           <div className="flex flex-col gap-1.5">
             <label htmlFor="accountRoles" className="text-sm font-bold patient-label">Vai trò</label>
-            <input id="accountRoles" className="patient-glass-input px-4 py-2.5 disabled:opacity-60" value={user?.roles?.join(", ") || ""} disabled />
+            <input id="accountRoles" className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed" value={user?.roles?.join(", ") || ""} disabled />
           </div>
         </div>
         <div className="flex justify-end mt-2">
@@ -134,7 +134,7 @@ export default function ProfilePage() {
   const usePatientVisualShell = isPatientOnly || isAdminShell || isPharmacist || isLabTechnician;
 
   return (
-    <div className={usePatientVisualShell ? "max-w-[1100px] mx-auto w-full flex flex-col items-center pb-10" : "max-w-[1100px] mx-auto w-full flex flex-col items-center pb-10"}>
+    <div className={usePatientVisualShell ? "w-full flex flex-col h-[calc(100vh-104px)] overflow-y-auto custom-scrollbar pb-8 pr-2" : "max-w-[1100px] mx-auto w-full flex flex-col items-center pb-10"}>
       <style>{`
         .field label {
           color: #0f766e !important;
@@ -155,7 +155,7 @@ export default function ProfilePage() {
         icon={UserSquare}
         iconColor="text-teal-400"
         subtitle={
-          <span className={usePatientVisualShell ? "text-white/80 font-bold" : "text-white/70 font-medium"}>
+          <span className={usePatientVisualShell ? "text-slate-500 font-bold" : "text-white/70 font-medium"}>
             Cập nhật thông tin cá nhân, avatar và xem hồ sơ theo vai trò.
           </span>
         }

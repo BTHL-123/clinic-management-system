@@ -9,6 +9,7 @@ public record PatientResponse(
         Long patientId,
         Long userId,
         String userName,
+        String relationshipToUser,
         String patientCode,
         String fullName,
         String gender,
@@ -23,6 +24,15 @@ public record PatientResponse(
         String bloodType,
         String allergies,
         String medicalHistory,
+        String ethnicity,
+        String occupation,
+        Double heightCm,
+        Double weightKg,
+        String familyHistory,
+        String surgicalHistory,
+        String currentMedications,
+        String lifestyleHabits,
+        String avatarUrl,
         LocalDateTime createdAt
 ) {
     public static PatientResponse from(Patient p) {
@@ -30,6 +40,7 @@ public record PatientResponse(
                 p.getPatientId(),
                 p.getUser() != null ? p.getUser().getUserId() : null,
                 p.getUser() != null ? p.getUser().getFullName() : null,
+                p.getRelationshipToUser(),
                 p.getPatientCode(),
                 p.getFullName(),
                 p.getGender(),
@@ -44,6 +55,15 @@ public record PatientResponse(
                 p.getBloodType(),
                 p.getAllergies(),
                 p.getMedicalHistory(),
+                p.getEthnicity(),
+                p.getOccupation(),
+                p.getHeightCm(),
+                p.getWeightKg(),
+                p.getFamilyHistory(),
+                p.getSurgicalHistory(),
+                p.getCurrentMedications(),
+                p.getLifestyleHabits(),
+                p.getAvatarUrl(),
                 p.getCreatedAt()
         );
     }

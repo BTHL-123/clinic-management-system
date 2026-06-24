@@ -12,8 +12,11 @@ import com.clinicmanagement.patient.Patient;
 import com.clinicmanagement.patient.PatientRepository;
 import com.clinicmanagement.user.User;
 import com.clinicmanagement.user.UserRepository;
+import com.clinicmanagement.email.EmailService;
+import com.clinicmanagement.consultation.ConsultationSessionRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
@@ -23,7 +26,9 @@ import com.clinicmanagement.notification.NotificationService;
 import com.clinicmanagement.review.ReviewRepository;
 import com.clinicmanagement.payment.Payment;
 import com.clinicmanagement.payment.PaymentRepository;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @Transactional(readOnly = true)
 public class AppointmentServiceImpl implements AppointmentService {
@@ -37,6 +42,9 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final NotificationService notificationService;
     private final ReviewRepository reviewRepository;
     private final PaymentRepository paymentRepository;
+    private final EmailService emailService;
+    private final ConsultationSessionRepository consultationSessionRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     public AppointmentServiceImpl(
             AppointmentRepository appointmentRepository,
@@ -47,7 +55,10 @@ public class AppointmentServiceImpl implements AppointmentService {
             QueueTicketRepository queueTicketRepository,
             NotificationService notificationService,
             ReviewRepository reviewRepository,
-            PaymentRepository paymentRepository
+            PaymentRepository paymentRepository,
+            EmailService emailService,
+            ConsultationSessionRepository consultationSessionRepository,
+            SimpMessagingTemplate messagingTemplate
     ) {
         this.appointmentRepository = appointmentRepository;
         this.timeSlotRepository = timeSlotRepository;
@@ -58,6 +69,9 @@ public class AppointmentServiceImpl implements AppointmentService {
         this.notificationService = notificationService;
         this.reviewRepository = reviewRepository;
         this.paymentRepository = paymentRepository;
+        this.emailService = emailService;
+        this.consultationSessionRepository = consultationSessionRepository;
+        this.messagingTemplate = messagingTemplate;
     }
 
     @Override
@@ -100,14 +114,35 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
+    public AppointmentResponse getAppointmentBySlotId(Long slotId, Long userId, boolean isPrivileged) {
+        Appointment appointment = appointmentRepository.findActiveByTimeSlotId(slotId)
+                .orElseThrow(() -> new ResourceNotFoundException("No active appointment found for slot id: " + slotId));
+
+        if (!isPrivileged) {
+            boolean isOwner = (appointment.getPatient() != null && appointment.getPatient().getUser() != null &&
+                    appointment.getPatient().getUser().getUserId().equals(userId)) ||
+                    (appointment.getDoctor() != null && appointment.getDoctor().getUser() != null &&
+                    appointment.getDoctor().getUser().getUserId().equals(userId));
+            if (!isOwner) {
+                throw new BusinessException("You do not have permission to view this appointment");
+            }
+        }
+
+        return mapToResponse(appointment);
+    }
+
+    @Override
     public PageResponse<AppointmentResponse> getMyAppointments(
             Long userId,
-            boolean upcoming,
+            String keyword,
+            Long doctorId,
+            Long departmentId,
+            Boolean upcoming,
             Pageable pageable
     ) {
         LocalDate currentDate = LocalDate.now();
-        Page<Appointment> appointments = appointmentRepository.findMyAppointments(
-                userId, upcoming, currentDate, pageable
+        Page<Appointment> appointments = appointmentRepository.findMyFilteredAppointments(
+                userId, keyword, doctorId, departmentId, upcoming, currentDate, pageable
         );
         return PageResponse.from(appointments.map(this::mapToResponse));
     }
@@ -166,20 +201,44 @@ public class AppointmentServiceImpl implements AppointmentService {
             throw new BusinessException("Ca khám này đã được đặt.");
         }
 
-        // Lấy hoặc tạo patient record cho user hiện tại
-        Patient patient = patientRepository.findByUserUserId(userId)
-                .orElseGet(() -> {
-                    User user = userRepository.findById(userId)
-                            .orElseThrow(() -> new ResourceNotFoundException("Người dùng không tồn tại với id: " + userId));
-                    Patient p = new Patient();
-                    p.setUser(user);
-                    p.setPatientCode("PAT" + System.currentTimeMillis());
-                    p.setFullName(user.getFullName());
-                    p.setEmail(user.getEmail());
-                    p.setPhone(user.getPhone() != null ? user.getPhone() : "0900000000");
-                    p.setGender("OTHER");
-                    return patientRepository.save(p);
-                });
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Người dùng không tồn tại với id: " + userId));
+
+        Patient patient;
+        if (request.patientId() != null) {
+            patient = patientRepository.findById(request.patientId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hồ sơ bệnh nhân"));
+            if (patient.getUser() == null || !patient.getUser().getUserId().equals(userId)) {
+                throw new BusinessException("Hồ sơ bệnh nhân không thuộc tài khoản của bạn");
+            }
+        } else {
+            java.util.List<Patient> patients = patientRepository.findListByUserUserId(userId);
+            if (!patients.isEmpty()) {
+                patient = patients.stream().filter(p -> "SELF".equals(p.getRelationshipToUser())).findFirst().orElse(patients.get(0));
+            } else {
+                Patient p = new Patient();
+                p.setUser(user);
+                p.setPatientCode("PAT" + System.currentTimeMillis());
+                p.setFullName(user.getFullName());
+                p.setEmail(user.getEmail());
+                p.setPhone(user.getPhone() != null ? user.getPhone() : "0900000000");
+                p.setGender("OTHER");
+                p.setRelationshipToUser("SELF");
+                patient = patientRepository.save(p);
+            }
+        }
+
+        // Kiểm tra xem bệnh nhân có bị trùng lịch hẹn với ca khám đang đặt không
+        boolean hasOverlap = appointmentRepository.existsOverlappingAppointmentForPatient(
+                patient.getPatientId(),
+                slot.getDoctorSchedule().getWorkDate(),
+                slot.getStartTime(),
+                slot.getEndTime(),
+                null // Booking mới, không có ID để exclude
+        );
+        if (hasOverlap) {
+            throw new BusinessException("Bệnh nhân đã có một lịch hẹn khác trong khoảng thời gian này. Vui lòng chọn ca khám khác.");
+        }
 
         if ("LOCKED".equals(slotStatus)) {
             // Slot đang bị lock — chỉ đúng patient đang giữ lock mới được book
@@ -229,14 +288,14 @@ public class AppointmentServiceImpl implements AppointmentService {
         payment.setPaymentMethod(request.paymentMethod() != null ? request.paymentMethod() : "CASH");
         payment.setAmount(doctor.getConsultationFee());
         payment.setStatus("PENDING");
-        payment.setPaidBy(patient.getUser());
+        payment.setPaidBy(user);
         paymentRepository.save(payment);
 
         try {
             notificationService.createNotification(
-                    patient.getUser().getUserId(),
+                    userId,
                     "Đặt lịch khám thành công",
-                    "Lịch hẹn của bạn mã " + savedApp.getAppointmentCode() + " với bác sĩ " + doctor.getUser().getFullName() + " vào ngày " + savedApp.getAppointmentDate() + " lúc " + savedApp.getStartTime() + " đã được xác nhận thành công.",
+                    "Hồ sơ của " + patient.getFullName() + " (Mã: " + savedApp.getAppointmentCode() + ") với bác sĩ " + doctor.getUser().getFullName() + " vào ngày " + savedApp.getAppointmentDate() + " lúc " + savedApp.getStartTime() + " đã được xác nhận thành công.",
                     "APPOINTMENT"
             );
 
@@ -244,13 +303,16 @@ public class AppointmentServiceImpl implements AppointmentService {
                 notificationService.createNotification(
                         doctor.getUser().getUserId(),
                         "Lịch hẹn mới",
-                        "Bệnh nhân " + patient.getUser().getFullName() + " đã đặt một lịch hẹn (Mã: " + savedApp.getAppointmentCode() + ") với bạn vào ngày " + savedApp.getAppointmentDate() + " lúc " + savedApp.getStartTime() + ".",
+                        "Bệnh nhân " + patient.getFullName() + " đã đặt một lịch hẹn (Mã: " + savedApp.getAppointmentCode() + ") với bạn vào ngày " + savedApp.getAppointmentDate() + " lúc " + savedApp.getStartTime() + ".",
                         "APPOINTMENT"
                 );
             }
+            
+            // Gửi email xác nhận
+            emailService.sendBookingConfirmation(savedApp);
+
         } catch (Exception e) {
-            // Log or ignore to prevent breaking main transaction
-            System.err.println("Không thể tạo thông báo đặt lịch: " + e.getMessage());
+            log.error("Failed to process notifications/emails for appointment booking", e);
         }
 
         return mapToResponse(savedApp);
@@ -390,6 +452,18 @@ public class AppointmentServiceImpl implements AppointmentService {
             throw new BusinessException("Ca khám mới không còn khả dụng.");
         }
 
+        // Kiểm tra trùng lịch của bệnh nhân (ngoại trừ lịch hẹn hiện tại đang dời)
+        boolean hasOverlap = appointmentRepository.existsOverlappingAppointmentForPatient(
+                appointment.getPatient().getPatientId(),
+                newSlot.getDoctorSchedule().getWorkDate(),
+                newSlot.getStartTime(),
+                newSlot.getEndTime(),
+                appointment.getAppointmentId()
+        );
+        if (hasOverlap) {
+            throw new BusinessException("Bệnh nhân đã có một lịch hẹn khác trong khoảng thời gian này. Vui lòng chọn ca khám khác.");
+        }
+
         // Release old slot
         if (oldSlot != null) {
             oldSlot.setStatus("AVAILABLE");
@@ -468,6 +542,17 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
         if (!appointment.getAppointmentDate().equals(LocalDate.now())) {
             throw new BusinessException("Chỉ có thể check-in cho lịch hẹn trong ngày hôm nay.");
+        }
+
+        LocalTime startTime = appointment.getStartTime();
+        LocalTime allowedCheckInTime = startTime.minusMinutes(60);
+        LocalTime now = LocalTime.now();
+
+        if (now.isBefore(allowedCheckInTime)) {
+            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm");
+            throw new BusinessException("Bệnh nhân có lịch hẹn lúc " + startTime.format(formatter) +
+                    ". Hệ thống chỉ cho phép nhận bệnh trước 60 phút (từ " + allowedCheckInTime.format(formatter) +
+                    "). Vui lòng mời bệnh nhân nghỉ ngơi tại sảnh chờ hoặc quay lại sau.");
         }
 
         appointment.setStatus("CHECKED_IN");

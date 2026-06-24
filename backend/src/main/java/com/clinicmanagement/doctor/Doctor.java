@@ -39,6 +39,12 @@ public class Doctor {
     @Column(name = "years_of_experience")
     private Integer yearsOfExperience = 0;
 
+    @Column(name = "year_of_birth")
+    private Integer yearOfBirth;
+
+    @Column(length = 150)
+    private String hometown;
+
     @Column(columnDefinition = "TEXT")
     private String biography;
 

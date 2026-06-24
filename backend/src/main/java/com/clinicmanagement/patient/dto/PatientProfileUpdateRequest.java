@@ -32,7 +32,25 @@ public record PatientProfileUpdateRequest(
 
         String allergies,
 
-        String medicalHistory
+        String medicalHistory,
+
+        String ethnicity,
+
+        String occupation,
+
+        Double heightCm,
+
+        Double weightKg,
+
+        String familyHistory,
+
+        String surgicalHistory,
+
+        String currentMedications,
+
+        String lifestyleHabits,
+
+        String avatarUrl
 ) {
 }
 

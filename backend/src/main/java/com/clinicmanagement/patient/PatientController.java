@@ -86,6 +86,23 @@ public class PatientController {
         );
     }
 
+    @GetMapping("/my-profiles")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<java.util.List<PatientResponse>>> getMyProfiles() {
+        Long userId = getAuthenticatedUserId();
+        return ResponseEntity.ok(ApiResponse.success(patientService.getMyProfiles(userId)));
+    }
+
+    @PostMapping("/my-profiles")
+    @PreAuthorize("hasRole('PATIENT')")
+    public ResponseEntity<ApiResponse<PatientResponse>> createDependentProfile(
+            @Valid @RequestBody PatientRequest request
+    ) {
+        Long userId = getAuthenticatedUserId();
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Thêm hồ sơ người thân thành công", patientService.createDependentProfile(userId, request)));
+    }
+
     private Long getAuthenticatedUserId() {
         org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated() || auth.getPrincipal() instanceof String) {

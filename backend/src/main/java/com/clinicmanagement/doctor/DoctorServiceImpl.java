@@ -67,6 +67,8 @@ public class DoctorServiceImpl implements DoctorService {
         doctor.setDegree(request.degree());
         doctor.setSpecialization(request.specialization());
         doctor.setYearsOfExperience(request.yearsOfExperience());
+        doctor.setYearOfBirth(request.yearOfBirth());
+        doctor.setHometown(request.hometown());
         doctor.setBiography(request.biography());
         doctor.setConsultationFee(request.consultationFee());
         doctor.setStatus("ACTIVE");
@@ -100,6 +102,8 @@ public class DoctorServiceImpl implements DoctorService {
         doctor.setDegree(request.degree());
         doctor.setSpecialization(request.specialization());
         doctor.setYearsOfExperience(request.yearsOfExperience());
+        doctor.setYearOfBirth(request.yearOfBirth());
+        doctor.setHometown(request.hometown());
         doctor.setBiography(request.biography());
         doctor.setConsultationFee(request.consultationFee());
         if (request.status() != null) {

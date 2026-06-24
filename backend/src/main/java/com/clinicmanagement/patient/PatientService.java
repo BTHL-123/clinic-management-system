@@ -20,5 +20,9 @@ public interface PatientService {
 
     PatientResponse updateMyProfile(Long userId, PatientProfileUpdateRequest request);
 
+    java.util.List<PatientResponse> getMyProfiles(Long userId);
+
+    PatientResponse createDependentProfile(Long userId, PatientRequest request);
+
     void delete(Long id);
 }

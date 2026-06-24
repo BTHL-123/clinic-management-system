@@ -24,6 +24,7 @@ public class ConsultationServiceImpl implements ConsultationService {
     private final ConsultationSessionRepository consultationRepository;
     private final com.clinicmanagement.appointment.AppointmentRepository appointmentRepository;
     private final com.clinicmanagement.appointment.QueueTicketRepository queueTicketRepository;
+    private final com.clinicmanagement.invoice.InvoiceService invoiceService;
 
     // ── GET LIST ──────────────────────────────────────────────────────────────
     @Transactional(readOnly = true)
@@ -96,7 +97,15 @@ public class ConsultationServiceImpl implements ConsultationService {
             });
         });
 
-        return ConsultationResponse.from(consultationRepository.save(session));
+        ConsultationSession savedSession = consultationRepository.save(session);
+        
+        try {
+            invoiceService.generateFromConsultation(savedSession.getConsultationId());
+        } catch (Exception e) {
+            System.err.println("Error generating invoice for consultation " + id + ": " + e.getMessage());
+        }
+
+        return ConsultationResponse.from(savedSession);
     }
 
     // ── CHANGE STATUS ─────────────────────────────────────────────────────────

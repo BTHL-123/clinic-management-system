@@ -74,14 +74,14 @@ public interface QueueTicketRepository extends JpaRepository<QueueTicket, Long>,
     );
 
     /**
-     * Count patients ahead of the given queue number who are still WAITING.
+     * Count patients ahead of the given queue number who are still WAITING or CALLED.
      */
     @Query("""
             SELECT COUNT(q)
             FROM QueueTicket q
             WHERE q.doctor.doctorId = :doctorId
               AND q.queueDate = :date
-              AND q.status = 'WAITING'
+              AND q.status IN ('WAITING', 'CALLED')
               AND q.queueNumber < :myQueueNumber
             """)
     int countPatientsAhead(

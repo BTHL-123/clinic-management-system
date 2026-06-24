@@ -89,7 +89,10 @@ CREATE TABLE role_permissions (
 -- =========================================================
 CREATE TABLE patients (
     patient_id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT UNIQUE,
+    user_id BIGINT,
+
+    relationship_to_user VARCHAR(20) NOT NULL DEFAULT 'SELF'
+        CHECK (relationship_to_user IN ('SELF', 'CHILD', 'PARENT', 'SPOUSE', 'OTHER')),
 
     patient_code VARCHAR(30) NOT NULL UNIQUE,
     full_name VARCHAR(150) NOT NULL,
@@ -301,6 +304,8 @@ CREATE TABLE appointments (
             'NO_SHOW',
             'RESCHEDULED'
         )),
+
+    reminder_sent BOOLEAN NOT NULL DEFAULT FALSE,
 
     deposit_amount NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (deposit_amount >= 0),
 
@@ -652,6 +657,7 @@ CREATE TABLE medicines (
 
     rxnorm_code VARCHAR(100),
     description TEXT,
+    usage_instructions VARCHAR(255),
 
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'
         CHECK (status IN ('ACTIVE', 'INACTIVE')),
@@ -777,7 +783,7 @@ CREATE TABLE medicine_batches (
     current_quantity INT NOT NULL CHECK (current_quantity >= 0),
 
     status VARCHAR(20) NOT NULL DEFAULT 'AVAILABLE'
-        CHECK (status IN ('AVAILABLE', 'LOW_STOCK', 'EXPIRED', 'OUT_OF_STOCK')),
+        CHECK (status IN ('AVAILABLE', 'LOW_STOCK', 'EXPIRED', 'OUT_OF_STOCK', 'CANCELLED')),
 
     imported_by BIGINT,
     imported_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

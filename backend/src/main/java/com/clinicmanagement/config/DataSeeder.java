@@ -39,7 +39,47 @@ public class DataSeeder implements CommandLineRunner {
         seedDoctor();
         seedPatient();
         seedMedicalRecords();
+        seedLabTests();
+        seedMedicalServices();
         syncPostgresSequences();
+    }
+
+    private void seedLabTests() {
+        List<Long> existingTests = jdbcTemplate.query(
+                "SELECT lab_test_id FROM lab_tests",
+                (rs, rowNum) -> rs.getLong("lab_test_id"));
+        if (!existingTests.isEmpty()) {
+            return;
+        }
+
+        jdbcTemplate.update("INSERT INTO lab_tests (test_code, test_name, description, price, status, created_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+                "XN01", "Xét nghiệm máu tổng quát", "Kiểm tra hồng cầu, bạch cầu, tiểu cầu", 150000.00, "ACTIVE");
+        jdbcTemplate.update("INSERT INTO lab_tests (test_code, test_name, description, price, status, created_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+                "XN02", "Đường huyết (Glucose)", "Kiểm tra mức đường trong máu", 50000.00, "ACTIVE");
+        jdbcTemplate.update("INSERT INTO lab_tests (test_code, test_name, description, price, status, created_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+                "XN03", "Xét nghiệm nước tiểu", "Phân tích 10 thông số nước tiểu", 80000.00, "ACTIVE");
+        jdbcTemplate.update("INSERT INTO lab_tests (test_code, test_name, description, price, status, created_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+                "XN04", "Men gan (AST/ALT)", "Kiểm tra chức năng gan", 120000.00, "ACTIVE");
+        jdbcTemplate.update("INSERT INTO lab_tests (test_code, test_name, description, price, status, created_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+                "XN05", "Siêu âm bụng", "Kiểm tra tổng quát nội tạng", 200000.00, "ACTIVE");
+    }
+
+    private void seedMedicalServices() {
+        String[] codes = {"SV_CONSULT", "SV_XRAY", "SV_ECHO", "SV_ENDO", "SV_ECG", "SV_DENT"};
+        String[] names = {"Khám bệnh chuyên khoa", "Chụp X-Quang Phổi", "Siêu âm thai 4D", "Nội soi dạ dày", "Điện tâm đồ (ECG)", "Cạo vôi răng"};
+        String[] descs = {"Phí khám lâm sàng ban đầu", "Chụp X-quang kỹ thuật số lồng ngực", "Siêu âm đánh giá hình thái thai nhi", "Nội soi thực quản, dạ dày, tá tràng", "Ghi lại hoạt động điện của tim", "Làm sạch mảng bám, vôi răng"};
+        String[] types = {"CONSULTATION", "IMAGING", "IMAGING", "PROCEDURE", "TESTING", "PROCEDURE"};
+        double[] prices = {200000.00, 150000.00, 400000.00, 800000.00, 100000.00, 250000.00};
+
+        for (int i = 0; i < codes.length; i++) {
+            List<Long> existing = jdbcTemplate.query(
+                    "SELECT service_id FROM medical_services WHERE service_code = ?",
+                    (rs, rowNum) -> rs.getLong("service_id"), codes[i]);
+            if (existing.isEmpty()) {
+                jdbcTemplate.update("INSERT INTO medical_services (service_code, service_name, description, service_type, price, status, created_at) VALUES (?, ?, ?, ?, ?, 'ACTIVE', CURRENT_TIMESTAMP)",
+                        codes[i], names[i], descs[i], types[i], prices[i]);
+            }
+        }
     }
 
     private void migrateCheckConstraint() {
@@ -48,8 +88,14 @@ public class DataSeeder implements CommandLineRunner {
                 try (var statement = connection.createStatement()) {
                     statement.execute("ALTER TABLE appointment_slots DROP CONSTRAINT IF EXISTS appointment_slots_status_check");
                     statement.execute("ALTER TABLE appointment_slots ADD CONSTRAINT appointment_slots_status_check CHECK (status IN ('AVAILABLE', 'LOCKED', 'BOOKED', 'BLOCKED', 'CANCELLED'))");
+
+                    statement.execute("ALTER TABLE medicine_batches DROP CONSTRAINT IF EXISTS medicine_batches_status_check");
+                    statement.execute("ALTER TABLE medicine_batches ADD CONSTRAINT medicine_batches_status_check CHECK (status IN ('AVAILABLE', 'LOW_STOCK', 'EXPIRED', 'OUT_OF_STOCK', 'CANCELLED'))");
+
+                    statement.execute("ALTER TABLE medical_services DROP CONSTRAINT IF EXISTS medical_services_service_type_check");
+                    statement.execute("ALTER TABLE medical_services ADD CONSTRAINT medical_services_service_type_check CHECK (service_type IN ('CONSULTATION', 'LAB_TEST', 'PACKAGE', 'OTHER', 'IMAGING', 'TESTING', 'PROCEDURE'))");
                 } catch (Exception e) {
-                    System.err.println("Migration of appointment_slots_status_check failed: " + e.getMessage());
+                    System.err.println("Migration of check constraints failed: " + e.getMessage());
                 }
             }
             return null;
@@ -164,8 +210,8 @@ public class DataSeeder implements CommandLineRunner {
         patient.setRoles(Set.of(patientRole));
         User savedUser = userRepository.save(patient);
 
-        jdbcTemplate.update("INSERT INTO patients (user_id, patient_code, full_name, gender, phone, email, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
-                savedUser.getUserId(), "PAT000001", "Nguyễn Văn Test", "MALE", "0911222333", email);
+        jdbcTemplate.update("INSERT INTO patients (user_id, patient_code, full_name, gender, phone, email, relationship_to_user, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                savedUser.getUserId(), "PAT000001", "Nguyễn Văn Test", "MALE", "0911222333", email, "SELF");
     }
 
     private void seedMedicalRecords() {
@@ -200,10 +246,10 @@ public class DataSeeder implements CommandLineRunner {
             Long deptId1 = jdbcTemplate.queryForObject("SELECT department_id FROM doctors WHERE doctor_id = ?", Long.class, doctorId1);
             Long deptId2 = jdbcTemplate.queryForObject("SELECT department_id FROM doctors WHERE doctor_id = ?", Long.class, doctorId2);
             
-            jdbcTemplate.update("INSERT INTO appointments (appointment_id, appointment_code, patient_id, doctor_id, department_id, appointment_date, start_time, end_time, booking_type, status, deposit_amount, created_at, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_DATE, '08:00', '08:30', 'ONLINE', 'COMPLETED', 0.0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", 1001, "APP1001", patientId, doctorId1, deptId1);
+            jdbcTemplate.update("INSERT INTO appointments (appointment_id, appointment_code, patient_id, doctor_id, department_id, appointment_date, start_time, end_time, booking_type, status, deposit_amount, reminder_sent, created_at, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_DATE, '08:00', '08:30', 'ONLINE', 'COMPLETED', 0.0, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", 1001, "APP1001", patientId, doctorId1, deptId1);
             jdbcTemplate.update("INSERT INTO consultation_sessions (consultation_id, appointment_id, patient_id, doctor_id, status, created_at, updated_at) VALUES (?, ?, ?, ?, 'COMPLETED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", 1001, 1001, patientId, doctorId1);
 
-            jdbcTemplate.update("INSERT INTO appointments (appointment_id, appointment_code, patient_id, doctor_id, department_id, appointment_date, start_time, end_time, booking_type, status, deposit_amount, created_at, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_DATE, '09:00', '09:30', 'ONLINE', 'COMPLETED', 0.0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", 1002, "APP1002", patientId, doctorId2, deptId2);
+            jdbcTemplate.update("INSERT INTO appointments (appointment_id, appointment_code, patient_id, doctor_id, department_id, appointment_date, start_time, end_time, booking_type, status, deposit_amount, reminder_sent, created_at, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_DATE, '09:00', '09:30', 'ONLINE', 'COMPLETED', 0.0, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", 1002, "APP1002", patientId, doctorId2, deptId2);
             jdbcTemplate.update("INSERT INTO consultation_sessions (consultation_id, appointment_id, patient_id, doctor_id, status, created_at, updated_at) VALUES (?, ?, ?, ?, 'COMPLETED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", 1002, 1002, patientId, doctorId2);
         }
 
@@ -249,6 +295,8 @@ public class DataSeeder implements CommandLineRunner {
         syncPostgresSequence("appointments", "appointment_id");
         syncPostgresSequence("consultation_sessions", "consultation_id");
         syncPostgresSequence("medical_records", "medical_record_id");
+        syncPostgresSequence("lab_tests", "lab_test_id");
+        syncPostgresSequence("medical_services", "service_id");
     }
 
     private void syncPostgresSequence(String tableName, String idColumn) {

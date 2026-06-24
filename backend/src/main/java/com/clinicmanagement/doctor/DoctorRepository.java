@@ -11,8 +11,8 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
     
     @Query("SELECT d FROM Doctor d JOIN d.user u WHERE " +
             "(:departmentId IS NULL OR d.department.departmentId = :departmentId) AND " +
-            "(LOWER(u.fullName) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) " +
-            "OR LOWER(d.doctorCode) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))) AND " +
+            "(LOWER(u.fullName) LIKE CONCAT('%', LOWER(CAST(:keyword AS string)), '%') " +
+            "OR LOWER(d.doctorCode) LIKE CONCAT('%', LOWER(CAST(:keyword AS string)), '%')) AND " +
             "(:status IS NULL OR d.status = :status)")
     Page<Doctor> searchDoctors(@Param("departmentId") Long departmentId,
                                @Param("keyword") String keyword,

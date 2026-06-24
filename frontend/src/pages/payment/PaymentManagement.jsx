@@ -230,24 +230,24 @@ export default function PaymentManagement() {
 
       {/* ── Table ──────────────────────────────────────── */}
       <div className="table-wrapper receptionist-fit-table">
-        <table className="data-table">
+        <table className="data-table fixed-table w-full min-w-[1000px]">
           <thead>
             <tr>
-              <th>#</th>
-              <th>Mã TT</th>
-              <th>Hóa đơn</th>
-              <th>Loại</th>
-              <th>Phương thức</th>
-              <th>Số tiền</th>
-              <th>Trạng thái</th>
-              <th>Ngày tạo</th>
-              <th style={{ textAlign: "center" }}>Hành động</th>
+              <th style={{ width: "5%", textAlign: "left" }}>#</th>
+              <th style={{ width: "13%", textAlign: "left" }}>Mã TT</th>
+              <th style={{ width: "13%", textAlign: "left" }}>Hóa đơn</th>
+              <th style={{ width: "13%", textAlign: "left" }}>Loại</th>
+              <th style={{ width: "12%", textAlign: "left" }}>Phương thức</th>
+              <th style={{ width: "13%", textAlign: "left" }}>Số tiền</th>
+              <th style={{ width: "12%", textAlign: "left" }}>Trạng thái</th>
+              <th style={{ width: "10%", textAlign: "left" }}>Ngày tạo</th>
+              <th style={{ width: "9%", textAlign: "center" }}>Hành động</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={9} className="empty-row">Đang tải dữ liệu...</td>
+                <td colSpan={9} className="empty-row" style={{ textAlign: "center" }}>Đang tải dữ liệu...</td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
@@ -270,8 +270,8 @@ export default function PaymentManagement() {
                       ? new Date(pay.createdAt).toLocaleDateString("vi-VN")
                       : "—"}
                   </td>
-                  <td>
-                    <div className="action-group">
+                  <td style={{ textAlign: "center" }}>
+                    <div className="action-group" style={{ display: "flex", justifyContent: "center", gap: "6px" }}>
                       <button
                         className="icon-button"
                         title="Xem chi tiết"

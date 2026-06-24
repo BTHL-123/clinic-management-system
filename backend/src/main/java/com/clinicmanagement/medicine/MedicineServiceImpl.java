@@ -72,6 +72,7 @@ public class MedicineServiceImpl implements MedicineService {
                 .unit(request.unit())
                 .rxnormCode(request.rxnormCode())
                 .description(request.description())
+                .usageInstructions(request.usageInstructions())
                 .status(request.status() != null ? request.status() : "ACTIVE")
                 .build();
 
@@ -101,6 +102,7 @@ public class MedicineServiceImpl implements MedicineService {
         medicine.setUnit(request.unit());
         medicine.setRxnormCode(request.rxnormCode());
         medicine.setDescription(request.description());
+        medicine.setUsageInstructions(request.usageInstructions());
         if (request.status() != null) {
             medicine.setStatus(request.status());
         }

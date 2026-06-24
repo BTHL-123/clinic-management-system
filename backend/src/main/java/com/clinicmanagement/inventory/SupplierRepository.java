@@ -9,8 +9,8 @@ import org.springframework.data.repository.query.Param;
 public interface SupplierRepository extends JpaRepository<Supplier, Long> {
 
     @Query("SELECT s FROM Supplier s WHERE " +
-           "(COALESCE(:keyword, '') = '' OR LOWER(s.supplierName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-           "OR LOWER(s.phone) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "(COALESCE(CAST(:keyword AS string), '') = '' OR LOWER(s.supplierName) LIKE CONCAT('%', LOWER(CAST(:keyword AS string)), '%') " +
+           "OR LOWER(s.phone) LIKE CONCAT('%', LOWER(CAST(:keyword AS string)), '%')) " +
            "AND (COALESCE(:status, '') = '' OR s.status = :status)")
     Page<Supplier> searchSuppliers(@Param("keyword") String keyword, @Param("status") String status, Pageable pageable);
 }

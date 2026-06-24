@@ -30,3 +30,7 @@ frontend/.vite/
 
 # CodeGraph
 .codegraph/
+
+# Temporary files & Mockups
+.taste-skill-tmp/
+mockups.docx

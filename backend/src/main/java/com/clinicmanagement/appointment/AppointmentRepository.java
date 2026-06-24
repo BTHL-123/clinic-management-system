@@ -32,11 +32,34 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long>,
            "LEFT JOIN a.doctor d " +
            "LEFT JOIN d.user du " +
            "WHERE (pu.userId = :userId OR du.userId = :userId) AND " +
-           "((:upcoming = true AND a.appointmentDate >= :currentDate) OR " +
-           " (:upcoming = false AND a.appointmentDate < :currentDate))")
+           "((:upcoming = true AND a.appointmentDate >= :currentDate AND a.status NOT IN ('COMPLETED', 'CANCELLED', 'NO_SHOW', 'RESCHEDULED')) OR " +
+           " (:upcoming = false AND (a.appointmentDate < :currentDate OR a.status IN ('COMPLETED', 'CANCELLED', 'NO_SHOW', 'RESCHEDULED'))))")
     Page<Appointment> findMyAppointments(
             @Param("userId") Long userId,
             @Param("upcoming") boolean upcoming,
+            @Param("currentDate") LocalDate currentDate,
+            Pageable pageable
+    );
+
+    @Query("SELECT a FROM Appointment a " +
+           "LEFT JOIN a.patient p " +
+           "LEFT JOIN p.user pu " +
+           "LEFT JOIN a.doctor d " +
+           "LEFT JOIN d.user du " +
+           "LEFT JOIN d.department dp " +
+           "WHERE (pu.userId = :userId OR du.userId = :userId) " +
+           "AND (:keyword IS NULL OR LOWER(du.fullName) LIKE CONCAT('%', LOWER(CAST(:keyword AS string)), '%') OR LOWER(p.fullName) LIKE CONCAT('%', LOWER(CAST(:keyword AS string)), '%') OR LOWER(dp.departmentName) LIKE CONCAT('%', LOWER(CAST(:keyword AS string)), '%')) " +
+           "AND (:doctorId IS NULL OR d.doctorId = :doctorId) " +
+           "AND (:departmentId IS NULL OR dp.departmentId = :departmentId) " +
+           "AND (:upcoming IS NULL OR " +
+             "(:upcoming = true AND a.appointmentDate >= :currentDate AND a.status NOT IN ('COMPLETED', 'CANCELLED', 'NO_SHOW', 'RESCHEDULED')) OR " +
+             "(:upcoming = false AND (a.appointmentDate < :currentDate OR a.status IN ('COMPLETED', 'CANCELLED', 'NO_SHOW', 'RESCHEDULED'))))")
+    Page<Appointment> findMyFilteredAppointments(
+            @Param("userId") Long userId,
+            @Param("keyword") String keyword,
+            @Param("doctorId") Long doctorId,
+            @Param("departmentId") Long departmentId,
+            @Param("upcoming") Boolean upcoming,
             @Param("currentDate") LocalDate currentDate,
             Pageable pageable
     );
@@ -116,9 +139,49 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long>,
             @Param("date") LocalDate date
     );
 
+    @Query("SELECT a FROM Appointment a WHERE a.timeSlot.id = :slotId AND a.status NOT IN ('CANCELLED', 'NO_SHOW', 'RESCHEDULED')")
+    java.util.Optional<Appointment> findActiveByTimeSlotId(@Param("slotId") Long slotId);
+
     @Query("SELECT a FROM Appointment a WHERE a.doctor.doctorId = :doctorId AND a.appointmentDate = :date ORDER BY a.startTime ASC")
     java.util.List<Appointment> findDoctorTodayAppointments(
             @Param("doctorId") Long doctorId,
             @Param("date") LocalDate date
+    );
+
+    @Query("SELECT COUNT(a) > 0 FROM Appointment a WHERE " +
+           "a.patient.patientId = :patientId AND " +
+           "a.appointmentDate = :date AND " +
+           "a.startTime < :endTime AND " +
+           "a.endTime > :startTime AND " +
+           "(:excludeAppointmentId IS NULL OR a.appointmentId <> :excludeAppointmentId) AND " +
+           "a.status NOT IN ('CANCELLED', 'NO_SHOW', 'COMPLETED', 'RESCHEDULED')")
+    boolean existsOverlappingAppointmentForPatient(
+            @Param("patientId") Long patientId,
+            @Param("date") LocalDate date,
+            @Param("startTime") LocalTime startTime,
+            @Param("endTime") LocalTime endTime,
+            @Param("excludeAppointmentId") Long excludeAppointmentId
+    );
+
+    @Query("SELECT a FROM Appointment a WHERE " +
+           "a.status = 'CONFIRMED' AND " +
+           "a.reminderSent = false AND " +
+           "a.appointmentDate = :date AND " +
+           "a.startTime BETWEEN :now AND :endTime")
+    java.util.List<Appointment> findAppointmentsForReminder(
+            @Param("date") LocalDate date,
+            @Param("now") LocalTime now,
+            @Param("endTime") LocalTime endTime
+    );
+
+    @Query("SELECT COUNT(a) > 0 FROM Appointment a WHERE " +
+           "a.doctor.user.userId = :doctorUserId AND " +
+           "a.patient.patientId = :patientId AND " +
+           "((a.appointmentDate = :currentDate) OR " +
+           " (a.appointmentDate > :currentDate AND a.status NOT IN ('CANCELLED', 'NO_SHOW', 'COMPLETED', 'RESCHEDULED')))")
+    boolean existsUpcomingAppointmentForDoctorAndPatient(
+            @Param("doctorUserId") Long doctorUserId,
+            @Param("patientId") Long patientId,
+            @Param("currentDate") LocalDate currentDate
     );
 }

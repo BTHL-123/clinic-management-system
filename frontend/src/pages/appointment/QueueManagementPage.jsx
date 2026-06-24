@@ -14,6 +14,8 @@ import queueService from "../../services/queueService";
 import { getDoctors } from "../../services/doctorService";
 import { useToast } from "../../context/useToast.js";
 import PageHeader from "../../components/PageHeader";
+import { Client } from "@stomp/stompjs";
+import SockJS from "sockjs-client/dist/sockjs";
 
 export default function QueueManagementPage() {
   const toast = useToast();
@@ -64,6 +66,32 @@ export default function QueueManagementPage() {
 
   useEffect(() => {
     fetchQueue();
+
+    const socketUrl = import.meta.env.VITE_API_URL 
+      ? import.meta.env.VITE_API_URL.replace("/api", "") + "/ws-queue" 
+      : "http://localhost:8080/ws-queue";
+
+    const client = new Client({
+      webSocketFactory: () => new SockJS(socketUrl),
+      reconnectDelay: 5000,
+      onConnect: () => {
+        console.log("Connected to STOMP for queue management updates");
+        client.subscribe("/topic/queue", (message) => {
+          if (message.body === "QUEUE_UPDATED") {
+            fetchQueue();
+          }
+        });
+      },
+      onStompError: (frame) => {
+        console.error("Broker reported error: " + frame.headers["message"]);
+      },
+    });
+
+    client.activate();
+
+    return () => {
+      client.deactivate();
+    };
   }, [fetchQueue]);
 
   // Actions
@@ -128,10 +156,20 @@ export default function QueueManagementPage() {
         icon={Users}
         iconColor="text-white"
         rightContent={
-          <button className="bg-white/10 hover:bg-white/20 text-white font-medium px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 transition-all flex items-center gap-2 shadow-sm" onClick={fetchQueue}>
-            <RefreshCw size={16} className={loading ? "spin-animation" : ""} />
-            Làm mới
-          </button>
+          <div className="flex items-center gap-3">
+            <span className="text-[12px] text-teal-600 font-semibold bg-teal-50 px-3 py-1.5 rounded-lg flex items-center gap-1.5 border border-teal-100">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Real-time Sync
+            </span>
+            <button
+              onClick={fetchQueue}
+              disabled={loading}
+              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-[13px] shadow-md shadow-teal-500/20 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+              Làm mới
+            </button>
+          </div>
         }
       />
 
@@ -213,18 +251,18 @@ export default function QueueManagementPage() {
 
       {/* Table container */}
       <div className="table-wrapper receptionist-fit-table queue-table-wrapper">
-        <table className="data-table queue-table">
+        <table className="data-table fixed-table queue-table w-full min-w-[1100px]">
           <thead>
             <tr>
-              <th style={{ textAlign: "center" }}>STT</th>
-              <th>Mã Lịch Hẹn</th>
-              <th>Bệnh Nhân</th>
-              <th>Số Điện Thoại</th>
-              <th>Bác Sĩ</th>
-              <th style={{ textAlign: "center" }}>Giờ Hẹn</th>
-              <th>Check-in</th>
-              <th>Trạng Thái</th>
-              <th style={{ textAlign: "center" }}>Thao Tác</th>
+              <th style={{ width: "5%", textAlign: "center" }}>STT</th>
+              <th style={{ width: "11%", textAlign: "left" }}>Mã Lịch Hẹn</th>
+              <th style={{ width: "13%", textAlign: "left" }}>Bệnh Nhân</th>
+              <th style={{ width: "11%", textAlign: "left" }}>Số Điện Thoại</th>
+              <th style={{ width: "12%", textAlign: "left" }}>Bác Sĩ</th>
+              <th style={{ width: "8%", textAlign: "center" }}>Giờ Hẹn</th>
+              <th style={{ width: "9%", textAlign: "left" }}>Check-in</th>
+              <th style={{ width: "9%", textAlign: "left" }}>Trạng Thái</th>
+              <th style={{ width: "22%", textAlign: "center" }}>Thao Tác</th>
             </tr>
           </thead>
           <tbody>
@@ -268,19 +306,19 @@ export default function QueueManagementPage() {
                         #{ticket.queueNumber}
                       </span>
                     </td>
-                    <td className="queue-appointment-code">{ticket.appointmentCode}</td>
-                    <td className="queue-patient-name">{ticket.patientName}</td>
-                    <td>{ticket.patientPhone || "—"}</td>
-                    <td>{ticket.doctorName}</td>
+                    <td className="queue-appointment-code" style={{ textAlign: "left" }}>{ticket.appointmentCode}</td>
+                    <td className="queue-patient-name" style={{ textAlign: "left" }}>{ticket.patientName}</td>
+                    <td style={{ textAlign: "left" }}>{ticket.patientPhone || "—"}</td>
+                    <td style={{ textAlign: "left" }}>{ticket.doctorName}</td>
                     <td style={{ textAlign: "center", fontWeight: 500 }}>
                       {ticket.startTime?.slice(0, 5)} - {ticket.endTime?.slice(0, 5)}
                     </td>
-                    <td className="queue-checkin-time">
+                    <td className="queue-checkin-time" style={{ textAlign: "left" }}>
                       {ticket.checkedInAt ? new Date(ticket.checkedInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "—"}
                     </td>
-                    <td>{getStatusBadge(ticket.queueStatus)}</td>
-                    <td>
-                      <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
+                    <td style={{ textAlign: "left" }}>{getStatusBadge(ticket.queueStatus)}</td>
+                    <td style={{ textAlign: "center" }}>
+                      <div style={{ display: "flex", gap: "6px", justifyContent: "center", alignItems: "center" }}>
                         {canCall && (
                           <button
                             className="primary-button compact"
@@ -291,10 +329,17 @@ export default function QueueManagementPage() {
                                 ? "linear-gradient(135deg, #475569, #64748b)" // Recalling
                                 : "linear-gradient(135deg, #0284c7, #06b6d4)",
                               boxShadow: "0 2px 4px rgba(2,132,199,0.15)",
+                              color: "white",
                               fontWeight: 700,
                               display: "inline-flex",
                               alignItems: "center",
-                              gap: "4px"
+                              gap: "4px",
+                              padding: "4px 10px",
+                              minHeight: "32px",
+                              fontSize: "12px",
+                              borderRadius: "8px",
+                              border: "none",
+                              cursor: "pointer"
                             }}
                           >
                             <Play size={14} />
@@ -309,10 +354,16 @@ export default function QueueManagementPage() {
                             style={{
                               borderColor: "#fca5a5",
                               color: "#dc2626",
-                              fontWeight: 600,
+                              background: "#ffffff",
+                              fontWeight: 650,
                               display: "inline-flex",
                               alignItems: "center",
-                              gap: "4px"
+                              gap: "4px",
+                              padding: "4px 10px",
+                              minHeight: "32px",
+                              fontSize: "12px",
+                              borderRadius: "8px",
+                              cursor: "pointer"
                             }}
                           >
                             <SkipForward size={14} />
@@ -327,10 +378,17 @@ export default function QueueManagementPage() {
                             style={{
                               background: "linear-gradient(135deg, #16a34a, #22c55e)",
                               boxShadow: "0 2px 4px rgba(22,163,74,0.15)",
+                              color: "white",
                               fontWeight: 700,
                               display: "inline-flex",
                               alignItems: "center",
-                              gap: "4px"
+                              gap: "4px",
+                              padding: "4px 10px",
+                              minHeight: "32px",
+                              fontSize: "12px",
+                              borderRadius: "8px",
+                              border: "none",
+                              cursor: "pointer"
                             }}
                           >
                             <Check size={14} />

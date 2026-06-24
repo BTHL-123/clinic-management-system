@@ -11,6 +11,7 @@ import com.clinicmanagement.patient.PatientRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,7 @@ public class QueueServiceImpl implements QueueService {
     private final ConsultationSessionRepository consultationSessionRepository;
     private final ApplicationContext applicationContext;
     private final PatientRepository patientRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Override
     @Transactional(readOnly = true)
@@ -60,6 +62,8 @@ public class QueueServiceImpl implements QueueService {
                 "Bạn đã được gọi vào phòng khám của bác sĩ "
                         + getDoctorName(saved) + ". Số thứ tự: #" + saved.getQueueNumber() + ".");
 
+        broadcastQueueUpdate();
+
         return mapToResponse(saved);
     }
 
@@ -80,7 +84,11 @@ public class QueueServiceImpl implements QueueService {
         }
 
         ticket.setStatus("SKIPPED");
-        return mapToResponse(queueTicketRepository.save(ticket));
+        QueueTicket saved = queueTicketRepository.save(ticket);
+        
+        broadcastQueueUpdate();
+        
+        return mapToResponse(saved);
     }
 
     @Override
@@ -107,6 +115,8 @@ public class QueueServiceImpl implements QueueService {
 
         sendNotificationSafely(saved, "Hoàn thành khám bệnh",
                 "Ca khám của bạn với bác sĩ " + getDoctorName(saved) + " đã hoàn tất. Chúc bạn luôn mạnh khỏe!");
+
+        broadcastQueueUpdate();
 
         return mapToResponse(saved);
     }
@@ -148,6 +158,14 @@ public class QueueServiceImpl implements QueueService {
         }
     }
 
+    private void broadcastQueueUpdate() {
+        try {
+            messagingTemplate.convertAndSend("/topic/queue", "QUEUE_UPDATED");
+        } catch (Exception e) {
+            System.err.println("WebSocket broadcast failed: " + e.getMessage());
+        }
+    }
+
     @Override
     @Transactional(readOnly = true)
     public PatientQueueStatusResponse getPatientQueueStatus(Long userId) {
@@ -181,8 +199,8 @@ public class QueueServiceImpl implements QueueService {
         // 5. Count patients ahead (WAITING with smaller queue number)
         int patientsAhead = queueTicketRepository.countPatientsAhead(doctorId, today, myQueueNumber);
 
-        // 6. Estimate waiting time: 15 min per patient ahead
-        final int AVG_CONSULTATION_MINUTES = 15;
+        // 6. Estimate waiting time: 30 min per patient ahead
+        final int AVG_CONSULTATION_MINUTES = 30;
         int estimatedWaitMinutes = patientsAhead * AVG_CONSULTATION_MINUTES;
 
         // 7. Build DTO
