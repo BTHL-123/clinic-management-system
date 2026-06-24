@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, KeyRound, LogOut, UserSquare, Home } from "lucide-react";
+import { ChevronDown, KeyRound, LogOut, UserSquare } from "lucide-react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import NotificationBell from "../components/NotificationBell.jsx";
@@ -11,8 +11,6 @@ import PatientSidebar from "./PatientSidebar.jsx";
 import LabTechnicianSidebar from "./LabTechnicianSidebar.jsx";
 import ReceptionistSidebar from "./ReceptionistSidebar.jsx";
 import AdminSidebar from "./AdminSidebar.jsx";
-import bgImage from "../assets/images/background_2k.png";
-import patientBgImage from "../assets/images/patient_bg.png";
 
 const normalizeRole = (role) => {
   const roleName = typeof role === "string" ? role : role?.roleName;
@@ -66,7 +64,7 @@ export default function DashboardLayout() {
   /* ─── PATIENT: Full-width top header bar (matching landing page) ─── */
   const renderPatientHeader = () => (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-2xl border-b border-slate-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-      <div className="w-full px-6 h-16 flex items-center justify-between">
+      <div className="mx-auto flex h-16 w-full max-w-[1240px] items-center justify-between px-5 md:px-7">
         {/* Left: Logo + Brand */}
         <div className="flex items-center gap-3 cursor-pointer group shrink-0" onClick={() => navigate('/')}>
           <LogoSVG className="w-9 h-9 drop-shadow-sm group-hover:scale-105 transition-transform" />
@@ -105,35 +103,34 @@ export default function DashboardLayout() {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-3">
-          <button
-            className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:bg-teal-50 hover:text-teal-600 hover:border-teal-200 transition-all"
-            aria-label="Home"
-            onClick={() => navigate('/dashboard')}
-          >
-            <Home size={18} />
-          </button>
-
           <NotificationBell />
 
           <div className="hidden md:block h-7 w-px bg-slate-200"></div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="relative flex items-center gap-2.5">
             <div className="hidden md:flex flex-col items-end">
               <strong className="text-[13px] font-bold leading-tight text-slate-800">{user?.fullName || "Clinic Admin"}</strong>
               <span className="text-[10px] font-semibold uppercase tracking-wider text-teal-600">{rolesText}</span>
             </div>
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-500 text-white flex items-center justify-center font-bold text-sm shadow-sm border border-teal-400/30 overflow-hidden">
+            <button
+              type="button"
+              className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border border-teal-400/30 bg-gradient-to-br from-teal-500 to-emerald-500 text-sm font-bold text-white shadow-sm transition hover:scale-105"
+              aria-label="Mở menu tài khoản"
+              aria-expanded={accountMenuOpen}
+              onClick={() => setAccountMenuOpen((open) => !open)}
+            >
               {user?.avatarUrl ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" /> : <span>{initials}</span>}
-            </div>
+            </button>
+            {accountMenuOpen && (
+              <div className="absolute right-0 top-[calc(100%+12px)] z-[60] w-52 overflow-hidden rounded-2xl border border-[#DDEDEA] bg-white p-1.5 shadow-[0_16px_36px_rgba(15,23,42,.14)]">
+                <button type="button" onClick={() => { setAccountMenuOpen(false); navigate("/dashboard/profile"); }} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:bg-[#F3FFFB] hover:text-[#007D68]"><UserSquare size={17} /> Hồ sơ cá nhân</button>
+                <button type="button" onClick={() => { setAccountMenuOpen(false); navigate("/dashboard/change-password"); }} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:bg-[#F3FFFB] hover:text-[#007D68]"><KeyRound size={17} /> Đổi mật khẩu</button>
+                <div className="mx-2 my-1 border-t border-[#E8F1EF]" />
+                <button type="button" onClick={handleLogout} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-rose-600 transition hover:bg-rose-50"><LogOut size={17} /> Đăng xuất</button>
+              </div>
+            )}
           </div>
 
-          <button
-            className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-200 text-slate-400 hover:bg-rose-50 hover:text-rose-500 hover:border-rose-200 transition-all group"
-            aria-label="Logout"
-            onClick={handleLogout}
-          >
-            <LogOut size={16} strokeWidth={2.5} className="group-hover:-translate-x-0.5 transition-transform" />
-          </button>
         </div>
       </div>
     </header>
@@ -216,17 +213,11 @@ export default function DashboardLayout() {
       {/* Global Background */}
       {isPatientOnly ? (
         /* ─── PATIENT: Solid light teal background matching design ─── */
-        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#E2F2EE]" />
+        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#F8FFFC]" />
       ) : usePatientVisualShell ? (
         <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#0a3d38]">
           {/* Rich teal base — darker & more saturated */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#064e3b] via-[#0d9488] to-[#134e4a]"></div>
-
-          {/* Patient background artwork — boosted saturation & contrast */}
-          <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-75 saturate-[1.45] contrast-[1.15] brightness-[0.82]"
-            style={{ backgroundImage: `url(${patientBgImage})` }}
-          ></div>
 
           {/* Vivid aurora mesh blobs */}
           <div className="absolute -top-[15%] -left-[5%] w-[55vw] h-[55vw] bg-teal-400/55 rounded-full blur-[100px] mix-blend-screen animate-pulse" style={{ animationDuration: "10s" }}></div>
@@ -248,12 +239,7 @@ export default function DashboardLayout() {
           ></div>
         </div>
       ) : (
-        <div
-          className="fixed inset-0 z-0 pointer-events-none bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url(${bgImage})` }}
-        >
-          <div className="absolute inset-0 bg-slate-900/40"></div>
-        </div>
+        <div className="fixed inset-0 z-0 pointer-events-none bg-gradient-to-br from-slate-100 via-slate-50 to-slate-200" />
       )}
 
       {/* Header */}
@@ -286,30 +272,11 @@ export default function DashboardLayout() {
             <Sidebar />
           )}
 
-          <div className={`flex-1 min-w-0 flex flex-col h-full ${isPatientOnly ? "px-6 py-6" : ""}`}>
+          <div className={`flex-1 min-w-0 flex flex-col h-full ${isPatientOnly ? "px-4 py-7 md:px-6 md:py-8" : ""}`}>
             <Outlet />
           </div>
         </main>
       </motion.div>
     </div>
   );
-}
-
-/* Helper: Get page title from pathname for breadcrumb */
-function getPageTitle(pathname) {
-  const map = {
-    "/dashboard": "Tổng quan",
-    "/dashboard/available-slots": "Đặt lịch khám",
-    "/dashboard/my-appointments": "Lịch hẹn của tôi",
-    "/dashboard/queue-status": "Hàng đợi",
-    "/dashboard/my-medical-history": "Hồ sơ bệnh án",
-    "/dashboard/my-lab-results": "Kết quả xét nghiệm",
-    "/dashboard/our-doctors": "Bác sĩ",
-    "/dashboard/service-prices": "Bảng giá dịch vụ",
-    "/dashboard/ai-chat": "Trợ lý AI",
-    "/dashboard/profile": "Hồ sơ cá nhân",
-    "/dashboard/change-password": "Đổi mật khẩu",
-    "/dashboard/notifications": "Thông báo",
-  };
-  return map[pathname] || "Dashboard";
 }
