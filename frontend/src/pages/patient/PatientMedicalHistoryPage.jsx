@@ -12,7 +12,7 @@ const TABS = [
 export default function PatientMedicalHistoryPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   // Read initial tab from URL query params
   const searchParams = new URLSearchParams(location.search);
   const tabParam = searchParams.get("tab");
@@ -116,11 +116,10 @@ export default function PatientMedicalHistoryPage() {
               <AlertTriangle size={18} className="text-amber-500" />
               Tiền sử dị ứng
             </p>
-            <div className={`p-3 rounded-xl text-sm font-medium ${
-              patient.allergies 
-                ? "bg-amber-50/50 border border-amber-100 text-amber-800" 
+            <div className={`p-3 rounded-xl text-sm font-medium ${patient.allergies
+                ? "bg-amber-50/50 border border-amber-100 text-amber-800"
                 : "bg-slate-50 text-slate-500 border border-slate-100"
-            }`}>
+              }`}>
               {patient.allergies || "Không có tiền sử dị ứng được ghi nhận"}
             </div>
           </div>
@@ -131,11 +130,10 @@ export default function PatientMedicalHistoryPage() {
               <ShieldCheck size={18} className="text-[#1DB896]" />
               Tiền sử bệnh lý (Bệnh nền)
             </p>
-            <div className={`p-3 rounded-xl text-sm font-medium ${
-              patient.medicalHistory 
-                ? "bg-teal-50/30 border border-[#D1F2EB]/55 text-[#0A604E]" 
+            <div className={`p-3 rounded-xl text-sm font-medium ${patient.medicalHistory
+                ? "bg-teal-50/30 border border-[#D1F2EB]/55 text-[#0A604E]"
                 : "bg-slate-50 text-slate-500 border border-slate-100"
-            }`}>
+              }`}>
               {patient.medicalHistory || "Chưa có ghi nhận bệnh lý nền"}
             </div>
           </div>
@@ -156,7 +154,7 @@ export default function PatientMedicalHistoryPage() {
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Hồ sơ Bệnh án</h1>
           </div>
           <p className="text-[#4A5D59] text-sm font-medium ml-[52px]">
-            {notFound 
+            {notFound
               ? <span className="text-red-500">Tài khoản của bạn chưa được liên kết với hồ sơ bệnh án.</span>
               : "Xem tổng quan sức khỏe và lịch sử các lần khám bệnh."
             }
@@ -200,11 +198,10 @@ export default function PatientMedicalHistoryPage() {
                       setActiveTab(tab.id);
                       navigate(`/dashboard/my-medical-history?tab=${tab.id}`, { replace: true });
                     }}
-                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 ${
-                      isActive 
-                        ? "bg-[#0A604E] text-white shadow-[0_4px_12px_rgba(10,96,78,0.15)]" 
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 ${isActive
+                        ? "bg-[#0A604E] text-white shadow-[0_4px_12px_rgba(10,96,78,0.15)]"
                         : "bg-white border border-slate-200 text-[#4A5D59] hover:bg-slate-50"
-                    }`}
+                      }`}
                   >
                     <Icon size={16} />
                     {tab.label}
@@ -232,17 +229,15 @@ function InfoRow({ label, value, bold, highlight, textPrimary }) {
     <div className="flex justify-between items-center py-3 border-b border-slate-100 last:border-0 hover:bg-[#F0F9F7]/25 px-2 rounded-xl transition-all">
       <span className="text-[13px] font-semibold text-[#4A5D59]">{label}</span>
       <span
-        className={`text-sm ${
-          textPrimary 
-            ? "text-[#0A604E] font-extrabold" 
-            : bold 
-              ? "font-bold text-slate-800" 
+        className={`text-sm ${textPrimary
+            ? "text-[#0A604E] font-extrabold"
+            : bold
+              ? "font-bold text-slate-800"
               : "font-semibold text-slate-700"
-        } ${
-          highlight 
-            ? "text-teal-800 bg-teal-50 px-3.5 py-1 rounded-full text-xs font-bold border border-teal-200" 
+          } ${highlight
+            ? "text-teal-800 bg-teal-50 px-3.5 py-1 rounded-full text-xs font-bold border border-teal-200"
             : ""
-        }`}
+          }`}
       >
         {value || "—"}
       </span>
