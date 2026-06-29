@@ -303,7 +303,7 @@ export default function DashboardLayout() {
   );
 
   return (
-    <div className={`flex flex-col min-h-screen w-full relative selection:bg-teal-200 selection:text-teal-900 font-sans overflow-y-auto overflow-x-hidden ${useTopNavbarLayout ? "" : usePatientVisualShell ? "patient-shell" : ""} ${isAdminShell ? "admin-shell" : ""} ${isReceptionist ? "receptionist-shell" : ""} ${isPatientOnly ? "patient-web-theme" : ""}`}>
+    <div className={`flex flex-col min-h-screen w-full relative selection:bg-teal-200 selection:text-teal-900 font-sans overflow-y-auto overflow-x-hidden ${useTopNavbarLayout ? "" : usePatientVisualShell ? "patient-shell" : ""} ${isAdminShell ? "admin-shell" : ""} ${isReceptionist ? "receptionist-shell" : ""} ${isPatientOnly ? "patient-web-theme" : ""} ${isDoctor || isPharmacist || isLabTechnician ? "doctor-layout-bg" : ""}`}>
       {/* Global Background */}
       {isAdminShell ? (
         <div className="admin-page-background" />

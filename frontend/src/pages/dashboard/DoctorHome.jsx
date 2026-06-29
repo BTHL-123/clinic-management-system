@@ -397,17 +397,17 @@ export default function DoctorHome() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 mt-auto">
-                  <button onClick={() => navigate('/dashboard/profile')} className="flex items-center gap-2 text-xs p-2 rounded-lg hover:bg-teal-50 text-teal-700 font-extrabold transition-colors">
+                <div className="grid grid-cols-2 gap-1.5 mt-auto">
+                  <button onClick={() => navigate('/dashboard/profile')} className="flex items-center gap-1.5 text-xs p-1.5 rounded-lg hover:bg-teal-50 text-teal-700 font-extrabold transition-colors whitespace-nowrap">
                     <User size={14} /> Profile
                   </button>
-                  <button onClick={() => navigate('/dashboard/doctor-appointments')} className="flex items-center gap-2 text-xs p-2 rounded-lg hover:bg-teal-50 text-teal-700 font-extrabold transition-colors">
+                  <button onClick={() => navigate('/dashboard/doctor-appointments')} className="flex items-center gap-1.5 text-xs p-1.5 rounded-lg hover:bg-teal-50 text-teal-700 font-extrabold transition-colors whitespace-nowrap">
                     <CalendarDays size={14} /> Lịch khám
                   </button>
-                  <button onClick={() => navigate('/dashboard/change-password')} className="flex items-center gap-2 text-xs p-2 rounded-lg hover:bg-teal-50 text-teal-700 font-extrabold transition-colors">
+                  <button onClick={() => navigate('/dashboard/change-password')} className="flex items-center gap-1.5 text-xs p-1.5 rounded-lg hover:bg-teal-50 text-teal-700 font-extrabold transition-colors whitespace-nowrap">
                     <Shield size={14} /> Bảo mật
                   </button>
-                  <button className="flex items-center gap-2 text-xs p-2 rounded-lg hover:bg-teal-50 text-teal-700 font-extrabold transition-colors">
+                  <button className="flex items-center gap-1.5 text-xs p-1.5 rounded-lg hover:bg-teal-50 text-teal-700 font-extrabold transition-colors whitespace-nowrap">
                     <Globe size={14} /> Ngôn ngữ
                   </button>
                 </div>
