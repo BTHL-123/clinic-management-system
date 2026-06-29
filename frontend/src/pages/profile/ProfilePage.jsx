@@ -130,8 +130,9 @@ export default function ProfilePage() {
   const isPharmacist = roles.includes("PHARMACIST");
   const isLabTechnician = roles.includes("LAB_TECHNICIAN");
   const isPatientOnly = roles.includes("PATIENT") && !isDoctor && !isPharmacist && !isLabTechnician;
+  const isReceptionistOnly = roles.includes("RECEPTIONIST") && !roles.includes("ADMIN");
   const isAdminShell = roles.includes("ADMIN") && !isDoctor && !isPharmacist && !isPatientOnly && !isLabTechnician;
-  const usePatientVisualShell = isPatientOnly || isAdminShell || isPharmacist || isLabTechnician;
+  const usePatientVisualShell = isPatientOnly || isReceptionistOnly || isAdminShell || isPharmacist || isLabTechnician;
 
   if (isDoctor) {
     return <DoctorProfile />;

@@ -9,7 +9,6 @@ import DoctorSidebar from "./DoctorSidebar.jsx";
 import PharmacistSidebar from "./PharmacistSidebar.jsx";
 import PatientSidebar from "./PatientSidebar.jsx";
 import LabTechnicianSidebar from "./LabTechnicianSidebar.jsx";
-import ReceptionistSidebar from "./ReceptionistSidebar.jsx";
 import AdminSidebar from "./AdminSidebar.jsx";
 
 const normalizeRole = (role) => {
@@ -59,11 +58,22 @@ export default function DashboardLayout() {
   const isReceptionist = roles.includes("RECEPTIONIST") && !roles.includes("ADMIN");
   const isPatientOnly = roles.includes("PATIENT") && !isDoctor && !isPharmacist && !isLabTechnician;
   const isAdminShell = roles.includes("ADMIN") && !isDoctor && !isPharmacist && !isPatientOnly && !isLabTechnician;
-  const usePatientVisualShell = isPatientOnly || isAdminShell || isPharmacist || isLabTechnician || isReceptionist;
-  const useTopNavbarLayout = isPatientOnly || isDoctor;
+  const usePatientVisualShell = isPatientOnly || isAdminShell || isPharmacist || isLabTechnician;
+  const useTopNavbarLayout = isPatientOnly || isDoctor || isReceptionist;
   const isLightShell = isPharmacist || isLabTechnician;
 
   const getNavLinks = () => {
+    if (isReceptionist) {
+      return [
+        { label: "Tổng quan", path: "/dashboard" },
+        { label: "Tạo lịch khám", path: "/dashboard/walk-in" },
+        { label: "Check-in", path: "/dashboard/receptionist-appointments" },
+        { label: "Hàng đợi", path: "/dashboard/queue-management" },
+        { label: "Bệnh nhân", path: "/dashboard/patients" },
+        { label: "Thanh toán", path: "/dashboard/payments" },
+      ];
+    }
+
     if (!isPatientOnly) return [];
 
     return [
@@ -283,6 +293,9 @@ export default function DashboardLayout() {
       ) : isPatientOnly ? (
         /* ─── PATIENT: Solid light teal background matching design ─── */
         <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#F8FFFC]" />
+      ) : isReceptionist ? (
+        /* ─── RECEPTIONIST: Solid slate background ─── */
+        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-slate-50" />
       ) : usePatientVisualShell ? (
         <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#0a3d38]">
           {/* Rich teal base — darker & more saturated */}
@@ -312,7 +325,7 @@ export default function DashboardLayout() {
       )}
 
       {/* Header */}
-      {isAdminShell ? renderAdminHeader() : (isPatientOnly || isDoctor) ? renderPatientHeader() : renderOriginalHeader()}
+      {isAdminShell ? renderAdminHeader() : useTopNavbarLayout ? renderPatientHeader() : renderOriginalHeader()}
 
       <motion.div
         key={location.pathname}
@@ -322,7 +335,7 @@ export default function DashboardLayout() {
         transition={{ duration: 0.25, ease: "easeOut" }}
         className="flex-1 w-full relative z-10 flex flex-col"
       >
-        <main className={`flex-1 w-full mx-auto ${(isPatientOnly || isDoctor) ? "pt-[68px] px-0 pb-0" : isAdminShell ? "admin-main" : "max-w-[1700px] pt-[80px] px-4 md:px-6 pb-4 md:pb-6"} flex gap-0 h-full`}>
+        <main className={`flex-1 w-full mx-auto ${useTopNavbarLayout ? "pt-[68px] px-0 pb-0" : isAdminShell ? "admin-main" : "max-w-[1700px] pt-[80px] px-4 md:px-6 pb-4 md:pb-6"} flex gap-0 h-full`}>
           {isAdminShell ? (
             <AdminSidebar />
           ) : roles.includes("DOCTOR") ? (
@@ -334,12 +347,14 @@ export default function DashboardLayout() {
           ) : roles.includes("LAB_TECHNICIAN") ? (
             <LabTechnicianSidebar />
           ) : isReceptionist ? (
-            <ReceptionistSidebar />
+            null
+          ) : isPatientOnly ? (
+            null
           ) : (
             <Sidebar />
           )}
 
-          <div className={`flex-1 min-w-0 flex flex-col h-full ${isDoctor ? "px-6 py-6" : isPatientOnly ? "px-4 py-7 md:px-6 md:py-8" : ""}`}>
+          <div className={`flex-1 min-w-0 flex flex-col h-full ${isDoctor || isReceptionist ? "px-6 py-6" : isPatientOnly ? "px-4 py-7 md:px-6 md:py-8" : ""}`}>
             <Outlet />
           </div>
         </main>
