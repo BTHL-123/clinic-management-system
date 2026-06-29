@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, KeyRound, LogOut, UserSquare, Home } from "lucide-react";
+import { ChevronDown, Home, KeyRound, LogOut, UserSquare } from "lucide-react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import NotificationBell from "../components/NotificationBell.jsx";
@@ -9,10 +9,7 @@ import DoctorSidebar from "./DoctorSidebar.jsx";
 import PharmacistSidebar from "./PharmacistSidebar.jsx";
 import PatientSidebar from "./PatientSidebar.jsx";
 import LabTechnicianSidebar from "./LabTechnicianSidebar.jsx";
-import ReceptionistSidebar from "./ReceptionistSidebar.jsx";
 import AdminSidebar from "./AdminSidebar.jsx";
-import bgImage from "../assets/images/background_2k.png";
-import patientBgImage from "../assets/images/patient_bg.png";
 
 const normalizeRole = (role) => {
   const roleName = typeof role === "string" ? role : role?.roleName;
@@ -61,12 +58,23 @@ export default function DashboardLayout() {
   const isReceptionist = roles.includes("RECEPTIONIST") && !roles.includes("ADMIN");
   const isPatientOnly = roles.includes("PATIENT") && !isDoctor && !isPharmacist && !isLabTechnician;
   const isAdminShell = roles.includes("ADMIN") && !isDoctor && !isPharmacist && !isPatientOnly && !isLabTechnician;
-  const usePatientVisualShell = isPatientOnly || isAdminShell || isPharmacist || isLabTechnician || isDoctor || isReceptionist;
-  const isLightShell = isPharmacist || isLabTechnician;
-  const useTopNavbarLayout = isPatientOnly || isPharmacist || isLabTechnician;
+  const usePatientVisualShell = isAdminShell;
+  const useTopNavbarLayout = isPatientOnly || isDoctor || isReceptionist || isPharmacist || isLabTechnician;
+  const isLightShell = false;
 
   const getNavLinks = () => {
-    if (roles.includes("PHARMACIST")) {
+    if (isReceptionist) {
+      return [
+        { label: "Tổng quan", path: "/dashboard" },
+        { label: "Tạo lịch khám", path: "/dashboard/walk-in" },
+        { label: "Check-in", path: "/dashboard/receptionist-appointments" },
+        { label: "Hàng đợi", path: "/dashboard/queue-management" },
+        { label: "Bệnh nhân", path: "/dashboard/patients" },
+        { label: "Thanh toán", path: "/dashboard/payments" },
+      ];
+    }
+
+    if (isPharmacist) {
       return [
         { label: "Tổng quan", path: "/dashboard" },
         { label: "Cấp phát thuốc", path: "/dashboard/pharmacist/prescriptions" },
@@ -77,13 +85,17 @@ export default function DashboardLayout() {
         { label: "Nhà cung cấp", path: "/dashboard/suppliers" },
       ];
     }
-    if (roles.includes("LAB_TECHNICIAN")) {
+
+    if (isLabTechnician) {
       return [
         { label: "Tổng quan", path: "/dashboard" },
         { label: "Xét nghiệm", path: "/dashboard/lab-requests" },
         { label: "Danh mục xét nghiệm", path: "/dashboard/lab-tests" },
       ];
     }
+
+    if (!isPatientOnly) return [];
+
     return [
       { label: "Tổng quan", path: "/dashboard" },
       { label: "Đặt lịch khám", path: "/dashboard/available-slots" },
@@ -93,12 +105,12 @@ export default function DashboardLayout() {
     ];
   };
 
-  /* ─── PATIENT: Full-width top header bar (matching landing page) ─── */
+  /* ─── PATIENT & DOCTOR: Full-width top header bar (matching landing page) ─── */
   const renderPatientHeader = () => (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-2xl border-b border-slate-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-      <div className="w-full px-6 h-16 flex items-center justify-between">
+      <div className={`mx-auto flex h-16 w-full items-center justify-between px-5 md:px-7 ${isPharmacist || isLabTechnician ? "" : "max-w-[1240px]"}`}>
         {/* Left: Logo + Brand */}
-        <div className="flex items-center gap-3 cursor-pointer group shrink-0" onClick={() => navigate('/')}>
+        <div className="flex items-center gap-3 cursor-pointer group shrink-0" onClick={() => navigate(isDoctor || isPharmacist || isLabTechnician ? "/dashboard" : "/")}>
           <LogoSVG className="w-9 h-9 drop-shadow-sm group-hover:scale-105 transition-transform" />
           <div className="hidden sm:flex flex-col justify-center leading-none">
             <span className="font-extrabold text-[1.1rem] tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-emerald-500">Medical</span>
@@ -107,26 +119,27 @@ export default function DashboardLayout() {
         </div>
 
         {/* Center: Top Horizontal Navigation Links */}
-        <nav className="hidden md:flex items-center gap-1.5">
-          {getNavLinks().map((item) => {
-            const isActive = location.pathname === item.path || 
-              (item.path !== "/dashboard" && location.pathname.startsWith(item.path)) ||
-              (item.path === "/dashboard/pharmacist/prescriptions" && location.pathname.startsWith("/dashboard/prescriptions"));
-            return (
-              <button
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                className={`px-4 py-2 rounded-xl text-xs font-extrabold tracking-wide transition-all ${
-                  isActive
+        {getNavLinks().length > 0 && (
+          <nav className="hidden md:flex items-center gap-1.5">
+            {getNavLinks().map((item) => {
+              const isActive = location.pathname === item.path ||
+                (item.path !== "/dashboard" && location.pathname.startsWith(item.path)) ||
+                (item.path === "/dashboard/pharmacist/prescriptions" && location.pathname.startsWith("/dashboard/prescriptions"));
+              return (
+                <button
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  className={`px-4 py-2 rounded-xl text-xs font-extrabold tracking-wide transition-all ${isActive
                     ? "bg-[#0A604E] !text-white shadow-sm shadow-[#0A604E]/10"
                     : "!text-slate-700 hover:bg-[#F0F9F7] hover:!text-[#0A604E]"
-                }`}
-              >
-                {item.label}
-              </button>
-            );
-          })}
-        </nav>
+                    }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
+        )}
 
         {/* Right: Actions */}
         <div className="flex items-center gap-3">
@@ -142,23 +155,30 @@ export default function DashboardLayout() {
 
           <div className="hidden md:block h-7 w-px bg-slate-200"></div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="relative flex items-center gap-2.5">
             <div className="hidden md:flex flex-col items-end">
               <strong className="text-[13px] font-bold leading-tight !text-slate-800">{user?.fullName || "Clinic Admin"}</strong>
               <span className="text-[10px] font-semibold uppercase tracking-wider !text-teal-600">{rolesText}</span>
             </div>
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-500 text-white flex items-center justify-center font-bold text-sm shadow-sm border border-teal-400/30 overflow-hidden">
+            <button
+              type="button"
+              className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border border-teal-400/30 bg-gradient-to-br from-teal-500 to-emerald-500 text-sm font-bold text-white shadow-sm transition hover:scale-105"
+              aria-label="Mở menu tài khoản"
+              aria-expanded={accountMenuOpen}
+              onClick={() => setAccountMenuOpen((open) => !open)}
+            >
               {user?.avatarUrl ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" /> : <span>{initials}</span>}
-            </div>
+            </button>
+            {accountMenuOpen && (
+              <div className="absolute right-0 top-[calc(100%+12px)] z-[60] w-52 overflow-hidden rounded-2xl border border-[#DDEDEA] bg-white p-1.5 shadow-[0_16px_36px_rgba(15,23,42,.14)]">
+                <button type="button" onClick={() => { setAccountMenuOpen(false); navigate("/dashboard/profile"); }} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:bg-[#F3FFFB] hover:text-[#007D68]"><UserSquare size={17} /> Hồ sơ cá nhân</button>
+                <button type="button" onClick={() => { setAccountMenuOpen(false); navigate("/dashboard/change-password"); }} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:bg-[#F3FFFB] hover:text-[#007D68]"><KeyRound size={17} /> Đổi mật khẩu</button>
+                <div className="mx-2 my-1 border-t border-[#E8F1EF]" />
+                <button type="button" onClick={handleLogout} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-rose-600 transition hover:bg-rose-50"><LogOut size={17} /> Đăng xuất</button>
+              </div>
+            )}
           </div>
 
-          <button
-            className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-200 !text-slate-400 hover:bg-rose-50 hover:!text-rose-500 hover:border-rose-200 transition-all group"
-            aria-label="Logout"
-            onClick={handleLogout}
-          >
-            <LogOut size={16} strokeWidth={2.5} className="group-hover:-translate-x-0.5 transition-transform" />
-          </button>
         </div>
       </div>
     </header>
@@ -236,22 +256,70 @@ export default function DashboardLayout() {
     </header>
   );
 
+  const renderAdminHeader = () => (
+    <header className="admin-topbar">
+      <div className="admin-topbar-inner">
+        <div className="admin-topbar-title">
+          <span className="admin-topbar-mark"><LogoSVG className="w-8 h-8" /></span>
+          <div>
+            <span className="admin-topbar-kicker">Medical Clinic</span>
+            <strong>{getPageTitle(location.pathname)}</strong>
+          </div>
+        </div>
+
+        <div className="admin-topbar-actions">
+          <button className="admin-topbar-home" type="button" aria-label="Về bảng điều khiển" onClick={() => navigate("/dashboard")}>
+            <Home size={18} />
+          </button>
+          <NotificationBell />
+          <div className="admin-topbar-divider" />
+          <div className="admin-account-menu">
+            <button
+              className="admin-account-trigger"
+              type="button"
+              aria-expanded={accountMenuOpen}
+              onClick={() => setAccountMenuOpen((open) => !open)}
+            >
+              <span className="admin-account-avatar">
+                {user?.avatarUrl ? <img src={user.avatarUrl} alt="" /> : initials}
+              </span>
+              <span className="hidden sm:grid text-left leading-tight">
+                <strong>{user?.fullName || "Clinic Admin"}</strong>
+                <small>{rolesText}</small>
+              </span>
+              <ChevronDown size={15} className={accountMenuOpen ? "open" : ""} />
+            </button>
+            {accountMenuOpen && (
+              <div className="admin-account-dropdown">
+                <button type="button" onClick={() => { setAccountMenuOpen(false); navigate("/dashboard/profile"); }}><UserSquare size={16} />Hồ sơ của tôi</button>
+                <button type="button" onClick={() => { setAccountMenuOpen(false); navigate("/dashboard/change-password"); }}><KeyRound size={16} />Đổi mật khẩu</button>
+                <button className="danger" type="button" onClick={handleLogout}><LogOut size={16} />Đăng xuất</button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+
   return (
     <div className={`flex flex-col min-h-screen w-full relative selection:bg-teal-200 selection:text-teal-900 font-sans overflow-y-auto overflow-x-hidden ${useTopNavbarLayout ? "" : usePatientVisualShell ? "patient-shell" : ""} ${isAdminShell ? "admin-shell" : ""} ${isReceptionist ? "receptionist-shell" : ""} ${isPatientOnly ? "patient-web-theme" : ""}`}>
       {/* Global Background */}
-      {useTopNavbarLayout ? (
-        /* ─── PATIENT, PHARMACIST, LAB: Solid light mint/teal background matching design ─── */
+      {isAdminShell ? (
+        <div className="admin-page-background" />
+      ) : isDoctor || isPharmacist || isLabTechnician ? (
+        /* ─── DOCTOR: Solid light teal background matching design ─── */
         <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#E2F2EE]" />
+      ) : isPatientOnly ? (
+        /* ─── PATIENT: Solid light teal background matching design ─── */
+        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#F8FFFC]" />
+      ) : isReceptionist ? (
+        /* ─── RECEPTIONIST: Solid slate background ─── */
+        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-slate-50" />
       ) : usePatientVisualShell ? (
         <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#0a3d38]">
           {/* Rich teal base — darker & more saturated */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#064e3b] via-[#0d9488] to-[#134e4a]"></div>
-
-          {/* Patient background artwork — boosted saturation & contrast */}
-          <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-75 saturate-[1.45] contrast-[1.15] brightness-[0.82]"
-            style={{ backgroundImage: `url(${patientBgImage})` }}
-          ></div>
 
           {/* Vivid aurora mesh blobs */}
           <div className="absolute -top-[15%] -left-[5%] w-[55vw] h-[55vw] bg-teal-400/55 rounded-full blur-[100px] mix-blend-screen animate-pulse" style={{ animationDuration: "10s" }}></div>
@@ -268,21 +336,16 @@ export default function DashboardLayout() {
           <div
             className="absolute inset-0 opacity-[0.06] mix-blend-overlay"
             style={{
-               backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
             }}
           ></div>
         </div>
       ) : (
-        <div
-          className="fixed inset-0 z-0 pointer-events-none bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url(${bgImage})` }}
-        >
-          <div className="absolute inset-0 bg-slate-900/40"></div>
-        </div>
+        <div className="fixed inset-0 z-0 pointer-events-none bg-gradient-to-br from-slate-100 via-slate-50 to-slate-200" />
       )}
 
       {/* Header */}
-      {useTopNavbarLayout ? renderPatientHeader() : renderOriginalHeader()}
+      {isAdminShell ? renderAdminHeader() : useTopNavbarLayout ? renderPatientHeader() : renderOriginalHeader()}
 
       <motion.div
         key={location.pathname}
@@ -292,19 +355,21 @@ export default function DashboardLayout() {
         transition={{ duration: 0.25, ease: "easeOut" }}
         className="flex-1 w-full relative z-10 flex flex-col"
       >
-        <main className={`flex-1 w-full mx-auto ${useTopNavbarLayout ? "pt-[68px] px-0 pb-0" : "max-w-[1700px] pt-[80px] px-4 md:px-6 pb-4 md:pb-6"} flex gap-0 h-full`}>
-          {useTopNavbarLayout ? null : isAdminShell ? (
+        <main className={`flex-1 w-full mx-auto ${useTopNavbarLayout ? "pt-[68px] px-0 pb-0" : isAdminShell ? "admin-main" : "max-w-[1700px] pt-[80px] px-4 md:px-6 pb-4 md:pb-6"} flex gap-0 h-full`}>
+          {isAdminShell ? (
             <AdminSidebar />
           ) : roles.includes("DOCTOR") ? (
             <DoctorSidebar />
           ) : roles.includes("PHARMACIST") ? (
-            <PharmacistSidebar />
+            null
           ) : roles.includes("PATIENT") && !isPatientOnly ? (
             <PatientSidebar />
           ) : roles.includes("LAB_TECHNICIAN") ? (
-            <LabTechnicianSidebar />
+            null
           ) : isReceptionist ? (
-            <ReceptionistSidebar />
+            null
+          ) : isPatientOnly ? (
+            null
           ) : (
             <Sidebar />
           )}
@@ -318,21 +383,35 @@ export default function DashboardLayout() {
   );
 }
 
-/* Helper: Get page title from pathname for breadcrumb */
 function getPageTitle(pathname) {
   const map = {
     "/dashboard": "Tổng quan",
-    "/dashboard/available-slots": "Đặt lịch khám",
-    "/dashboard/my-appointments": "Lịch hẹn của tôi",
-    "/dashboard/queue-status": "Hàng đợi",
-    "/dashboard/my-medical-history": "Hồ sơ bệnh án",
-    "/dashboard/my-lab-results": "Kết quả xét nghiệm",
-    "/dashboard/our-doctors": "Bác sĩ",
-    "/dashboard/service-prices": "Bảng giá dịch vụ",
-    "/dashboard/ai-chat": "Trợ lý AI",
+    "/dashboard/appointments": "Lịch khám",
+    "/dashboard/patients": "Bệnh nhân",
+    "/dashboard/doctors": "Bác sĩ",
+    "/dashboard/lab-requests": "Xét nghiệm",
+    "/dashboard/queue-management": "Hàng đợi",
+    "/dashboard/admin/doctor-leave-requests": "Duyệt nghỉ phép",
+    "/dashboard/articles": "Bài viết y tế",
+    "/dashboard/departments": "Chuyên khoa",
+    "/dashboard/medical-services": "Dịch vụ y tế",
+    "/dashboard/medicines": "Thuốc",
+    "/dashboard/suppliers": "Nhà cung cấp",
+    "/dashboard/inventory/batches": "Lô thuốc",
+    "/dashboard/inventory/transactions": "Giao dịch kho",
+    "/dashboard/inventory/alerts": "Cảnh báo kho",
+    "/dashboard/payments": "Thanh toán",
+    "/dashboard/invoices": "Hóa đơn",
+    "/dashboard/refunds": "Hoàn tiền",
+    "/dashboard/reviews": "Đánh giá",
+    "/dashboard/users": "Tài khoản",
+    "/dashboard/security": "Vai trò & phân quyền",
+    "/dashboard/system-settings": "Cấu hình hệ thống",
+    "/dashboard/audit-logs": "Nhật ký hệ thống",
     "/dashboard/profile": "Hồ sơ cá nhân",
     "/dashboard/change-password": "Đổi mật khẩu",
     "/dashboard/notifications": "Thông báo",
   };
+
   return map[pathname] || "Dashboard";
 }
