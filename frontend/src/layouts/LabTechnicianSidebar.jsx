@@ -23,6 +23,7 @@ export default function LabTechnicianSidebar() {
     const path = location.pathname;
     if (path === "/dashboard") return "home";
     if (path.includes("lab-requests")) return "lab-management";
+    if (path.includes("lab-tests")) return "lab-tests";
     if (path.includes("notifications")) return "notifications";
     if (path.includes("profile")) return "profile";
     if (path.includes("change-password")) return "settings";
@@ -42,6 +43,7 @@ export default function LabTechnicianSidebar() {
     { id: "notifications", icon: <Bell size={22} />, path: "/dashboard/notifications", label: "Thông báo" },
     { id: "settings", icon: <KeyRound size={22} />, path: "/dashboard/change-password", label: "Đổi mật khẩu" },
     { id: "lab-management", icon: <FlaskConical size={22} />, path: "/dashboard/lab-requests", label: "Phòng xét nghiệm" },
+    { id: "lab-tests", icon: <FileText size={22} />, path: "/dashboard/lab-tests", label: "Danh mục xét nghiệm" },
   ];
 
   return (

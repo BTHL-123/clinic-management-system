@@ -160,7 +160,7 @@ export default function ProfilePage() {
         icon={UserSquare}
         iconColor="text-teal-400"
         subtitle={
-          <span className={usePatientVisualShell ? "text-slate-500 font-bold" : "text-white/70 font-medium"}>
+          <span className="text-slate-500 font-medium">
             Cập nhật thông tin cá nhân, avatar và xem hồ sơ theo vai trò.
           </span>
         }

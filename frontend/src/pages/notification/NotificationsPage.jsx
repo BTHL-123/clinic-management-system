@@ -14,7 +14,7 @@ export default function NotificationsPage() {
   const isLabTechnician = roles.includes("LAB_TECHNICIAN");
   const isPatientOnly = roles.includes("PATIENT") && !isDoctor && !isPharmacist && !isLabTechnician;
   const isAdminShell = roles.includes("ADMIN") && !isDoctor && !isPharmacist && !isPatientOnly && !isLabTechnician;
-  const usePatientVisualShell = isPatientOnly || isAdminShell || isPharmacist || isLabTechnician;
+  const usePatientVisualShell = false;
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -107,7 +107,7 @@ export default function NotificationsPage() {
         icon={Bell}
         iconColor={usePatientVisualShell ? "text-teal-400" : "text-teal-300"}
         subtitle={
-          <span className={usePatientVisualShell ? "text-white/80 font-bold" : "text-white/70 font-medium"}>
+          <span className="text-slate-500 font-medium">
             Nhận và xem các cập nhật về lịch khám hoặc thông báo từ hệ thống.
           </span>
         }
@@ -176,13 +176,13 @@ export default function NotificationsPage() {
           {loading && notifications.length === 0 ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "60px 20px" }}>
               <Loader2 className="animate-spin" size={32} style={{ color: "#00b5f1", marginBottom: 12 }} />
-              <span className={usePatientVisualShell ? "text-white/60" : "muted"}>Đang tải thông báo...</span>
+              <span className="text-slate-500 font-medium">Đang tải thông báo...</span>
             </div>
           ) : notifications.length === 0 ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "80px 20px", textAlign: "center" }}>
               <div style={{ fontSize: "3rem", marginBottom: 16 }}>🔔</div>
               <h3 style={{ margin: "0 0 8px", color: usePatientVisualShell ? "white" : "#1e293b", fontWeight: 700 }}>Hộp thư của bạn đang trống</h3>
-              <p className={usePatientVisualShell ? "text-white/60" : "muted"} style={{ maxWidth: 360, margin: 0 }}>
+              <p className="text-slate-500" style={{ maxWidth: 360, margin: 0 }}>
                 {filterUnread ? "Không tìm thấy thông báo chưa đọc nào." : "Bạn không có thông báo nào vào lúc này."}
               </p>
             </div>
@@ -213,7 +213,7 @@ export default function NotificationsPage() {
                         {item.title}
                       </h3>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span className={usePatientVisualShell ? "text-white/50" : "muted"} style={{ fontSize: "0.8rem", marginBottom: 0 }}>{formatDate(item.createdAt)}</span>
+                        <span className="text-slate-400" style={{ fontSize: "0.8rem", marginBottom: 0 }}>{formatDate(item.createdAt)}</span>
                         {!item.isRead && (
                           <button
                             onClick={(e) => {
@@ -250,7 +250,7 @@ export default function NotificationsPage() {
               <ChevronLeft size={16} />
               Trang trước
             </button>
-            <span className="muted" style={{ fontSize: "0.9rem", fontWeight: 600 }}>
+            <span className="text-slate-600" style={{ fontSize: "0.9rem", fontWeight: 600 }}>
               Trang {page + 1} / {totalPages}
             </span>
             <button

@@ -10,6 +10,7 @@ import PharmacistSidebar from "./PharmacistSidebar.jsx";
 import PatientSidebar from "./PatientSidebar.jsx";
 import LabTechnicianSidebar from "./LabTechnicianSidebar.jsx";
 import AdminSidebar from "./AdminSidebar.jsx";
+import ReceptionistSidebar from "./ReceptionistSidebar.jsx";
 
 const normalizeRole = (role) => {
   const roleName = typeof role === "string" ? role : role?.roleName;
@@ -119,7 +120,7 @@ export default function DashboardLayout() {
         </div>
 
         {/* Center: Top Horizontal Navigation Links */}
-        {getNavLinks().length > 0 && (
+        {getNavLinks().length > 0 && isPatientOnly && (
           <nav className="hidden md:flex items-center gap-1.5">
             {getNavLinks().map((item) => {
               const isActive = location.pathname === item.path ||
@@ -355,26 +356,38 @@ export default function DashboardLayout() {
         transition={{ duration: 0.25, ease: "easeOut" }}
         className="flex-1 w-full relative z-10 flex flex-col"
       >
-        <main className={`flex-1 w-full mx-auto ${useTopNavbarLayout ? (isPatientOnly ? "pt-[68px] px-0 pb-0 max-w-[1240px]" : "pt-[68px] px-0 pb-0 max-w-[1440px]") : isAdminShell ? "admin-main" : "max-w-[1700px] pt-[80px] px-4 md:px-6 pb-4 md:pb-6"} flex gap-6 h-full`}>
+        <main className={`flex-1 w-full mx-auto ${
+          useTopNavbarLayout 
+            ? (isPatientOnly 
+                ? "pt-[68px] px-0 pb-0 max-w-[1240px]" 
+                : (isDoctor 
+                    ? "pt-[68px] px-0 pb-0 max-w-[1440px]" 
+                    : "pt-[80px] px-4 md:px-6 pb-4 md:pb-6 max-w-[1440px]"
+                  )
+              ) 
+            : isAdminShell 
+              ? "admin-main" 
+              : "max-w-[1700px] pt-[80px] px-4 md:px-6 pb-4 md:pb-6"
+        } flex gap-6 h-full`}>
           {isAdminShell ? (
             <AdminSidebar />
           ) : roles.includes("DOCTOR") ? (
             <DoctorSidebar />
           ) : roles.includes("PHARMACIST") ? (
-            null
+            <PharmacistSidebar />
           ) : roles.includes("PATIENT") && !isPatientOnly ? (
             <PatientSidebar />
           ) : roles.includes("LAB_TECHNICIAN") ? (
-            null
+            <LabTechnicianSidebar />
           ) : isReceptionist ? (
-            null
+            <ReceptionistSidebar />
           ) : isPatientOnly ? (
             null
           ) : (
             <Sidebar />
           )}
 
-          <div className={`flex-1 min-w-0 flex flex-col h-full ${isDoctor ? "pt-4 px-0 pb-6" : useTopNavbarLayout ? "px-6 py-6" : ""}`}>
+          <div className={`flex-1 min-w-0 flex flex-col h-full ${isDoctor ? "pt-4 px-0 pb-6" : (isPatientOnly ? "px-6 py-6" : "")}`}>
             <Outlet />
           </div>
         </main>
