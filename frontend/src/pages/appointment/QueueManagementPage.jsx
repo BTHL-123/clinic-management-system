@@ -128,15 +128,15 @@ export default function QueueManagementPage() {
   const getStatusBadge = (ticketStatus) => {
     switch (ticketStatus) {
       case "WAITING":
-        return <span className="queue-status queue-status-waiting">Đang chờ</span>;
+        return <span className="bg-sky-50 text-sky-600 px-2.5 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider">Đang chờ</span>;
       case "CALLED":
-        return <span className="queue-status queue-status-called">Đang khám</span>;
+        return <span className="bg-amber-50 text-amber-600 px-2.5 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider">Đang khám</span>;
       case "SKIPPED":
-        return <span className="queue-status queue-status-skipped">Bỏ qua</span>;
+        return <span className="bg-rose-50 text-rose-600 px-2.5 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider">Bỏ qua</span>;
       case "COMPLETED":
-        return <span className="queue-status queue-status-completed">Hoàn tất</span>;
+        return <span className="bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider">Hoàn tất</span>;
       default:
-        return <span className="queue-status">{ticketStatus}</span>;
+        return <span className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider">{ticketStatus}</span>;
     }
   };
 
@@ -150,23 +150,23 @@ export default function QueueManagementPage() {
   };
 
   return (
-    <div className="content receptionist-data-page">
+    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
       <PageHeader
         title="Quản lý hàng đợi"
         icon={Users}
-        iconColor="text-white"
+        iconColor="text-teal-500"
         rightContent={
           <div className="flex items-center gap-3">
-            <span className="text-[12px] text-teal-600 font-semibold bg-teal-50 px-3 py-1.5 rounded-lg flex items-center gap-1.5 border border-teal-100">
+            <span className="text-[12px] text-emerald-700 font-bold bg-emerald-50 px-3 py-1.5 rounded-xl flex items-center gap-1.5 border border-emerald-200">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               Real-time Sync
             </span>
             <button
               onClick={fetchQueue}
               disabled={loading}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-[13px] shadow-md shadow-teal-500/20 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+              className="bg-white hover:bg-slate-50 text-slate-700 font-bold px-4 py-2.5 rounded-xl border border-slate-200 transition-all flex items-center gap-2 shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+              <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
               Làm mới
             </button>
           </div>
@@ -174,53 +174,50 @@ export default function QueueManagementPage() {
       />
 
       {/* Grid of stats overview */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px", marginBottom: "20px" }}>
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {[
-          { label: "Đang chờ", count: stats.waiting, color: "#0284c7", bg: "#f0f9ff" },
-          { label: "Đang khám (Đã gọi)", count: stats.called, color: "#d97706", bg: "#fffbeb" },
-          { label: "Bỏ qua", count: stats.skipped, color: "#dc2626", bg: "#fef2f2" },
-          { label: "Hoàn tất", count: stats.completed, color: "#16a34a", bg: "#f0fdf4" },
-          { label: "Tổng số hàng đợi", count: stats.total, color: "#0f766e", bg: "#f0fdfa" }
+          { label: "Đang chờ", count: stats.waiting, color: "text-sky-600", bg: "bg-sky-50/50 border-sky-100" },
+          { label: "Đang khám (Đã gọi)", count: stats.called, color: "text-amber-600", bg: "bg-amber-50/50 border-amber-100" },
+          { label: "Bỏ qua", count: stats.skipped, color: "text-rose-600", bg: "bg-rose-50/50 border-rose-100" },
+          { label: "Hoàn tất", count: stats.completed, color: "text-emerald-600", bg: "bg-emerald-50/50 border-emerald-100" },
+          { label: "Tổng số hàng đợi", count: stats.total, color: "text-teal-700", bg: "bg-teal-50/50 border-teal-100" }
         ].map((stat, i) => (
-          <div
-            key={i}
-            className="panel"
-            style={{
-              background: stat.bg,
-              borderColor: `${stat.color}15`,
-              display: "flex",
-              flexDirection: "column",
-              padding: "16px",
-              borderRadius: "12px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
-            }}
-          >
-            <span style={{ fontSize: "13px", fontWeight: 600, color: "#64748b" }}>{stat.label}</span>
-            <span style={{ fontSize: "28px", fontWeight: 800, color: stat.color, marginTop: "4px" }}>{stat.count}</span>
+          <div key={i} className={`flex flex-col p-5 rounded-2xl border ${stat.bg} shadow-sm`}>
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">{stat.label}</span>
+            <span className={`text-3xl font-black mt-2 ${stat.color}`}>{stat.count}</span>
           </div>
         ))}
       </div>
 
       {/* Filters Toolbar */}
-      <div className="panel checkin-filter-panel queue-filter-panel">
-        <div className="queue-filter-bar">
-          <label className="checkin-filter-field">
-            <span className="checkin-filter-label">Ngày khám</span>
-            <span className="checkin-filter-control">
-              <Calendar size={18} />
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <div className="flex flex-col md:flex-row gap-4">
+          <label className="w-full md:w-1/3">
+            <span className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">Ngày khám</span>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <Calendar size={18} />
+              </div>
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
               />
-            </span>
+            </div>
           </label>
 
-          <label className="checkin-filter-field">
-            <span className="checkin-filter-label">Bác sĩ phụ trách</span>
-            <span className="checkin-filter-control checkin-select-control">
-              <Stethoscope size={18} />
-              <select value={doctorId} onChange={(e) => setDoctorId(e.target.value)}>
+          <label className="w-full md:w-1/3">
+            <span className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">Bác sĩ phụ trách</span>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <Stethoscope size={18} />
+              </div>
+              <select 
+                value={doctorId} 
+                onChange={(e) => setDoctorId(e.target.value)}
+                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
+              >
                 <option value="">Tất cả bác sĩ</option>
                 {doctors.map(d => (
                   <option key={d.doctorId} value={d.doctorId}>
@@ -228,181 +225,145 @@ export default function QueueManagementPage() {
                   </option>
                 ))}
               </select>
-              <ChevronDown size={16} className="checkin-select-chevron" />
-            </span>
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+                <ChevronDown size={16} />
+              </div>
+            </div>
           </label>
 
-          <label className="checkin-filter-field">
-            <span className="checkin-filter-label">Trạng thái hàng đợi</span>
-            <span className="checkin-filter-control checkin-select-control">
-              <SlidersHorizontal size={18} />
-              <select value={status} onChange={(e) => setStatus(e.target.value)}>
+          <label className="w-full md:w-1/3">
+            <span className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">Trạng thái hàng đợi</span>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <SlidersHorizontal size={18} />
+              </div>
+              <select 
+                value={status} 
+                onChange={(e) => setStatus(e.target.value)}
+                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
+              >
                 <option value="">Tất cả trạng thái</option>
                 <option value="WAITING">Đang chờ</option>
                 <option value="CALLED">Đang khám</option>
                 <option value="SKIPPED">Bỏ qua</option>
                 <option value="COMPLETED">Hoàn tất</option>
               </select>
-              <ChevronDown size={16} className="checkin-select-chevron" />
-            </span>
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+                <ChevronDown size={16} />
+              </div>
+            </div>
           </label>
         </div>
       </div>
 
       {/* Table container */}
-      <div className="table-wrapper receptionist-fit-table queue-table-wrapper">
-        <table className="data-table fixed-table queue-table w-full min-w-[1100px]">
-          <thead>
-            <tr>
-              <th style={{ width: "5%", textAlign: "center" }}>STT</th>
-              <th style={{ width: "11%", textAlign: "left" }}>Mã Lịch Hẹn</th>
-              <th style={{ width: "13%", textAlign: "left" }}>Bệnh Nhân</th>
-              <th style={{ width: "11%", textAlign: "left" }}>Số Điện Thoại</th>
-              <th style={{ width: "12%", textAlign: "left" }}>Bác Sĩ</th>
-              <th style={{ width: "8%", textAlign: "center" }}>Giờ Hẹn</th>
-              <th style={{ width: "9%", textAlign: "left" }}>Check-in</th>
-              <th style={{ width: "9%", textAlign: "left" }}>Trạng Thái</th>
-              <th style={{ width: "22%", textAlign: "center" }}>Thao Tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan="9" className="queue-table-message">
-                  Đang tải dữ liệu hàng đợi...
-                </td>
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1100px] text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-100 text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+                <th className="px-5 py-4 text-center">STT</th>
+                <th className="px-5 py-4">Mã Lịch Hẹn</th>
+                <th className="px-5 py-4">Bệnh Nhân</th>
+                <th className="px-5 py-4">Số Điện Thoại</th>
+                <th className="px-5 py-4">Bác Sĩ</th>
+                <th className="px-5 py-4 text-center">Giờ Hẹn</th>
+                <th className="px-5 py-4">Check-in</th>
+                <th className="px-5 py-4">Trạng Thái</th>
+                <th className="px-5 py-4 text-center">Thao Tác</th>
               </tr>
-            ) : queueTickets.length === 0 ? (
-              <tr>
-                <td colSpan="9" className="queue-table-message">
-                  Không có bệnh nhân nào trong hàng đợi hôm nay.
-                </td>
-              </tr>
-            ) : (
-              queueTickets.map((ticket) => {
-                const canCall = ticket.queueStatus === "WAITING" || ticket.queueStatus === "SKIPPED" || ticket.queueStatus === "CALLED";
-                const canSkip = ticket.queueStatus === "WAITING" || ticket.queueStatus === "CALLED";
-                const canComplete = ticket.queueStatus === "CALLED" || ticket.queueStatus === "WAITING";
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {loading ? (
+                <tr>
+                  <td colSpan="9" className="text-center py-12 text-slate-400">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <div className="w-8 h-8 rounded-full border-4 border-slate-100 border-t-teal-500 animate-spin"></div>
+                      <p className="text-sm font-medium">Đang tải dữ liệu hàng đợi...</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : queueTickets.length === 0 ? (
+                <tr>
+                  <td colSpan="9" className="text-center py-12 text-slate-500 text-sm font-medium">
+                    Không có bệnh nhân nào trong hàng đợi hôm nay.
+                  </td>
+                </tr>
+              ) : (
+                queueTickets.map((ticket) => {
+                  const canCall = ticket.queueStatus === "WAITING" || ticket.queueStatus === "SKIPPED" || ticket.queueStatus === "CALLED";
+                  const canSkip = ticket.queueStatus === "WAITING" || ticket.queueStatus === "CALLED";
+                  const canComplete = ticket.queueStatus === "CALLED" || ticket.queueStatus === "WAITING";
 
-                return (
-                  <tr key={ticket.queueTicketId}>
-                    <td style={{ textAlign: "center" }}>
-                      <span
-                        style={{
-                          background: ticket.queueStatus === "CALLED"
-                            ? "linear-gradient(135deg, #d97706, #f59e0b)"
-                            : ticket.queueStatus === "COMPLETED"
-                            ? "linear-gradient(135deg, #16a34a, #22c55e)"
-                            : "linear-gradient(135deg, #0f766e, #0d9488)",
-                          color: "white",
-                          padding: "6px 12px",
-                          borderRadius: "8px",
-                          fontWeight: 800,
-                          fontSize: "14px",
-                          boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
-                          display: "inline-block"
-                        }}
-                      >
-                        #{ticket.queueNumber}
-                      </span>
-                    </td>
-                    <td className="queue-appointment-code" style={{ textAlign: "left" }}>{ticket.appointmentCode}</td>
-                    <td className="queue-patient-name" style={{ textAlign: "left" }}>{ticket.patientName}</td>
-                    <td style={{ textAlign: "left" }}>{ticket.patientPhone || "—"}</td>
-                    <td style={{ textAlign: "left" }}>{ticket.doctorName}</td>
-                    <td style={{ textAlign: "center", fontWeight: 500 }}>
-                      {ticket.startTime?.slice(0, 5)} - {ticket.endTime?.slice(0, 5)}
-                    </td>
-                    <td className="queue-checkin-time" style={{ textAlign: "left" }}>
-                      {ticket.checkedInAt ? new Date(ticket.checkedInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "—"}
-                    </td>
-                    <td style={{ textAlign: "left" }}>{getStatusBadge(ticket.queueStatus)}</td>
-                    <td style={{ textAlign: "center" }}>
-                      <div style={{ display: "flex", gap: "6px", justifyContent: "center", alignItems: "center" }}>
-                        {canCall && (
-                          <button
-                            className="primary-button compact"
-                            title="Gọi khám bệnh nhân"
-                            onClick={() => handleCall(ticket.queueTicketId)}
-                            style={{
-                              background: ticket.queueStatus === "CALLED"
-                                ? "linear-gradient(135deg, #475569, #64748b)" // Recalling
-                                : "linear-gradient(135deg, #0284c7, #06b6d4)",
-                              boxShadow: "0 2px 4px rgba(2,132,199,0.15)",
-                              color: "white",
-                              fontWeight: 700,
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "4px",
-                              padding: "4px 10px",
-                              minHeight: "32px",
-                              fontSize: "12px",
-                              borderRadius: "8px",
-                              border: "none",
-                              cursor: "pointer"
-                            }}
-                          >
-                            <Play size={14} />
-                            {ticket.queueStatus === "CALLED" ? "Gọi lại" : "Gọi khám"}
-                          </button>
-                        )}
-                        {canSkip && (
-                          <button
-                            className="ghost-button compact"
-                            title="Bỏ qua lượt bệnh nhân"
-                            onClick={() => handleSkip(ticket.queueTicketId)}
-                            style={{
-                              borderColor: "#fca5a5",
-                              color: "#dc2626",
-                              background: "#ffffff",
-                              fontWeight: 650,
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "4px",
-                              padding: "4px 10px",
-                              minHeight: "32px",
-                              fontSize: "12px",
-                              borderRadius: "8px",
-                              cursor: "pointer"
-                            }}
-                          >
-                            <SkipForward size={14} />
-                            Bỏ qua
-                          </button>
-                        )}
-                        {canComplete && (
-                          <button
-                            className="primary-button compact"
-                            title="Hoàn tất lượt khám"
-                            onClick={() => handleComplete(ticket.queueTicketId)}
-                            style={{
-                              background: "linear-gradient(135deg, #16a34a, #22c55e)",
-                              boxShadow: "0 2px 4px rgba(22,163,74,0.15)",
-                              color: "white",
-                              fontWeight: 700,
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "4px",
-                              padding: "4px 10px",
-                              minHeight: "32px",
-                              fontSize: "12px",
-                              borderRadius: "8px",
-                              border: "none",
-                              cursor: "pointer"
-                            }}
-                          >
-                            <Check size={14} />
-                            Hoàn tất
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                  return (
+                    <tr key={ticket.queueTicketId} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-5 py-4 text-center">
+                        <span
+                          className={`inline-block px-3 py-1.5 rounded-lg font-black text-sm shadow-sm text-white ${
+                            ticket.queueStatus === "CALLED" ? "bg-gradient-to-r from-amber-500 to-amber-400" :
+                            ticket.queueStatus === "COMPLETED" ? "bg-gradient-to-r from-emerald-500 to-emerald-400" :
+                            "bg-gradient-to-r from-teal-600 to-teal-500"
+                          }`}
+                        >
+                          #{ticket.queueNumber}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 text-sm font-extrabold text-teal-600">{ticket.appointmentCode}</td>
+                      <td className="px-5 py-4 text-sm font-bold text-slate-800">{ticket.patientName}</td>
+                      <td className="px-5 py-4 text-sm font-medium text-slate-600">{ticket.patientPhone || "—"}</td>
+                      <td className="px-5 py-4 text-sm font-medium text-slate-600">{ticket.doctorName}</td>
+                      <td className="px-5 py-4 text-sm font-bold text-slate-700 text-center">
+                        {ticket.startTime?.slice(0, 5)} - {ticket.endTime?.slice(0, 5)}
+                      </td>
+                      <td className="px-5 py-4 text-sm font-medium text-slate-600">
+                        {ticket.checkedInAt ? new Date(ticket.checkedInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "—"}
+                      </td>
+                      <td className="px-5 py-4">{getStatusBadge(ticket.queueStatus)}</td>
+                      <td className="px-5 py-4 text-center">
+                        <div className="flex justify-center items-center gap-2">
+                          {canCall && (
+                            <button
+                              title="Gọi khám bệnh nhân"
+                              onClick={() => handleCall(ticket.queueTicketId)}
+                              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold text-xs text-white transition-all shadow-sm ${
+                                ticket.queueStatus === "CALLED" 
+                                  ? "bg-slate-600 hover:bg-slate-700 shadow-slate-500/20" 
+                                  : "bg-sky-600 hover:bg-sky-700 shadow-sky-500/20"
+                              }`}
+                            >
+                              <Play size={14} />
+                              {ticket.queueStatus === "CALLED" ? "Gọi lại" : "Gọi khám"}
+                            </button>
+                          )}
+                          {canSkip && (
+                            <button
+                              title="Bỏ qua lượt bệnh nhân"
+                              onClick={() => handleSkip(ticket.queueTicketId)}
+                              className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold text-xs text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-all"
+                            >
+                              <SkipForward size={14} />
+                              Bỏ qua
+                            </button>
+                          )}
+                          {canComplete && (
+                            <button
+                              title="Hoàn tất lượt khám"
+                              onClick={() => handleComplete(ticket.queueTicketId)}
+                              className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold text-xs text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm shadow-emerald-500/20 transition-all"
+                            >
+                              <Check size={14} />
+                              Hoàn tất
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
