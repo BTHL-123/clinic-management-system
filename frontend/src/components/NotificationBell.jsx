@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import notificationService from "../services/notificationService";
 
-export default function NotificationBell({ theme = "dark" }) {
+export default function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -112,7 +112,7 @@ export default function NotificationBell({ theme = "dark" }) {
   return (
     <div className="notification-bell-wrapper">
       <button
-        className={`icon-button notification-bell-button ${theme === "light" ? "!bg-slate-50 !text-slate-500 !border-slate-200 hover:!bg-teal-50 hover:!text-teal-600 hover:!border-teal-200 shadow-sm" : ""}`}
+        className="icon-button notification-bell-button"
         aria-label="Notifications"
         onClick={handleBellClick}
       >
