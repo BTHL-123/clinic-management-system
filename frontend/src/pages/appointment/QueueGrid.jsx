@@ -47,7 +47,7 @@ function slotStatusLabel(status) {
   return status;
 }
 
-export default function QueueGrid({ doctors, schedules, slotsBySchedule, onSlotClick, onSlotRightClick }) {
+export default function QueueGrid({ doctors, schedules, slotsBySchedule, onSlotClick, onSlotRightClick, selectedSlotId }) {
   const columns = doctors;
   const TIME_ROWS = React.useMemo(() => getDynamicTimeRows(schedules), [schedules]);
 
@@ -125,10 +125,12 @@ export default function QueueGrid({ doctors, schedules, slotsBySchedule, onSlotC
                 else if (status === "BOOKED" || status === "LOCKED") statusClass = "booked";
                 else if (status === "EXPIRED" || status === "BLOCKED" || status === "CANCELLED") statusClass = "blocked";
 
+                const isSelected = selectedSlotId && slot && (slot.slotId === selectedSlotId || slot.id === selectedSlotId);
+
                 return (
                   <button
                     type="button"
-                    className={`appointment-resource-slot ${statusClass}`}
+                    className={`appointment-resource-slot ${statusClass} ${isSelected ? "selected" : ""}`}
                     key={time}
                     onClick={(e) => {
                       if (boardRef.current?.dataset.dragged === "true") {

@@ -104,18 +104,36 @@ export default function ReceptionistHome() {
     return "Chào buổi tối";
   };
 
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatFullDateTime = (d) => {
+    const days = ["CHỦ NHẬT", "THỨ HAI", "THỨ BA", "THỨ TƯ", "THỨ NĂM", "THỨ SÁU", "THỨ BẢY"];
+    const dayName = days[d.getDay()];
+    const dateStr = d.toLocaleDateString("vi-VN", { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const timeStr = d.toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return `${dayName}, ${dateStr} - ${timeStr} • QUẦY TIẾP ĐÓN`;
+  };
+
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6 w-full h-full">
-      {/* Header section (Compact) */}
+      {/* Header section matching screenshot */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
         <div>
-          <div className="flex items-center gap-2 text-teal-600 mb-1 font-semibold text-xs uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-teal-600 mb-1 font-extrabold text-xs uppercase tracking-widest">
             <Headset size={14} />
-            <span>Trung tâm tiếp đón</span>
+            <span>HỆ THỐNG QUẢN LÝ PHÒNG KHÁM</span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">
+          <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
             {getGreeting()}, <span className="text-teal-600">{user?.fullName ?? "Lễ tân"}</span>
           </h1>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">
+            {formatFullDateTime(currentTime)}
+          </p>
         </div>
         <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 font-bold py-2.5 px-4 rounded-xl shadow-sm border border-emerald-100 text-sm">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -269,7 +287,7 @@ export default function ReceptionistHome() {
                         q.queueStatus === 'WAITING' ? 'bg-amber-400' :
                         q.queueStatus === 'CALLED' ? 'bg-sky-500 animate-pulse' :
                         'bg-slate-300'
-                     }`}></span>
+                      }`}></span>
                    </div>
                  ))}
                </div>
