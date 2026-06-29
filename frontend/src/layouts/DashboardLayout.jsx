@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, KeyRound, LogOut, UserSquare } from "lucide-react";
+import { ChevronDown, Home, KeyRound, LogOut, UserSquare } from "lucide-react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import NotificationBell from "../components/NotificationBell.jsx";
@@ -59,14 +59,14 @@ export default function DashboardLayout() {
   const isReceptionist = roles.includes("RECEPTIONIST") && !roles.includes("ADMIN");
   const isPatientOnly = roles.includes("PATIENT") && !isDoctor && !isPharmacist && !isLabTechnician;
   const isAdminShell = roles.includes("ADMIN") && !isDoctor && !isPharmacist && !isPatientOnly && !isLabTechnician;
-  const usePatientVisualShell = isPatientOnly || isPharmacist || isLabTechnician || isDoctor || isReceptionist;
+  const usePatientVisualShell = isPatientOnly || isAdminShell || isPharmacist || isLabTechnician || isReceptionist;
 
-  /* ─── PATIENT: Full-width top header bar (matching landing page) ─── */
+  /* ─── PATIENT & DOCTOR: Full-width top header bar (matching landing page) ─── */
   const renderPatientHeader = () => (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-2xl border-b border-slate-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
       <div className="mx-auto flex h-16 w-full max-w-[1240px] items-center justify-between px-5 md:px-7">
         {/* Left: Logo + Brand */}
-        <div className="flex items-center gap-3 cursor-pointer group shrink-0" onClick={() => navigate('/')}>
+        <div className="flex items-center gap-3 cursor-pointer group shrink-0" onClick={() => navigate(isDoctor ? '/dashboard' : '/')}>
           <LogoSVG className="w-9 h-9 drop-shadow-sm group-hover:scale-105 transition-transform" />
           <div className="hidden sm:flex flex-col justify-center leading-none">
             <span className="font-extrabold text-[1.1rem] tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-emerald-500">Medical</span>
@@ -74,32 +74,33 @@ export default function DashboardLayout() {
           </div>
         </div>
 
-        {/* Center: Top Horizontal Navigation Links */}
-        <nav className="hidden md:flex items-center gap-1.5">
-          {[
-            { label: "Tổng quan", path: "/dashboard" },
-            { label: "Đặt lịch khám", path: "/dashboard/available-slots" },
-            { label: "Lịch hẹn", path: "/dashboard/my-appointments" },
-            { label: "Bệnh án", path: "/dashboard/my-medical-history" },
-            { label: "Trợ lý AI", path: "/dashboard/ai-chat" },
-          ].map((item) => {
-            const isActive = location.pathname === item.path || 
-              (item.path !== "/dashboard" && location.pathname.startsWith(item.path));
-            return (
-              <button
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                className={`px-4 py-2 rounded-xl text-xs font-extrabold tracking-wide transition-all ${
-                  isActive
+        {/* Center: Top Horizontal Navigation Links (Only for patient) */}
+        {!isDoctor && (
+          <nav className="hidden md:flex items-center gap-1.5">
+            {[
+              { label: "Tổng quan", path: "/dashboard" },
+              { label: "Đặt lịch khám", path: "/dashboard/available-slots" },
+              { label: "Lịch hẹn", path: "/dashboard/my-appointments" },
+              { label: "Bệnh án", path: "/dashboard/my-medical-history" },
+              { label: "Trợ lý AI", path: "/dashboard/ai-chat" },
+            ].map((item) => {
+              const isActive = location.pathname === item.path ||
+                (item.path !== "/dashboard" && location.pathname.startsWith(item.path));
+              return (
+                <button
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  className={`px-4 py-2 rounded-xl text-xs font-extrabold tracking-wide transition-all ${isActive
                     ? "bg-[#0A604E] text-white shadow-sm shadow-[#0A604E]/10"
                     : "text-[#4A5D59] hover:bg-[#F0F9F7] hover:text-[#0A604E]"
-                }`}
-              >
-                {item.label}
-              </button>
-            );
-          })}
-        </nav>
+                    }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
+        )}
 
         {/* Right: Actions */}
         <div className="flex items-center gap-3">
@@ -255,10 +256,13 @@ export default function DashboardLayout() {
   );
 
   return (
-    <div className={`flex flex-col min-h-screen w-full relative selection:bg-teal-200 selection:text-teal-900 font-sans overflow-y-auto overflow-x-hidden ${usePatientVisualShell ? "patient-shell" : ""} ${isAdminShell ? "admin-shell" : ""} ${isReceptionist ? "receptionist-shell" : ""} ${isPatientOnly ? "patient-web-theme" : ""}`}>
+    <div className={`flex flex-col min-h-screen w-full relative selection:bg-teal-200 selection:text-teal-900 font-sans overflow-y-auto overflow-x-hidden ${isDoctor ? "patient-web-theme" : usePatientVisualShell ? "patient-shell" : ""} ${isAdminShell ? "admin-shell" : ""} ${isReceptionist ? "receptionist-shell" : ""} ${isPatientOnly ? "patient-web-theme" : ""}`}>
       {/* Global Background */}
       {isAdminShell ? (
         <div className="admin-page-background" />
+      ) : isDoctor ? (
+        /* ─── DOCTOR: Solid light teal background matching design ─── */
+        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#E2F2EE]" />
       ) : isPatientOnly ? (
         /* ─── PATIENT: Solid light teal background matching design ─── */
         <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#F8FFFC]" />
@@ -282,7 +286,7 @@ export default function DashboardLayout() {
           <div
             className="absolute inset-0 opacity-[0.06] mix-blend-overlay"
             style={{
-               backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
             }}
           ></div>
         </div>
@@ -291,7 +295,7 @@ export default function DashboardLayout() {
       )}
 
       {/* Header */}
-      {isAdminShell ? renderAdminHeader() : isPatientOnly ? renderPatientHeader() : renderOriginalHeader()}
+      {isAdminShell ? renderAdminHeader() : (isPatientOnly || isDoctor) ? renderPatientHeader() : renderOriginalHeader()}
 
       <motion.div
         key={location.pathname}
@@ -301,7 +305,7 @@ export default function DashboardLayout() {
         transition={{ duration: 0.25, ease: "easeOut" }}
         className="flex-1 w-full relative z-10 flex flex-col"
       >
-        <main className={`flex-1 w-full mx-auto ${isPatientOnly ? "pt-[68px] px-0 pb-0" : isAdminShell ? "admin-main" : "max-w-[1700px] pt-[80px] px-4 md:px-6 pb-4 md:pb-6"} flex gap-0 h-full`}>
+        <main className={`flex-1 w-full mx-auto ${(isPatientOnly || isDoctor) ? "pt-[68px] px-0 pb-0" : isAdminShell ? "admin-main" : "max-w-[1700px] pt-[80px] px-4 md:px-6 pb-4 md:pb-6"} flex gap-0 h-full`}>
           {isAdminShell ? (
             <AdminSidebar />
           ) : roles.includes("DOCTOR") ? (
@@ -320,7 +324,7 @@ export default function DashboardLayout() {
             <Sidebar />
           )}
 
-          <div className={`flex-1 min-w-0 flex flex-col h-full ${isPatientOnly ? "px-4 py-7 md:px-6 md:py-8" : ""}`}>
+          <div className={`flex-1 min-w-0 flex flex-col h-full ${isDoctor ? "px-6 py-6" : isPatientOnly ? "px-4 py-7 md:px-6 md:py-8" : ""}`}>
             <Outlet />
           </div>
         </main>
