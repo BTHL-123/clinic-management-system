@@ -133,10 +133,6 @@ export default function ProfilePage() {
   const isAdminShell = roles.includes("ADMIN") && !isDoctor && !isPharmacist && !isPatientOnly && !isLabTechnician;
   const usePatientVisualShell = isPatientOnly || isAdminShell || isPharmacist || isLabTechnician;
 
-  if (isDoctor) {
-    return <DoctorProfile />;
-  }
-
   return (
     <div className={usePatientVisualShell ? "w-full flex flex-col h-[calc(100vh-104px)] overflow-y-auto custom-scrollbar pb-8 pr-2" : "max-w-[1100px] mx-auto w-full flex flex-col items-center pb-10"}>
       <style>{`

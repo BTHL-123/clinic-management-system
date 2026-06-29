@@ -185,10 +185,11 @@ export default function PatientDetailPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-6 py-3 rounded-t-2xl font-bold text-sm transition-all border-b-2 ${isActive
-                ? "border-teal-500 text-teal-700 bg-white/40"
-                : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-white/20"
-                }`}
+              className={`flex items-center gap-2 px-6 py-3 rounded-t-2xl font-bold text-sm transition-all border-b-2 ${
+                isActive 
+                  ? "border-teal-500 text-teal-700 bg-white/40" 
+                  : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-white/20"
+              }`}
             >
               <Icon size={18} />
               {tab.label}
@@ -214,8 +215,9 @@ function InfoRow({ label, value, bold, highlight, icon }) {
         {label}
       </span>
       <span
-        className={`text-sm ${bold ? "font-bold text-slate-800" : "font-medium text-slate-700"
-          } ${highlight ? "text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md" : ""}`}
+        className={`text-sm ${
+          bold ? "font-bold text-slate-800" : "font-medium text-slate-700"
+        } ${highlight ? "text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md" : ""}`}
       >
         {value || "—"}
       </span>
