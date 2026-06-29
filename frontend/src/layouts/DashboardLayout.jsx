@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, KeyRound, LogOut, UserSquare } from "lucide-react";
+import { ChevronDown, Home, KeyRound, LogOut, UserSquare } from "lucide-react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import NotificationBell from "../components/NotificationBell.jsx";
@@ -9,7 +9,6 @@ import DoctorSidebar from "./DoctorSidebar.jsx";
 import PharmacistSidebar from "./PharmacistSidebar.jsx";
 import PatientSidebar from "./PatientSidebar.jsx";
 import LabTechnicianSidebar from "./LabTechnicianSidebar.jsx";
-import ReceptionistSidebar from "./ReceptionistSidebar.jsx";
 import AdminSidebar from "./AdminSidebar.jsx";
 
 const normalizeRole = (role) => {
@@ -59,14 +58,39 @@ export default function DashboardLayout() {
   const isReceptionist = roles.includes("RECEPTIONIST") && !roles.includes("ADMIN");
   const isPatientOnly = roles.includes("PATIENT") && !isDoctor && !isPharmacist && !isLabTechnician;
   const isAdminShell = roles.includes("ADMIN") && !isDoctor && !isPharmacist && !isPatientOnly && !isLabTechnician;
-  const usePatientVisualShell = isPatientOnly || isPharmacist || isLabTechnician || isDoctor || isReceptionist;
+  const usePatientVisualShell = isPatientOnly || isAdminShell || isPharmacist || isLabTechnician;
+  const useTopNavbarLayout = isPatientOnly || isDoctor || isReceptionist;
+  const isLightShell = isPharmacist || isLabTechnician;
 
-  /* ─── PATIENT: Full-width top header bar (matching landing page) ─── */
+  const getNavLinks = () => {
+    if (isReceptionist) {
+      return [
+        { label: "Tổng quan", path: "/dashboard" },
+        { label: "Tạo lịch khám", path: "/dashboard/walk-in" },
+        { label: "Check-in", path: "/dashboard/receptionist-appointments" },
+        { label: "Hàng đợi", path: "/dashboard/queue-management" },
+        { label: "Bệnh nhân", path: "/dashboard/patients" },
+        { label: "Thanh toán", path: "/dashboard/payments" },
+      ];
+    }
+
+    if (!isPatientOnly) return [];
+
+    return [
+      { label: "Tổng quan", path: "/dashboard" },
+      { label: "Đặt lịch khám", path: "/dashboard/available-slots" },
+      { label: "Lịch hẹn", path: "/dashboard/my-appointments" },
+      { label: "Bệnh án", path: "/dashboard/my-medical-history" },
+      { label: "Trợ lý AI", path: "/dashboard/ai-chat" },
+    ];
+  };
+
+  /* ─── PATIENT & DOCTOR: Full-width top header bar (matching landing page) ─── */
   const renderPatientHeader = () => (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-2xl border-b border-slate-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
       <div className="mx-auto flex h-16 w-full max-w-[1240px] items-center justify-between px-5 md:px-7">
         {/* Left: Logo + Brand */}
-        <div className="flex items-center gap-3 cursor-pointer group shrink-0" onClick={() => navigate('/')}>
+        <div className="flex items-center gap-3 cursor-pointer group shrink-0" onClick={() => navigate(isDoctor ? '/dashboard' : '/')}>
           <LogoSVG className="w-9 h-9 drop-shadow-sm group-hover:scale-105 transition-transform" />
           <div className="hidden sm:flex flex-col justify-center leading-none">
             <span className="font-extrabold text-[1.1rem] tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-emerald-500">Medical</span>
@@ -75,42 +99,46 @@ export default function DashboardLayout() {
         </div>
 
         {/* Center: Top Horizontal Navigation Links */}
-        <nav className="hidden md:flex items-center gap-1.5">
-          {[
-            { label: "Tổng quan", path: "/dashboard" },
-            { label: "Đặt lịch khám", path: "/dashboard/available-slots" },
-            { label: "Lịch hẹn", path: "/dashboard/my-appointments" },
-            { label: "Bệnh án", path: "/dashboard/my-medical-history" },
-            { label: "Trợ lý AI", path: "/dashboard/ai-chat" },
-          ].map((item) => {
-            const isActive = location.pathname === item.path || 
-              (item.path !== "/dashboard" && location.pathname.startsWith(item.path));
-            return (
-              <button
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                className={`px-4 py-2 rounded-xl text-xs font-extrabold tracking-wide transition-all ${
-                  isActive
-                    ? "bg-[#0A604E] text-white shadow-sm shadow-[#0A604E]/10"
-                    : "text-[#4A5D59] hover:bg-[#F0F9F7] hover:text-[#0A604E]"
-                }`}
-              >
-                {item.label}
-              </button>
-            );
-          })}
-        </nav>
+        {getNavLinks().length > 0 && (
+          <nav className="hidden md:flex items-center gap-1.5">
+            {getNavLinks().map((item) => {
+              const isActive = location.pathname === item.path ||
+                (item.path !== "/dashboard" && location.pathname.startsWith(item.path)) ||
+                (item.path === "/dashboard/pharmacist/prescriptions" && location.pathname.startsWith("/dashboard/prescriptions"));
+              return (
+                <button
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  className={`px-4 py-2 rounded-xl text-xs font-extrabold tracking-wide transition-all ${isActive
+                    ? "bg-[#0A604E] !text-white shadow-sm shadow-[#0A604E]/10"
+                    : "!text-slate-700 hover:bg-[#F0F9F7] hover:!text-[#0A604E]"
+                    }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
+        )}
 
         {/* Right: Actions */}
         <div className="flex items-center gap-3">
-          <NotificationBell />
+          <button
+            className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-200 !text-slate-500 hover:bg-teal-50 hover:!text-teal-600 hover:border-teal-200 transition-all"
+            aria-label="Home"
+            onClick={() => navigate('/dashboard')}
+          >
+            <Home size={18} />
+          </button>
+
+          <NotificationBell theme="light" />
 
           <div className="hidden md:block h-7 w-px bg-slate-200"></div>
 
           <div className="relative flex items-center gap-2.5">
             <div className="hidden md:flex flex-col items-end">
-              <strong className="text-[13px] font-bold leading-tight text-slate-800">{user?.fullName || "Clinic Admin"}</strong>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-teal-600">{rolesText}</span>
+              <strong className="text-[13px] font-bold leading-tight !text-slate-800">{user?.fullName || "Clinic Admin"}</strong>
+              <span className="text-[10px] font-semibold uppercase tracking-wider !text-teal-600">{rolesText}</span>
             </div>
             <button
               type="button"
@@ -139,10 +167,10 @@ export default function DashboardLayout() {
   /* ─── NON-PATIENT: Keep original floating pill header ─── */
   const renderOriginalHeader = () => (
     <header className="fixed top-6 right-6 z-50 flex justify-end">
-      <div className={`${usePatientVisualShell ? "patient-glass-panel" : "bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.08)]"} py-2.5 px-5 rounded-[2rem] flex items-center gap-4 md:gap-6`}>
+      <div className={`${isLightShell ? "bg-white/80 backdrop-blur-xl border border-slate-200/60 shadow-[0_4px_20px_rgba(0,0,0,0.05)] text-slate-800" : usePatientVisualShell ? "patient-glass-panel" : "bg-white/70 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.08)]"} py-2.5 px-5 rounded-[2rem] flex items-center gap-4 md:gap-6`}>
 
         <button
-          className={`w-10 h-10 flex items-center justify-center rounded-full transition-all group ${usePatientVisualShell ? "patient-header-icon-btn" : "bg-white/80 border border-white hover:bg-teal-50 hover:border-teal-100 text-slate-500 hover:text-teal-600 shadow-sm"}`}
+          className={`w-10 h-10 flex items-center justify-center rounded-full transition-all group ${isLightShell ? "bg-slate-50 border border-slate-200 text-slate-500 hover:bg-teal-50 hover:text-teal-600 hover:border-teal-200 shadow-sm" : usePatientVisualShell ? "patient-header-icon-btn" : "bg-white/80 border border-white hover:bg-teal-50 hover:border-teal-100 text-slate-500 hover:text-teal-600 shadow-sm"}`}
           aria-label="Home"
           onClick={() => navigate('/dashboard')}
         >
@@ -151,12 +179,12 @@ export default function DashboardLayout() {
 
         <NotificationBell />
 
-        <div className={`hidden md:block h-8 w-[2px] rounded-full ${usePatientVisualShell ? "bg-white/20" : "bg-slate-200/60"}`}></div>
+        <div className={`hidden md:block h-8 w-[2px] rounded-full ${isLightShell ? "bg-slate-200" : usePatientVisualShell ? "bg-white/20" : "bg-slate-200/60"}`}></div>
 
         <div className="flex items-center gap-3">
           <div className="hidden md:flex flex-col items-end">
-            <strong className={`text-[14px] font-extrabold leading-tight ${usePatientVisualShell ? "text-white" : "text-slate-800"}`}>{user?.fullName || "Clinic Admin"}</strong>
-            <span className={`text-[10px] font-bold uppercase tracking-wider ${usePatientVisualShell ? "text-teal-200" : "text-teal-600"}`}>{rolesText}</span>
+            <strong className={`text-[14px] font-extrabold leading-tight ${isLightShell ? "text-slate-800" : usePatientVisualShell ? "text-white" : "text-slate-800"}`}>{user?.fullName || "Clinic Admin"}</strong>
+            <span className={`text-[10px] font-bold uppercase tracking-wider ${isLightShell ? "text-teal-600" : usePatientVisualShell ? "text-teal-200" : "text-teal-600"}`}>{rolesText}</span>
           </div>
           {isAdminShell ? (
             <div className="admin-account-menu">
@@ -197,7 +225,7 @@ export default function DashboardLayout() {
 
         {!isAdminShell && (
           <button
-            className={`w-10 h-10 flex items-center justify-center rounded-full transition-all group ${usePatientVisualShell ? "patient-header-icon-btn patient-header-icon-btn-danger" : "bg-white/80 border border-white hover:bg-rose-50 hover:border-rose-100 text-slate-400 hover:text-rose-500 shadow-sm"}`}
+            className={`w-10 h-10 flex items-center justify-center rounded-full transition-all group ${isLightShell ? "bg-slate-50 border border-slate-200 text-slate-400 hover:bg-rose-50 hover:text-rose-500 hover:border-rose-200 shadow-sm" : usePatientVisualShell ? "patient-header-icon-btn patient-header-icon-btn-danger" : "bg-white/80 border border-white hover:bg-rose-50 hover:border-rose-100 text-slate-400 hover:text-rose-500 shadow-sm"}`}
             aria-label="Logout"
             onClick={handleLogout}
           >
@@ -255,13 +283,19 @@ export default function DashboardLayout() {
   );
 
   return (
-    <div className={`flex flex-col min-h-screen w-full relative selection:bg-teal-200 selection:text-teal-900 font-sans overflow-y-auto overflow-x-hidden ${usePatientVisualShell ? "patient-shell" : ""} ${isAdminShell ? "admin-shell" : ""} ${isReceptionist ? "receptionist-shell" : ""} ${isPatientOnly ? "patient-web-theme" : ""}`}>
+    <div className={`flex flex-col min-h-screen w-full relative selection:bg-teal-200 selection:text-teal-900 font-sans overflow-y-auto overflow-x-hidden ${useTopNavbarLayout ? "" : usePatientVisualShell ? "patient-shell" : ""} ${isAdminShell ? "admin-shell" : ""} ${isReceptionist ? "receptionist-shell" : ""} ${isPatientOnly ? "patient-web-theme" : ""}`}>
       {/* Global Background */}
       {isAdminShell ? (
         <div className="admin-page-background" />
+      ) : isDoctor ? (
+        /* ─── DOCTOR: Solid light teal background matching design ─── */
+        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#E2F2EE]" />
       ) : isPatientOnly ? (
         /* ─── PATIENT: Solid light teal background matching design ─── */
         <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#F8FFFC]" />
+      ) : isReceptionist ? (
+        /* ─── RECEPTIONIST: Solid slate background ─── */
+        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-slate-50" />
       ) : usePatientVisualShell ? (
         <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#0a3d38]">
           {/* Rich teal base — darker & more saturated */}
@@ -282,7 +316,7 @@ export default function DashboardLayout() {
           <div
             className="absolute inset-0 opacity-[0.06] mix-blend-overlay"
             style={{
-               backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
             }}
           ></div>
         </div>
@@ -291,7 +325,7 @@ export default function DashboardLayout() {
       )}
 
       {/* Header */}
-      {isAdminShell ? renderAdminHeader() : isPatientOnly ? renderPatientHeader() : renderOriginalHeader()}
+      {isAdminShell ? renderAdminHeader() : useTopNavbarLayout ? renderPatientHeader() : renderOriginalHeader()}
 
       <motion.div
         key={location.pathname}
@@ -301,7 +335,7 @@ export default function DashboardLayout() {
         transition={{ duration: 0.25, ease: "easeOut" }}
         className="flex-1 w-full relative z-10 flex flex-col"
       >
-        <main className={`flex-1 w-full mx-auto ${isPatientOnly ? "pt-[68px] px-0 pb-0" : isAdminShell ? "admin-main" : "max-w-[1700px] pt-[80px] px-4 md:px-6 pb-4 md:pb-6"} flex gap-0 h-full`}>
+        <main className={`flex-1 w-full mx-auto ${useTopNavbarLayout ? "pt-[68px] px-0 pb-0" : isAdminShell ? "admin-main" : "max-w-[1700px] pt-[80px] px-4 md:px-6 pb-4 md:pb-6"} flex gap-0 h-full`}>
           {isAdminShell ? (
             <AdminSidebar />
           ) : roles.includes("DOCTOR") ? (
@@ -313,14 +347,14 @@ export default function DashboardLayout() {
           ) : roles.includes("LAB_TECHNICIAN") ? (
             <LabTechnicianSidebar />
           ) : isReceptionist ? (
-            <ReceptionistSidebar />
+            null
           ) : isPatientOnly ? (
             null
           ) : (
             <Sidebar />
           )}
 
-          <div className={`flex-1 min-w-0 flex flex-col h-full ${isPatientOnly ? "px-4 py-7 md:px-6 md:py-8" : ""}`}>
+          <div className={`flex-1 min-w-0 flex flex-col h-full ${isDoctor || isReceptionist ? "px-6 py-6" : isPatientOnly ? "px-4 py-7 md:px-6 md:py-8" : ""}`}>
             <Outlet />
           </div>
         </main>

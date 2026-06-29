@@ -35,6 +35,8 @@ export default function PageHeader({
     !roles.includes("PHARMACIST") &&
     !roles.includes("LAB_TECHNICIAN") &&
     !isPatientOnly;
+  const isReceptionistOnly = roles.includes("RECEPTIONIST") && !roles.includes("ADMIN");
+  const useLightHeader = isPatientOnly || isReceptionistOnly || isAdminShell;
 
   const resolvedIconColor = iconColor === "text-white" ? "text-teal-500" : iconColor;
 
@@ -46,7 +48,7 @@ export default function PageHeader({
     }
   };
 
-  if (isPatientOnly || isAdminShell) {
+  if (useLightHeader) {
     return (
       <div className={`mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 w-full ${className}`}>
         <div>

@@ -86,24 +86,12 @@ export default function QueueGrid({ doctors, schedules, slotsBySchedule, onSlotC
 
   return (
     <div 
-      className="appointment-resource-board" 
+      className="appointment-resource-board h-[calc(100vh-230px)] overflow-auto bg-white/40 backdrop-blur-2xl rounded-3xl border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.05)] p-4 cursor-grab" 
       ref={boardRef}
       onMouseDown={handleMouseDown}
       onMouseLeave={handleMouseLeave}
       onMouseUp={handleMouseUp}
       onMouseMove={handleMouseMove}
-      style={{ 
-        height: "calc(100vh - 230px)", 
-        overflow: "auto",
-        background: "rgba(255, 255, 255, 0.4)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
-        borderRadius: "24px",
-        border: "1px solid rgba(255, 255, 255, 0.6)",
-        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.05)",
-        padding: "16px",
-        cursor: "grab"
-      }}
     >
       <div className="appointment-resource-time-axis">
         <span />
@@ -114,16 +102,9 @@ export default function QueueGrid({ doctors, schedules, slotsBySchedule, onSlotC
           const doctorSchedules = schedules.filter((schedule) => schedule.doctorId === doctor.doctorId);
           return (
             <div className="appointment-resource-column" key={doctor.doctorId}>
-              <div className="appointment-resource-head" style={{
-                background: "linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.6))",
-                border: "1px solid rgba(255,255,255,0.8)",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-                borderRadius: "14px",
-                color: "#0f766e",
-                backdropFilter: "blur(8px)"
-              }}>
-                <strong style={{ fontSize: "14px", fontWeight: 800 }}>{doctor.fullName}</strong>
-                <small style={{ color: "#64748b", fontWeight: 600 }}>{doctor.doctorCode}</small>
+              <div className="appointment-resource-head flex flex-col items-center justify-center p-3 mb-2 bg-gradient-to-br from-white/90 to-white/60 border border-white/80 shadow-[0_4px_12px_rgba(0,0,0,0.05)] rounded-xl text-teal-700 backdrop-blur-sm">
+                <strong className="text-sm font-extrabold">{doctor.fullName}</strong>
+                <small className="text-slate-500 font-bold">{doctor.doctorCode}</small>
               </div>
               {TIME_ROWS.map((time) => {
                 const schedule = doctorSchedules.find(
@@ -187,20 +168,7 @@ export default function QueueGrid({ doctors, schedules, slotsBySchedule, onSlotC
           );
         })}
         {columns.length === 0 && (
-          <div className="appointment-resource-empty" style={{ 
-            color: "#0f766e", 
-            fontWeight: 700, 
-            background: "rgba(255,255,255,0.8)", 
-            padding: "20px 40px", 
-            borderRadius: "16px", 
-            backdropFilter: "blur(12px)",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
-            border: "1px solid rgba(255,255,255,0.6)",
-            margin: "40px auto",
-            maxWidth: "max-content",
-            textAlign: "center",
-            fontSize: "15px"
-          }}>
+          <div className="appointment-resource-empty text-teal-700 font-bold bg-white/80 px-10 py-5 rounded-2xl backdrop-blur-md shadow-lg border border-white/60 mx-auto my-10 max-w-max text-center text-[15px]">
             Vui lòng chọn ngày có bác sĩ làm việc để hiển thị sơ đồ.
           </div>
         )}
