@@ -150,6 +150,7 @@ export default function App() {
         <Route path="patients" element={<PatientManagement />} />
         <Route path="patients/:patientId" element={<PatientDetailPage />} />
         <Route path="consultation" element={<ConsultationPage />} />
+        <Route path="examination" element={<ExaminationPage />} />
         <Route path="examination/:consultationId" element={<ExaminationPage />} />
         <Route path="lab-requests" element={<LabRequestPage />} />
         <Route path="lab-tests" element={<LabTestManagement />} />

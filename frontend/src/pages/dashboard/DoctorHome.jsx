@@ -1,19 +1,27 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/useAuth.js";
+import { 
+  Home, Users, CalendarDays, MessageCircle, Settings, Bell, LogOut,
+  ChevronRight, Search, SlidersHorizontal, Activity, MoreHorizontal,
+  Clock, CheckCircle2, XCircle, Shield, Globe, User
+} from "lucide-react";
+import { motion } from "framer-motion";
 import { getMyDoctorProfile } from "../../services/doctorService";
 import appointmentService from "../../services/appointmentService";
 import { getDoctorPerformance } from "../../services/reportService";
+import { toLocalDateString } from "../../lib/utils";
+
 
 export default function DoctorHome() {
   const { user } = useAuth();
   const navigate = useNavigate();
-
   const [profile, setProfile] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [completedCount, setCompletedCount] = useState(1420);
   const [activePatientsCount, setActivePatientsCount] = useState(315);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -29,12 +37,12 @@ export default function DoctorHome() {
         const apptsList = apptRes?.data || apptRes || [];
         setAppointments(apptsList);
 
-        // 3. Fetch performance data if available
+        // 3. Fetch doctor performance reports for completed count
         if (docData && docData.doctorId) {
           try {
             const perfRes = await getDoctorPerformance({
               from: "2020-01-01",
-              to: new Date().toISOString().split("T")[0]
+              to: toLocalDateString(new Date())
             });
             const perfList = perfRes?.data || perfRes || [];
             const myPerf = perfList.find(item => item.doctorId === docData.doctorId);
@@ -43,7 +51,7 @@ export default function DoctorHome() {
               setActivePatientsCount(Math.round((myPerf.totalAppointments || 0) * 0.22) || 315);
             }
           } catch (err) {
-            console.warn("Failed to fetch performance stats", err);
+            console.warn("Failed to fetch performance stats, using default values", err);
           }
         }
       } catch (err) {
@@ -55,352 +63,358 @@ export default function DoctorHome() {
     fetchData();
   }, []);
 
-  // Helper date formatter
-  const getCurrentDateStr = () => {
-    const days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
-    const now = new Date();
-    const dayName = days[now.getDay()];
-    const dateStr = now.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
-    return `${dayName}, ${dateStr}`;
-  };
-
-  // Map status from db format to visual status
   const getMappedStatus = (app) => {
-    if (app.status === "CANCELLED") return "Khẩn cấp";
-    if (app.status === "COMPLETED") return "Đã xong";
-
+    if (app.status === "CANCELLED") return "Hủy";
+    if (app.status === "COMPLETED") return "Hoàn thành";
+    
+    // Check queue status
     if (app.queueStatus === "WAITING") return "Đang chờ";
     if (app.queueStatus === "CALLED") return "Đang khám";
     if (app.queueStatus === "SKIPPED") return "Bỏ qua";
-    if (app.queueStatus === "COMPLETED" || app.queueStatus === "DONE") return "Đã xong";
-
-    return "Sắp tới";
+    if (app.queueStatus === "COMPLETED" || app.queueStatus === "DONE") return "Hoàn thành";
+    
+    if (app.checkedInAt) return "Đang chờ";
+    return "Đang chờ"; // Fallback default for Confirmed/today
   };
 
-  const getStatusStyle = (status) => {
+  const getStatusColor = (status) => {
     switch (status) {
-      case "Đang chờ":
-      case "Sắp tới":
-        return "text-amber-600 bg-amber-50 border-amber-100";
-      case "Đang khám":
-        return "text-blue-600 bg-blue-50 border-blue-100";
-      case "Đã xong":
-      case "Hoàn thành":
-        return "text-emerald-600 bg-emerald-50 border-emerald-100";
-      case "Khẩn cấp":
-        return "text-rose-600 bg-rose-50 border-rose-100";
-      default:
-        return "text-slate-600 bg-slate-50 border-slate-100";
+      case "Đang chờ": return "bg-amber-500/20 text-amber-800 border-amber-500/30";
+      case "Đang khám": return "bg-sky-500/20 text-sky-800 border-sky-500/30";
+      case "Hoàn thành": return "bg-emerald-500/20 text-emerald-800 border-emerald-500/30";
+      case "Hủy": return "bg-rose-500/20 text-rose-800 border-rose-500/30";
+      case "Bỏ qua": return "bg-slate-500/20 text-slate-700 border-slate-500/30";
+      default: return "bg-slate-900/10 text-slate-700";
     }
   };
 
-  // Fallback Mock Data matching the design mockup image precisely
-  const fallbackAppointments = [
-    { appointmentId: "fb-1", patientName: "Lê Hoàng", reasonForVisit: "Sốt, đau họng", startTime: "08:30:00", status: "PENDING", queueStatus: "WAITING" },
-    { appointmentId: "fb-2", patientName: "Trần Minh", reasonForVisit: "Kiểm tra định kỳ", startTime: "09:15:00", status: "COMPLETED", queueStatus: "DONE" },
-    { appointmentId: "fb-3", patientName: "Ngô Hoa", reasonForVisit: "Đau dạ dày", startTime: "10:00:00", status: "CANCELLED", queueStatus: "SKIPPED" },
-    { appointmentId: "fb-4", patientName: "Phạm Hùng", reasonForVisit: "Tái khám cao huyết áp", startTime: "10:45:00", status: "PENDING", queueStatus: "WAITING" },
-    { appointmentId: "fb-5", patientName: "Vương Anh", reasonForVisit: "Xét nghiệm máu", startTime: "11:30:00", status: "CONFIRMED", queueStatus: "UPCOMING" }
-  ];
+  // Generate simple calendar days
+  const currentMonth = "Tháng 6, 2026";
+  const days = Array.from({length: 30}, (_, i) => i + 1);
 
-  const displayedAppointments = appointments.length > 0 ? appointments.slice(0, 5) : fallbackAppointments;
+  // Filter appointments
+  const filteredAppointments = appointments.filter(app => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return true;
+    return (
+      app.patientName?.toLowerCase().includes(query) ||
+      app.patientPhone?.toLowerCase().includes(query) ||
+      app.appointmentCode?.toLowerCase().includes(query) ||
+      (app.reasonForVisit || "").toLowerCase().includes(query)
+    );
+  });
 
-  // Stats calculation
-  const totalToday = appointments.length > 0 ? appointments.length : 24;
-  const waitingToday = appointments.length > 0 ? appointments.filter(a => getMappedStatus(a) === "Đang chờ").length : 8;
-  const completedToday = appointments.length > 0 ? appointments.filter(a => getMappedStatus(a) === "Đã xong").length : 16;
-  const emergencyToday = appointments.length > 0 ? appointments.filter(a => getMappedStatus(a) === "Khẩn cấp").length : 2;
+  const waitingCount = appointments.filter(app => {
+    const status = getMappedStatus(app);
+    return status === "Đang chờ" || status === "Đang khám";
+  }).length;
+  const completedTodayCount = appointments.filter(app => getMappedStatus(app) === "Hoàn thành").length;
+  const cancelledTodayCount = appointments.filter(app => getMappedStatus(app) === "Hủy").length;
+  const totalTodayCount = appointments.length;
 
   return (
-    <div className="w-full flex flex-col gap-6 p-1 pb-10">
+    <div className="w-full h-full relative text-slate-800 flex gap-6 pb-6">
+      
+      {/* Left Navbar moved to DashboardLayout globally */}
 
-      {/* 1. GREETING HEADER */}
-      <div className="flex flex-col gap-1 mt-4">
-        <div className="flex items-center gap-2 text-[#1DB896] font-bold text-xs uppercase tracking-wider">
-          <i className="ti ti-activity text-sm animate-pulse" />
-          <span>Hệ thống quản lý phòng khám</span>
-        </div>
-        <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
-          Chào buổi sáng, <span className="text-[#0A604E]">{profile?.fullName || user?.fullName || "BS. Nguyễn Văn A"}</span>
-        </h1>
-        <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-wider mt-1">
-          <i className="ti ti-calendar text-sm text-[#1DB896]" />
-          <span>{getCurrentDateStr()} &bull; {profile?.departmentName || "Khoa Nội Tổng Quát"}</span>
-        </div>
-      </div>
-
-      {/* 2. STATS ROW (4 CARDS) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-
-        {/* Stat 1: Ca khám hôm nay */}
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-5 flex justify-between items-center transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
-          <div className="flex flex-col">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Ca khám hôm nay</span>
-            <span className="text-3xl font-black text-slate-800 mt-1">{totalToday}</span>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-teal-50 text-[#0A604E] flex items-center justify-center border border-teal-100/50">
-            <i className="ti ti-stethoscope text-xl" />
-          </div>
-        </div>
-
-        {/* Stat 2: Bệnh nhân chờ */}
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-5 flex justify-between items-center transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
-          <div className="flex flex-col">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Bệnh nhân chờ</span>
-            <span className="text-3xl font-black text-slate-800 mt-1">{waitingToday}</span>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100/50">
-            <i className="ti ti-clock text-xl" />
-          </div>
-        </div>
-
-        {/* Stat 3: Đã hoàn thành */}
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-5 flex justify-between items-center transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
-          <div className="flex flex-col">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Đã hoàn thành</span>
-            <span className="text-3xl font-black text-slate-800 mt-1">{completedToday}</span>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100/50">
-            <i className="ti ti-circle-check text-xl" />
-          </div>
-        </div>
-
-        {/* Stat 4: Ca khẩn cấp */}
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-5 flex justify-between items-center transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
-          <div className="flex flex-col">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Ca khẩn cấp</span>
-            <span className="text-3xl font-black text-slate-800 mt-1 text-rose-500">{emergencyToday}</span>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center border border-rose-100/50">
-            <i className="ti ti-alert-triangle text-xl" />
-          </div>
-        </div>
-
-      </div>
-
-      {/* 3. MIDDLE ROW GRID (2 COLUMNS: TODAY'S SCHEDULE + WEEKLY STATS) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-        {/* Left Column (8 cols): Lịch khám hôm nay */}
-        <div className="lg:col-span-8 bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col justify-between">
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col gap-6 min-w-0">
+        
+        {/* Custom Doctor Topbar - Premium Bento Style */}
+        <motion.div 
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 shrink-0 mt-4 lg:pr-[380px]"
+        >
           <div>
-            <div className="flex justify-between items-center border-b border-slate-100 pb-4 mb-4">
-              <h2 className="text-base font-extrabold text-[#0A604E] flex items-center gap-2">
-                <i className="ti ti-calendar-event text-lg text-[#1DB896]" /> Lịch khám hôm nay
+            <div className="flex items-center gap-2 text-teal-200 mb-2 font-medium">
+              <Activity size={18} className="animate-pulse" />
+              <span>Cổng thông tin Bác sĩ</span>
+            </div>
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-white tracking-tight drop-shadow-md leading-tight">
+              Xin chào, <br className="hidden md:block" />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-200 to-emerald-200">
+                {profile?.fullName || user?.fullName || "BS. Hùng Lê"}
+              </span>
+            </h1>
+            <p className="text-teal-200/90 text-xs font-bold tracking-wider uppercase mt-3 bg-white/10 px-3 py-1.5 rounded-full w-max border border-white/10 backdrop-blur-sm shadow-sm">
+              {profile?.departmentName || profile?.specialization || user?.specialty || "CHUYÊN KHOA TIM MẠCH"}
+            </p>
+          </div>
+
+        </motion.div>
+
+        {/* Dashboard Grid */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 flex-1 min-h-0">
+          
+          {/* Left Column: Timeline (7 cols) */}
+          <motion.div 
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="xl:col-span-7 patient-glass-panel rounded-[2rem] p-6 shadow-xl flex flex-col"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+              <h2 className="text-xl font-extrabold flex items-center gap-2 patient-card-title shrink-0">
+                Phòng khám <span className="text-teal-600 font-bold">&bull; Hôm nay</span>
               </h2>
-              <button
-                onClick={() => navigate("/dashboard/doctor-appointments")}
-                className="text-xs font-extrabold text-[#0A604E] hover:text-[#1DB896] uppercase tracking-wider transition-colors"
-              >
-                Xem tất cả
-              </button>
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="relative w-full sm:w-auto">
+                  <div className="absolute inset-y-0 left-3.5 flex items-center pointer-events-none z-10 text-teal-800/60">
+                    <Search size={16} />
+                  </div>
+                  <input 
+                    type="text" 
+                    placeholder="Tìm kiếm bệnh nhân..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full sm:w-64 text-slate-800 placeholder-slate-400 text-sm focus:outline-none transition-all font-semibold rounded-full border border-teal-600/20 bg-teal-50/50 hover:bg-teal-50/80 focus:bg-white focus:border-teal-600/50 focus:ring-2 focus:ring-teal-100"
+                    style={{
+                      paddingTop: "0.5rem",
+                      paddingBottom: "0.5rem",
+                      paddingLeft: "2.5rem",
+                      paddingRight: "1rem",
+                      outline: "none"
+                    }}
+                  />
+                </div>
+                <button className="text-teal-700/60 hover:text-teal-900 shrink-0"><MoreHorizontal size={20} /></button>
+              </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-100">
-                    <th className="pb-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Bệnh nhân</th>
-                    <th className="pb-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Thời gian</th>
-                    <th className="pb-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Trạng thái</th>
-                    <th className="pb-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 text-right">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {displayedAppointments.map((app) => {
-                    const status = getMappedStatus(app);
-                    const formattedTime = app.startTime ? app.startTime.slice(0, 5) : "--:--";
-                    const initials = app.patientName
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar relative">
+              {/* Vertical Timeline Line */}
+              {filteredAppointments.length > 0 && (
+                <div className="absolute left-[39px] top-4 bottom-4 w-0.5 bg-slate-200"></div>
+              )}
+
+              <div className="flex flex-col gap-4">
+                {loading ? (
+                  <div className="text-center py-12 text-slate-500 font-bold">Đang tải lịch hẹn...</div>
+                ) : filteredAppointments.length === 0 ? (
+                  <div className="text-center py-12 text-slate-500 font-bold">Không có lịch hẹn nào hôm nay.</div>
+                ) : (
+                  filteredAppointments.map((app) => {
+                    const mappedStatus = getMappedStatus(app);
+                    const formattedTime = app.startTime ? app.startTime.slice(0, 5) : "";
+                    const reason = app.reasonForVisit || "Khám bệnh";
+                    const avatarInitials = (app.patientName || "BN")
                       .split(" ")
                       .filter(Boolean)
                       .slice(-2)
-                      .map((p) => p[0])
+                      .map((part) => part[0])
                       .join("")
                       .toUpperCase();
 
                     return (
-                      <tr key={app.appointmentId} className="group hover:bg-slate-50/50 transition-colors">
-                        <td className="py-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-[#1DB896]/10 text-[#0A604E] flex items-center justify-center text-xs font-black">
-                              {initials}
+                      <div key={app.appointmentId} className="flex gap-4 relative group animate-fade-in">
+                        {/* Timeline Dot & Time */}
+                        <div className="flex flex-col items-center w-[80px] shrink-0 z-10 bg-transparent pt-4">
+                          <div className={`w-3 h-3 rounded-full border-2 border-[#115e59] mb-1 ${mappedStatus === 'Đang chờ' || mappedStatus === 'Đang khám' ? 'bg-teal-400 shadow-[0_0_10px_rgba(45,212,191,0.5)]' : 'bg-white/30'}`}></div>
+                          <span className="text-xs font-bold patient-label">{formattedTime}</span>
+                        </div>
+
+                        {/* Appointment Card */}
+                        <div 
+                          className="flex-1 patient-glass-subcard hover:bg-white/40 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 transition-all duration-300 group-hover:-translate-y-0.5 cursor-pointer"
+                          onClick={() => navigate(`/dashboard/doctor-appointments`)}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 text-white flex items-center justify-center font-extrabold border border-white/20 shadow-md">
+                              {avatarInitials}
                             </div>
                             <div>
-                              <div className="font-extrabold text-slate-800 text-sm leading-tight">{app.patientName}</div>
-                              <div className="text-[11px] text-slate-400 font-semibold mt-0.5">{app.reasonForVisit || "Khám tổng quát"}</div>
+                              <h3 className="font-bold text-lg patient-data leading-tight">{app.patientName}</h3>
+                              <p className="text-slate-600 text-sm font-semibold mt-1">SĐT: {app.patientPhone || "—"}</p>
                             </div>
                           </div>
-                        </td>
-                        <td className="py-3 text-slate-600 font-bold text-sm">{formattedTime} AM</td>
-                        <td className="py-3">
-                          <span className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full border ${getStatusStyle(status)}`}>
-                            {status}
-                          </span>
-                        </td>
-                        <td className="py-3 text-right">
-                          {status === "Đang chờ" || status === "Đang khám" ? (
-                            <button
-                              onClick={() => navigate("/dashboard/doctor-appointments")}
-                              className="px-3.5 py-1.5 bg-[#0A604E] hover:bg-[#1DB896] text-white text-xs font-bold rounded-xl transition-all shadow-sm shadow-teal-700/10"
-                            >
-                              Khám bệnh
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => navigate("/dashboard/doctor-appointments")}
-                              className="px-3.5 py-1.5 bg-[#F0F9F7] hover:bg-teal-100/50 text-[#0A604E] text-xs font-bold rounded-xl transition-all border border-teal-200/40"
-                            >
-                              Hồ sơ
-                            </button>
-                          )}
-                        </td>
-                      </tr>
+
+                          <div className="hidden sm:block">
+                            <h4 className="font-bold patient-data mb-0.5">{formattedTime}</h4>
+                            <p className="text-teal-600 font-bold text-sm">{reason}</p>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${getStatusColor(mappedStatus)}`}>
+                              {mappedStatus}
+                            </span>
+                            <div className="hidden md:flex gap-2 text-teal-700/60">
+                              <button 
+                                className="p-1.5 hover:bg-white/10 hover:text-teal-900 rounded-lg transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/dashboard/consultation`);
+                                }}
+                              >
+                                <MessageCircle size={18} />
+                              </button>
+                              <button 
+                                className="p-1.5 hover:bg-white/10 hover:text-teal-900 rounded-lg transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/dashboard/doctor-appointments`);
+                                }}
+                              >
+                                <Activity size={18} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     );
-                  })}
-                </tbody>
-              </table>
+                  })
+                )}
+              </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
 
-        {/* Right Column (4 cols): Thống kê tuần */}
-        <div className="lg:col-span-4 bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col justify-between">
-          <div>
-            <div className="flex justify-between items-center border-b border-slate-100 pb-4 mb-4">
-              <h2 className="text-base font-extrabold text-[#0A604E] flex items-center gap-2">
-                <i className="ti ti-chart-bar text-lg text-[#1DB896]" /> Thống kê tuần
-              </h2>
-            </div>
-
-            {/* Simulated Chart */}
-            <div className="flex items-end justify-between h-32 px-2 pb-2 pt-6 border-b border-slate-100">
-              {[
-                { day: "T2", height: "h-20" },
-                { day: "T3", height: "h-12" },
-                { day: "T4", height: "h-24" },
-                { day: "T5", height: "h-16" },
-                { day: "T6", height: "h-20" },
-                { day: "T7", height: "h-8" },
-                { day: "CN", height: "h-10" },
-              ].map((bar, i) => (
-                <div key={i} className="flex flex-col items-center gap-2 w-full">
-                  <div className="w-5 bg-slate-50 rounded-t-md h-24 flex items-end">
-                    <div className={`w-full bg-gradient-to-t from-[#0A604E] to-[#1DB896] rounded-t-md ${bar.height}`} />
+          {/* Right Column: Stats, Calendar, Profile (5 cols) */}
+          <div className="xl:col-span-5 flex flex-col gap-6">
+            
+            {/* Top Right: Patients & Medicine Stats */}
+            <motion.div 
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="patient-glass-panel rounded-[2rem] p-6 shadow-xl"
+            >
+              <h2 className="text-lg font-bold mb-6 patient-card-title">Bệnh nhân & Thuốc</h2>
+              <div className="flex gap-6 items-center">
+                <div className="flex-1 flex flex-col items-center">
+                  <p className="text-sm patient-label font-bold mb-4">Tình trạng Bệnh nhân ({totalTodayCount})</p>
+                  {/* CSS Donut Chart Mockup */}
+                  <div className="relative w-28 h-28 rounded-full border-[12px] border-slate-900/10 flex items-center justify-center">
+                    <div className="absolute inset-[-12px] rounded-full border-[12px] border-transparent border-t-teal-400 border-r-teal-400 rotate-45"></div>
+                    <div className="absolute inset-[-12px] rounded-full border-[12px] border-transparent border-b-rose-400 -rotate-12"></div>
+                    <div className="absolute inset-[-12px] rounded-full border-[12px] border-transparent border-l-blue-400 -rotate-[80deg]"></div>
+                    <span className="text-2xl font-black patient-data">{totalTodayCount}</span>
                   </div>
-                  <span className="text-[10px] font-bold text-slate-400">{bar.day}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3 mt-4">
-            <div className="flex justify-between items-center text-sm border-b border-slate-50 pb-2">
-              <span className="text-slate-500 font-bold">Tổng bệnh nhân</span>
-              <span className="font-extrabold text-slate-800">148</span>
-            </div>
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-slate-500 font-bold">Hiệu suất trung bình</span>
-              <span className="font-extrabold text-[#0A604E]">92%</span>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      {/* 4. LOWER ROW GRID (2 COLUMNS: RECENT PATIENTS + NOTIFICATIONS) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        {/* Left Card: Bệnh nhân gần đây */}
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col">
-          <div className="flex justify-between items-center border-b border-slate-100 pb-4 mb-4">
-            <h2 className="text-base font-extrabold text-[#0A604E] flex items-center gap-2">
-              <i className="ti ti-users text-lg text-[#1DB896]" /> Bệnh nhân gần đây
-            </h2>
-          </div>
-
-          <div className="flex flex-col gap-4">
-            {[
-              { name: "Bà Nguyễn Thị Lan", clinic: "Khám tim mạch", time: "2 giờ trước" },
-              { name: "Anh Đặng Văn Nam", clinic: "Kiểm tra phổi", time: "4 giờ trước" },
-              { name: "Chị Mai Phương", clinic: "Xét nghiệm tổng quát", time: "Hôm qua" },
-            ].map((p, idx) => {
-              const pInitials = p.name.split(" ").filter(Boolean).slice(-2).map((x) => x[0]).join("").toUpperCase();
-              return (
-                <div key={idx} className="flex justify-between items-center p-3 rounded-2xl hover:bg-slate-50/80 transition-colors border border-transparent hover:border-slate-100 cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-extrabold text-xs">
-                      {pInitials}
-                    </div>
-                    <div>
-                      <h3 className="font-extrabold text-sm text-slate-800 leading-tight">{p.name}</h3>
-                      <p className="text-[11px] text-slate-400 font-semibold mt-1">{p.clinic}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-slate-400 font-bold">{p.time}</span>
-                    <i className="ti ti-chevron-right text-slate-400 text-sm" />
+                  <div className="flex flex-col gap-1.5 mt-4 w-full">
+                    <div className="flex items-center gap-2 text-xs patient-data font-bold"><div className="w-2 h-2 rounded-full bg-teal-400"></div> Đang chờ/khám: {waitingCount}</div>
+                    <div className="flex items-center gap-2 text-xs patient-data font-bold"><div className="w-2 h-2 rounded-full bg-blue-400"></div> Hoàn thành: {completedTodayCount}</div>
+                    <div className="flex items-center gap-2 text-xs patient-data font-bold"><div className="w-2 h-2 rounded-full bg-rose-400"></div> Hủy: {cancelledTodayCount}</div>
                   </div>
                 </div>
-              );
-            })}
+                
+                <div className="flex-1 flex flex-col justify-end h-[180px]">
+                  <p className="text-sm patient-label font-bold mb-auto text-center">Thuốc phổ biến nhất</p>
+                  <div className="flex items-end justify-center gap-4 h-[120px] pb-2 border-b border-slate-900/10">
+                    <div className="flex flex-col items-center gap-2">
+                      <span className="text-xs font-extrabold patient-data">85%</span>
+                      <div className="w-8 bg-gradient-to-t from-teal-500 to-teal-300 rounded-t-md h-[90px] shadow-[0_0_15px_rgba(45,212,191,0.3)]"></div>
+                    </div>
+                    <div className="flex flex-col items-center gap-2">
+                      <span className="text-xs font-extrabold patient-data">82%</span>
+                      <div className="w-8 bg-gradient-to-t from-emerald-500 to-emerald-300 rounded-t-md h-[85px]"></div>
+                    </div>
+                    <div className="flex flex-col items-center gap-2">
+                      <span className="text-xs font-extrabold patient-data">37%</span>
+                      <div className="w-8 bg-gradient-to-t from-blue-500 to-blue-300 rounded-t-md h-[40px]"></div>
+                    </div>
+                  </div>
+                  <div className="flex justify-center gap-3 mt-2 text-[10px] text-slate-600 font-bold">
+                    <span>Paracetamol</span>
+                    <span>Metformin</span>
+                    <span>Vitamin C</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 flex-1">
+              {/* Bottom Left: Calendar */}
+              <motion.div 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="patient-glass-panel rounded-[2rem] p-5 shadow-xl flex flex-col"
+              >
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-md font-bold patient-card-title">Nội dung & Nghỉ phép</h2>
+                  <MoreHorizontal size={18} className="text-teal-700/60" />
+                </div>
+                <div className="flex justify-between items-center mb-4">
+                  <button className="text-teal-700/60 hover:text-teal-900"><ChevronRight size={16} className="rotate-180" /></button>
+                  <span className="font-bold text-sm patient-data">{currentMonth}</span>
+                  <button className="text-teal-700/60 hover:text-teal-900"><ChevronRight size={16} /></button>
+                </div>
+                
+                <div className="grid grid-cols-7 gap-1 text-center mb-2">
+                  {['Mo','Tu','We','Th','Fr','Sa','Su'].map(d => (
+                    <div key={d} className="patient-label text-[10px] font-bold">{d}</div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-1 text-center">
+                  {Array.from({length: 4}).map((_, i) => <div key={`empty-${i}`}></div>)}
+                  {days.map(d => (
+                    <div 
+                      key={d} 
+                      className={`text-xs w-7 h-7 mx-auto flex items-center justify-center rounded-full cursor-pointer transition-colors
+                        ${d === 15 ? 'bg-teal-600 text-white font-extrabold shadow-[0_0_10px_rgba(15,118,110,0.4)]' : 
+                          d === 2 ? 'border border-teal-600 text-teal-700 font-bold' : 
+                          d === 10 ? 'text-rose-600 font-extrabold' : 'patient-data hover:bg-slate-900/10'}
+                      `}
+                    >
+                      {d}
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-auto pt-4 flex items-center gap-4 text-xs">
+                  <div className="flex items-center gap-1.5 patient-label text-xs"><div className="w-2 h-2 rounded-full bg-teal-400"></div> Ca trực</div>
+                  <div className="flex items-center gap-1.5 patient-label text-xs"><div className="w-2 h-2 rounded-full bg-rose-400"></div> Nghỉ phép</div>
+                </div>
+              </motion.div>
+
+              {/* Bottom Right: Profile Summary */}
+              <motion.div 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.5 }}
+                className="patient-glass-panel rounded-[2rem] p-5 shadow-xl flex flex-col"
+              >
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-md font-bold patient-card-title">Cài đặt Cá nhân</h2>
+                  <MoreHorizontal size={18} className="text-teal-700/60" />
+                </div>
+                
+                <div className="flex items-center gap-3 bg-slate-900/5 p-3 rounded-xl border border-slate-900/10 mb-4">
+                  <img src={user?.avatarUrl || "https://i.pravatar.cc/150?u=doc"} className="w-10 h-10 rounded-full border border-teal-600/50" alt="Doctor" />
+                  <div>
+                    <h3 className="font-bold text-sm leading-none patient-data">{profile?.fullName || user?.fullName || "BS. Hùng Lê"}</h3>
+                    <p className="text-[10px] text-teal-700 font-extrabold mt-1 uppercase">{profile?.departmentName || profile?.specialization || user?.specialty || "Chuyên khoa II"}</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2 mb-4">
+                  <div className="flex justify-between text-sm">
+                    <span className="patient-label text-sm">Ca khám đã hoàn thành:</span>
+                    <span className="font-bold patient-data">{completedCount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="patient-label text-sm">Bệnh nhân hoạt động:</span>
+                    <span className="font-bold patient-data">{activePatientsCount.toLocaleString()}</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mt-auto">
+                  <button onClick={() => navigate('/dashboard/profile')} className="flex items-center gap-2 text-xs p-2 rounded-lg hover:bg-teal-50 text-teal-700 font-extrabold transition-colors">
+                    <User size={14} /> Profile
+                  </button>
+                  <button onClick={() => navigate('/dashboard/doctor-appointments')} className="flex items-center gap-2 text-xs p-2 rounded-lg hover:bg-teal-50 text-teal-700 font-extrabold transition-colors">
+                    <CalendarDays size={14} /> Lịch khám
+                  </button>
+                  <button onClick={() => navigate('/dashboard/change-password')} className="flex items-center gap-2 text-xs p-2 rounded-lg hover:bg-teal-50 text-teal-700 font-extrabold transition-colors">
+                    <Shield size={14} /> Bảo mật
+                  </button>
+                  <button className="flex items-center gap-2 text-xs p-2 rounded-lg hover:bg-teal-50 text-teal-700 font-extrabold transition-colors">
+                    <Globe size={14} /> Ngôn ngữ
+                  </button>
+                </div>
+              </motion.div>
+            </div>
           </div>
         </div>
-
-        {/* Right Card: Thông báo & Nhắc nhở */}
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col">
-          <div className="flex justify-between items-center border-b border-slate-100 pb-4 mb-4">
-            <h2 className="text-base font-extrabold text-[#0A604E] flex items-center gap-2">
-              <i className="ti ti-bell-ringing text-lg text-[#1DB896]" /> Thông báo / Nhắc nhở
-            </h2>
-          </div>
-
-          <div className="flex flex-col gap-3.5">
-
-            {/* Note 1 */}
-            <div className="p-3 bg-slate-50/50 hover:bg-slate-50 rounded-2xl border border-slate-100/60 flex gap-3 transition-colors">
-              <div className="w-8 h-8 rounded-lg bg-teal-50 text-[#0A604E] flex items-center justify-center shrink-0">
-                <i className="ti ti-mail-opened text-base" />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-xs font-extrabold text-slate-800">Kết quả xét nghiệm mới</h4>
-                <p className="text-[11px] text-slate-500 font-semibold mt-0.5 leading-relaxed">
-                  Hồ sơ BN Lê Hoàng đã có kết quả xét nghiệm máu từ phòng Lab.
-                </p>
-                <span className="text-[9px] text-slate-400 font-bold block mt-1">15 phút trước</span>
-              </div>
-            </div>
-
-            {/* Note 2 */}
-            <div className="p-3 bg-slate-50/50 hover:bg-slate-50 rounded-2xl border border-slate-100/60 flex gap-3 transition-colors">
-              <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                <i className="ti ti-device-laptop text-base" />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-xs font-extrabold text-slate-800">Hội chẩn chuyên khoa</h4>
-                <p className="text-[11px] text-slate-500 font-semibold mt-0.5 leading-relaxed">
-                  Cuộc họp hội chẩn khoa Nội lúc 14:00 tại phòng họp số 3.
-                </p>
-                <span className="text-[9px] text-slate-400 font-bold block mt-1">1 giờ trước</span>
-              </div>
-            </div>
-
-            {/* Note 3 */}
-            <div className="p-3 bg-slate-50/50 hover:bg-slate-50 rounded-2xl border border-slate-100/60 flex gap-3 transition-colors">
-              <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center shrink-0">
-                <i className="ti ti-package text-base" />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-xs font-extrabold text-slate-800">Cảnh báo thuốc sắp hết</h4>
-                <p className="text-[11px] text-slate-500 font-semibold mt-0.5 leading-relaxed">
-                  Khoa thuốc báo cáo lượng Insulin tồn kho đang ở mức thấp.
-                </p>
-                <span className="text-[9px] text-slate-400 font-bold block mt-1">3 giờ trước</span>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
       </div>
 
     </div>

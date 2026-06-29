@@ -21,9 +21,15 @@ import {
   FileText,
   Sparkles,
   Eye,
-  Bot
+  Bot,
+  Search,
+  ChevronRight,
+  ClipboardList,
+  Users,
+  X
 } from "lucide-react";
 import consultationService from "../../services/consultationService";
+import queueTicketService from "../../services/queueTicketService";
 import {
   createMedicalRecord,
   getMedicalRecords,
@@ -42,9 +48,11 @@ import {
   checkInteractionsDraft,
 } from "../../services/prescriptionService";
 import { getMedicines } from "../../services/medicineService";
-import { getPatientById } from "../../services/patientService";
-import { getDoctorById } from "../../services/doctorService";
+import { getPatientById, getPatients } from "../../services/patientService";
+import { getDoctorById, getMyDoctorProfile } from "../../services/doctorService";
 import { useToast } from "../../context/useToast.js";
+import { toLocalDateString } from "../../lib/utils";
+
 
 const EMPTY_FORM = {
   symptoms: "",
@@ -99,7 +107,7 @@ export default function ExaminationPage() {
   const [labNote, setLabNote] = useState("");
   const [savedLabRequests, setSavedLabRequests] = useState([]);
   const [savingLab, setSavingLab] = useState(false);
-  
+
   // Prescription states
   const [medicines, setMedicines] = useState([]);
   const [rxItems, setRxItems] = useState([{ ...EMPTY_RX_ITEM }]);
@@ -107,7 +115,7 @@ export default function ExaminationPage() {
   const [savedPrescription, setSavedPrescription] = useState(null);
   const [savingRx, setSavingRx] = useState(false);
   const [checkingInteractions, setCheckingInteractions] = useState(false);
-  
+
   const [completing, setCompleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -123,9 +131,38 @@ export default function ExaminationPage() {
   const [expandedRxRow, setExpandedRxRow] = useState(null);
   const [showVitalsForm, setShowVitalsForm] = useState(false);
 
+  // Patient lookup/search states (when no consultationId is active)
+  const [recentPatients, setRecentPatients] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+
+  // Queue modal states
+  const [showQueueModal, setShowQueueModal] = useState(false);
+  const [queueList, setQueueList] = useState([]);
+  const [queueLoading, setQueueLoading] = useState(false);
+  const [queueSearch, setQueueSearch] = useState("");
+  const [queueFilter, setQueueFilter] = useState("Tất cả"); // Tất cả, Cấp cứu, Ưu tiên, Tái khám, Khám mới
+  const [queueDoctor, setQueueDoctor] = useState(null);
+  const [queuePage, setQueuePage] = useState(1);
+
   // Load consultation + existing medical record + histories
   useEffect(() => {
-    if (!consultationId) return;
+    // Always fetch logged-in doctor profile
+    getMyDoctorProfile()
+      .then((res) => setQueueDoctor(res.data))
+      .catch((err) => console.error("Không thể tải thông tin bác sĩ:", err));
+
+    if (!consultationId) {
+      setLoading(true);
+      getPatients({ size: 100 })
+        .then((res) => {
+          setRecentPatients(res.data?.content || []);
+        })
+        .catch((err) => console.error("Không thể tải gợi ý bệnh nhân:", err))
+        .finally(() => setLoading(false));
+      return;
+    }
     setLoading(true);
 
     Promise.all([
@@ -207,6 +244,75 @@ export default function ExaminationPage() {
       .catch((err) => setError(err.message || "Không thể tải thông tin phiên khám."))
       .finally(() => setLoading(false));
   }, [consultationId]);
+
+  // Debounced search for suggestion screen when no consultation is active
+  useEffect(() => {
+    if (!consultationId && searchTerm.trim() !== "") {
+      const delayDebounceFn = setTimeout(() => {
+        setSearching(true);
+        getPatients({ size: 100 })
+          .then((res) => {
+            const list = res.data?.content || [];
+            const query = searchTerm.toLowerCase().trim();
+            const filtered = list.filter(p => 
+              (p.fullName || "").toLowerCase().includes(query) ||
+              (p.patientCode || "").toLowerCase().includes(query) ||
+              (p.phone || "").toLowerCase().includes(query)
+            );
+            setSearchResults(filtered);
+          })
+          .catch((err) => console.error(err))
+          .finally(() => setSearching(false));
+      }, 300);
+      return () => clearTimeout(delayDebounceFn);
+    } else {
+      setSearchResults([]);
+    }
+  }, [searchTerm, consultationId]);
+
+  const fetchQueueTickets = async () => {
+    if (!queueDoctor?.doctorId) return;
+    setQueueLoading(true);
+    try {
+      const todayStr = toLocalDateString(new Date());
+      const res = await queueTicketService.getQueue(
+        queueDoctor.doctorId,
+        todayStr
+      );
+      // axiosClient unwraps HTTP body → res = ApiResponse { data: [...] }
+      const rawList = Array.isArray(res.data) ? res.data : [];
+      // Only show tickets still in queue (not done/cancelled/in_examination)
+      const activeList = rawList.filter(
+        (t) => t.queueStatus === "WAITING" || t.queueStatus === "CALLED"
+      );
+      setQueueList(activeList);
+    } catch (err) {
+      console.error("Không thể tải hàng đợi bệnh nhân:", err);
+      showToast("Không thể tải hàng đợi bệnh nhân.", "error");
+    } finally {
+      setQueueLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showQueueModal && queueDoctor?.doctorId) {
+      fetchQueueTickets();
+    }
+  }, [showQueueModal, queueDoctor?.doctorId]);
+
+  const handleStartExamFromQueue = async (ticketId) => {
+    try {
+      const res = await queueTicketService.startExamination(ticketId);
+      showToast("Bắt đầu khám thành công!");
+      setShowQueueModal(false);
+      if (res.data?.consultationId) {
+        navigate(`/dashboard/examination/${res.data.consultationId}`);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Không thể bắt đầu ca khám: " + (err.response?.data?.message || err.message), "error");
+    }
+  };
 
   const showToast = (message, type = "success") => {
     if (type === "error") {
@@ -469,7 +575,7 @@ export default function ExaminationPage() {
     try {
       const res = await standardizeClinicalNote(rawNote);
       const data = res.data;
-      
+
       const diag = data.diagnosis || "";
       const match = diag.match(/^\[(.*?)\]\s*(.*)$/);
       if (match) {
@@ -513,7 +619,7 @@ export default function ExaminationPage() {
       }
       await consultationService.complete(consultationId);
       showToast("Phiên khám đã hoàn thành! Đang chuyển về hàng đợi...");
-      setTimeout(() => navigate("/dashboard/consultation"), 1800);
+      setTimeout(() => navigate("/dashboard/examination"), 1800);
     } catch (err) {
       setError(err.message || "Không thể hoàn tất phiên khám.");
     } finally {
@@ -533,6 +639,209 @@ export default function ExaminationPage() {
     return `${age} Tuổi`;
   };
 
+  const renderQueueModal = () => {
+    if (!showQueueModal) return null;
+
+    const filteredList = queueList.filter((ticket) => {
+      const query = queueSearch.toLowerCase().trim();
+      const matchSearch =
+        (ticket.patientName || "").toLowerCase().includes(query) ||
+        (ticket.patientPhone || "").toLowerCase().includes(query);
+
+      if (!matchSearch) return false;
+
+      if (queueFilter === "Tất cả") return true;
+      if (queueFilter === "Cấp cứu") return ticket.priorityLevel === "EMERGENCY";
+      if (queueFilter === "Ưu tiên") return ticket.priorityLevel === "PRIORITY";
+      if (queueFilter === "Tái khám") return ticket.priorityLevel === "REEXAMINATION";
+      if (queueFilter === "Khám mới") {
+        return ticket.priorityLevel !== "EMERGENCY" && ticket.priorityLevel !== "PRIORITY" && ticket.priorityLevel !== "REEXAMINATION";
+      }
+      return true;
+    });
+
+    const itemsPerPage = 4;
+    const totalItems = filteredList.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+    const startIndex = (queuePage - 1) * itemsPerPage;
+    const paginatedList = filteredList.slice(startIndex, startIndex + itemsPerPage);
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+        <div className="bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.15)] w-full max-w-4xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
+            <div>
+              <h3 className="text-lg font-black text-slate-800 tracking-tight">Danh sách bệnh nhân chờ khám</h3>
+              <p className="text-xs text-slate-400 font-bold mt-1">
+                {queueList.filter(t => t.queueStatus === 'WAITING' || t.queueStatus === 'CALLED').length} bệnh nhân đang chờ
+              </p>
+            </div>
+            <button
+              onClick={() => setShowQueueModal(false)}
+              className="w-10 h-10 rounded-full hover:bg-slate-50 text-slate-450 hover:text-slate-600 flex items-center justify-center transition-colors"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Filters and Search */}
+          <div className="p-6 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-50 shrink-0 bg-slate-50/30">
+            {/* Search Input */}
+            <div className="relative w-full max-w-xs">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <Search size={14} />
+              </span>
+              <input
+                type="text"
+                placeholder="Tìm theo tên hoặc mã Bệnh nhân..."
+                value={queueSearch}
+                onChange={(e) => {
+                  setQueueSearch(e.target.value);
+                  setQueuePage(1);
+                }}
+                className="w-full bg-white border border-slate-200 focus:border-[#0A604E] rounded-xl pl-9 pr-3 py-2 text-[11px] text-slate-700 font-bold outline-none transition-all placeholder:text-slate-450"
+              />
+            </div>
+
+            {/* Filter Tabs */}
+            <div className="flex flex-wrap gap-1.5 bg-slate-100/80 p-1 rounded-xl">
+              {[
+                { key: "Tất cả", label: `Tất cả (${queueList.length})` },
+                { key: "Cấp cứu", label: `Cấp cứu (${queueList.filter(t => t.priorityLevel === "EMERGENCY").length})` },
+                { key: "Ưu tiên", label: `Ưu tiên (${queueList.filter(t => t.priorityLevel === "PRIORITY").length})` },
+                { key: "Tái khám", label: `Tái khám (${queueList.filter(t => t.priorityLevel === "REEXAMINATION").length})` },
+                { key: "Khám mới", label: `Khám mới (${queueList.filter(t => t.priorityLevel !== "EMERGENCY" && t.priorityLevel !== "PRIORITY" && t.priorityLevel !== "REEXAMINATION").length})` }
+              ].map((tab) => {
+                const isActive = queueFilter === tab.key;
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() => {
+                      setQueueFilter(tab.key);
+                      setQueuePage(1);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-black tracking-wide transition-all ${
+                      isActive
+                        ? "bg-white text-slate-800 shadow-sm"
+                        : "text-slate-500 hover:text-slate-750"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Table Area */}
+          <div className="flex-1 overflow-y-auto p-6 min-h-[250px]">
+            {queueLoading ? (
+              <div className="w-full h-full flex flex-col items-center justify-center gap-3">
+                <RefreshCw size={24} className="animate-spin text-[#0A604E]" />
+                <span className="text-[11px] text-slate-400 font-bold">Đang tải danh sách chờ...</span>
+              </div>
+            ) : paginatedList.length > 0 ? (
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                    <th className="pb-3 pl-2 w-16">STT</th>
+                    <th className="pb-3 w-64">Patient Info</th>
+                    <th className="pb-3 w-32">Time</th>
+                    <th className="pb-3 w-40">Status/Priority</th>
+                    <th className="pb-3">Reason</th>
+                    <th className="pb-3 text-right pr-2 w-40">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedList.map((ticket, index) => {
+                    const initials = (ticket.patientName || "BN").split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
+
+                    let priorityBadge = null;
+                    if (ticket.priorityLevel === "EMERGENCY") {
+                      priorityBadge = <span className="bg-rose-50 border border-rose-100 text-rose-700 text-[9px] font-extrabold px-2.5 py-1 rounded-md uppercase">▲ Cấp cứu</span>;
+                    } else if (ticket.priorityLevel === "PRIORITY") {
+                      priorityBadge = <span className="bg-amber-50 border border-amber-100 text-amber-700 text-[9px] font-extrabold px-2.5 py-1 rounded-md uppercase">★ Ưu tiên</span>;
+                    } else if (ticket.priorityLevel === "REEXAMINATION") {
+                      priorityBadge = <span className="bg-sky-50 border border-sky-100 text-sky-700 text-[9px] font-extrabold px-2.5 py-1 rounded-md uppercase">Tái khám</span>;
+                    } else {
+                      priorityBadge = <span className="bg-indigo-50 border border-indigo-100 text-indigo-700 text-[9px] font-extrabold px-2.5 py-1 rounded-md uppercase">Khám mới</span>;
+                    }
+
+                    return (
+                      <tr key={ticket.queueTicketId} className="border-b border-slate-50 hover:bg-slate-50/40 transition-colors group">
+                        <td className="py-4 pl-2 font-extrabold text-slate-800 text-xs">#{ticket.queueNumber || (startIndex + index + 1)}</td>
+                        <td className="py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-teal-50 border border-teal-100 overflow-hidden shrink-0 flex items-center justify-center text-teal-655 font-bold text-xs">
+                              <span>{initials}</span>
+                            </div>
+                            <div>
+                              <h4 className="font-extrabold text-slate-800 text-xs tracking-tight group-hover:text-teal-705 transition-colors">{ticket.patientName}</h4>
+                              <p className="text-[10px] text-slate-400 font-bold mt-0.5">
+                                SĐT: {ticket.patientPhone || "—"}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 text-xs font-extrabold text-slate-700">
+                          {ticket.startTime ? String(ticket.startTime).substring(0, 5) : "—"}
+                        </td>
+                        <td className="py-4">
+                          {priorityBadge}
+                        </td>
+                        <td className="py-4 text-xs font-semibold text-slate-500 max-w-xs truncate">
+                          {ticket.queueStatus === "WAITING" ? "Đang chờ" : ticket.queueStatus === "CALLED" ? "Đã được gọi" : ticket.queueStatus}
+                        </td>
+                        <td className="py-4 text-right pr-2">
+                          <button
+                            onClick={() => handleStartExamFromQueue(ticket.queueTicketId)}
+                            className="bg-[#1DB896] hover:bg-[#159a7c] text-white font-extrabold text-[10px] tracking-wide px-3.5 py-2 rounded-xl transition-all shadow-sm active:scale-95 flex items-center gap-1.5 ml-auto uppercase"
+                          >
+                            Bắt đầu khám <ChevronRight size={10} className="stroke-[2.5]" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center text-center py-10">
+                <Users size={48} className="text-slate-350 stroke-[1.2] mb-3" />
+                <p className="text-xs text-slate-450 font-bold">Không có bệnh nhân nào trong danh sách chờ của bộ lọc này.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Footer / Pagination */}
+          <div className="p-6 border-t border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/20 text-[10px] font-bold text-slate-400">
+            <span>
+              Hiển thị {totalItems > 0 ? startIndex + 1 : 0} đến {Math.min(startIndex + itemsPerPage, totalItems)} của {totalItems} bệnh nhân
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                disabled={queuePage === 1}
+                onClick={() => setQueuePage(p => Math.max(p - 1, 1))}
+                className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 hover:text-slate-600 transition-colors disabled:opacity-50 disabled:pointer-events-none"
+              >
+                &lt;
+              </button>
+              <span className="text-slate-800 font-extrabold px-1">Trang {queuePage} / {totalPages}</span>
+              <button
+                disabled={queuePage === totalPages}
+                onClick={() => setQueuePage(p => Math.min(p + 1, totalPages))}
+                className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 hover:text-slate-600 transition-colors disabled:opacity-50 disabled:pointer-events-none"
+              >
+                &gt;
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="w-full flex items-center justify-center min-h-[400px]">
@@ -544,9 +853,126 @@ export default function ExaminationPage() {
     );
   }
 
-  const avatarUrl = patientInfo?.avatarUrl || 
-    (patientInfo?.gender === 'FEMALE' 
-      ? "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop" 
+  if (!consultationId) {
+    return (
+      <div className="w-full max-w-[1000px] mx-auto p-4 md:p-6 lg:p-8 flex flex-col gap-8 animate-fadeIn">
+        {/* Top Header */}
+        <div className="flex items-center gap-2 border-b border-slate-200 pb-5">
+          <span className="w-8 h-8 rounded-xl bg-emerald-50 text-[#0A604E] flex items-center justify-center shrink-0 shadow-sm border border-emerald-100/50">
+            <Stethoscope size={18} className="stroke-[2.5]" />
+          </span>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Khám bệnh</h1>
+        </div>
+
+        {/* Empty State Panel */}
+        <div className="w-full bg-white/70 backdrop-blur-xl border border-slate-100 rounded-[2rem] p-8 md:p-12 shadow-[0_10px_35px_rgba(0,0,0,0.02)] text-center flex flex-col items-center">
+          <div className="w-20 h-20 rounded-full bg-slate-50 border border-slate-150 flex items-center justify-center shadow-sm text-[#0A604E] mb-6">
+            <Users size={36} className="stroke-[1.5]" />
+          </div>
+
+          <h2 className="text-xl font-extrabold text-slate-800 tracking-tight">
+            Chưa có bệnh nhân đang khám
+          </h2>
+          <p className="text-sm text-slate-400 font-bold max-w-sm mt-2 leading-relaxed">
+            Vui lòng chọn bệnh nhân từ hàng chờ hoặc tìm kiếm hồ sơ bệnh nhân để bắt đầu ca khám mới.
+          </p>
+
+          <button
+            onClick={() => setShowQueueModal(true)}
+            className="mt-6 px-6 py-3 bg-[#0A604E] hover:bg-[#07473a] active:scale-95 text-white font-extrabold text-xs rounded-xl shadow-[0_6px_20px_rgba(10,96,78,0.2)] transition-all flex items-center gap-2"
+          >
+            <ClipboardList size={14} />
+            Chọn bệnh nhân từ hàng chờ
+          </button>
+        </div>
+
+        {/* Suggested & Search Section */}
+        <div className="w-full flex flex-col gap-6">
+          <div className="flex items-center gap-4 w-full">
+            <div className="h-[1px] bg-slate-200/65 flex-1"></div>
+            <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">GỢI Ý</span>
+            <div className="h-[1px] bg-slate-200/65 flex-1"></div>
+          </div>
+
+          {/* Search Box */}
+          <div className="relative w-full max-w-md mx-auto">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+              <Search size={16} />
+            </span>
+            <input
+              type="text"
+              placeholder="Tìm kiếm tên hoặc mã bệnh nhân..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-white border border-slate-200 focus:border-[#0A604E] rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-700 font-bold outline-none transition-all shadow-sm placeholder:text-slate-400"
+            />
+            {searching && (
+              <span className="absolute right-4 top-1/2 -translate-y-1/2">
+                <RefreshCw size={14} className="animate-spin text-[#0A604E]" />
+              </span>
+            )}
+          </div>
+
+          {/* List or Suggestions */}
+          {searchTerm.trim() !== "" ? (
+            <div className="w-full flex flex-col gap-3">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                Kết quả tìm kiếm ({searchResults.length})
+              </h3>
+              {searchResults.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {searchResults.map((patient) => (
+                    <PatientCard
+                      key={patient.patientId}
+                      patient={patient}
+                      onClick={() => navigate(`/dashboard/patients/${patient.patientId}`)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 text-slate-400 font-bold text-xs bg-white/40 border border-slate-100 rounded-2xl">
+                  Không tìm thấy bệnh nhân nào khớp với từ khóa.
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="w-full flex flex-col gap-3">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                Bệnh nhân vừa xem gần đây
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {recentPatients.length > 0 ? (
+                  recentPatients.slice(0, 2).map((patient) => (
+                    <PatientCard
+                      key={patient.patientId}
+                      patient={patient}
+                      onClick={() => navigate(`/dashboard/patients/${patient.patientId}`)}
+                    />
+                  ))
+                ) : (
+                  <>
+                    <PatientCard
+                      patient={{ fullName: "Lê Hoàng Nam", patientCode: "BN-99281" }}
+                      onClick={() => navigate("/dashboard/patients")}
+                    />
+                    <PatientCard
+                      patient={{ fullName: "Phạm Minh Tuyết", patientCode: "BN-88102" }}
+                      onClick={() => navigate("/dashboard/patients")}
+                    />
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+        {renderQueueModal()}
+      </div>
+    );
+  }
+
+  const avatarUrl = patientInfo?.avatarUrl ||
+    (patientInfo?.gender === 'FEMALE'
+      ? "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop"
       : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop");
 
   const allergyList = patientInfo?.allergies ? patientInfo.allergies.split('\n').filter(Boolean) : [];
@@ -554,7 +980,7 @@ export default function ExaminationPage() {
 
   return (
     <div className="w-full max-w-[1280px] mx-auto p-4 md:p-6 lg:p-8 flex flex-col gap-6 relative pb-8">
-      
+
       {/* Top Breadcrumb/Header Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
         <div className="flex items-center gap-3">
@@ -602,10 +1028,10 @@ export default function ExaminationPage() {
 
       {/* Main Two-Column Workflow Workspace Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full">
-        
+
         {/* LEFT COLUMN: Patient Info, History, Vitals, Prev Records */}
         <div className="lg:col-span-5 flex flex-col gap-6 w-full">
-          
+
           {/* CARD 1: Patient Profile Card */}
           <div className="bg-white border border-slate-100 rounded-[1.5rem] p-6 shadow-[0_4px_25px_rgba(0,0,0,0.015)] transition-all">
             <div className="flex items-center gap-4">
@@ -830,7 +1256,7 @@ export default function ExaminationPage() {
 
         {/* RIGHT COLUMN: AI helper, Symptoms/Diagnosis, Prescriptions, Lab requests */}
         <div className="lg:col-span-7 flex flex-col gap-6 w-full">
-          
+
           {/* CARD 0: AI Smart Notes Helper */}
           <div className="bg-gradient-to-br from-fuchsia-50/50 via-purple-50/30 to-white border border-purple-100 rounded-[1.5rem] p-6 shadow-[0_4px_25px_rgba(232,121,249,0.02)] transition-all">
             <div className="flex items-center justify-between pb-3 border-b border-purple-100/50">
@@ -885,7 +1311,7 @@ export default function ExaminationPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
-              
+
               {/* Symptoms */}
               <div className="sm:col-span-12 flex flex-col gap-1">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-0.5">Triệu chứng lâm sàng <span className="text-rose-500">*</span></label>
@@ -937,7 +1363,7 @@ export default function ExaminationPage() {
 
               {showAdvancedDiagnosis && (
                 <div className="sm:col-span-12 grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2 animate-fadeIn">
-                  
+
                   {/* Clinical Findings */}
                   <div className="sm:col-span-2 flex flex-col gap-1">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-0.5">Khám lâm sàng / Thực thể</label>
@@ -1016,7 +1442,7 @@ export default function ExaminationPage() {
                 </span>
                 <h4 className="text-sm font-extrabold text-slate-800">Đơn thuốc</h4>
               </div>
-              
+
               {!savedPrescription && (
                 <button
                   type="button"
@@ -1049,7 +1475,7 @@ export default function ExaminationPage() {
                             : savedPrescription.status}
                     </span>
                   </div>
-                  
+
                   <div className="overflow-x-auto mt-4">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
@@ -1317,11 +1743,10 @@ export default function ExaminationPage() {
                   return (
                     <label
                       key={t.labTestId}
-                      className={`flex items-start gap-2.5 p-3 rounded-2xl border cursor-pointer transition-all ${
-                        isSelected
+                      className={`flex items-start gap-2.5 p-3 rounded-2xl border cursor-pointer transition-all ${isSelected
                           ? "border-cyan-500 bg-cyan-50/50 text-cyan-800 shadow-sm"
                           : "border-slate-100 bg-slate-50/50 text-slate-700 hover:bg-slate-50"
-                      }`}
+                        }`}
                     >
                       <input
                         type="checkbox"
@@ -1375,7 +1800,7 @@ export default function ExaminationPage() {
             {savedLabRequests.length > 0 && (
               <div className="mt-6 pt-5 border-t border-slate-50 flex flex-col gap-3">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Lịch sử chỉ định xét nghiệm</p>
-                
+
                 {savedLabRequests.map((req) => (
                   <div key={req.labRequestId} className="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex flex-col gap-3">
                     <div className="flex justify-between items-center border-b border-slate-100 pb-2">
@@ -1458,10 +1883,10 @@ export default function ExaminationPage() {
 
       {/* FOOTER ACTIONS BAR: Cancel, Save Draft, Save & Complete */}
       <div className="w-full bg-white border border-slate-100 p-5 rounded-[1.5rem] shadow-[0_4px_25px_rgba(0,0,0,0.015)] mt-4 flex items-center justify-between">
-        
+
         <button
           type="button"
-          onClick={() => navigate("/dashboard/consultation")}
+          onClick={() => navigate("/dashboard/examination")}
           className="flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-655 font-bold text-xs tracking-wider transition-all active:scale-95 shadow-sm"
         >
           Hủy bỏ
@@ -1496,7 +1921,35 @@ export default function ExaminationPage() {
         </div>
 
       </div>
+      {renderQueueModal()}
+    </div>
+  );
+}
 
+function PatientCard({ patient, onClick }) {
+  return (
+    <div
+      onClick={onClick}
+      className="flex items-center gap-4 bg-white border border-slate-100 hover:border-emerald-250 hover:bg-emerald-50/5 rounded-2xl p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 cursor-pointer transition-all duration-300 group"
+    >
+      <div className="w-12 h-12 rounded-xl bg-emerald-55 border border-emerald-100 overflow-hidden shrink-0 flex items-center justify-center text-[#0A604E] shadow-sm group-hover:scale-105 transition-transform">
+        {patient.avatarUrl ? (
+          <img src={patient.avatarUrl} alt={patient.fullName} className="w-full h-full object-cover" />
+        ) : (
+          <User size={20} className="stroke-[2]" />
+        )}
+      </div>
+      <div className="flex-1">
+        <h4 className="font-extrabold text-slate-800 text-xs tracking-tight group-hover:text-[#0A604E] transition-colors">
+          {patient.fullName}
+        </h4>
+        <p className="text-[10px] text-slate-400 font-bold mt-0.5">
+          {patient.patientCode ? `#${patient.patientCode}` : "Mã BN ẩn"}
+        </p>
+      </div>
+      <div className="w-6 h-6 rounded-lg bg-slate-50 text-slate-400 group-hover:bg-emerald-50 group-hover:text-[#0A604E] flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
+        <ChevronRight size={14} />
+      </div>
     </div>
   );
 }
