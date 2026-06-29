@@ -30,11 +30,6 @@ export default function PageHeader({
     !roles.includes("RECEPTIONIST") &&
     !roles.includes("ADMIN");
 
-  const isLightLayout =
-    isPatientOnly ||
-    roles.includes("PHARMACIST") ||
-    roles.includes("LAB_TECHNICIAN");
-
   const resolvedIconColor = iconColor === "text-white" ? "text-teal-500" : iconColor;
 
   const handleBack = () => {
@@ -45,8 +40,7 @@ export default function PageHeader({
     }
   };
 
-  if (isLightLayout) {
-
+  if (isPatientOnly) {
     return (
       <div className={`mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 w-full ${className}`}>
         <div>

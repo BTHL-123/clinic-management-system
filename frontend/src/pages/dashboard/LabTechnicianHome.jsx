@@ -65,29 +65,29 @@ export default function LabTechnicianHome() {
   };
 
   return (
-    <div className="max-w-[1100px] mx-auto w-full flex flex-col gap-8 pb-8 px-4 sm:px-6">
+    <div className="w-full flex flex-col gap-8 h-[calc(100vh-104px)] overflow-y-auto custom-scrollbar pr-2 pb-8">
       
       {/* HEADER SECTION */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 shrink-0 mt-4">
         <div>
-          <div className="flex items-center gap-2 text-teal-600 mb-2 font-extrabold text-[11px] uppercase tracking-wider">
-            <FlaskConical size={16} className="animate-pulse" />
+          <div className="flex items-center gap-2 text-teal-200 mb-2 font-medium">
+            <FlaskConical size={18} className="animate-pulse" />
             <span>Trung tâm Xét nghiệm Tiêu chuẩn</span>
           </div>
-          <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-slate-800 tracking-tight leading-tight">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-white tracking-tight drop-shadow-md">
             {getGreeting()}, <br className="hidden md:block" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-emerald-500">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-200 to-emerald-200">
               {user?.fullName ?? "Kỹ thuật viên"}
             </span>
           </h1>
         </div>
       </div>
 
-      {/* CREATIVE DASHBOARD WIDGETS */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 w-full">
+      {/* CREATIVE AURORA DASHBOARD WIDGETS */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 w-full">
         
-        {/* LEFT COLUMN: UPCOMING REQUEST & AI SECTION */}
-        <div className="xl:col-span-8 flex flex-col gap-6">
+        {/* LEFT COLUMN: UPCOMING REQUEST & AI ORB */}
+        <div className="xl:col-span-8 flex flex-col gap-8">
           
           {/* FLOATING TICKET UI */}
           <AnimatePresence>
@@ -95,62 +95,62 @@ export default function LabTechnicianHome() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group flex flex-col md:flex-row transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-teal-100"
+                className="patient-glass-panel rounded-[3rem] relative overflow-hidden group flex flex-col md:flex-row transition-all hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.22)]"
               >
                 {/* Decorative Pattern - Frosted Glass blob */}
-                <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-teal-50/40 to-emerald-50/30 rounded-full blur-[60px] -translate-y-1/2 translate-x-1/3 group-hover:scale-110 transition-transform duration-1000 pointer-events-none"></div>
+                <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-teal-200/40 to-cyan-200/30 rounded-full blur-[60px] -translate-y-1/2 translate-x-1/3 group-hover:scale-110 transition-transform duration-1000"></div>
                 
                 {/* Main Ticket Info */}
-                <div className="p-6 md:p-8 flex-1 relative z-10 flex flex-col justify-between">
+                <div className="p-8 md:p-10 flex-1 relative z-10 flex flex-col justify-between">
                   <div>
-                    <div className="flex items-center gap-1.5 bg-teal-50 text-teal-600 w-max px-3 py-1 rounded-full text-xs font-bold border border-teal-100/50 mb-6 uppercase tracking-wider shadow-sm">
-                      <ShieldCheck size={14} /> Phiếu Xét Nghiệm Ưu Tiên
+                    <div className="flex items-center gap-3 bg-teal-50 text-teal-700 w-max px-4 py-2 rounded-full text-sm font-bold border border-teal-100 mb-8 uppercase tracking-wider shadow-sm">
+                      <ShieldCheck size={16} /> Phiếu Xét Nghiệm Ưu Tiên
                     </div>
 
-                    <div className="flex justify-between items-end mb-6">
+                    <div className="flex justify-between items-end mb-8">
                       <div>
-                        <p className="text-slate-400 text-xs font-extrabold uppercase tracking-wider mb-1">Mã Phiếu</p>
-                        <h2 className="text-4xl md:text-5xl font-black text-[#1DB896] tracking-tight">
+                        <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mb-1">Mã Phiếu</p>
+                        <h2 className="text-5xl md:text-6xl font-black text-slate-900 tracking-tight">
                           {upcomingRequest.requestCode}
                         </h2>
-                        <p className="text-slate-500 font-extrabold text-sm mt-2 flex items-center gap-1.5">
-                          <Clock size={16} className="text-teal-500" /> 
+                        <p className="text-teal-600 font-extrabold text-xl mt-2 flex items-center gap-2">
+                          <Clock size={20} /> 
                           {new Date(upcomingRequest.requestedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                         </p>
                       </div>
                       <div className="text-right hidden sm:block">
-                        <p className="text-slate-400 text-xs font-extrabold uppercase tracking-wider mb-1">Trạng thái</p>
-                        <p className={`text-xl font-black ${upcomingRequest.status === "REQUESTED" ? "text-amber-600" : "text-blue-600"}`}>
+                        <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mb-1">Trạng thái</p>
+                        <p className={`text-3xl font-black ${upcomingRequest.status === "REQUESTED" ? "text-amber-600" : "text-blue-600"}`}>
                           {upcomingRequest.status === "REQUESTED" ? "Chờ tiếp nhận" : "Đang xử lý"}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between border-t border-slate-100 pt-5 mt-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-teal-50 flex items-center justify-center text-teal-600 border border-teal-100/50 shadow-sm">
-                        <UserCircle size={28} />
+                  <div className="flex items-center justify-between border-t border-slate-100 pt-6 mt-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-full bg-teal-50 flex items-center justify-center text-teal-700 border border-teal-100 p-1 shadow-sm">
+                        <UserCircle size={36} />
                       </div>
                       <div>
-                        <div className="text-slate-400 text-[10px] font-extrabold uppercase tracking-wider">Mã bệnh nhân</div>
-                        <div className="text-slate-800 font-bold text-base">ID: {upcomingRequest.patientId}</div>
+                        <div className="text-slate-500 text-xs font-bold uppercase tracking-widest">Mã bệnh nhân</div>
+                        <div className="text-slate-900 font-black text-xl">ID: {upcomingRequest.patientId}</div>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Ticket Stub */}
-                <div className="w-full md:w-64 bg-slate-50/50 backdrop-blur-sm border-t md:border-t-0 md:border-l border-slate-100 p-6 flex flex-col items-center justify-center relative">
-                  <div className="hidden md:block absolute left-[-1px] top-6 bottom-6 w-[2px] bg-[linear-gradient(to_bottom,transparent_50%,rgba(148,163,184,0.15)_50%)] bg-[length:100%_20px]"></div>
+                <div className="w-full md:w-72 bg-gradient-to-b from-teal-50 to-cyan-50 backdrop-blur-md border-l border-slate-100 p-8 flex flex-col items-center justify-center relative border-t md:border-t-0">
+                  <div className="hidden md:block absolute left-[-1px] top-6 bottom-6 w-[2px] bg-[linear-gradient(to_bottom,transparent_50%,rgba(148,163,184,0.35)_50%)] bg-[length:100%_20px]"></div>
                   
-                  <div className="bg-white p-4 rounded-xl mb-6 shadow-sm border border-slate-100">
-                    <FlaskConical size={52} className="text-teal-600" />
+                  <div className="bg-white p-6 rounded-3xl mb-8 shadow-md border border-slate-100">
+                    <FlaskConical size={80} className="text-teal-600" />
                   </div>
                   
                   <button 
                     onClick={() => navigate('/dashboard/lab-requests')}
-                    className="w-full bg-[#1DB896] hover:bg-[#159a7c] text-white font-bold py-3.5 rounded-xl transition-all shadow-md shadow-teal-500/20 text-sm cursor-pointer"
+                    className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-400 hover:to-teal-500 text-white font-black py-4 rounded-2xl transition-all shadow-lg hover:shadow-teal-400/30 hover:-translate-y-1"
                   >
                     XỬ LÝ NGAY
                   </button>
@@ -161,40 +161,41 @@ export default function LabTechnicianHome() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 md:p-12 flex flex-col items-center justify-center min-h-[320px] relative overflow-hidden transition-all duration-300 hover:shadow-md hover:border-teal-100"
+                  className="patient-glass-panel rounded-[3rem] p-12 flex flex-col items-center justify-center min-h-[320px] relative overflow-hidden hover:shadow-[0_12px_40px_rgba(0,0,0,0.22)] transition-all"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-t from-teal-50/10 to-transparent pointer-events-none"></div>
-                  <div className="w-20 h-20 rounded-2xl bg-teal-50 flex items-center justify-center text-teal-600 mb-6 relative z-10 border border-teal-100/50">
-                    <CheckCircle size={40} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-teal-900/20 to-transparent"></div>
+                  <div className="w-28 h-28 patient-glass-panel-sm rounded-[2.5rem] rotate-12 flex items-center justify-center text-teal-200 mb-8 relative z-10">
+                    <CheckCircle size={56} className="-rotate-12" />
                   </div>
-                  <h3 className="text-2xl font-black text-slate-800 mb-2 relative z-10">Hoàn thành xuất sắc</h3>
-                  <p className="text-slate-500 mb-8 max-w-md text-center text-sm relative z-10 font-medium">Không còn phiếu xét nghiệm nào đang chờ xử lý. Mọi thứ đã được cập nhật đầy đủ.</p>
+                  <h3 className="text-3xl font-black text-slate-900 mb-4 relative z-10 drop-shadow-sm">Hoàn thành xuất sắc</h3>
+                  <p className="text-slate-700 mb-10 max-w-md text-center text-lg relative z-10 font-medium drop-shadow-sm">Không còn phiếu xét nghiệm nào đang chờ xử lý. Mọi thứ đã được cập nhật đầy đủ.</p>
                   <button 
                     onClick={() => navigate("/dashboard/lab-requests")}
-                    className="bg-[#1DB896] hover:bg-[#159a7c] text-white font-bold py-3 px-6 rounded-xl transition-all hover:scale-105 shadow-md shadow-teal-500/20 relative z-10 flex items-center gap-2 text-sm cursor-pointer"
+                    className="bg-teal-600 hover:bg-teal-500 text-white font-black text-lg py-4 px-10 rounded-2xl transition-all hover:scale-105 shadow-[0_0_30px_rgba(45,212,191,0.25)] relative z-10 flex items-center gap-3"
                   >
-                    Xem lịch sử <ArrowRight size={18} />
+                    Xem lịch sử <ArrowRight size={22} />
                   </button>
                 </motion.div>
               )
             )}
           </AnimatePresence>
 
-          {/* AI AUTOMATION SECTION */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 relative overflow-hidden group transition-all duration-300 hover:shadow-md hover:border-teal-100">
-            <div className="absolute right-0 top-1/2 w-64 h-64 bg-teal-50/30 rounded-full blur-[60px] translate-x-1/3 -translate-y-1/2 pointer-events-none transition-colors duration-1000"></div>
+          {/* AI ENERGY ORB WIDGET */}
+          <div className="patient-glass-panel patient-glass-panel-clear rounded-[3rem] p-8 md:p-10 relative overflow-hidden group hover:shadow-[0_12px_40px_rgba(0,0,0,0.22)] transition-all">
+            <div className="absolute right-0 top-1/2 w-64 h-64 bg-violet-200/30 rounded-full blur-[60px] translate-x-1/3 -translate-y-1/2 pointer-events-none group-hover:bg-violet-200/50 transition-colors duration-1000"></div>
             
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-6 relative z-10">
-              <div className="w-14 h-14 rounded-2xl bg-teal-50 flex items-center justify-center text-teal-600 shrink-0 border border-teal-100/50 shadow-sm">
-                <Sparkles size={28} />
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-8 relative z-10">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-500 via-cyan-500 to-emerald-500 flex items-center justify-center text-white shrink-0 shadow-[0_0_40px_rgba(45,212,191,0.35)] animate-pulse relative">
+                <div className="absolute inset-0 rounded-full bg-white/20 blur-md mix-blend-overlay"></div>
+                <Sparkles size={36} className="relative z-10 drop-shadow-md" />
               </div>
 
               <div className="flex-1 w-full">
-                <h3 className="text-lg font-black text-slate-800 mb-1">Hệ thống Tự động hóa</h3>
-                <p className="text-slate-500 text-xs font-semibold mb-4">Các kết quả xét nghiệm từ máy phân tích có thể được đồng bộ trực tiếp vào hệ thống.</p>
-                <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 px-4 py-2 rounded-xl w-max">
-                  <RefreshCw size={16} className="text-teal-600 animate-spin" />
-                  <span className="text-slate-600 text-xs font-bold tracking-wide">Đang đồng bộ ngầm...</span>
+                <h3 className="text-2xl font-black text-white mb-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]">Hệ thống Tự động hóa</h3>
+                <p className="text-white/95 font-extrabold mb-5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.3)]">Các kết quả xét nghiệm từ máy phân tích có thể được đồng bộ trực tiếp vào hệ thống.</p>
+                <div className="flex items-center gap-3 bg-white/10 px-6 py-3 rounded-2xl w-max border border-white/20">
+                  <RefreshCw size={20} className="text-teal-300 animate-spin-slow" />
+                  <span className="text-white font-bold tracking-wide">Đang đồng bộ ngầm...</span>
                 </div>
               </div>
             </div>
@@ -202,19 +203,19 @@ export default function LabTechnicianHome() {
 
         </div>
 
-        {/* RIGHT COLUMN: STATS AND PROGRESS */}
+        {/* RIGHT COLUMN: ASYMMETRIC BENTO GRID */}
         <div className="xl:col-span-4 flex flex-col gap-6 h-full">
           
-          {/* LAB PERFORMANCE */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col relative overflow-hidden flex-shrink-0 transition-all duration-300 hover:shadow-md hover:border-teal-100">
-            <h3 className="text-slate-700 font-extrabold text-sm uppercase tracking-wider mb-6 flex items-center gap-2">
-              <ActivitySquare size={18} className="text-teal-600" /> Tiến độ Xét nghiệm
+          {/* WELLNESS SCORE WIDGET -> HIỆU SUẤT LAB */}
+          <div className="patient-glass-panel patient-glass-panel-clear rounded-[3rem] p-8 flex flex-col relative overflow-hidden flex-shrink-0 hover:shadow-[0_12px_40px_rgba(0,0,0,0.22)] transition-all">
+            <h3 className="text-white font-black text-xl mb-8 flex items-center gap-2 drop-shadow-[0_1px_3px_rgba(0,0,0,0.3)]">
+              <ActivitySquare className="text-teal-200" /> Tiến độ Xét nghiệm
             </h3>
             
             <div className="flex justify-center mb-6">
-              <div className="relative w-40 h-40">
-                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                  <circle cx="50" cy="50" r="45" fill="none" stroke="#f1f5f9" strokeWidth="8" />
+              <div className="relative w-48 h-48">
+                <svg className="w-full h-full transform -rotate-90 drop-shadow-xl" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(148,163,184,0.25)" strokeWidth="8" />
                   <circle 
                     cx="50" cy="50" r="45" fill="none" 
                     stroke="url(#wellnessGradient)" strokeWidth="8" 
@@ -229,25 +230,25 @@ export default function LabTechnicianHome() {
                   </defs>
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-4xl font-black text-slate-800 tracking-tighter">{stats.completed}</span>
-                  <span className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-0.5">Đã xong</span>
+                  <span className="text-5xl font-black text-white tracking-tighter drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]">{stats.completed}</span>
+                  <span className="text-teal-200 font-extrabold text-sm uppercase tracking-widest mt-1 drop-shadow-sm">Đã xong</span>
                 </div>
               </div>
             </div>
 
-            <div className="h-16 w-full mt-auto relative">
+            <div className="h-20 w-full mt-auto relative">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={mockPerformanceData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorHeart" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.2}/>
-                      <stop offset="95%" stopColor="#14b8a6" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#2dd4bf" stopOpacity={0.4}/>
+                      <stop offset="95%" stopColor="#2dd4bf" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <Area type="monotone" dataKey="value" stroke="#14b8a6" strokeWidth={2} fillOpacity={1} fill="url(#colorHeart)" />
+                  <Area type="monotone" dataKey="value" stroke="#2dd4bf" strokeWidth={3} fillOpacity={1} fill="url(#colorHeart)" />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #f1f5f9', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
-                    itemStyle={{ fontWeight: 'bold', color: '#0f766e', fontSize: '12px' }}
+                    contentStyle={{ backgroundColor: 'rgba(15,23,42,0.9)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}
+                    itemStyle={{ fontWeight: 'bold', color: '#2dd4bf' }}
                     labelStyle={{ display: 'none' }}
                   />
                 </AreaChart>
@@ -255,35 +256,33 @@ export default function LabTechnicianHome() {
             </div>
           </div>
 
-          {/* ACTION BLOCKS */}
+          {/* ASYMMETRIC ACTION BLOCKS */}
           <div className="grid grid-cols-2 gap-4 flex-1">
             <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
               onClick={() => navigate("/dashboard/lab-requests")}
-              className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 cursor-pointer transition-all duration-300 flex flex-col justify-between group hover:shadow-md hover:border-teal-100"
+              className="patient-glass-panel-sm patient-glass-panel-sm-clear rounded-[2.5rem] p-6 cursor-pointer transition-all flex flex-col justify-between group hover:-translate-y-0.5 hover:shadow-[0_8px_28px_rgba(0,0,0,0.18)]"
             >
-              <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center mb-4 border border-amber-100/50 group-hover:scale-105 transition-transform duration-300">
-                <FileText size={22} />
+              <div className="w-14 h-14 rounded-2xl bg-amber-400/25 text-amber-200 flex items-center justify-center mb-6 shadow-sm group-hover:-translate-y-1 transition-transform border border-amber-300/20">
+                <FileText size={26} />
               </div>
-              <div>
-                <span className="text-slate-400 font-extrabold text-[10px] uppercase tracking-wider block mb-0.5">Chờ tiếp nhận</span>
-                <span className="text-2xl font-black text-slate-800 leading-none">{stats.waiting}</span>
+              <div className="text-white font-black text-xl leading-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.3)]">
+                {stats.waiting} <span className="text-sm block font-semibold text-white/80">Chờ tiếp nhận</span>
               </div>
             </motion.div>
 
             <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
               onClick={() => navigate("/dashboard/lab-requests")}
-              className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 cursor-pointer transition-all duration-300 flex flex-col justify-between group hover:shadow-md hover:border-teal-100"
+              className="patient-glass-panel-sm patient-glass-panel-sm-clear rounded-[2.5rem] p-6 cursor-pointer transition-all flex flex-col justify-between group hover:-translate-y-0.5 hover:shadow-[0_8px_28px_rgba(0,0,0,0.18)]"
             >
-              <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center mb-4 border border-blue-100/50 group-hover:scale-105 transition-transform duration-300">
-                <ActivitySquare size={22} />
+              <div className="w-14 h-14 rounded-2xl bg-sky-400/25 text-sky-200 flex items-center justify-center mb-6 shadow-sm group-hover:-translate-y-1 transition-transform border border-sky-300/20">
+                <ActivitySquare size={26} />
               </div>
-              <div>
-                <span className="text-slate-400 font-extrabold text-[10px] uppercase tracking-wider block mb-0.5">Đang xử lý</span>
-                <span className="text-2xl font-black text-slate-800 leading-none">{stats.inProgress}</span>
+              <div className="text-white font-black text-xl leading-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.3)]">
+                {stats.inProgress} <span className="text-sm block font-semibold text-white/80">Đang xử lý</span>
               </div>
             </motion.div>
           </div>
