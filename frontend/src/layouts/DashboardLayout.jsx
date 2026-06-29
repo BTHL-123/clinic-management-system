@@ -9,7 +9,6 @@ import DoctorSidebar from "./DoctorSidebar.jsx";
 import PharmacistSidebar from "./PharmacistSidebar.jsx";
 import PatientSidebar from "./PatientSidebar.jsx";
 import LabTechnicianSidebar from "./LabTechnicianSidebar.jsx";
-import ReceptionistSidebar from "./ReceptionistSidebar.jsx";
 import AdminSidebar from "./AdminSidebar.jsx";
 import bgImage from "../assets/images/background_2k.png";
 import patientBgImage from "../assets/images/patient_bg.png";
@@ -61,7 +60,7 @@ export default function DashboardLayout() {
   const isReceptionist = roles.includes("RECEPTIONIST") && !roles.includes("ADMIN");
   const isPatientOnly = roles.includes("PATIENT") && !isDoctor && !isPharmacist && !isLabTechnician;
   const isAdminShell = roles.includes("ADMIN") && !isDoctor && !isPharmacist && !isPatientOnly && !isLabTechnician;
-  const usePatientVisualShell = isPatientOnly || isPharmacist || isLabTechnician || isDoctor || isReceptionist;
+  const usePatientVisualShell = isPatientOnly || isAdminShell || isPharmacist || isLabTechnician || isDoctor || isReceptionist;
 
   /* ─── PATIENT: Full-width top header bar (matching landing page) ─── */
   const renderPatientHeader = () => (
@@ -76,15 +75,21 @@ export default function DashboardLayout() {
           </div>
         </div>
 
-        {/* Center: Top Horizontal Navigation Links */}
         <nav className="hidden md:flex items-center gap-1.5">
-          {[
+          {(isReceptionist ? [
+            { label: "Tổng quan", path: "/dashboard" },
+            { label: "Tạo lịch khám", path: "/dashboard/walk-in" },
+            { label: "Check-in", path: "/dashboard/receptionist-appointments" },
+            { label: "Hàng đợi", path: "/dashboard/queue-management" },
+            { label: "Bệnh nhân", path: "/dashboard/patients" },
+            { label: "Thanh toán", path: "/dashboard/payments" },
+          ] : [
             { label: "Tổng quan", path: "/dashboard" },
             { label: "Đặt lịch khám", path: "/dashboard/available-slots" },
             { label: "Lịch hẹn", path: "/dashboard/my-appointments" },
             { label: "Bệnh án", path: "/dashboard/my-medical-history" },
             { label: "Trợ lý AI", path: "/dashboard/ai-chat" },
-          ].map((item) => {
+          ]).map((item) => {
             const isActive = location.pathname === item.path || 
               (item.path !== "/dashboard" && location.pathname.startsWith(item.path));
             return (
@@ -127,13 +132,45 @@ export default function DashboardLayout() {
             </div>
           </div>
 
-          <button
-            className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-200 text-slate-400 hover:bg-rose-50 hover:text-rose-500 hover:border-rose-200 transition-all group"
-            aria-label="Logout"
-            onClick={handleLogout}
-          >
-            <LogOut size={16} strokeWidth={2.5} className="group-hover:-translate-x-0.5 transition-transform" />
-          </button>
+          <div className="account-menu relative">
+            <button
+              className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-200 text-slate-400 hover:bg-slate-100 hover:text-slate-600 hover:border-slate-300 transition-all"
+              type="button"
+              aria-expanded={accountMenuOpen}
+              onClick={() => setAccountMenuOpen((open) => !open)}
+            >
+              <ChevronDown size={16} strokeWidth={2.5} className={`transition-transform ${accountMenuOpen ? "rotate-180" : ""}`} />
+            </button>
+            {accountMenuOpen && (
+              <div className="absolute right-0 top-[120%] w-48 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 flex flex-col z-50">
+                <button
+                  type="button"
+                  onClick={() => { setAccountMenuOpen(false); navigate("/dashboard/profile"); }}
+                  className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-teal-600 transition-colors w-full text-left"
+                >
+                  <UserSquare size={16} />
+                  Hồ sơ của tôi
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAccountMenuOpen(false); navigate("/dashboard/change-password"); }}
+                  className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-teal-600 transition-colors w-full text-left"
+                >
+                  <KeyRound size={16} />
+                  Đổi mật khẩu
+                </button>
+                <div className="h-px bg-slate-100 my-1 mx-2"></div>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-bold text-rose-600 hover:bg-rose-50 transition-colors w-full text-left"
+                >
+                  <LogOut size={16} />
+                  Đăng xuất
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>
@@ -258,13 +295,16 @@ export default function DashboardLayout() {
   );
 
   return (
-    <div className={`flex flex-col min-h-screen w-full relative selection:bg-teal-200 selection:text-teal-900 font-sans overflow-y-auto overflow-x-hidden ${usePatientVisualShell ? "patient-shell" : ""} ${isAdminShell ? "admin-shell" : ""} ${isReceptionist ? "receptionist-shell" : ""} ${isPatientOnly ? "patient-web-theme" : ""}`}>
+    <div className={`flex flex-col min-h-screen w-full relative selection:bg-teal-200 selection:text-teal-900 font-sans overflow-y-auto overflow-x-hidden ${usePatientVisualShell ? "patient-shell" : ""} ${isAdminShell ? "admin-shell" : ""} ${isPatientOnly ? "patient-web-theme" : ""} ${isReceptionist ? "bg-slate-50" : ""}`}>
       {/* Global Background */}
       {isAdminShell ? (
         <div className="admin-page-background" />
       ) : isPatientOnly ? (
         /* ─── PATIENT: Solid light teal background matching design ─── */
         <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#E2F2EE]" />
+      ) : isReceptionist ? (
+        /* ─── RECEPTIONIST: Solid slate background ─── */
+        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-slate-50" />
       ) : usePatientVisualShell ? (
         <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#0a3d38]">
           {/* Rich teal base — darker & more saturated */}
@@ -305,7 +345,7 @@ export default function DashboardLayout() {
       )}
 
       {/* Header */}
-      {isAdminShell ? renderAdminHeader() : isPatientOnly ? renderPatientHeader() : renderOriginalHeader()}
+      {isAdminShell ? renderAdminHeader() : (isPatientOnly || isReceptionist) ? renderPatientHeader() : renderOriginalHeader()}
 
       <motion.div
         key={location.pathname}
@@ -315,7 +355,7 @@ export default function DashboardLayout() {
         transition={{ duration: 0.25, ease: "easeOut" }}
         className="flex-1 w-full relative z-10 flex flex-col"
       >
-        <main className={`flex-1 w-full mx-auto ${isPatientOnly ? "pt-[68px] px-0 pb-0" : isAdminShell ? "admin-main" : "max-w-[1700px] pt-[80px] px-4 md:px-6 pb-4 md:pb-6"} flex gap-0 h-full`}>
+        <main className={`flex-1 w-full mx-auto ${(isPatientOnly || isReceptionist) ? "pt-[68px] px-0 pb-0" : isAdminShell ? "admin-main" : "max-w-[1700px] pt-[80px] px-4 md:px-6 pb-4 md:pb-6"} flex gap-0 h-full`}>
           {isAdminShell ? (
             <AdminSidebar />
           ) : roles.includes("DOCTOR") ? (
@@ -327,14 +367,14 @@ export default function DashboardLayout() {
           ) : roles.includes("LAB_TECHNICIAN") ? (
             <LabTechnicianSidebar />
           ) : isReceptionist ? (
-            <ReceptionistSidebar />
+            null
           ) : isPatientOnly ? (
             null
           ) : (
             <Sidebar />
           )}
 
-          <div className={`flex-1 min-w-0 flex flex-col h-full ${isPatientOnly ? "px-6 py-6" : ""}`}>
+          <div className={`flex-1 min-w-0 flex flex-col h-full ${(isPatientOnly || isReceptionist) ? "px-6 py-6" : ""}`}>
             <Outlet />
           </div>
         </main>
