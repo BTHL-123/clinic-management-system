@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/useAuth.js";
-import { 
+import {
   Home, Users, CalendarDays, MessageCircle, Settings, Bell, LogOut,
   ChevronRight, Search, SlidersHorizontal, Activity, MoreHorizontal,
   Clock, CheckCircle2, XCircle, Shield, Globe, User
@@ -66,13 +66,13 @@ export default function DoctorHome() {
   const getMappedStatus = (app) => {
     if (app.status === "CANCELLED") return "Hủy";
     if (app.status === "COMPLETED") return "Hoàn thành";
-    
+
     // Check queue status
     if (app.queueStatus === "WAITING") return "Đang chờ";
     if (app.queueStatus === "CALLED") return "Đang khám";
     if (app.queueStatus === "SKIPPED") return "Bỏ qua";
     if (app.queueStatus === "COMPLETED" || app.queueStatus === "DONE") return "Hoàn thành";
-    
+
     if (app.checkedInAt) return "Đang chờ";
     return "Đang chờ"; // Fallback default for Confirmed/today
   };
@@ -90,7 +90,7 @@ export default function DoctorHome() {
 
   // Generate simple calendar days
   const currentMonth = "Tháng 6, 2026";
-  const days = Array.from({length: 30}, (_, i) => i + 1);
+  const days = Array.from({ length: 30 }, (_, i) => i + 1);
 
   // Filter appointments
   const filteredAppointments = appointments.filter(app => {
@@ -112,44 +112,27 @@ export default function DoctorHome() {
   const cancelledTodayCount = appointments.filter(app => getMappedStatus(app) === "Hủy").length;
   const totalTodayCount = appointments.length;
 
+  const waitingPct = totalTodayCount > 0 ? (waitingCount / totalTodayCount) * 100 : 0;
+  const completedPct = totalTodayCount > 0 ? (completedTodayCount / totalTodayCount) * 100 : 0;
+  const cancelledPct = totalTodayCount > 0 ? (cancelledTodayCount / totalTodayCount) * 100 : 0;
+
+  const donutGradient = totalTodayCount === 0 
+    ? "conic-gradient(rgb(226, 232, 240) 0% 100%)" 
+    : `conic-gradient(#2dd4bf 0% ${waitingPct}%, #60a5fa ${waitingPct}% ${waitingPct + completedPct}%, #f87171 ${waitingPct + completedPct}% 100%)`;
+
   return (
     <div className="w-full h-full relative text-slate-800 flex gap-6 pb-6">
-      
+
       {/* Left Navbar moved to DashboardLayout globally */}
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col gap-6 min-w-0">
-        
-        {/* Custom Doctor Topbar - Premium Bento Style */}
-        <motion.div 
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-          className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 shrink-0 mt-4 lg:pr-[380px]"
-        >
-          <div>
-            <div className="flex items-center gap-2 text-teal-200 mb-2 font-medium">
-              <Activity size={18} className="animate-pulse" />
-              <span>Cổng thông tin Bác sĩ</span>
-            </div>
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-white tracking-tight drop-shadow-md leading-tight">
-              Xin chào, <br className="hidden md:block" />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-200 to-emerald-200">
-                {profile?.fullName || user?.fullName || "BS. Hùng Lê"}
-              </span>
-            </h1>
-            <p className="text-teal-200/90 text-xs font-bold tracking-wider uppercase mt-3 bg-white/10 px-3 py-1.5 rounded-full w-max border border-white/10 backdrop-blur-sm shadow-sm">
-              {profile?.departmentName || profile?.specialization || user?.specialty || "CHUYÊN KHOA TIM MẠCH"}
-            </p>
-          </div>
-
-        </motion.div>
 
         {/* Dashboard Grid */}
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 flex-1 min-h-0">
-          
+
           {/* Left Column: Timeline (7 cols) */}
-          <motion.div 
+          <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
@@ -164,9 +147,9 @@ export default function DoctorHome() {
                   <div className="absolute inset-y-0 left-3.5 flex items-center pointer-events-none z-10 text-teal-800/60">
                     <Search size={16} />
                   </div>
-                  <input 
-                    type="text" 
-                    placeholder="Tìm kiếm bệnh nhân..." 
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm bệnh nhân..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full sm:w-64 text-slate-800 placeholder-slate-400 text-sm focus:outline-none transition-all font-semibold rounded-full border border-teal-600/20 bg-teal-50/50 hover:bg-teal-50/80 focus:bg-white focus:border-teal-600/50 focus:ring-2 focus:ring-teal-100"
@@ -216,7 +199,7 @@ export default function DoctorHome() {
                         </div>
 
                         {/* Appointment Card */}
-                        <div 
+                        <div
                           className="flex-1 patient-glass-subcard hover:bg-white/40 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 transition-all duration-300 group-hover:-translate-y-0.5 cursor-pointer"
                           onClick={() => navigate(`/dashboard/doctor-appointments`)}
                         >
@@ -240,7 +223,7 @@ export default function DoctorHome() {
                               {mappedStatus}
                             </span>
                             <div className="hidden md:flex gap-2 text-teal-700/60">
-                              <button 
+                              <button
                                 className="p-1.5 hover:bg-white/10 hover:text-teal-900 rounded-lg transition-colors"
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -249,7 +232,7 @@ export default function DoctorHome() {
                               >
                                 <MessageCircle size={18} />
                               </button>
-                              <button 
+                              <button
                                 className="p-1.5 hover:bg-white/10 hover:text-teal-900 rounded-lg transition-colors"
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -271,9 +254,9 @@ export default function DoctorHome() {
 
           {/* Right Column: Stats, Calendar, Profile (5 cols) */}
           <div className="xl:col-span-5 flex flex-col gap-6">
-            
+
             {/* Top Right: Patients & Medicine Stats */}
-            <motion.div 
+            <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.3 }}
@@ -283,12 +266,14 @@ export default function DoctorHome() {
               <div className="flex gap-6 items-center">
                 <div className="flex-1 flex flex-col items-center">
                   <p className="text-sm patient-label font-bold mb-4">Tình trạng Bệnh nhân ({totalTodayCount})</p>
-                  {/* CSS Donut Chart Mockup */}
-                  <div className="relative w-28 h-28 rounded-full border-[12px] border-slate-900/10 flex items-center justify-center">
-                    <div className="absolute inset-[-12px] rounded-full border-[12px] border-transparent border-t-teal-400 border-r-teal-400 rotate-45"></div>
-                    <div className="absolute inset-[-12px] rounded-full border-[12px] border-transparent border-b-rose-400 -rotate-12"></div>
-                    <div className="absolute inset-[-12px] rounded-full border-[12px] border-transparent border-l-blue-400 -rotate-[80deg]"></div>
-                    <span className="text-2xl font-black patient-data">{totalTodayCount}</span>
+                  {/* CSS Donut Chart Dynamic */}
+                  <div 
+                    className="relative w-28 h-28 rounded-full flex items-center justify-center shadow-inner"
+                    style={{ background: donutGradient }}
+                  >
+                    <div className="absolute w-[88px] h-[88px] rounded-full bg-white flex items-center justify-center shadow-md">
+                      <span className="text-2xl font-black patient-data">{totalTodayCount}</span>
+                    </div>
                   </div>
                   <div className="flex flex-col gap-1.5 mt-4 w-full">
                     <div className="flex items-center gap-2 text-xs patient-data font-bold"><div className="w-2 h-2 rounded-full bg-teal-400"></div> Đang chờ/khám: {waitingCount}</div>
@@ -296,7 +281,7 @@ export default function DoctorHome() {
                     <div className="flex items-center gap-2 text-xs patient-data font-bold"><div className="w-2 h-2 rounded-full bg-rose-400"></div> Hủy: {cancelledTodayCount}</div>
                   </div>
                 </div>
-                
+
                 <div className="flex-1 flex flex-col justify-end h-[180px]">
                   <p className="text-sm patient-label font-bold mb-auto text-center">Thuốc phổ biến nhất</p>
                   <div className="flex items-end justify-center gap-4 h-[120px] pb-2 border-b border-slate-900/10">
@@ -324,7 +309,7 @@ export default function DoctorHome() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 flex-1">
               {/* Bottom Left: Calendar */}
-              <motion.div 
+              <motion.div
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
@@ -339,24 +324,30 @@ export default function DoctorHome() {
                   <span className="font-bold text-sm patient-data">{currentMonth}</span>
                   <button className="text-teal-700/60 hover:text-teal-900"><ChevronRight size={16} /></button>
                 </div>
-                
+
                 <div className="grid grid-cols-7 gap-1 text-center mb-2">
-                  {['Mo','Tu','We','Th','Fr','Sa','Su'].map(d => (
+                  {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(d => (
                     <div key={d} className="patient-label text-[10px] font-bold">{d}</div>
                   ))}
                 </div>
                 <div className="grid grid-cols-7 gap-1 text-center">
-                  {Array.from({length: 4}).map((_, i) => <div key={`empty-${i}`}></div>)}
+                  {Array.from({ length: 4 }).map((_, i) => <div key={`empty-${i}`}></div>)}
                   {days.map(d => (
-                    <div 
-                      key={d} 
-                      className={`text-xs w-7 h-7 mx-auto flex items-center justify-center rounded-full cursor-pointer transition-colors
-                        ${d === 15 ? 'bg-teal-600 text-white font-extrabold shadow-[0_0_10px_rgba(15,118,110,0.4)]' : 
-                          d === 2 ? 'border border-teal-600 text-teal-700 font-bold' : 
-                          d === 10 ? 'text-rose-600 font-extrabold' : 'patient-data hover:bg-slate-900/10'}
+                    <div
+                      key={d}
+                      className={`text-xs w-7 h-7 mx-auto flex items-center justify-center rounded-full cursor-pointer transition-colors relative
+                        ${d === 29 ? 'bg-teal-600 text-white font-extrabold shadow-[0_0_10px_rgba(15,118,110,0.4)]' :
+                          d === 2 || d === 15 ? 'border border-teal-600 text-teal-700 font-bold' :
+                            d === 10 || d === 22 ? 'text-rose-600 font-extrabold' : 'patient-data hover:bg-slate-900/10'}
                       `}
                     >
-                      {d}
+                      <span className="relative z-10">{d}</span>
+                      {(d === 10 || d === 22) && (
+                        <span className="absolute bottom-[3px] left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-rose-400" />
+                      )}
+                      {(d === 2 || d === 15 || d === 29) && (
+                        <span className={`absolute bottom-[3px] left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${d === 29 ? 'bg-white' : 'bg-teal-400'}`} />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -367,7 +358,7 @@ export default function DoctorHome() {
               </motion.div>
 
               {/* Bottom Right: Profile Summary */}
-              <motion.div 
+              <motion.div
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.5 }}
@@ -377,7 +368,7 @@ export default function DoctorHome() {
                   <h2 className="text-md font-bold patient-card-title">Cài đặt Cá nhân</h2>
                   <MoreHorizontal size={18} className="text-teal-700/60" />
                 </div>
-                
+
                 <div className="flex items-center gap-3 bg-slate-900/5 p-3 rounded-xl border border-slate-900/10 mb-4">
                   <img src={user?.avatarUrl || "https://i.pravatar.cc/150?u=doc"} className="w-10 h-10 rounded-full border border-teal-600/50" alt="Doctor" />
                   <div>

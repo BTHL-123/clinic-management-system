@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/useAuth.js";
-import { 
+import {
   Home, Users, CalendarDays, Stethoscope, Settings, Bell, LogOut, ChevronRight, ClipboardList, FileText
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -53,9 +53,9 @@ export default function DoctorSidebar() {
   return (
     <motion.nav
       initial={{ x: -100, opacity: 0 }}
-      animate={{ x: 0, opacity: 1, width: isExpanded ? 240 : 68 }}
+      animate={{ x: 0, opacity: 1, width: isExpanded ? 260 : 68 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="hidden md:flex flex-col justify-between bg-white border-r border-slate-200/80 py-4 h-[calc(100vh-68px)] sticky top-[68px] z-[100] shadow-[1px_0_8px_rgba(0,0,0,0.03)]"
+      className="hidden md:flex flex-col justify-between bg-white border-r border-slate-200/80 py-4 h-[calc(100vh-68px)] sticky top-[68px] z-[100] shadow-[1px_0_8px_rgba(0,0,0,0.03)] shrink-0"
     >
       <div className="flex flex-col gap-2 w-full px-2.5 relative h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
         {/* Expand Toggle Button */}
@@ -72,8 +72,8 @@ export default function DoctorSidebar() {
               key={item.id}
               onClick={() => navigate(item.path)}
               className={`relative flex items-center h-11 transition-all duration-200 group overflow-hidden shrink-0 ${activeNav === item.id
-                  ? "bg-[#0A604E] text-white font-bold rounded-full shadow-[0_4px_12px_rgba(10,96,78,0.15)]"
-                  : "text-[#4A5D59] font-medium hover:text-slate-850 hover:bg-[#F0F9F7] rounded-xl"
+                ? "bg-[#0A604E] text-white font-bold rounded-full shadow-[0_4px_12px_rgba(10,96,78,0.15)]"
+                : "text-[#4A5D59] font-medium hover:text-slate-850 hover:bg-[#F0F9F7] rounded-xl"
                 } ${isExpanded ? "px-3" : "justify-center"}`}
               title={!isExpanded ? item.label : ""}
             >
@@ -102,8 +102,8 @@ export default function DoctorSidebar() {
         <button
           onClick={() => navigate("/dashboard/notifications")}
           className={`relative flex items-center h-10 transition-all duration-200 group overflow-hidden shrink-0 ${activeNav === "notifications"
-              ? "bg-[#0A604E] text-white font-bold rounded-full"
-              : "text-[#4A5D59] font-medium hover:text-slate-850 hover:bg-[#F0F9F7] rounded-xl"
+            ? "bg-[#0A604E] text-white font-bold rounded-full"
+            : "text-[#4A5D59] font-medium hover:text-slate-850 hover:bg-[#F0F9F7] rounded-xl"
             } ${isExpanded ? "px-3" : "justify-center"}`}
           title={!isExpanded ? "Thông báo" : ""}
         >
