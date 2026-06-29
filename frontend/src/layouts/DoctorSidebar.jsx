@@ -44,7 +44,7 @@ export default function DoctorSidebar() {
     { id: "patients", icon: <Users size={20} />, path: "/dashboard/patients", label: "Bệnh nhân" },
     { id: "schedule", icon: <CalendarDays size={20} />, path: "/dashboard/doctor-schedule", label: "Lịch làm việc" },
     { id: "calendar", icon: <CalendarDays size={20} />, path: "/dashboard/doctor-appointments", label: "Ca trực hôm nay" },
-    { id: "examination", icon: <Stethoscope size={20} />, path: "/dashboard/consultation", label: "Khám bệnh" },
+    { id: "examination", icon: <Stethoscope size={20} />, path: "/dashboard/examination", label: "Khám bệnh" },
     { id: "leave-requests", icon: <ClipboardList size={20} />, path: "/dashboard/doctor-leave-requests", label: "Nghỉ phép" },
     { id: "articles", icon: <FileText size={20} />, path: "/dashboard/articles", label: "Bài viết y tế" },
     { id: "settings", icon: <Settings size={20} />, path: "/dashboard/profile", label: "Cài đặt" },
@@ -71,17 +71,15 @@ export default function DoctorSidebar() {
             <button
               key={item.id}
               onClick={() => navigate(item.path)}
-              className={`relative flex items-center h-11 transition-all duration-200 group overflow-hidden shrink-0 ${
-                activeNav === item.id
+              className={`relative flex items-center h-11 transition-all duration-200 group overflow-hidden shrink-0 ${activeNav === item.id
                   ? "bg-[#0A604E] text-white font-bold rounded-full shadow-[0_4px_12px_rgba(10,96,78,0.15)]"
                   : "text-[#4A5D59] font-medium hover:text-slate-850 hover:bg-[#F0F9F7] rounded-xl"
-              } ${isExpanded ? "px-3" : "justify-center"}`}
+                } ${isExpanded ? "px-3" : "justify-center"}`}
               title={!isExpanded ? item.label : ""}
             >
               <div className={`relative z-10 flex items-center ${isExpanded ? "gap-3" : ""}`}>
-                <div className={`transition-colors duration-200 ${
-                  activeNav === item.id ? "text-white" : "text-[#4A5D59]/75 group-hover:text-slate-850"
-                }`}>
+                <div className={`transition-colors duration-200 ${activeNav === item.id ? "text-white" : "text-[#4A5D59]/75 group-hover:text-slate-850"
+                  }`}>
                   {item.icon}
                 </div>
                 {isExpanded && (

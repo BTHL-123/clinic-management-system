@@ -186,8 +186,8 @@ export default function PatientDetailPage() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-6 py-3 rounded-t-2xl font-bold text-sm transition-all border-b-2 ${isActive
-                  ? "border-teal-500 text-teal-700 bg-white/40"
-                  : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-white/20"
+                ? "border-teal-500 text-teal-700 bg-white/40"
+                : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-white/20"
                 }`}
             >
               <Icon size={18} />
