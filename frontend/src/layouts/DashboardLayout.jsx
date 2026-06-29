@@ -362,3 +362,36 @@ export default function DashboardLayout() {
     </div>
   );
 }
+
+function getPageTitle(pathname) {
+  const map = {
+    "/dashboard": "Tổng quan",
+    "/dashboard/appointments": "Lịch khám",
+    "/dashboard/patients": "Bệnh nhân",
+    "/dashboard/doctors": "Bác sĩ",
+    "/dashboard/lab-requests": "Xét nghiệm",
+    "/dashboard/queue-management": "Hàng đợi",
+    "/dashboard/admin/doctor-leave-requests": "Duyệt nghỉ phép",
+    "/dashboard/articles": "Bài viết y tế",
+    "/dashboard/departments": "Chuyên khoa",
+    "/dashboard/medical-services": "Dịch vụ y tế",
+    "/dashboard/medicines": "Thuốc",
+    "/dashboard/suppliers": "Nhà cung cấp",
+    "/dashboard/inventory/batches": "Lô thuốc",
+    "/dashboard/inventory/transactions": "Giao dịch kho",
+    "/dashboard/inventory/alerts": "Cảnh báo kho",
+    "/dashboard/payments": "Thanh toán",
+    "/dashboard/invoices": "Hóa đơn",
+    "/dashboard/refunds": "Hoàn tiền",
+    "/dashboard/reviews": "Đánh giá",
+    "/dashboard/users": "Tài khoản",
+    "/dashboard/security": "Vai trò & phân quyền",
+    "/dashboard/system-settings": "Cấu hình hệ thống",
+    "/dashboard/audit-logs": "Nhật ký hệ thống",
+    "/dashboard/profile": "Hồ sơ cá nhân",
+    "/dashboard/change-password": "Đổi mật khẩu",
+    "/dashboard/notifications": "Thông báo",
+  };
+
+  return map[pathname] || "Dashboard";
+}
