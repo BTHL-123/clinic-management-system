@@ -108,9 +108,9 @@ export default function DashboardLayout() {
   /* ─── PATIENT & DOCTOR: Full-width top header bar (matching landing page) ─── */
   const renderPatientHeader = () => (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-2xl border-b border-slate-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-      <div className={`mx-auto flex h-16 w-full items-center justify-between px-5 md:px-7 ${isPharmacist || isLabTechnician ? "" : "max-w-[1240px]"}`}>
+      <div className={`mx-auto flex h-16 w-full items-center justify-between px-5 md:px-7 ${isPatientOnly ? "max-w-[1240px]" : ""}`}>
         {/* Left: Logo + Brand */}
-        <div className="flex items-center gap-3 cursor-pointer group shrink-0" onClick={() => navigate(isDoctor || isPharmacist || isLabTechnician ? "/dashboard" : "/")}>
+        <div className="flex items-center gap-3 cursor-pointer group shrink-0" onClick={() => navigate(isPatientOnly ? "/" : "/dashboard")}>
           <LogoSVG className="w-9 h-9 drop-shadow-sm group-hover:scale-105 transition-transform" />
           <div className="hidden sm:flex flex-col justify-center leading-none">
             <span className="font-extrabold text-[1.1rem] tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-emerald-500">Medical</span>
