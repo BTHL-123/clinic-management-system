@@ -61,37 +61,7 @@ export default function DashboardLayout() {
   const isReceptionist = roles.includes("RECEPTIONIST") && !roles.includes("ADMIN");
   const isPatientOnly = roles.includes("PATIENT") && !isDoctor && !isPharmacist && !isLabTechnician;
   const isAdminShell = roles.includes("ADMIN") && !isDoctor && !isPharmacist && !isPatientOnly && !isLabTechnician;
-  const usePatientVisualShell = isPatientOnly || isAdminShell || isPharmacist || isLabTechnician || isDoctor || isReceptionist;
-  const isLightShell = isPharmacist || isLabTechnician;
-  const useTopNavbarLayout = isPatientOnly || isPharmacist || isLabTechnician;
-
-  const getNavLinks = () => {
-    if (roles.includes("PHARMACIST")) {
-      return [
-        { label: "Tổng quan", path: "/dashboard" },
-        { label: "Cấp phát thuốc", path: "/dashboard/pharmacist/prescriptions" },
-        { label: "Danh mục thuốc", path: "/dashboard/medicines" },
-        { label: "Lô thuốc", path: "/dashboard/inventory/batches" },
-        { label: "Giao dịch kho", path: "/dashboard/inventory/transactions" },
-        { label: "Cảnh báo kho", path: "/dashboard/inventory/alerts" },
-        { label: "Nhà cung cấp", path: "/dashboard/suppliers" },
-      ];
-    }
-    if (roles.includes("LAB_TECHNICIAN")) {
-      return [
-        { label: "Tổng quan", path: "/dashboard" },
-        { label: "Xét nghiệm", path: "/dashboard/lab-requests" },
-        { label: "Danh mục xét nghiệm", path: "/dashboard/lab-tests" },
-      ];
-    }
-    return [
-      { label: "Tổng quan", path: "/dashboard" },
-      { label: "Đặt lịch khám", path: "/dashboard/available-slots" },
-      { label: "Lịch hẹn", path: "/dashboard/my-appointments" },
-      { label: "Bệnh án", path: "/dashboard/my-medical-history" },
-      { label: "Trợ lý AI", path: "/dashboard/ai-chat" },
-    ];
-  };
+  const usePatientVisualShell = isPatientOnly || isPharmacist || isLabTechnician || isDoctor || isReceptionist;
 
   /* ─── PATIENT: Full-width top header bar (matching landing page) ─── */
   const renderPatientHeader = () => (
@@ -236,11 +206,59 @@ export default function DashboardLayout() {
     </header>
   );
 
+  const renderAdminHeader = () => (
+    <header className="admin-topbar">
+      <div className="admin-topbar-inner">
+        <div className="admin-topbar-title">
+          <span className="admin-topbar-mark"><LogoSVG className="w-8 h-8" /></span>
+          <div>
+            <span className="admin-topbar-kicker">Medical Clinic</span>
+            <strong>{getPageTitle(location.pathname)}</strong>
+          </div>
+        </div>
+
+        <div className="admin-topbar-actions">
+          <button className="admin-topbar-home" type="button" aria-label="Về bảng điều khiển" onClick={() => navigate("/dashboard")}>
+            <Home size={18} />
+          </button>
+          <NotificationBell />
+          <div className="admin-topbar-divider" />
+          <div className="admin-account-menu">
+            <button
+              className="admin-account-trigger"
+              type="button"
+              aria-expanded={accountMenuOpen}
+              onClick={() => setAccountMenuOpen((open) => !open)}
+            >
+              <span className="admin-account-avatar">
+                {user?.avatarUrl ? <img src={user.avatarUrl} alt="" /> : initials}
+              </span>
+              <span className="hidden sm:grid text-left leading-tight">
+                <strong>{user?.fullName || "Clinic Admin"}</strong>
+                <small>{rolesText}</small>
+              </span>
+              <ChevronDown size={15} className={accountMenuOpen ? "open" : ""} />
+            </button>
+            {accountMenuOpen && (
+              <div className="admin-account-dropdown">
+                <button type="button" onClick={() => { setAccountMenuOpen(false); navigate("/dashboard/profile"); }}><UserSquare size={16} />Hồ sơ của tôi</button>
+                <button type="button" onClick={() => { setAccountMenuOpen(false); navigate("/dashboard/change-password"); }}><KeyRound size={16} />Đổi mật khẩu</button>
+                <button className="danger" type="button" onClick={handleLogout}><LogOut size={16} />Đăng xuất</button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+
   return (
     <div className={`flex flex-col min-h-screen w-full relative selection:bg-teal-200 selection:text-teal-900 font-sans overflow-y-auto overflow-x-hidden ${useTopNavbarLayout ? "" : usePatientVisualShell ? "patient-shell" : ""} ${isAdminShell ? "admin-shell" : ""} ${isReceptionist ? "receptionist-shell" : ""} ${isPatientOnly ? "patient-web-theme" : ""}`}>
       {/* Global Background */}
-      {useTopNavbarLayout ? (
-        /* ─── PATIENT, PHARMACIST, LAB: Solid light mint/teal background matching design ─── */
+      {isAdminShell ? (
+        <div className="admin-page-background" />
+      ) : isPatientOnly ? (
+        /* ─── PATIENT: Solid light teal background matching design ─── */
         <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#E2F2EE]" />
       ) : usePatientVisualShell ? (
         <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#0a3d38]">
@@ -282,7 +300,7 @@ export default function DashboardLayout() {
       )}
 
       {/* Header */}
-      {useTopNavbarLayout ? renderPatientHeader() : renderOriginalHeader()}
+      {isAdminShell ? renderAdminHeader() : isPatientOnly ? renderPatientHeader() : renderOriginalHeader()}
 
       <motion.div
         key={location.pathname}
@@ -292,8 +310,8 @@ export default function DashboardLayout() {
         transition={{ duration: 0.25, ease: "easeOut" }}
         className="flex-1 w-full relative z-10 flex flex-col"
       >
-        <main className={`flex-1 w-full mx-auto ${useTopNavbarLayout ? "pt-[68px] px-0 pb-0" : "max-w-[1700px] pt-[80px] px-4 md:px-6 pb-4 md:pb-6"} flex gap-0 h-full`}>
-          {useTopNavbarLayout ? null : isAdminShell ? (
+        <main className={`flex-1 w-full mx-auto ${isPatientOnly ? "pt-[68px] px-0 pb-0" : isAdminShell ? "admin-main" : "max-w-[1700px] pt-[80px] px-4 md:px-6 pb-4 md:pb-6"} flex gap-0 h-full`}>
+          {isAdminShell ? (
             <AdminSidebar />
           ) : roles.includes("DOCTOR") ? (
             <DoctorSidebar />
