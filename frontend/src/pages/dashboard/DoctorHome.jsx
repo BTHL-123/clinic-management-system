@@ -4,13 +4,14 @@ import { useAuth } from "../../context/useAuth.js";
 import {
   Home, Users, CalendarDays, MessageCircle, Settings, Bell, LogOut,
   ChevronRight, Search, SlidersHorizontal, Activity, MoreHorizontal,
-  Clock, CheckCircle2, XCircle, Shield, Globe, User
+  Clock, CheckCircle2, XCircle, Shield, Globe, User, Stethoscope
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { getMyDoctorProfile } from "../../services/doctorService";
 import appointmentService from "../../services/appointmentService";
 import { getDoctorPerformance } from "../../services/reportService";
 import { toLocalDateString } from "../../lib/utils";
+import { emitToast } from "../../services/toastService";
 
 
 export default function DoctorHome() {
@@ -307,53 +308,47 @@ export default function DoctorHome() {
               </div>
             </motion.div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 flex-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1 justify-center items-stretch">
               {/* Bottom Left: Calendar */}
               <motion.div
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
-                className="patient-glass-panel rounded-[2rem] p-5 shadow-xl flex flex-col"
+                className="patient-glass-panel rounded-[2rem] px-3.5 py-4 shadow-xl flex flex-col h-[260px] max-w-[210px] w-full mx-auto"
               >
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-md font-bold patient-card-title">Nội dung & Nghỉ phép</h2>
-                  <MoreHorizontal size={18} className="text-teal-700/60" />
+                <div className="flex justify-between items-center mb-3">
+                  <h2 className="text-xs font-bold patient-card-title truncate">Nội dung & Nghỉ phép</h2>
+                  <MoreHorizontal size={16} className="text-teal-700/60" />
                 </div>
-                <div className="flex justify-between items-center mb-4">
-                  <button className="text-teal-700/60 hover:text-teal-900"><ChevronRight size={16} className="rotate-180" /></button>
-                  <span className="font-bold text-sm patient-data">{currentMonth}</span>
-                  <button className="text-teal-700/60 hover:text-teal-900"><ChevronRight size={16} /></button>
+                <div className="flex justify-between items-center mb-3">
+                  <button className="text-teal-700/60 hover:text-teal-900"><ChevronRight size={14} className="rotate-180" /></button>
+                  <span className="font-bold text-xs patient-data">{currentMonth}</span>
+                  <button className="text-teal-700/60 hover:text-teal-900"><ChevronRight size={14} /></button>
                 </div>
 
-                <div className="grid grid-cols-7 gap-1 text-center mb-2">
+                <div className="grid grid-cols-7 gap-0.5 text-center mb-1">
                   {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(d => (
                     <div key={d} className="patient-label text-[10px] font-bold">{d}</div>
                   ))}
                 </div>
-                <div className="grid grid-cols-7 gap-1 text-center">
-                  {Array.from({ length: 4 }).map((_, i) => <div key={`empty-${i}`}></div>)}
+                <div className="grid grid-cols-7 gap-0.5 text-center items-center justify-items-center">
+                  {Array.from({ length: 4 }).map((_, i) => <div key={`empty-${i}`} className="w-5.5 h-5.5"></div>)}
                   {days.map(d => (
                     <div
                       key={d}
-                      className={`text-xs w-7 h-7 mx-auto flex items-center justify-center rounded-full cursor-pointer transition-colors relative
-                        ${d === 29 ? 'bg-teal-600 text-white font-extrabold shadow-[0_0_10px_rgba(15,118,110,0.4)]' :
+                      className={`text-[10px] w-5.5 h-5.5 flex items-center justify-center rounded-full cursor-pointer transition-colors
+                        ${d === 29 ? 'bg-teal-600 text-white font-extrabold shadow-[0_0_8px_rgba(15,118,110,0.3)]' :
                           d === 2 || d === 15 ? 'border border-teal-600 text-teal-700 font-bold' :
-                            d === 10 || d === 22 ? 'text-rose-600 font-extrabold' : 'patient-data hover:bg-slate-900/10'}
+                            d === 10 || d === 22 ? 'text-rose-600 font-extrabold bg-rose-50/50' : 'patient-data hover:bg-slate-900/10'}
                       `}
                     >
-                      <span className="relative z-10">{d}</span>
-                      {(d === 10 || d === 22) && (
-                        <span className="absolute bottom-[3px] left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-rose-400" />
-                      )}
-                      {(d === 2 || d === 15 || d === 29) && (
-                        <span className={`absolute bottom-[3px] left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${d === 29 ? 'bg-white' : 'bg-teal-400'}`} />
-                      )}
+                      {d}
                     </div>
                   ))}
                 </div>
-                <div className="mt-auto pt-4 flex items-center gap-4 text-xs">
-                  <div className="flex items-center gap-1.5 patient-label text-xs"><div className="w-2 h-2 rounded-full bg-teal-400"></div> Ca trực</div>
-                  <div className="flex items-center gap-1.5 patient-label text-xs"><div className="w-2 h-2 rounded-full bg-rose-400"></div> Nghỉ phép</div>
+                <div className="mt-auto pt-3 flex items-center gap-3 text-[10px]">
+                  <div className="flex items-center gap-1 patient-label"><div className="w-1.5 h-1.5 rounded-full bg-teal-400"></div> Ca trực</div>
+                  <div className="flex items-center gap-1 patient-label"><div className="w-1.5 h-1.5 rounded-full bg-rose-400"></div> Nghỉ phép</div>
                 </div>
               </motion.div>
 
@@ -362,44 +357,47 @@ export default function DoctorHome() {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.5 }}
-                className="patient-glass-panel rounded-[2rem] p-5 shadow-xl flex flex-col"
+                className="patient-glass-panel rounded-[2rem] px-3.5 py-4 shadow-xl flex flex-col h-[260px] max-w-[210px] w-full mx-auto"
               >
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-md font-bold patient-card-title">Cài đặt Cá nhân</h2>
-                  <MoreHorizontal size={18} className="text-teal-700/60" />
+                <div className="flex justify-between items-center mb-3">
+                  <h2 className="text-xs font-bold patient-card-title truncate">Cài đặt Cá nhân</h2>
+                  <MoreHorizontal size={16} className="text-teal-700/60" />
                 </div>
 
-                <div className="flex items-center gap-3 bg-slate-900/5 p-3 rounded-xl border border-slate-900/10 mb-4">
-                  <img src={user?.avatarUrl || "https://i.pravatar.cc/150?u=doc"} className="w-10 h-10 rounded-full border border-teal-600/50" alt="Doctor" />
-                  <div>
-                    <h3 className="font-bold text-sm leading-none patient-data">{profile?.fullName || user?.fullName || "BS. Hùng Lê"}</h3>
-                    <p className="text-[10px] text-teal-700 font-extrabold mt-1 uppercase">{profile?.departmentName || profile?.specialization || user?.specialty || "Chuyên khoa II"}</p>
+                <div className="flex items-center gap-2 bg-slate-900/5 p-2 rounded-xl border border-slate-900/10 mb-3">
+                  <img src={user?.avatarUrl || "https://i.pravatar.cc/150?u=doc"} className="w-8 h-8 rounded-full border border-teal-600/50" alt="Doctor" />
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-xs leading-none patient-data truncate">{profile?.fullName || user?.fullName || "BS. Hùng Lê"}</h3>
+                    <p className="text-[9px] text-teal-700 font-extrabold mt-1 uppercase truncate">{profile?.departmentName || profile?.specialization || user?.specialty || "Chuyên khoa II"}</p>
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-2 mb-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="patient-label text-sm">Ca khám đã hoàn thành:</span>
+                <div className="flex flex-col gap-1.5 mb-3">
+                  <div className="flex justify-between text-xs">
+                    <span className="patient-label">Ca khám hoàn thành:</span>
                     <span className="font-bold patient-data">{completedCount.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="patient-label text-sm">Bệnh nhân hoạt động:</span>
+                  <div className="flex justify-between text-xs">
+                    <span className="patient-label">Bệnh nhân hoạt động:</span>
                     <span className="font-bold patient-data">{activePatientsCount.toLocaleString()}</span>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-1.5 mt-auto">
-                  <button onClick={() => navigate('/dashboard/profile')} className="flex items-center gap-1.5 text-xs p-1.5 rounded-lg hover:bg-teal-50 text-teal-700 font-extrabold transition-colors whitespace-nowrap">
+                <div className="grid grid-cols-2 gap-1 mt-auto">
+                  <button onClick={() => navigate('/dashboard/profile')} className="flex items-center gap-1.5 text-xs p-1 rounded-lg hover:bg-teal-50 text-teal-700 font-extrabold transition-colors whitespace-nowrap">
                     <User size={14} /> Profile
                   </button>
-                  <button onClick={() => navigate('/dashboard/doctor-appointments')} className="flex items-center gap-1.5 text-xs p-1.5 rounded-lg hover:bg-teal-50 text-teal-700 font-extrabold transition-colors whitespace-nowrap">
+                  <button onClick={() => navigate('/dashboard/doctor-appointments')} className="flex items-center gap-1.5 text-xs p-1 rounded-lg hover:bg-teal-50 text-teal-700 font-extrabold transition-colors whitespace-nowrap">
                     <CalendarDays size={14} /> Lịch khám
                   </button>
-                  <button onClick={() => navigate('/dashboard/change-password')} className="flex items-center gap-1.5 text-xs p-1.5 rounded-lg hover:bg-teal-50 text-teal-700 font-extrabold transition-colors whitespace-nowrap">
+                  <button onClick={() => navigate('/dashboard/change-password')} className="flex items-center gap-1.5 text-xs p-1 rounded-lg hover:bg-teal-50 text-teal-700 font-extrabold transition-colors whitespace-nowrap">
                     <Shield size={14} /> Bảo mật
                   </button>
-                  <button className="flex items-center gap-1.5 text-xs p-1.5 rounded-lg hover:bg-teal-50 text-teal-700 font-extrabold transition-colors whitespace-nowrap">
-                    <Globe size={14} /> Ngôn ngữ
+                  <button 
+                    onClick={() => navigate('/dashboard/examination')}
+                    className="flex items-center gap-1.5 text-xs p-1 rounded-lg hover:bg-teal-50 text-teal-700 font-extrabold transition-colors whitespace-nowrap"
+                  >
+                    <Stethoscope size={14} /> Khám bệnh
                   </button>
                 </div>
               </motion.div>
