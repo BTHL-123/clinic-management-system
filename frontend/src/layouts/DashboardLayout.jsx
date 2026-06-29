@@ -362,3 +362,22 @@ export default function DashboardLayout() {
     </div>
   );
 }
+
+/* Helper: Get page title from pathname for breadcrumb */
+function getPageTitle(pathname) {
+  const map = {
+    "/dashboard": "Tổng quan",
+    "/dashboard/available-slots": "Đặt lịch khám",
+    "/dashboard/my-appointments": "Lịch hẹn của tôi",
+    "/dashboard/queue-status": "Hàng đợi",
+    "/dashboard/my-medical-history": "Hồ sơ bệnh án",
+    "/dashboard/my-lab-results": "Kết quả xét nghiệm",
+    "/dashboard/our-doctors": "Bác sĩ",
+    "/dashboard/service-prices": "Bảng giá dịch vụ",
+    "/dashboard/ai-chat": "Trợ lý AI",
+    "/dashboard/profile": "Hồ sơ cá nhân",
+    "/dashboard/change-password": "Đổi mật khẩu",
+    "/dashboard/notifications": "Thông báo",
+  };
+  return map[pathname] || "Dashboard";
+}
