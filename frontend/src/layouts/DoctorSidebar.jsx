@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/useAuth.js";
-import {
+import { 
   Home, Users, CalendarDays, Stethoscope, Settings, Bell, LogOut, ChevronRight, ClipboardList, FileText
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -40,76 +40,80 @@ export default function DoctorSidebar() {
   };
 
   const navItems = [
-    { id: "home", icon: <Home size={20} />, path: "/dashboard", label: "Trang chủ" },
-    { id: "patients", icon: <Users size={20} />, path: "/dashboard/patients", label: "Bệnh nhân" },
-    { id: "schedule", icon: <CalendarDays size={20} />, path: "/dashboard/doctor-schedule", label: "Lịch làm việc" },
-    { id: "calendar", icon: <CalendarDays size={20} />, path: "/dashboard/doctor-appointments", label: "Ca trực hôm nay" },
-    { id: "examination", icon: <Stethoscope size={20} />, path: "/dashboard/consultation", label: "Khám bệnh" },
-    { id: "leave-requests", icon: <ClipboardList size={20} />, path: "/dashboard/doctor-leave-requests", label: "Nghỉ phép" },
-    { id: "articles", icon: <FileText size={20} />, path: "/dashboard/articles", label: "Bài viết y tế" },
-    { id: "settings", icon: <Settings size={20} />, path: "/dashboard/profile", label: "Cài đặt" },
+    { id: "home", icon: <Home size={22} />, path: "/dashboard", label: "Trang chủ" },
+    { id: "patients", icon: <Users size={22} />, path: "/dashboard/patients", label: "Bệnh nhân" },
+    { id: "schedule", icon: <CalendarDays size={22} />, path: "/dashboard/doctor-schedule", label: "Lịch làm việc" },
+    { id: "calendar", icon: <CalendarDays size={22} />, path: "/dashboard/doctor-appointments", label: "Ca trực hôm nay" },
+    { id: "examination", icon: <Stethoscope size={22} />, path: "/dashboard/consultation", label: "Khám bệnh" },
+    { id: "leave-requests", icon: <ClipboardList size={22} />, path: "/dashboard/doctor-leave-requests", label: "Nghỉ phép" },
+    { id: "articles", icon: <FileText size={22} />, path: "/dashboard/articles", label: "Bài viết y tế" },
+    { id: "settings", icon: <Settings size={22} />, path: "/dashboard/profile", label: "Cài đặt" },
   ];
 
   return (
-    <motion.nav
+    <motion.nav 
       initial={{ x: -100, opacity: 0 }}
-      animate={{ x: 0, opacity: 1, width: isExpanded ? 240 : 68 }}
+      animate={{ x: 0, opacity: 1, width: isExpanded ? 240 : 70 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="hidden md:flex flex-col justify-between bg-white border-r border-slate-200/80 py-4 h-[calc(100vh-68px)] sticky top-[68px] z-[100] shadow-[1px_0_8px_rgba(0,0,0,0.03)]"
+      className="hidden md:flex flex-col justify-between bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] py-6 shadow-[0_8px_30px_rgba(0,0,0,0.12)] h-[calc(100vh-104px)] sticky top-[80px] z-[100]"
     >
-      <div className="flex flex-col gap-2 w-full px-2.5 relative h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
+      <div className="flex flex-col gap-4 w-full px-3 relative h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
         {/* Expand Toggle Button */}
-        <button
+        <button 
           onClick={() => setIsExpanded(!isExpanded)}
-          className={`w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all shrink-0 ${isExpanded ? "self-end mr-0.5" : "mx-auto"}`}
+          className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white/60 hover:bg-white/10 hover:text-white transition-all ${isExpanded ? "self-end mr-1" : "mx-auto"}`}
         >
-          <ChevronRight size={18} className={`transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
+          <ChevronRight size={22} className={`transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
         </button>
 
-        <div className="flex flex-col gap-1 w-full mt-1 flex-1">
+        <div className="flex flex-col gap-2 w-full mt-2">
           {navItems.map(item => (
-            <button
+            <button 
               key={item.id}
               onClick={() => navigate(item.path)}
-              className={`relative flex items-center h-11 transition-all duration-200 group overflow-hidden shrink-0 ${
-                activeNav === item.id
-                  ? "bg-[#0A604E] text-white font-bold rounded-full shadow-[0_4px_12px_rgba(10,96,78,0.15)]"
-                  : "text-[#4A5D59] font-medium hover:text-slate-850 hover:bg-[#F0F9F7] rounded-xl"
-              } ${isExpanded ? "px-3" : "justify-center"}`}
-              title={!isExpanded ? item.label : ""}
+              className={`h-12 rounded-2xl flex items-center transition-all duration-300 group relative ${isExpanded ? "px-4 justify-start gap-4" : "w-11 mx-auto justify-center"} ${activeNav === item.id ? 'bg-teal-400/20 text-teal-300 shadow-[0_0_15px_rgba(45,212,191,0.2)]' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
             >
-              <div className={`relative z-10 flex items-center ${isExpanded ? "gap-3" : ""}`}>
-                <div className={`transition-colors duration-200 ${
-                  activeNav === item.id ? "text-white" : "text-[#4A5D59]/75 group-hover:text-slate-850"
-                }`}>
-                  {item.icon}
-                </div>
+              <div className="shrink-0">{item.icon}</div>
+              
+              <AnimatePresence>
                 {isExpanded && (
-                  <motion.span
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    className="whitespace-nowrap text-[14px] tracking-wide font-semibold text-sm"
+                  <motion.span 
+                    initial={{ opacity: 0, width: 0 }}
+                    animate={{ opacity: 1, width: "auto" }}
+                    exit={{ opacity: 0, width: 0 }}
+                    className="font-semibold whitespace-nowrap overflow-hidden"
                   >
                     {item.label}
                   </motion.span>
                 )}
-              </div>
+              </AnimatePresence>
+
+              {/* Tooltip when collapsed */}
+              {!isExpanded && (
+                <div className="absolute left-14 bg-slate-800 text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[110]">
+                  {item.label}
+                </div>
+              )}
             </button>
           ))}
         </div>
+      </div>
 
-        {/* Bottom actions */}
-        <div className="w-full mt-auto pt-3 border-t border-slate-100 flex flex-col gap-1">
-          <button
-            onClick={handleLogout}
-            className={`w-full flex items-center h-11 rounded-xl text-[#4A5D59] font-medium hover:text-rose-600 hover:bg-rose-50 transition-all duration-200 group ${isExpanded ? "px-3 gap-3" : "justify-center"}`}
-            title={!isExpanded ? "Đăng xuất" : ""}
-          >
-            <LogOut size={20} className="group-hover:-translate-x-0.5 transition-transform shrink-0" />
-            {isExpanded && <span className="whitespace-nowrap tracking-wide text-[14px] font-semibold">Đăng xuất</span>}
-          </button>
-        </div>
+      <div className="flex flex-col gap-2 w-full px-3 relative">
+        <button className={`h-12 rounded-2xl flex items-center transition-all group relative ${isExpanded ? "px-4 justify-start gap-4" : "w-11 mx-auto justify-center"} text-white/60 hover:bg-white/10 hover:text-white`}>
+          <div className="shrink-0"><Bell size={22} /></div>
+          <AnimatePresence>
+            {isExpanded && <motion.span initial={{opacity:0, width:0}} animate={{opacity:1, width:"auto"}} exit={{opacity:0, width:0}} className="font-semibold whitespace-nowrap overflow-hidden">Thông báo</motion.span>}
+          </AnimatePresence>
+          {!isExpanded && <div className="absolute left-14 bg-slate-800 text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[110]">Thông báo</div>}
+        </button>
+        <button onClick={handleLogout} className={`h-12 rounded-2xl flex items-center transition-all group relative ${isExpanded ? "px-4 justify-start gap-4" : "w-11 mx-auto justify-center"} text-rose-300/70 hover:bg-rose-500/20 hover:text-rose-300`}>
+          <div className="shrink-0"><LogOut size={22} /></div>
+          <AnimatePresence>
+            {isExpanded && <motion.span initial={{opacity:0, width:0}} animate={{opacity:1, width:"auto"}} exit={{opacity:0, width:0}} className="font-semibold whitespace-nowrap overflow-hidden">Đăng xuất</motion.span>}
+          </AnimatePresence>
+          {!isExpanded && <div className="absolute left-14 bg-rose-500 text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[110]">Đăng xuất</div>}
+        </button>
       </div>
     </motion.nav>
   );

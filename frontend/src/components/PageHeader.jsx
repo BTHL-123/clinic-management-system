@@ -1,3 +1,4 @@
+import React from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth.js";
@@ -29,14 +30,10 @@ export default function PageHeader({
     !roles.includes("RECEPTIONIST") &&
     !roles.includes("ADMIN");
 
-  const isAdminShell =
-    roles.includes("ADMIN") &&
-    !roles.includes("DOCTOR") &&
-    !roles.includes("PHARMACIST") &&
-    !roles.includes("LAB_TECHNICIAN") &&
-    !isPatientOnly;
-  const isReceptionistOnly = roles.includes("RECEPTIONIST") && !roles.includes("ADMIN");
-  const useLightHeader = isPatientOnly || isReceptionistOnly || isAdminShell;
+  const isLightLayout =
+    isPatientOnly ||
+    roles.includes("PHARMACIST") ||
+    roles.includes("LAB_TECHNICIAN");
 
   const resolvedIconColor = iconColor === "text-white" ? "text-teal-500" : iconColor;
 
@@ -48,7 +45,8 @@ export default function PageHeader({
     }
   };
 
-  if (useLightHeader) {
+  if (isLightLayout) {
+
     return (
       <div className={`mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 w-full ${className}`}>
         <div>
@@ -119,3 +117,4 @@ export default function PageHeader({
     </div>
   );
 }
+
