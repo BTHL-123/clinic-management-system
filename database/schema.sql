@@ -303,6 +303,7 @@ CREATE TABLE appointments (
         )),
 
     deposit_amount NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (deposit_amount >= 0),
+    reminder_sent BOOLEAN NOT NULL DEFAULT FALSE,
 
     created_by BIGINT,
     cancelled_by BIGINT,
