@@ -24,9 +24,12 @@ import {
   Bot,
   Search,
   ChevronRight,
-  ClipboardList
+  ClipboardList,
+  Users,
+  X
 } from "lucide-react";
 import consultationService from "../../services/consultationService";
+import queueTicketService from "../../services/queueTicketService";
 import {
   createMedicalRecord,
   getMedicalRecords,
@@ -46,7 +49,7 @@ import {
 } from "../../services/prescriptionService";
 import { getMedicines } from "../../services/medicineService";
 import { getPatientById, getPatients } from "../../services/patientService";
-import { getDoctorById } from "../../services/doctorService";
+import { getDoctorById, getMyDoctorProfile } from "../../services/doctorService";
 import { useToast } from "../../context/useToast.js";
 
 const EMPTY_FORM = {
@@ -132,8 +135,22 @@ export default function ExaminationPage() {
   const [searching, setSearching] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
 
+  // Queue modal states
+  const [showQueueModal, setShowQueueModal] = useState(false);
+  const [queueList, setQueueList] = useState([]);
+  const [queueLoading, setQueueLoading] = useState(false);
+  const [queueSearch, setQueueSearch] = useState("");
+  const [queueFilter, setQueueFilter] = useState("Tất cả"); // Tất cả, Cấp cứu, Ưu tiên, Tái khám, Khám mới
+  const [queueDoctor, setQueueDoctor] = useState(null);
+  const [queuePage, setQueuePage] = useState(1);
+
   // Load consultation + existing medical record + histories
   useEffect(() => {
+    // Always fetch logged-in doctor profile
+    getMyDoctorProfile()
+      .then((res) => setQueueDoctor(res.data))
+      .catch((err) => console.error("Không thể tải thông tin bác sĩ:", err));
+
     if (!consultationId) {
       setLoading(true);
       getPatients({ size: 100 })
@@ -250,6 +267,44 @@ export default function ExaminationPage() {
       setSearchResults([]);
     }
   }, [searchTerm, consultationId]);
+
+  const fetchQueueTickets = async () => {
+    if (!queueDoctor?.doctorId) return;
+    setQueueLoading(true);
+    try {
+      const todayStr = new Date().toISOString().split("T")[0];
+      const res = await queueTicketService.getQueue(
+        queueDoctor.doctorId,
+        todayStr
+      );
+      setQueueList(res.data || []);
+    } catch (err) {
+      console.error("Không thể tải hàng đợi bệnh nhân:", err);
+      showToast("Không thể tải hàng đợi bệnh nhân.", "error");
+    } finally {
+      setQueueLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showQueueModal && queueDoctor?.doctorId) {
+      fetchQueueTickets();
+    }
+  }, [showQueueModal, queueDoctor?.doctorId]);
+
+  const handleStartExamFromQueue = async (ticketId) => {
+    try {
+      const res = await queueTicketService.startExamination(ticketId);
+      showToast("Bắt đầu khám thành công!");
+      setShowQueueModal(false);
+      if (res.data?.consultationId) {
+        navigate(`/dashboard/examination/${res.data.consultationId}`);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Không thể bắt đầu ca khám: " + (err.response?.data?.message || err.message), "error");
+    }
+  };
 
   const showToast = (message, type = "success") => {
     if (type === "error") {
@@ -556,7 +611,7 @@ export default function ExaminationPage() {
       }
       await consultationService.complete(consultationId);
       showToast("Phiên khám đã hoàn thành! Đang chuyển về hàng đợi...");
-      setTimeout(() => navigate("/dashboard/consultation"), 1800);
+      setTimeout(() => navigate("/dashboard/examination"), 1800);
     } catch (err) {
       setError(err.message || "Không thể hoàn tất phiên khám.");
     } finally {
@@ -574,6 +629,217 @@ export default function ExaminationPage() {
       age--;
     }
     return `${age} Tuổi`;
+  };
+
+  const renderQueueModal = () => {
+    if (!showQueueModal) return null;
+
+    const filteredList = queueList.filter((ticket) => {
+      const query = queueSearch.toLowerCase().trim();
+      const patient = ticket.patient || {};
+      const matchSearch =
+        (patient.fullName || "").toLowerCase().includes(query) ||
+        (patient.patientCode || "").toLowerCase().includes(query);
+
+      if (!matchSearch) return false;
+
+      if (queueFilter === "Tất cả") return true;
+      if (queueFilter === "Cấp cứu") return ticket.priority === "EMERGENCY";
+      if (queueFilter === "Ưu tiên") return ticket.priority === "PRIORITY";
+      if (queueFilter === "Tái khám") return ticket.isReexamination || ticket.appointment?.appointmentType === "REEXAMINATION";
+      if (queueFilter === "Khám mới") {
+        return ticket.priority !== "EMERGENCY" && ticket.priority !== "PRIORITY" && !ticket.isReexamination && ticket.appointment?.appointmentType !== "REEXAMINATION";
+      }
+      return true;
+    });
+
+    const itemsPerPage = 4;
+    const totalItems = filteredList.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+    const startIndex = (queuePage - 1) * itemsPerPage;
+    const paginatedList = filteredList.slice(startIndex, startIndex + itemsPerPage);
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+        <div className="bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.15)] w-full max-w-4xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
+            <div>
+              <h3 className="text-lg font-black text-slate-800 tracking-tight">Danh sách bệnh nhân chờ khám</h3>
+              <p className="text-xs text-slate-400 font-bold mt-1">
+                Phòng 302 - {queueList.filter(t => t.queueStatus === 'WAITING' || t.queueStatus === 'CALLED').length} bệnh nhân đang chờ
+              </p>
+            </div>
+            <button
+              onClick={() => setShowQueueModal(false)}
+              className="w-10 h-10 rounded-full hover:bg-slate-50 text-slate-450 hover:text-slate-600 flex items-center justify-center transition-colors"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Filters and Search */}
+          <div className="p-6 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-50 shrink-0 bg-slate-50/30">
+            {/* Search Input */}
+            <div className="relative w-full max-w-xs">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <Search size={14} />
+              </span>
+              <input
+                type="text"
+                placeholder="Tìm theo tên hoặc mã Bệnh nhân..."
+                value={queueSearch}
+                onChange={(e) => {
+                  setQueueSearch(e.target.value);
+                  setQueuePage(1);
+                }}
+                className="w-full bg-white border border-slate-200 focus:border-[#0A604E] rounded-xl pl-9 pr-3 py-2 text-[11px] text-slate-700 font-bold outline-none transition-all placeholder:text-slate-450"
+              />
+            </div>
+
+            {/* Filter Tabs */}
+            <div className="flex flex-wrap gap-1.5 bg-slate-100/80 p-1 rounded-xl">
+              {[
+                { key: "Tất cả", label: `Tất cả (${queueList.length})` },
+                { key: "Cấp cứu", label: `Cấp cứu (${queueList.filter(t => t.priority === "EMERGENCY").length})` },
+                { key: "Ưu tiên", label: `Ưu tiên (${queueList.filter(t => t.priority === "PRIORITY").length})` },
+                { key: "Tái khám", label: `Tái khám (${queueList.filter(t => t.isReexamination || t.appointment?.appointmentType === "REEXAMINATION").length})` },
+                { key: "Khám mới", label: `Khám mới (${queueList.filter(t => t.priority !== "EMERGENCY" && t.priority !== "PRIORITY" && !t.isReexamination && t.appointment?.appointmentType !== "REEXAMINATION").length})` }
+              ].map((tab) => {
+                const isActive = queueFilter === tab.key;
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() => {
+                      setQueueFilter(tab.key);
+                      setQueuePage(1);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-black tracking-wide transition-all ${
+                      isActive
+                        ? "bg-white text-slate-800 shadow-sm"
+                        : "text-slate-500 hover:text-slate-750"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Table Area */}
+          <div className="flex-1 overflow-y-auto p-6 min-h-[250px]">
+            {queueLoading ? (
+              <div className="w-full h-full flex flex-col items-center justify-center gap-3">
+                <RefreshCw size={24} className="animate-spin text-[#0A604E]" />
+                <span className="text-[11px] text-slate-400 font-bold">Đang tải danh sách chờ...</span>
+              </div>
+            ) : paginatedList.length > 0 ? (
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                    <th className="pb-3 pl-2 w-16">STT</th>
+                    <th className="pb-3 w-64">Patient Info</th>
+                    <th className="pb-3 w-32">Time</th>
+                    <th className="pb-3 w-40">Status/Priority</th>
+                    <th className="pb-3">Reason</th>
+                    <th className="pb-3 text-right pr-2 w-40">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedList.map((ticket, index) => {
+                    const patient = ticket.patient || {};
+                    const genderLabel = patient.gender === "FEMALE" ? "Nữ" : patient.gender === "MALE" ? "Nam" : "Khác";
+                    const ageLabel = patient.dateOfBirth ? getAge(patient.dateOfBirth) : "—";
+                    const initials = (patient.fullName || "BN").split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
+
+                    let priorityBadge = null;
+                    if (ticket.priority === "EMERGENCY") {
+                      priorityBadge = <span className="bg-rose-50 border border-rose-100 text-rose-700 text-[9px] font-extrabold px-2.5 py-1 rounded-md uppercase">▲ Cấp cứu</span>;
+                    } else if (ticket.priority === "PRIORITY") {
+                      priorityBadge = <span className="bg-amber-50 border border-amber-100 text-amber-700 text-[9px] font-extrabold px-2.5 py-1 rounded-md uppercase">★ Ưu tiên</span>;
+                    } else if (ticket.isReexamination || ticket.appointment?.appointmentType === "REEXAMINATION") {
+                      priorityBadge = <span className="bg-sky-50 border border-sky-100 text-sky-700 text-[9px] font-extrabold px-2.5 py-1 rounded-md uppercase">Tái khám</span>;
+                    } else {
+                      priorityBadge = <span className="bg-indigo-50 border border-indigo-100 text-indigo-700 text-[9px] font-extrabold px-2.5 py-1 rounded-md uppercase">Khám mới</span>;
+                    }
+
+                    return (
+                      <tr key={ticket.queueTicketId} className="border-b border-slate-50 hover:bg-slate-50/40 transition-colors group">
+                        <td className="py-4 pl-2 font-extrabold text-slate-800 text-xs">{startIndex + index + 1}</td>
+                        <td className="py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-teal-50 border border-teal-100 overflow-hidden shrink-0 flex items-center justify-center text-teal-655 font-bold text-xs">
+                              {patient.avatarUrl ? (
+                                <img src={patient.avatarUrl} alt={patient.fullName} className="w-full h-full object-cover" />
+                              ) : (
+                                <span>{initials}</span>
+                              )}
+                            </div>
+                            <div>
+                              <h4 className="font-extrabold text-slate-800 text-xs tracking-tight group-hover:text-teal-705 transition-colors">{patient.fullName}</h4>
+                              <p className="text-[10px] text-slate-400 font-bold mt-0.5">
+                                ID: {patient.patientCode || "BN-XXXX"} • {genderLabel}, {ageLabel}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 text-xs font-extrabold text-slate-700">
+                          {ticket.appointment?.appointmentTime ? ticket.appointment.appointmentTime.substring(0, 5) : "08:00"}
+                        </td>
+                        <td className="py-4">
+                          {priorityBadge}
+                        </td>
+                        <td className="py-4 text-xs font-semibold text-slate-500 max-w-xs truncate">
+                          {ticket.reasonForVisit || "Khám sức khỏe tổng quát định kỳ"}
+                        </td>
+                        <td className="py-4 text-right pr-2">
+                          <button
+                            onClick={() => handleStartExamFromQueue(ticket.queueTicketId)}
+                            className="bg-[#1DB896] hover:bg-[#159a7c] text-white font-extrabold text-[10px] tracking-wide px-3.5 py-2 rounded-xl transition-all shadow-sm active:scale-95 flex items-center gap-1.5 ml-auto uppercase"
+                          >
+                            Bắt đầu khám <ChevronRight size={10} className="stroke-[2.5]" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center text-center py-10">
+                <Users size={48} className="text-slate-350 stroke-[1.2] mb-3" />
+                <p className="text-xs text-slate-450 font-bold">Không có bệnh nhân nào trong danh sách chờ của bộ lọc này.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Footer / Pagination */}
+          <div className="p-6 border-t border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/20 text-[10px] font-bold text-slate-400">
+            <span>
+              Hiển thị {totalItems > 0 ? startIndex + 1 : 0} đến {Math.min(startIndex + itemsPerPage, totalItems)} của {totalItems} bệnh nhân
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                disabled={queuePage === 1}
+                onClick={() => setQueuePage(p => Math.max(p - 1, 1))}
+                className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 hover:text-slate-600 transition-colors disabled:opacity-50 disabled:pointer-events-none"
+              >
+                &lt;
+              </button>
+              <span className="text-slate-800 font-extrabold px-1">Trang {queuePage} / {totalPages}</span>
+              <button
+                disabled={queuePage === totalPages}
+                onClick={() => setQueuePage(p => Math.min(p + 1, totalPages))}
+                className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 hover:text-slate-600 transition-colors disabled:opacity-50 disabled:pointer-events-none"
+              >
+                &gt;
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (loading) {
@@ -612,7 +878,7 @@ export default function ExaminationPage() {
           </p>
 
           <button
-            onClick={() => navigate("/dashboard/consultation")}
+            onClick={() => setShowQueueModal(true)}
             className="mt-6 px-6 py-3 bg-[#0A604E] hover:bg-[#07473a] active:scale-95 text-white font-extrabold text-xs rounded-xl shadow-[0_6px_20px_rgba(10,96,78,0.2)] transition-all flex items-center gap-2"
           >
             <ClipboardList size={14} />
@@ -699,6 +965,7 @@ export default function ExaminationPage() {
             </div>
           )}
         </div>
+        {renderQueueModal()}
       </div>
     );
   }
@@ -1619,7 +1886,7 @@ export default function ExaminationPage() {
 
         <button
           type="button"
-          onClick={() => navigate("/dashboard/consultation")}
+          onClick={() => navigate("/dashboard/examination")}
           className="flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-655 font-bold text-xs tracking-wider transition-all active:scale-95 shadow-sm"
         >
           Hủy bỏ
@@ -1654,7 +1921,7 @@ export default function ExaminationPage() {
         </div>
 
       </div>
-
+      {renderQueueModal()}
     </div>
   );
 }
