@@ -11,6 +11,8 @@ import appointmentService from "../../services/appointmentService";
 import queueTicketService from "../../services/queueTicketService";
 import PatientRecordModal from "../../components/PatientRecordModal";
 import { useToast } from "../../context/useToast.js";
+import { toLocalDateString } from "../../lib/utils";
+
 
 const DAYS_OF_WEEK = ["THỨ 2", "THỨ 3", "THỨ 4", "THỨ 5", "THỨ 6", "THỨ 7", "CHỦ NHẬT"];
 
@@ -73,8 +75,8 @@ export default function DoctorSchedulePage() {
       setDoctorProfile(profile);
 
       if (profile && profile.doctorId) {
-        const fromDateStr = weekDays[0].toISOString().split("T")[0];
-        const toDateStr = weekDays[6].toISOString().split("T")[0];
+        const fromDateStr = toLocalDateString(weekDays[0]);
+        const toDateStr = toLocalDateString(weekDays[6]);
 
         const schedRes = await getSchedules({
           doctorId: profile.doctorId,
@@ -131,10 +133,9 @@ export default function DoctorSchedulePage() {
     }
   };
 
-  // Auto select schedule when schedules load
   useEffect(() => {
     if (schedules.length > 0) {
-      const todayStr = new Date().toISOString().split("T")[0];
+      const todayStr = toLocalDateString(new Date());
       const todaySched = schedules.find(s => s.workDate === todayStr);
       if (todaySched) {
         handleScheduleSelect(todaySched);
@@ -269,7 +270,7 @@ export default function DoctorSchedulePage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4">
               {weekDays.map((day, idx) => {
-                const dateStr = day.toISOString().split("T")[0];
+                const dateStr = toLocalDateString(day);
                 const schedsForDay = schedules.filter(s => s.workDate === dateStr);
                 const isToday = isDateToday(day);
                 const isWeekend = idx === 6; // Sunday index

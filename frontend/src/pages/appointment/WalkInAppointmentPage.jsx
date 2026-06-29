@@ -17,6 +17,8 @@ import { getActiveMedicalServices } from "../../services/medicalServiceService";
 import QueueGrid from "./QueueGrid";
 import { useToast } from "../../context/useToast";
 import PageHeader from "../../components/PageHeader";
+import { toLocalDateString } from "../../lib/utils";
+
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const GENDER_OPTIONS = [
@@ -136,7 +138,7 @@ function SuccessCard({ result, onReset }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function WalkInAppointmentPage() {
   const toast = useToast();
-  const today = new Date().toISOString().split("T")[0];
+  const today = toLocalDateString(new Date());
   const [selectedDate, setSelectedDate] = useState(today);
 
   // Doctor + schedule state

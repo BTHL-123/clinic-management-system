@@ -16,10 +16,12 @@ import { useToast } from "../../context/useToast.js";
 import PageHeader from "../../components/PageHeader";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client/dist/sockjs";
+import { toLocalDateString } from "../../lib/utils";
 
 export default function QueueManagementPage() {
   const toast = useToast();
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = toLocalDateString(new Date());
+
 
   // Filters
   const [date, setDate] = useState(todayStr);

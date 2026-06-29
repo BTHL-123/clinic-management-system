@@ -54,4 +54,6 @@ public interface AppointmentService {
     java.util.List<AppointmentResponse> getDoctorTodayAppointments(Long userId);
 
     AppointmentResponse markNoShow(Long appointmentId, String note, Long receptionistId);
+
+    AppointmentResponse selfCheckIn(Long appointmentId, Long userId);
 }

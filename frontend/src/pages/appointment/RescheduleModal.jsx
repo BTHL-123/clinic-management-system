@@ -3,6 +3,8 @@ import { X, CalendarDays, Clock, UserRound } from "lucide-react";
 import { getSchedules, getAvailableSlotsForPatient } from "../../services/scheduleService";
 import { getDoctors } from "../../services/doctorService";
 import appointmentService from "../../services/appointmentService";
+import { toLocalDateString } from "../../lib/utils";
+
 
 export default function RescheduleModal({ isOpen, onClose, onRescheduleSuccess, appointment }) {
   const [schedules, setSchedules] = useState([]);
@@ -92,7 +94,7 @@ export default function RescheduleModal({ isOpen, onClose, onRescheduleSuccess, 
 
   if (!isOpen) return null;
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = toLocalDateString(new Date());
 
   const uniqueDates = [...new Set(schedules.filter(s => s.workDate >= today).map(s => s.workDate))].sort();
 

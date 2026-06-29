@@ -4,6 +4,8 @@ import { useAuth } from "../../context/useAuth.js";
 import { getMyDoctorProfile } from "../../services/doctorService";
 import appointmentService from "../../services/appointmentService";
 import { getDoctorPerformance } from "../../services/reportService";
+import { toLocalDateString } from "../../lib/utils";
+
 
 export default function DoctorHome() {
   const { user } = useAuth();
@@ -34,7 +36,7 @@ export default function DoctorHome() {
           try {
             const perfRes = await getDoctorPerformance({
               from: "2020-01-01",
-              to: new Date().toISOString().split("T")[0]
+              to: toLocalDateString(new Date())
             });
             const perfList = perfRes?.data || perfRes || [];
             const myPerf = perfList.find(item => item.doctorId === docData.doctorId);

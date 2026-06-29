@@ -20,6 +20,8 @@ import queueTicketService from "../../services/queueTicketService";
 import { getMyDoctorProfile } from "../../services/doctorService";
 import { useToast } from "../../context/useToast.js";
 import PatientRecordModal from "../../components/PatientRecordModal";
+import { toLocalDateString } from "../../lib/utils";
+
 
 export default function DoctorTodayAppointments() {
   const toast = useToast();
@@ -64,7 +66,7 @@ export default function DoctorTodayAppointments() {
         setAppointments(appRes?.data || []);
 
         // Fetch today's queue tickets for this doctor
-        const todayStr = new Date().toISOString().split("T")[0];
+        const todayStr = toLocalDateString(new Date());
         const queueRes = await queueService.getQueue({
           date: todayStr,
           doctorId: currentDoctor.doctorId

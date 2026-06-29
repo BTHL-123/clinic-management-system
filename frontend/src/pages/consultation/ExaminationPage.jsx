@@ -51,6 +51,8 @@ import { getMedicines } from "../../services/medicineService";
 import { getPatientById, getPatients } from "../../services/patientService";
 import { getDoctorById, getMyDoctorProfile } from "../../services/doctorService";
 import { useToast } from "../../context/useToast.js";
+import { toLocalDateString } from "../../lib/utils";
+
 
 const EMPTY_FORM = {
   symptoms: "",
@@ -272,12 +274,18 @@ export default function ExaminationPage() {
     if (!queueDoctor?.doctorId) return;
     setQueueLoading(true);
     try {
-      const todayStr = new Date().toISOString().split("T")[0];
+      const todayStr = toLocalDateString(new Date());
       const res = await queueTicketService.getQueue(
         queueDoctor.doctorId,
         todayStr
       );
-      setQueueList(res.data || []);
+      // axiosClient unwraps HTTP body → res = ApiResponse { data: [...] }
+      const rawList = Array.isArray(res.data) ? res.data : [];
+      // Only show tickets still in queue (not done/cancelled/in_examination)
+      const activeList = rawList.filter(
+        (t) => t.queueStatus === "WAITING" || t.queueStatus === "CALLED"
+      );
+      setQueueList(activeList);
     } catch (err) {
       console.error("Không thể tải hàng đợi bệnh nhân:", err);
       showToast("Không thể tải hàng đợi bệnh nhân.", "error");
@@ -636,19 +644,18 @@ export default function ExaminationPage() {
 
     const filteredList = queueList.filter((ticket) => {
       const query = queueSearch.toLowerCase().trim();
-      const patient = ticket.patient || {};
       const matchSearch =
-        (patient.fullName || "").toLowerCase().includes(query) ||
-        (patient.patientCode || "").toLowerCase().includes(query);
+        (ticket.patientName || "").toLowerCase().includes(query) ||
+        (ticket.patientPhone || "").toLowerCase().includes(query);
 
       if (!matchSearch) return false;
 
       if (queueFilter === "Tất cả") return true;
-      if (queueFilter === "Cấp cứu") return ticket.priority === "EMERGENCY";
-      if (queueFilter === "Ưu tiên") return ticket.priority === "PRIORITY";
-      if (queueFilter === "Tái khám") return ticket.isReexamination || ticket.appointment?.appointmentType === "REEXAMINATION";
+      if (queueFilter === "Cấp cứu") return ticket.priorityLevel === "EMERGENCY";
+      if (queueFilter === "Ưu tiên") return ticket.priorityLevel === "PRIORITY";
+      if (queueFilter === "Tái khám") return ticket.priorityLevel === "REEXAMINATION";
       if (queueFilter === "Khám mới") {
-        return ticket.priority !== "EMERGENCY" && ticket.priority !== "PRIORITY" && !ticket.isReexamination && ticket.appointment?.appointmentType !== "REEXAMINATION";
+        return ticket.priorityLevel !== "EMERGENCY" && ticket.priorityLevel !== "PRIORITY" && ticket.priorityLevel !== "REEXAMINATION";
       }
       return true;
     });
@@ -667,7 +674,7 @@ export default function ExaminationPage() {
             <div>
               <h3 className="text-lg font-black text-slate-800 tracking-tight">Danh sách bệnh nhân chờ khám</h3>
               <p className="text-xs text-slate-400 font-bold mt-1">
-                Phòng 302 - {queueList.filter(t => t.queueStatus === 'WAITING' || t.queueStatus === 'CALLED').length} bệnh nhân đang chờ
+                {queueList.filter(t => t.queueStatus === 'WAITING' || t.queueStatus === 'CALLED').length} bệnh nhân đang chờ
               </p>
             </div>
             <button
@@ -701,10 +708,10 @@ export default function ExaminationPage() {
             <div className="flex flex-wrap gap-1.5 bg-slate-100/80 p-1 rounded-xl">
               {[
                 { key: "Tất cả", label: `Tất cả (${queueList.length})` },
-                { key: "Cấp cứu", label: `Cấp cứu (${queueList.filter(t => t.priority === "EMERGENCY").length})` },
-                { key: "Ưu tiên", label: `Ưu tiên (${queueList.filter(t => t.priority === "PRIORITY").length})` },
-                { key: "Tái khám", label: `Tái khám (${queueList.filter(t => t.isReexamination || t.appointment?.appointmentType === "REEXAMINATION").length})` },
-                { key: "Khám mới", label: `Khám mới (${queueList.filter(t => t.priority !== "EMERGENCY" && t.priority !== "PRIORITY" && !t.isReexamination && t.appointment?.appointmentType !== "REEXAMINATION").length})` }
+                { key: "Cấp cứu", label: `Cấp cứu (${queueList.filter(t => t.priorityLevel === "EMERGENCY").length})` },
+                { key: "Ưu tiên", label: `Ưu tiên (${queueList.filter(t => t.priorityLevel === "PRIORITY").length})` },
+                { key: "Tái khám", label: `Tái khám (${queueList.filter(t => t.priorityLevel === "REEXAMINATION").length})` },
+                { key: "Khám mới", label: `Khám mới (${queueList.filter(t => t.priorityLevel !== "EMERGENCY" && t.priorityLevel !== "PRIORITY" && t.priorityLevel !== "REEXAMINATION").length})` }
               ].map((tab) => {
                 const isActive = queueFilter === tab.key;
                 return (
@@ -748,17 +755,14 @@ export default function ExaminationPage() {
                 </thead>
                 <tbody>
                   {paginatedList.map((ticket, index) => {
-                    const patient = ticket.patient || {};
-                    const genderLabel = patient.gender === "FEMALE" ? "Nữ" : patient.gender === "MALE" ? "Nam" : "Khác";
-                    const ageLabel = patient.dateOfBirth ? getAge(patient.dateOfBirth) : "—";
-                    const initials = (patient.fullName || "BN").split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
+                    const initials = (ticket.patientName || "BN").split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
 
                     let priorityBadge = null;
-                    if (ticket.priority === "EMERGENCY") {
+                    if (ticket.priorityLevel === "EMERGENCY") {
                       priorityBadge = <span className="bg-rose-50 border border-rose-100 text-rose-700 text-[9px] font-extrabold px-2.5 py-1 rounded-md uppercase">▲ Cấp cứu</span>;
-                    } else if (ticket.priority === "PRIORITY") {
+                    } else if (ticket.priorityLevel === "PRIORITY") {
                       priorityBadge = <span className="bg-amber-50 border border-amber-100 text-amber-700 text-[9px] font-extrabold px-2.5 py-1 rounded-md uppercase">★ Ưu tiên</span>;
-                    } else if (ticket.isReexamination || ticket.appointment?.appointmentType === "REEXAMINATION") {
+                    } else if (ticket.priorityLevel === "REEXAMINATION") {
                       priorityBadge = <span className="bg-sky-50 border border-sky-100 text-sky-700 text-[9px] font-extrabold px-2.5 py-1 rounded-md uppercase">Tái khám</span>;
                     } else {
                       priorityBadge = <span className="bg-indigo-50 border border-indigo-100 text-indigo-700 text-[9px] font-extrabold px-2.5 py-1 rounded-md uppercase">Khám mới</span>;
@@ -766,32 +770,28 @@ export default function ExaminationPage() {
 
                     return (
                       <tr key={ticket.queueTicketId} className="border-b border-slate-50 hover:bg-slate-50/40 transition-colors group">
-                        <td className="py-4 pl-2 font-extrabold text-slate-800 text-xs">{startIndex + index + 1}</td>
+                        <td className="py-4 pl-2 font-extrabold text-slate-800 text-xs">#{ticket.queueNumber || (startIndex + index + 1)}</td>
                         <td className="py-4">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-teal-50 border border-teal-100 overflow-hidden shrink-0 flex items-center justify-center text-teal-655 font-bold text-xs">
-                              {patient.avatarUrl ? (
-                                <img src={patient.avatarUrl} alt={patient.fullName} className="w-full h-full object-cover" />
-                              ) : (
-                                <span>{initials}</span>
-                              )}
+                              <span>{initials}</span>
                             </div>
                             <div>
-                              <h4 className="font-extrabold text-slate-800 text-xs tracking-tight group-hover:text-teal-705 transition-colors">{patient.fullName}</h4>
+                              <h4 className="font-extrabold text-slate-800 text-xs tracking-tight group-hover:text-teal-705 transition-colors">{ticket.patientName}</h4>
                               <p className="text-[10px] text-slate-400 font-bold mt-0.5">
-                                ID: {patient.patientCode || "BN-XXXX"} • {genderLabel}, {ageLabel}
+                                SĐT: {ticket.patientPhone || "—"}
                               </p>
                             </div>
                           </div>
                         </td>
                         <td className="py-4 text-xs font-extrabold text-slate-700">
-                          {ticket.appointment?.appointmentTime ? ticket.appointment.appointmentTime.substring(0, 5) : "08:00"}
+                          {ticket.startTime ? String(ticket.startTime).substring(0, 5) : "—"}
                         </td>
                         <td className="py-4">
                           {priorityBadge}
                         </td>
                         <td className="py-4 text-xs font-semibold text-slate-500 max-w-xs truncate">
-                          {ticket.reasonForVisit || "Khám sức khỏe tổng quát định kỳ"}
+                          {ticket.queueStatus === "WAITING" ? "Đang chờ" : ticket.queueStatus === "CALLED" ? "Đã được gọi" : ticket.queueStatus}
                         </td>
                         <td className="py-4 text-right pr-2">
                           <button

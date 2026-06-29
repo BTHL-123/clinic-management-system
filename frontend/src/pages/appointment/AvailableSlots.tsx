@@ -50,6 +50,13 @@ interface DoctorOption {
 
 type FetchState = "idle" | "loading" | "done" | "error";
 
+function toLocalDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function formatTime(t: string): string {
   return String(t ?? "").slice(0, 5);
 }
@@ -69,7 +76,7 @@ export default function AvailableSlots() {
   // States
   const [workDate, setWorkDate] = useState<string>(() => {
     if (paramWorkDate) return paramWorkDate;
-    return new Date().toISOString().split("T")[0]; // default to today
+    return toLocalDateString(new Date()); // default to today
   });
   
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>("");
@@ -190,8 +197,8 @@ export default function AvailableSlots() {
           if (doc) {
             setSelectedDoctor(doc);
             // Search calendar for that doctor's active schedule and auto-set date
-            const todayStr = new Date().toISOString().split("T")[0];
-            const toDateStr = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+            const todayStr = toLocalDateString(new Date());
+            const toDateStr = toLocalDateString(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
             const scheds: any = await getSchedules({ doctorId: initialDoctorId, fromDate: todayStr, toDate: toDateStr, status: "AVAILABLE" });
             const schedulesList = Array.isArray(scheds.data) ? scheds.data : [];
             if (schedulesList.length > 0) {
@@ -221,8 +228,8 @@ export default function AvailableSlots() {
     let isActive = true;
     const fetchSchedulesForIndicator = async () => {
       try {
-        const todayStr = new Date().toISOString().split("T")[0];
-        const endRangeStr = new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+        const todayStr = toLocalDateString(new Date());
+        const endRangeStr = toLocalDateString(new Date(Date.now() + 45 * 24 * 60 * 60 * 1000));
         const params: any = { fromDate: todayStr, toDate: endRangeStr, status: "AVAILABLE" };
         
         // If specific department or query is selected, we could filter but let's just get overall active dates
@@ -346,8 +353,8 @@ export default function AvailableSlots() {
   // Helper selectors
   const nextAvailableDateForDoctor = async (doc: DoctorOption) => {
     try {
-      const todayStr = new Date().toISOString().split("T")[0];
-      const endRangeStr = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      const todayStr = toLocalDateString(new Date());
+      const endRangeStr = toLocalDateString(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
       const res: any = await getSchedules({ doctorId: doc.doctorId, fromDate: todayStr, toDate: endRangeStr, status: "AVAILABLE" });
       const schedulesList = Array.isArray(res.data) ? res.data : [];
       if (schedulesList.length > 0) {
@@ -393,8 +400,8 @@ export default function AvailableSlots() {
     }
 
     const fetchUpcomingDates = async () => {
-      const todayStr = new Date().toISOString().split("T")[0];
-      const endRangeStr = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      const todayStr = toLocalDateString(new Date());
+      const endRangeStr = toLocalDateString(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
       
       const promises = unscheduledMatchingDoctors.map(async (doc) => {
         try {
@@ -603,7 +610,7 @@ export default function AvailableSlots() {
             {/* Days Grid */}
             <div className="grid grid-cols-7 gap-1">
               {daysInGrid.map((date, idx) => {
-                const dateStr = date.toISOString().split("T")[0];
+                const dateStr = toLocalDateString(date);
                 const isSelected = workDate === dateStr;
                 const isCurrentMonth = date.getMonth() === currentMonth;
                 const isPast = date < new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate());

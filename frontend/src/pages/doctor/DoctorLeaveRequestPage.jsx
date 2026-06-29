@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { ClipboardList, AlertTriangle, ArrowLeft, Send, Calendar, Clock, CheckCircle2, HelpCircle } from "lucide-react";
 import doctorLeaveRequestService from "../../services/doctorLeaveRequestService.js";
 import { useToast } from "../../context/useToast.js";
+import { toLocalDateString } from "../../lib/utils";
+
 
 const STATUS_BADGE = {
   PENDING: { label: "Đang chờ duyệt", color: "text-amber-700 bg-amber-50 border-amber-100/60" },
@@ -35,7 +37,7 @@ export default function DoctorLeaveRequestPage() {
   const toast = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const today = new Date().toISOString().split("T")[0];
+  const today = toLocalDateString(new Date());
   const prefillDate = location.state?.prefillDate || today;
 
   const [form, setForm] = useState({

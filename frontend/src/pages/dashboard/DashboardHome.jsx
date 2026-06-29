@@ -11,6 +11,8 @@ import {
   getRevenueSummary, getRevenueReport, getAppointmentReport,
   getDoctorPerformance, getMedicineStockSummary, getExpiringBatches
 } from "../../services/reportService.js";
+import { toLocalDateString } from "../../lib/utils";
+
 
 const COLORS = ["#0ea5e9", "#10b981", "#f59e0b", "#f43f5e", "#8b5cf6", "#64748b"];
 
@@ -34,8 +36,8 @@ export default function DashboardHome() {
       const fromDate = new Date();
       fromDate.setDate(today.getDate() - timeRange);
 
-      const fromStr = fromDate.toISOString().split("T")[0];
-      const toStr = today.toISOString().split("T")[0];
+      const fromStr = toLocalDateString(fromDate);
+      const toStr = toLocalDateString(today);
 
       const [
         revSummary, revReport, apptReport, docPerf, stockSum, expiring

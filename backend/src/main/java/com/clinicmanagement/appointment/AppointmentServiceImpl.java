@@ -705,4 +705,95 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         return mapToResponse(saved);
     }
+
+    @Override
+    @Transactional
+    public AppointmentResponse selfCheckIn(Long appointmentId, Long userId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Lịch hẹn không tồn tại với ID: " + appointmentId));
+
+        // Verify the appointment belongs to this patient's user account
+        if (appointment.getPatient() == null ||
+                appointment.getPatient().getUser() == null ||
+                !appointment.getPatient().getUser().getUserId().equals(userId)) {
+            throw new BusinessException("Bạn không có quyền check-in lịch hẹn này.");
+        }
+
+        String status = appointment.getStatus();
+        if ("CANCELLED".equals(status)) {
+            throw new BusinessException("Không thể check-in lịch hẹn đã hủy.");
+        }
+        if ("COMPLETED".equals(status)) {
+            throw new BusinessException("Không thể check-in lịch hẹn đã hoàn thành.");
+        }
+        if ("CHECKED_IN".equals(status)) {
+            throw new BusinessException("Lịch hẹn đã được check-in trước đó.");
+        }
+        if (!"CONFIRMED".equals(status)) {
+            throw new BusinessException("Lịch hẹn phải ở trạng thái CONFIRMED mới có thể check-in.");
+        }
+        if (!appointment.getAppointmentDate().equals(LocalDate.now())) {
+            throw new BusinessException("Chỉ có thể check-in cho lịch hẹn trong ngày hôm nay.");
+        }
+
+        LocalTime startTime = appointment.getStartTime();
+        LocalTime allowedCheckInTime = startTime.minusMinutes(60);
+        LocalTime now = LocalTime.now();
+        if (now.isBefore(allowedCheckInTime)) {
+            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm");
+            throw new BusinessException("Bạn có lịch hẹn lúc " + startTime.format(formatter) +
+                    ". Hệ thống chỉ cho phép check-in trước 60 phút (từ " + allowedCheckInTime.format(formatter) + ").");
+        }
+
+        appointment.setStatus("CHECKED_IN");
+        appointment.setCheckedInAt(LocalDateTime.now());
+        appointment.setCheckedInBy(userId);
+
+        QueueTicket ticket = appointment.getQueueTicket();
+        if (ticket == null) {
+            ticket = new QueueTicket();
+            ticket.setAppointment(appointment);
+            ticket.setPatient(appointment.getPatient());
+            ticket.setDoctor(appointment.getDoctor());
+            ticket.setDepartment(appointment.getDepartment());
+            ticket.setQueueDate(LocalDate.now());
+
+            int nextQueueNumber = queueTicketRepository.findMaxQueueNumberByDoctorAndDate(
+                    appointment.getDoctor().getDoctorId(), LocalDate.now()
+            ) + 1;
+
+            ticket.setQueueNumber(nextQueueNumber);
+            ticket.setPriorityLevel("NORMAL");
+            ticket.setStatus("WAITING");
+            ticket.setCheckedInAt(LocalDateTime.now());
+
+            queueTicketRepository.save(ticket);
+            appointment.setQueueTicket(ticket);
+        } else {
+            ticket.setStatus("WAITING");
+            ticket.setCheckedInAt(LocalDateTime.now());
+            queueTicketRepository.save(ticket);
+        }
+
+        Appointment saved = appointmentRepository.save(appointment);
+
+        try {
+            QueueTicket finalTicket = saved.getQueueTicket();
+            int qNum = finalTicket != null ? finalTicket.getQueueNumber() : 0;
+            if (saved.getPatient() != null && saved.getPatient().getUser() != null) {
+                notificationService.createNotification(
+                        saved.getPatient().getUser().getUserId(),
+                        "Check-in thành công",
+                        "Bạn đã check-in thành công lịch hẹn mã " + saved.getAppointmentCode() +
+                                ". Số thứ tự khám của bạn là #" + qNum +
+                                ". Vui lòng đợi đến lượt khám tại khoa " + saved.getDepartment().getDepartmentName() + ".",
+                        "APPOINTMENT"
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("Không thể tạo thông báo self check-in: " + e.getMessage());
+        }
+
+        return mapToResponse(saved);
+    }
 }

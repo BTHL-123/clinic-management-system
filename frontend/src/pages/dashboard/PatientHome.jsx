@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { 
+import {
   CalendarDays, FileText, HeartPulse, UserCircle, CalendarPlus, ListOrdered,
   QrCode, ArrowRight, ActivitySquare, ShieldCheck, Star, X, Calendar, Clock, BookOpen, GraduationCap, Activity, ThumbsUp
 } from "lucide-react";
@@ -120,7 +120,7 @@ export default function PatientHome() {
 
   return (
     <div className="w-full flex flex-col gap-6 h-[calc(100vh-104px)] overflow-y-auto custom-scrollbar pr-2 pb-6">
-      
+
       {/* HEADER SECTION */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0 mt-2">
         <div>
@@ -132,7 +132,7 @@ export default function PatientHome() {
             {getGreeting()}, <span className="text-[#0A604E]">{user?.fullName ?? "Bệnh nhân"}</span>
           </h1>
         </div>
-        <button 
+        <button
           onClick={() => navigate("/dashboard/available-slots")}
           className="flex items-center gap-2 bg-[#0A604E] hover:bg-[#1DB896] text-white font-extrabold py-2.5 px-5 rounded-xl transition-all shadow-md shadow-[#0A604E]/10 hover:-translate-y-0.5 text-xs"
         >
@@ -143,10 +143,10 @@ export default function PatientHome() {
 
       {/* TWO-COLUMN GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full flex-1 items-start">
-        
+
         {/* LEFT COLUMN: UPCOMING TICKET & DOCTORS */}
         <div className="lg:col-span-8 flex flex-col gap-6">
-          
+
           {/* UPCOMING APPOINTMENT TICKET */}
           <AnimatePresence mode="wait">
             {!loadingAppt && upcomingAppointment ? (
@@ -157,7 +157,7 @@ export default function PatientHome() {
               >
                 {/* Decorative Pattern */}
                 <div className="absolute top-0 right-0 w-72 h-72 bg-gradient-to-br from-teal-100/30 to-emerald-50/20 rounded-full blur-[60px] -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
-                
+
                 {/* Main Ticket Info */}
                 <div className="p-6 md:p-8 flex-1 relative z-10 flex flex-col justify-between gap-6">
                   <div>
@@ -219,24 +219,23 @@ export default function PatientHome() {
                 {/* Ticket Stub */}
                 <div className="w-full md:w-56 bg-[#F0F9F7]/70 border-l border-slate-100 p-6 flex flex-col items-center justify-center relative border-t md:border-t-0 shrink-0">
                   <div className="hidden md:block absolute left-[-1px] top-6 bottom-6 w-[2px] bg-[linear-gradient(to_bottom,transparent_50%,rgba(148,163,184,0.18)_50%)] bg-[length:100%_16px]"></div>
-                  
+
                   <div className="bg-white p-2.5 rounded-2xl mb-4 shadow-sm border border-slate-200/50">
                     <QrCode size={90} className="text-slate-850" />
                   </div>
-                  
-                  <button 
+
+                  <button
                     onClick={() => navigate('/dashboard/queue-status')}
-                    className={`w-full text-white font-extrabold py-3 rounded-xl transition-all shadow-sm text-xs ${
-                      upcomingAppointment.queueStatus === 'CALLED'
-                        ? "bg-rose-600 hover:bg-rose-500 shadow-rose-100"
-                        : "bg-[#0A604E] hover:bg-[#1DB896] shadow-teal-150"
-                    }`}
+                    className={`w-full text-white font-extrabold py-3 rounded-xl transition-all shadow-sm text-xs ${upcomingAppointment.queueStatus === 'CALLED'
+                      ? "bg-rose-600 hover:bg-rose-500 shadow-rose-100"
+                      : "bg-[#0A604E] hover:bg-[#1DB896] shadow-teal-150"
+                      }`}
                   >
                     {upcomingAppointment.queueStatus === 'CALLED'
                       ? "VÀO PHÒNG KHÁM"
                       : upcomingAppointment.queueNumber
-                      ? "THEO DÕI HÀNG ĐỢI"
-                      : "LẤY SỐ THỨ TỰ"}
+                        ? "THEO DÕI HÀNG ĐỢI"
+                        : "LẤY SỐ THỨ TỰ"}
                   </button>
                 </div>
               </motion.div>
@@ -252,7 +251,7 @@ export default function PatientHome() {
                   </div>
                   <h3 className="text-lg font-bold text-slate-800 mb-1.5">Bạn chưa có lịch hẹn sắp tới</h3>
                   <p className="text-slate-500 mb-5 max-w-sm text-center text-xs font-semibold">Đặt lịch khám định kỳ giúp kiểm soát tốt sức khỏe cá nhân của bạn.</p>
-                  <button 
+                  <button
                     onClick={() => navigate("/dashboard/available-slots")}
                     className="bg-[#0A604E] hover:bg-[#1DB896] text-white font-bold text-xs py-3 px-6 rounded-xl transition-all hover:-translate-y-0.5 shadow-sm flex items-center gap-1.5"
                   >
@@ -269,7 +268,7 @@ export default function PatientHome() {
               <h2 className="text-base font-extrabold text-[#0A604E] flex items-center gap-2">
                 <UserCircle className="text-[#1DB896]" size={20} /> Đội ngũ Bác sĩ Chuyên khoa
               </h2>
-              <button 
+              <button
                 onClick={() => navigate('/dashboard/our-doctors')}
                 className="text-[#1DB896] hover:text-[#0A604E] font-bold text-xs flex items-center gap-0.5 transition-colors"
               >
@@ -295,16 +294,16 @@ export default function PatientHome() {
                         </div>
                       )}
                     </div>
-                    
+
                     <h3 className="text-xs font-bold text-slate-800 z-10 text-center mb-0.5 truncate w-full">{doc.fullName}</h3>
                     <p className="text-[#1DB896] font-semibold text-[11px] mb-2.5 z-10 truncate w-full text-center">{doc.departmentName || doc.specialization || "Chuyên khoa"}</p>
-                    
+
                     <div className="flex gap-1 text-[10px] font-bold text-slate-450 mb-3.5 z-10">
                       <span className="bg-slate-50 px-2 py-0.5 rounded border border-slate-150">{doc.degree || "Bác sĩ"}</span>
                       <span className="bg-slate-50 px-2 py-0.5 rounded border border-slate-150">{doc.yearsOfExperience || 0} năm KN</span>
                     </div>
 
-                    <button 
+                    <button
                       onClick={() => setSelectedDoctor(doc)}
                       className="w-full mt-auto bg-slate-50 hover:bg-[#0A604E] text-slate-700 hover:text-white font-bold py-2 rounded-xl transition-all z-10 border border-slate-200/80 hover:border-[#0A604E] text-[11px]"
                     >
@@ -320,11 +319,11 @@ export default function PatientHome() {
 
         {/* RIGHT COLUMN: QUICK ACCESS & USER GUIDE */}
         <div className="lg:col-span-4 flex flex-col gap-6 w-full">
-          
+
           {/* QUICK ACCESS GRID */}
           <div className="flex flex-col gap-4 w-full">
             <h2 className="text-base font-extrabold text-[#0A604E] pl-1">Truy cập nhanh</h2>
-            
+
             <div className="grid grid-cols-2 gap-4 w-full">
               {quickAccessItems.map((item, index) => {
                 const IconComponent = item.icon;
@@ -361,7 +360,7 @@ export default function PatientHome() {
               </div>
               <span>Hướng dẫn sử dụng nhanh</span>
             </div>
-            
+
             <div className="divide-y divide-slate-100 flex flex-col">
               <div className="flex items-center gap-3 py-2.5">
                 <div className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-[10px] border border-blue-150 shrink-0">
@@ -421,7 +420,7 @@ export default function PatientHome() {
               className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden relative border border-slate-100"
             >
               <div className="absolute top-4 right-4 z-10">
-                <button 
+                <button
                   onClick={() => setSelectedDoctor(null)}
                   className="p-2 bg-white/80 hover:bg-white text-slate-500 hover:text-slate-800 rounded-xl transition-colors shadow-sm border border-slate-200/80"
                 >
@@ -452,7 +451,7 @@ export default function PatientHome() {
                     <p className="text-teal-600 font-bold text-sm">{selectedDoctor.departmentName || selectedDoctor.specialization || "Chuyên khoa"}</p>
                   </div>
                   <div className="shrink-0 w-full sm:w-auto mt-2 sm:mt-0">
-                    <button 
+                    <button
                       onClick={() => navigate('/dashboard/available-slots', { state: { prefillDoctorId: selectedDoctor.doctorId } })}
                       className="w-full sm:w-auto bg-[#0A604E] hover:bg-[#1DB896] text-white font-extrabold py-2.5 px-6 rounded-xl transition-all shadow-sm text-xs"
                     >
