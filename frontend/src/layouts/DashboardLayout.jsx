@@ -10,6 +10,7 @@ import PharmacistSidebar from "./PharmacistSidebar.jsx";
 import PatientSidebar from "./PatientSidebar.jsx";
 import LabTechnicianSidebar from "./LabTechnicianSidebar.jsx";
 import AdminSidebar from "./AdminSidebar.jsx";
+import ReceptionistSidebar from "./ReceptionistSidebar.jsx";
 
 const normalizeRole = (role) => {
   const roleName = typeof role === "string" ? role : role?.roleName;
