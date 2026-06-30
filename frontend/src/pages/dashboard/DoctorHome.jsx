@@ -17,12 +17,12 @@ import { emitToast } from "../../services/toastService";
 export default function DoctorHome() {
   const { user } = useAuth();
   const navigate = useNavigate();
-
   const [profile, setProfile] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [completedCount, setCompletedCount] = useState(1420);
   const [activePatientsCount, setActivePatientsCount] = useState(315);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -38,7 +38,7 @@ export default function DoctorHome() {
         const apptsList = apptRes?.data || apptRes || [];
         setAppointments(apptsList);
 
-        // 3. Fetch performance data if available
+        // 3. Fetch doctor performance reports for completed count
         if (docData && docData.doctorId) {
           try {
             const perfRes = await getDoctorPerformance({
@@ -52,7 +52,7 @@ export default function DoctorHome() {
               setActivePatientsCount(Math.round((myPerf.totalAppointments || 0) * 0.22) || 315);
             }
           } catch (err) {
-            console.warn("Failed to fetch performance stats", err);
+            console.warn("Failed to fetch performance stats, using default values", err);
           }
         }
       } catch (err) {
@@ -64,16 +64,6 @@ export default function DoctorHome() {
     fetchData();
   }, []);
 
-  // Helper date formatter
-  const getCurrentDateStr = () => {
-    const days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
-    const now = new Date();
-    const dayName = days[now.getDay()];
-    const dateStr = now.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
-    return `${dayName}, ${dateStr}`;
-  };
-
-  // Map status from db format to visual status
   const getMappedStatus = (app) => {
     if (app.status === "CANCELLED") return "Hủy";
     if (app.status === "COMPLETED") return "Hoàn thành";
@@ -88,20 +78,14 @@ export default function DoctorHome() {
     return "Đang chờ"; // Fallback default for Confirmed/today
   };
 
-  const getStatusStyle = (status) => {
+  const getStatusColor = (status) => {
     switch (status) {
-      case "Đang chờ":
-      case "Sắp tới":
-        return "text-amber-600 bg-amber-50 border-amber-100";
-      case "Đang khám":
-        return "text-blue-600 bg-blue-50 border-blue-100";
-      case "Đã xong":
-      case "Hoàn thành":
-        return "text-emerald-600 bg-emerald-50 border-emerald-100";
-      case "Khẩn cấp":
-        return "text-rose-600 bg-rose-50 border-rose-100";
-      default:
-        return "text-slate-600 bg-slate-50 border-slate-100";
+      case "Đang chờ": return "bg-amber-500/20 text-amber-800 border-amber-500/30";
+      case "Đang khám": return "bg-sky-500/20 text-sky-800 border-sky-500/30";
+      case "Hoàn thành": return "bg-emerald-500/20 text-emerald-800 border-emerald-500/30";
+      case "Hủy": return "bg-rose-500/20 text-rose-800 border-rose-500/30";
+      case "Bỏ qua": return "bg-slate-500/20 text-slate-700 border-slate-500/30";
+      default: return "bg-slate-900/10 text-slate-700";
     }
   };
 
@@ -109,13 +93,25 @@ export default function DoctorHome() {
   const currentMonth = "Tháng 6, 2026";
   const days = Array.from({ length: 30 }, (_, i) => i + 1);
 
-  const displayedAppointments = appointments.length > 0 ? appointments.slice(0, 5) : fallbackAppointments;
+  // Filter appointments
+  const filteredAppointments = appointments.filter(app => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return true;
+    return (
+      app.patientName?.toLowerCase().includes(query) ||
+      app.patientPhone?.toLowerCase().includes(query) ||
+      app.appointmentCode?.toLowerCase().includes(query) ||
+      (app.reasonForVisit || "").toLowerCase().includes(query)
+    );
+  });
 
-  // Stats calculation
-  const totalToday = appointments.length > 0 ? appointments.length : 24;
-  const waitingToday = appointments.length > 0 ? appointments.filter(a => getMappedStatus(a) === "Đang chờ").length : 8;
-  const completedToday = appointments.length > 0 ? appointments.filter(a => getMappedStatus(a) === "Đã xong").length : 16;
-  const emergencyToday = appointments.length > 0 ? appointments.filter(a => getMappedStatus(a) === "Khẩn cấp").length : 2;
+  const waitingCount = appointments.filter(app => {
+    const status = getMappedStatus(app);
+    return status === "Đang chờ" || status === "Đang khám";
+  }).length;
+  const completedTodayCount = appointments.filter(app => getMappedStatus(app) === "Hoàn thành").length;
+  const cancelledTodayCount = appointments.filter(app => getMappedStatus(app) === "Hủy").length;
+  const totalTodayCount = appointments.length;
 
   const waitingPct = totalTodayCount > 0 ? (waitingCount / totalTodayCount) * 100 : 0;
   const completedPct = totalTodayCount > 0 ? (completedTodayCount / totalTodayCount) * 100 : 0;
@@ -171,25 +167,27 @@ export default function DoctorHome() {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-100">
-                    <th className="pb-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Bệnh nhân</th>
-                    <th className="pb-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Thời gian</th>
-                    <th className="pb-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Trạng thái</th>
-                    <th className="pb-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 text-right">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {displayedAppointments.map((app) => {
-                    const status = getMappedStatus(app);
-                    const formattedTime = app.startTime ? app.startTime.slice(0, 5) : "--:--";
-                    const initials = app.patientName
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar relative">
+              {/* Vertical Timeline Line */}
+              {filteredAppointments.length > 0 && (
+                <div className="absolute left-[39px] top-4 bottom-4 w-0.5 bg-slate-200"></div>
+              )}
+
+              <div className="flex flex-col gap-4">
+                {loading ? (
+                  <div className="text-center py-12 text-slate-500 font-bold">Đang tải lịch hẹn...</div>
+                ) : filteredAppointments.length === 0 ? (
+                  <div className="text-center py-12 text-slate-500 font-bold">Không có lịch hẹn nào hôm nay.</div>
+                ) : (
+                  filteredAppointments.map((app) => {
+                    const mappedStatus = getMappedStatus(app);
+                    const formattedTime = app.startTime ? app.startTime.slice(0, 5) : "";
+                    const reason = app.reasonForVisit || "Khám bệnh";
+                    const avatarInitials = (app.patientName || "BN")
                       .split(" ")
                       .filter(Boolean)
                       .slice(-2)
-                      .map((p) => p[0])
+                      .map((part) => part[0])
                       .join("")
                       .toUpperCase();
 
@@ -211,8 +209,8 @@ export default function DoctorHome() {
                               {avatarInitials}
                             </div>
                             <div>
-                              <div className="font-extrabold text-slate-800 text-sm leading-tight">{app.patientName}</div>
-                              <div className="text-[11px] text-slate-400 font-semibold mt-0.5">{app.reasonForVisit || "Khám tổng quát"}</div>
+                              <h3 className="font-bold text-lg patient-data leading-tight">{app.patientName}</h3>
+                              <p className="text-slate-600 text-sm font-semibold mt-1">SĐT: {app.patientPhone || "—"}</p>
                             </div>
                           </div>
 
@@ -406,145 +404,6 @@ export default function DoctorHome() {
             </div>
           </div>
         </div>
-
-        {/* Right Column (4 cols): Thống kê tuần */}
-        <div className="lg:col-span-4 bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col justify-between">
-          <div>
-            <div className="flex justify-between items-center border-b border-slate-100 pb-4 mb-4">
-              <h2 className="text-base font-extrabold text-[#0A604E] flex items-center gap-2">
-                <i className="ti ti-chart-bar text-lg text-[#1DB896]" /> Thống kê tuần
-              </h2>
-            </div>
-
-            {/* Simulated Chart */}
-            <div className="flex items-end justify-between h-32 px-2 pb-2 pt-6 border-b border-slate-100">
-              {[
-                { day: "T2", height: "h-20" },
-                { day: "T3", height: "h-12" },
-                { day: "T4", height: "h-24" },
-                { day: "T5", height: "h-16" },
-                { day: "T6", height: "h-20" },
-                { day: "T7", height: "h-8" },
-                { day: "CN", height: "h-10" },
-              ].map((bar, i) => (
-                <div key={i} className="flex flex-col items-center gap-2 w-full">
-                  <div className="w-5 bg-slate-50 rounded-t-md h-24 flex items-end">
-                    <div className={`w-full bg-gradient-to-t from-[#0A604E] to-[#1DB896] rounded-t-md ${bar.height}`} />
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-400">{bar.day}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3 mt-4">
-            <div className="flex justify-between items-center text-sm border-b border-slate-50 pb-2">
-              <span className="text-slate-500 font-bold">Tổng bệnh nhân</span>
-              <span className="font-extrabold text-slate-800">148</span>
-            </div>
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-slate-500 font-bold">Hiệu suất trung bình</span>
-              <span className="font-extrabold text-[#0A604E]">92%</span>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      {/* 4. LOWER ROW GRID (2 COLUMNS: RECENT PATIENTS + NOTIFICATIONS) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        {/* Left Card: Bệnh nhân gần đây */}
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col">
-          <div className="flex justify-between items-center border-b border-slate-100 pb-4 mb-4">
-            <h2 className="text-base font-extrabold text-[#0A604E] flex items-center gap-2">
-              <i className="ti ti-users text-lg text-[#1DB896]" /> Bệnh nhân gần đây
-            </h2>
-          </div>
-
-          <div className="flex flex-col gap-4">
-            {[
-              { name: "Bà Nguyễn Thị Lan", clinic: "Khám tim mạch", time: "2 giờ trước" },
-              { name: "Anh Đặng Văn Nam", clinic: "Kiểm tra phổi", time: "4 giờ trước" },
-              { name: "Chị Mai Phương", clinic: "Xét nghiệm tổng quát", time: "Hôm qua" },
-            ].map((p, idx) => {
-              const pInitials = p.name.split(" ").filter(Boolean).slice(-2).map((x) => x[0]).join("").toUpperCase();
-              return (
-                <div key={idx} className="flex justify-between items-center p-3 rounded-2xl hover:bg-slate-50/80 transition-colors border border-transparent hover:border-slate-100 cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-extrabold text-xs">
-                      {pInitials}
-                    </div>
-                    <div>
-                      <h3 className="font-extrabold text-sm text-slate-800 leading-tight">{p.name}</h3>
-                      <p className="text-[11px] text-slate-400 font-semibold mt-1">{p.clinic}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-slate-400 font-bold">{p.time}</span>
-                    <i className="ti ti-chevron-right text-slate-400 text-sm" />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Right Card: Thông báo & Nhắc nhở */}
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col">
-          <div className="flex justify-between items-center border-b border-slate-100 pb-4 mb-4">
-            <h2 className="text-base font-extrabold text-[#0A604E] flex items-center gap-2">
-              <i className="ti ti-bell-ringing text-lg text-[#1DB896]" /> Thông báo / Nhắc nhở
-            </h2>
-          </div>
-
-          <div className="flex flex-col gap-3.5">
-
-            {/* Note 1 */}
-            <div className="p-3 bg-slate-50/50 hover:bg-slate-50 rounded-2xl border border-slate-100/60 flex gap-3 transition-colors">
-              <div className="w-8 h-8 rounded-lg bg-teal-50 text-[#0A604E] flex items-center justify-center shrink-0">
-                <i className="ti ti-mail-opened text-base" />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-xs font-extrabold text-slate-800">Kết quả xét nghiệm mới</h4>
-                <p className="text-[11px] text-slate-500 font-semibold mt-0.5 leading-relaxed">
-                  Hồ sơ BN Lê Hoàng đã có kết quả xét nghiệm máu từ phòng Lab.
-                </p>
-                <span className="text-[9px] text-slate-400 font-bold block mt-1">15 phút trước</span>
-              </div>
-            </div>
-
-            {/* Note 2 */}
-            <div className="p-3 bg-slate-50/50 hover:bg-slate-50 rounded-2xl border border-slate-100/60 flex gap-3 transition-colors">
-              <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                <i className="ti ti-device-laptop text-base" />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-xs font-extrabold text-slate-800">Hội chẩn chuyên khoa</h4>
-                <p className="text-[11px] text-slate-500 font-semibold mt-0.5 leading-relaxed">
-                  Cuộc họp hội chẩn khoa Nội lúc 14:00 tại phòng họp số 3.
-                </p>
-                <span className="text-[9px] text-slate-400 font-bold block mt-1">1 giờ trước</span>
-              </div>
-            </div>
-
-            {/* Note 3 */}
-            <div className="p-3 bg-slate-50/50 hover:bg-slate-50 rounded-2xl border border-slate-100/60 flex gap-3 transition-colors">
-              <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center shrink-0">
-                <i className="ti ti-package text-base" />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-xs font-extrabold text-slate-800">Cảnh báo thuốc sắp hết</h4>
-                <p className="text-[11px] text-slate-500 font-semibold mt-0.5 leading-relaxed">
-                  Khoa thuốc báo cáo lượng Insulin tồn kho đang ở mức thấp.
-                </p>
-                <span className="text-[9px] text-slate-400 font-bold block mt-1">3 giờ trước</span>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
       </div>
 
     </div>
