@@ -141,6 +141,12 @@ export default function WalkInAppointmentPage() {
   const [searchingPatient, setSearchingPatient] = useState(false);
   const [selectedExistingPatient, setSelectedExistingPatient] = useState(null);
 
+  const selectedPatientBmi = useMemo(() => {
+    if (!selectedExistingPatient?.heightCm || !selectedExistingPatient?.weightKg) return null;
+    const h = selectedExistingPatient.heightCm / 100;
+    return (selectedExistingPatient.weightKg / (h * h)).toFixed(1);
+  }, [selectedExistingPatient]);
+
   // ── Debounced Search ─────────────────────────────────────────
   useEffect(() => {
     if (!patientSearch.trim()) {
@@ -515,6 +521,61 @@ export default function WalkInAppointmentPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Warning and Vitals summary for Lễ tân khi bốc số */}
+                {selectedExistingPatient && (
+                  <div className="space-y-2.5 my-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                    {selectedExistingPatient.allergies ? (
+                      <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 flex items-start gap-2.5 shadow-sm animate-pulse-slow">
+                        <AlertCircle className="text-rose-600 shrink-0 mt-0.5" size={16} />
+                        <div>
+                          <strong className="text-rose-800 text-[11px] font-extrabold uppercase tracking-wider block">
+                            ⚠️ CẢNH BÁO TIỀN SỬ DỊ ỨNG THUỐC:
+                          </strong>
+                          <p className="text-rose-700 text-xs font-extrabold mt-0.5 whitespace-pre-wrap">
+                            {selectedExistingPatient.allergies}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-emerald-50/40 border border-emerald-250/30 rounded-xl p-2.5 flex items-center gap-2">
+                        <CheckCircle className="text-emerald-600 shrink-0" size={14} />
+                        <span className="text-emerald-800 text-xs font-bold">
+                          Không ghi nhận tiền sử dị ứng thuốc.
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs font-bold text-slate-700">
+                      <div>
+                        <span className="text-slate-400 block text-[9px] uppercase font-extrabold tracking-wider mb-0.5">Nhóm máu</span>
+                        <span className="text-rose-600 text-sm font-extrabold">{selectedExistingPatient.bloodType || "Chưa xác định"}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[9px] uppercase font-extrabold tracking-wider mb-0.5">Chỉ số BMI</span>
+                        <span className="text-slate-800 text-sm font-extrabold">{selectedPatientBmi ? `${selectedPatientBmi}` : "Chưa có chỉ số"}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[9px] uppercase font-extrabold tracking-wider mb-0.5">Chiều cao & Cân nặng</span>
+                        <span className="text-slate-800">
+                          {selectedExistingPatient.heightCm ? `${selectedExistingPatient.heightCm} cm` : "—"} / {selectedExistingPatient.weightKg ? `${selectedExistingPatient.weightKg} kg` : "—"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[9px] uppercase font-extrabold tracking-wider mb-0.5">Tài khoản quản lý</span>
+                        <span className="truncate block max-w-[120px]">
+                          {selectedExistingPatient.userName ? (
+                            <span className="bg-sky-50 border border-sky-100 text-sky-700 px-1.5 py-0.5 rounded text-[10px] font-extrabold">
+                              {selectedExistingPatient.userName}
+                            </span>
+                          ) : (
+                            <em className="text-slate-400 font-normal">Tự quản lý</em>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Reason */}
                 <div>

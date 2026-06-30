@@ -125,8 +125,11 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
     @Override
     public List<MedicalRecordResponse> getMedicalHistory(Long patientId) {
         validateAccess(patientId);
+        boolean receptionistOnly = isReceptionistOnly();
         return medicalRecordRepository.findByPatientIdOrderByCreatedAtDesc(patientId)
-                .stream().map(this::toEnrichedResponse).toList();
+                .stream()
+                .map(r -> receptionistOnly ? toCensoredResponse(r) : toEnrichedResponse(r))
+                .toList();
     }
 
     @Transactional
@@ -184,6 +187,58 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
     private MedicalRecord findOrThrow(Long id) {
         return medicalRecordRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hồ sơ bệnh án với ID: " + id));
+    }
+
+    private boolean isReceptionistOnly() {
+        CustomUserDetails currentUser = getCurrentUserDetails();
+        if (currentUser == null) {
+            return false;
+        }
+        boolean isAdminOrDoctor = currentUser.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_DOCTOR"));
+        boolean isReceptionist = currentUser.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_RECEPTIONIST"));
+        return isReceptionist && !isAdminOrDoctor;
+    }
+
+    private MedicalRecordResponse toCensoredResponse(MedicalRecord record) {
+        String doctorName = null;
+        String departmentName = null;
+
+        if (record.getDoctorId() != null) {
+            Doctor doctor = doctorRepository.findById(record.getDoctorId()).orElse(null);
+            if (doctor != null) {
+                doctorName = doctor.getUser() != null ? doctor.getUser().getFullName() : null;
+                departmentName = doctor.getDepartment() != null ? doctor.getDepartment().getDepartmentName() : null;
+            }
+        }
+
+        boolean hasPrescription = record.getConsultationId() != null
+                && prescriptionRepository.existsByConsultationId(record.getConsultationId());
+        boolean hasLabResult = record.getConsultationId() != null
+                && !labRequestRepository.findByConsultationId(record.getConsultationId()).isEmpty();
+
+        return new MedicalRecordResponse(
+                record.getMedicalRecordId(),
+                record.getConsultationId(),
+                record.getPatientId(),
+                record.getDoctorId(),
+                doctorName,
+                departmentName,
+                null, // symptoms
+                null, // clinicalFindings
+                null, // diagnosis
+                null, // treatmentPlan
+                null, // doctorNote
+                null, // followUpDate
+                null, // followUpNote
+                null, // voiceInputTranscript
+                null, // aiSummary
+                record.getCreatedAt(),
+                record.getUpdatedAt(),
+                hasPrescription,
+                hasLabResult
+        );
     }
 
     private MedicalRecordResponse toEnrichedResponse(MedicalRecord record) {

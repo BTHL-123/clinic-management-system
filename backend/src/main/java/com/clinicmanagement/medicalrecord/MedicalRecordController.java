@@ -79,10 +79,10 @@ public class MedicalRecordController {
 
     /**
      * GET /api/patients/{patientId}/medical-history
-     * ADMIN, DOCTOR, PATIENT
+     * ADMIN, DOCTOR, PATIENT, RECEPTIONIST
      */
     @GetMapping("/patients/{patientId}/medical-history")
-    @PreAuthorize("hasAnyRole('ADMIN','DOCTOR','PATIENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','DOCTOR','PATIENT','RECEPTIONIST')")
     public ResponseEntity<ApiResponse<List<MedicalRecordResponse>>> getMedicalHistory(
             @PathVariable Long patientId
     ) {
