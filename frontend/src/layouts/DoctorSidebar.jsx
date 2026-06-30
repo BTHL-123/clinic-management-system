@@ -96,6 +96,7 @@ export default function DoctorSidebar() {
             </button>
           ))}
         </div>
+      </div>
 
       <div className="flex flex-col gap-1.5 w-full px-2.5 mt-auto border-t border-slate-100 pt-3">
         <button
