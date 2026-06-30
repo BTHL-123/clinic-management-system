@@ -64,37 +64,6 @@ export default function DashboardLayout() {
   const isLightShell = false;
 
   const getNavLinks = () => {
-    if (isReceptionist) {
-      return [
-        { label: "Tổng quan", path: "/dashboard" },
-        { label: "Tạo lịch khám", path: "/dashboard/walk-in" },
-        { label: "Check-in", path: "/dashboard/receptionist-appointments" },
-        { label: "Hàng đợi", path: "/dashboard/queue-management" },
-        { label: "Bệnh nhân", path: "/dashboard/patients" },
-        { label: "Thanh toán", path: "/dashboard/payments" },
-      ];
-    }
-
-    if (isPharmacist) {
-      return [
-        { label: "Tổng quan", path: "/dashboard" },
-        { label: "Cấp phát thuốc", path: "/dashboard/pharmacist/prescriptions" },
-        { label: "Danh mục thuốc", path: "/dashboard/medicines" },
-        { label: "Lô thuốc", path: "/dashboard/inventory/batches" },
-        { label: "Giao dịch kho", path: "/dashboard/inventory/transactions" },
-        { label: "Cảnh báo kho", path: "/dashboard/inventory/alerts" },
-        { label: "Nhà cung cấp", path: "/dashboard/suppliers" },
-      ];
-    }
-
-    if (isLabTechnician) {
-      return [
-        { label: "Tổng quan", path: "/dashboard" },
-        { label: "Xét nghiệm", path: "/dashboard/lab-requests" },
-        { label: "Danh mục xét nghiệm", path: "/dashboard/lab-tests" },
-      ];
-    }
-
     if (!isPatientOnly) return [];
 
     return [
