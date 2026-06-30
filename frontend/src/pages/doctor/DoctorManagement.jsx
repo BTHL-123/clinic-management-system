@@ -48,8 +48,8 @@ export default function DoctorManagement() {
   const fetchOptions = async () => {
     try {
       const [deptRes, userRes] = await Promise.all([
-        getActiveDepartments(),
-        getUsersEligibleForDoctor(),
+        getActiveDepartments().catch(() => ({ data: [] })),
+        getUsersEligibleForDoctor().catch(() => ({ data: [] })),
       ]);
       setDepartments(deptRes.data ?? []);
       setUsers(userRes.data ?? []);

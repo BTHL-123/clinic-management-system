@@ -361,13 +361,13 @@ export default function DashboardLayout() {
           ) : roles.includes("DOCTOR") ? (
             <DoctorSidebar />
           ) : roles.includes("PHARMACIST") ? (
-            null
+            <PharmacistSidebar />
           ) : roles.includes("PATIENT") && !isPatientOnly ? (
             <PatientSidebar />
           ) : roles.includes("LAB_TECHNICIAN") ? (
-            null
+            <LabTechnicianSidebar />
           ) : isReceptionist ? (
-            null
+            <ReceptionistSidebar />
           ) : isPatientOnly ? (
             null
           ) : (

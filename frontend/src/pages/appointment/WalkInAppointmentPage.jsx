@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   UserPlus,
   CalendarDays,
@@ -38,6 +38,15 @@ const EMPTY_FORM = {
 };
 
 // ─── Helper Functions ──────────────────────────────────────────────────────────
+function formatTime(t) {
+  if (!t) return "";
+  if (Array.isArray(t)) {
+    const [h, m] = t;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  }
+  return String(t).slice(0, 5);
+}
+
 function FieldError({ msg }) {
   if (!msg) return null;
   return (
@@ -176,11 +185,15 @@ export default function WalkInAppointmentPage() {
     setLoading(true);
     try {
       const docRes = await getDoctors({ page: 0, size: 200, status: "ACTIVE" });
-      const docs = Array.isArray(docRes?.data?.content) ? docRes.data.content : [];
+      const docs = Array.isArray(docRes?.data?.content) 
+        ? docRes.data.content 
+        : (Array.isArray(docRes?.data) ? docRes.data : (Array.isArray(docRes?.content) ? docRes.content : (Array.isArray(docRes) ? docRes : [])));
       setDoctors(docs);
 
       const schedRes = await getSchedules({ fromDate: selectedDate, toDate: selectedDate, size: 500 });
-      const scheds = Array.isArray(schedRes?.data) ? schedRes.data : [];
+      const scheds = Array.isArray(schedRes?.data) 
+        ? schedRes.data 
+        : (Array.isArray(schedRes?.content) ? schedRes.content : (Array.isArray(schedRes) ? schedRes : []));
       
       // Filter out cancelled/on_leave schedules
       const activeScheds = scheds.filter(s => !["CANCELLED", "ON_LEAVE"].includes(s.status));
@@ -191,7 +204,10 @@ export default function WalkInAppointmentPage() {
       const slotPromises = activeScheds.map(async (schedule) => {
         try {
           const slotRes = await getSlotsByScheduleId(schedule.scheduleId);
-          slotsMap[schedule.scheduleId] = Array.isArray(slotRes?.data) ? slotRes.data : [];
+          const slots = Array.isArray(slotRes?.data) 
+            ? slotRes.data 
+            : (Array.isArray(slotRes?.content) ? slotRes.content : (Array.isArray(slotRes) ? slotRes : []));
+          slotsMap[schedule.scheduleId] = slots;
         } catch (e) {
           slotsMap[schedule.scheduleId] = [];
         }
@@ -241,7 +257,6 @@ export default function WalkInAppointmentPage() {
     setPatientSearch("");
     setSelectedExistingPatient(null);
     setShowPatientDropdown(false);
-    setShowModal(true);
   };
 
   const handleSlotRightClick = async (slot) => {
@@ -295,7 +310,9 @@ export default function WalkInAppointmentPage() {
       };
       const res = await walkInService.createWalkIn(payload);
       setResult(res.data ?? res);
-      setShowModal(false);
+      setSelectedSlotObj(null);
+      setSelectedDoctorObj(null);
+      setForm(EMPTY_FORM);
       fetchData(); // Refresh grid behind
     } catch (err) {
       setApiError(err.message || "Tạo lịch thất bại. Vui lòng thử lại.");
@@ -309,7 +326,7 @@ export default function WalkInAppointmentPage() {
   };
 
   const getInputClass = (hasError) => {
-    return `w-full px-3.5 py-2.5 rounded-xl border-1.5 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 ${hasError ? "border-rose-300 bg-rose-50" : "border-slate-200 bg-white"}`;
+    return `w-full px-3 py-2 rounded-xl border text-xs transition-all focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 ${hasError ? "border-rose-300 bg-rose-50" : "border-slate-200 bg-white"}`;
   };
 
   // ─── Render ────────────────────────────────────────────────────────────────
@@ -322,202 +339,220 @@ export default function WalkInAppointmentPage() {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="p-6 md:p-8 max-w-[1600px] mx-auto space-y-6">
       {/* Page Header */}
       <PageHeader
         title="Tạo lịch khám trực tiếp"
         icon={UserPlus}
         iconColor="text-white"
-        subtitle="Lễ tân: Chọn ngày và bấm vào một ô trống (màu xanh lục) để đặt lịch nhanh."
+        subtitle="Lễ tân: Chọn ngày và bấm vào một ô trống (màu xanh lục) trên lịch khám để đặt lịch cho bệnh nhân."
       />
 
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col md:flex-row md:items-end gap-6">
-        <div className="w-full md:w-72">
-          <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-2">Ngày khám</label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-teal-600">
-              <CalendarDays size={20} />
-            </div>
-            <input 
-              type="date" 
-              value={selectedDate} 
-              onChange={(e) => setSelectedDate(e.target.value)} 
-              min={today}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
-            />
-          </div>
-        </div>
-        <button 
-          onClick={fetchData} 
-          disabled={loading}
-          className="bg-white hover:bg-slate-50 text-teal-700 border border-slate-200 font-bold rounded-xl px-5 py-2.5 transition-all flex items-center gap-2 justify-center shadow-sm"
-        >
-          <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
-          Tải lại lưới
-        </button>
-      </div>
-
-      {loading ? (
-        <div className="text-center py-16 text-slate-400 flex flex-col items-center">
-          <div className="w-8 h-8 rounded-full border-4 border-slate-100 border-t-teal-500 animate-spin mb-4"></div>
-          <div className="text-sm font-medium">Đang tải sơ đồ lịch khám...</div>
-        </div>
-      ) : (
-        <QueueGrid 
-          doctors={doctors.filter(d => schedules.some(s => s.doctorId === d.doctorId))}
-          schedules={schedules}
-          slotsBySchedule={slotsBySchedule}
-          onSlotClick={handleSlotClick}
-          onSlotRightClick={handleSlotRightClick}
-        />
-      )}
-
-      {/* Modal Form */}
-      {showModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200 flex flex-col">
-            <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-2xl sticky top-0 z-10">
-              <div>
-                <h2 className="m-0 text-lg font-black text-teal-700 flex items-center gap-2">
-                  <UserPlus size={20} /> Tạo Walk-in Appointment
-                </h2>
-                <div className="mt-1 text-[13px] font-medium text-slate-500 flex items-center gap-2">
-                  <span>Bác sĩ: <strong className="text-slate-700">{selectedDoctorObj?.fullName}</strong></span>
-                  <span>•</span>
-                  <span>Ca khám: <strong className="text-slate-700">{formatTime(selectedSlotObj?.startTime)} - {formatTime(selectedSlotObj?.endTime)}</strong></span>
-                </div>
-              </div>
-              <button 
-                onClick={() => setShowModal(false)}
-                className="text-slate-400 hover:text-slate-600 transition-colors p-1"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5" noValidate>
-              {apiError && (
-                <div className="flex items-center gap-2.5 bg-rose-50 border border-rose-200 rounded-xl p-3.5 text-rose-600 text-sm font-medium">
-                  <AlertCircle size={18} /> {apiError}
-                </div>
-              )}
-
-              {/* Autocomplete Search Field */}
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_350px] gap-6 items-start">
+        {/* Left Column: Date Filter & Schedule Grid */}
+        <div className="space-y-6 min-w-0">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col md:flex-row md:items-end gap-6">
+            <div className="w-full md:w-72">
+              <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-2">Ngày khám</label>
               <div className="relative">
-                <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-2">Tìm kiếm bệnh nhân (SĐT hoặc Tên)</label>
-                <div className="relative flex items-center">
-                  <input 
-                    type="text" 
-                    placeholder="Nhập số điện thoại hoặc tên để tìm..." 
-                    value={patientSearch}
-                    onChange={(e) => {
-                      setPatientSearch(e.target.value);
-                      if (selectedExistingPatient) {
-                         setSelectedExistingPatient(null);
-                      }
-                    }}
-                    onFocus={() => { if(patientOptions.length > 0) setShowPatientDropdown(true); }}
-                    onBlur={() => setTimeout(() => setShowPatientDropdown(false), 200)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all pr-10"
-                  />
-                  {searchingPatient && <div className="absolute right-3 w-4 h-4 rounded-full border-2 border-slate-200 border-t-teal-500 animate-spin" />}
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-teal-600">
+                  <CalendarDays size={20} />
                 </div>
+                <input 
+                  type="date" 
+                  value={selectedDate} 
+                  onChange={(e) => {
+                    setSelectedDate(e.target.value);
+                    setSelectedSlotObj(null);
+                    setSelectedDoctorObj(null);
+                  }} 
+                  min={today}
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
+                />
+              </div>
+            </div>
+            <button 
+              onClick={fetchData} 
+              disabled={loading}
+              className="bg-white hover:bg-slate-50 text-teal-700 border border-slate-200 font-bold rounded-xl px-5 py-2.5 transition-all flex items-center gap-2 justify-center shadow-sm"
+            >
+              <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+              Tải lại lưới
+            </button>
+          </div>
 
-                {/* Dropdown */}
-                {showPatientDropdown && patientOptions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-lg z-20 mt-1 max-h-48 overflow-y-auto">
-                    {patientOptions.map(p => (
-                      <div 
-                        key={p.patientId}
-                        onClick={() => handleSelectExistingPatient(p)}
-                        className="px-4 py-3 border-b border-slate-50 cursor-pointer hover:bg-slate-50 transition-colors"
-                      >
-                        <div className="font-bold text-teal-700 text-sm mb-0.5">{p.fullName}</div>
-                        <div className="text-xs font-medium text-slate-500">
-                          SĐT: {p.phone} • {p.gender === "MALE" ? "Nam" : p.gender === "FEMALE" ? "Nữ" : "Khác"} 
-                          {p.dateOfBirth ? ` • Sinh: ${p.dateOfBirth}` : ""}
-                        </div>
-                      </div>
-                    ))}
+          {loading ? (
+            <div className="text-center py-16 text-slate-400 flex flex-col items-center">
+              <div className="w-8 h-8 rounded-full border-4 border-slate-100 border-t-teal-500 animate-spin mb-4"></div>
+              <div className="text-sm font-medium">Đang tải sơ đồ lịch khám...</div>
+            </div>
+          ) : (
+            <QueueGrid 
+              doctors={(() => {
+                if (!doctors || doctors.length === 0) return [];
+                if (!schedules || schedules.length === 0) return doctors;
+                const scheduledIds = new Set(schedules.map(s => String(s.doctorId)));
+                const matched = doctors.filter(d => scheduledIds.has(String(d.doctorId)));
+                return matched.length > 0 ? matched : doctors;
+              })()}
+              schedules={schedules}
+              slotsBySchedule={slotsBySchedule}
+              onSlotClick={handleSlotClick}
+              onSlotRightClick={handleSlotRightClick}
+              selectedSlotId={selectedSlotObj?.slotId || selectedSlotObj?.id}
+            />
+          )}
+        </div>
+
+        {/* Right Column: Vertical Sidebar (350px fixed on desktop) */}
+        <aside className="w-full xl:w-[350px] sticky top-6 space-y-4">
+          {selectedSlotObj ? (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4 animate-in fade-in duration-200">
+              <div className="border-b border-slate-100 pb-3 flex justify-between items-start">
+                <div>
+                  <h3 className="m-0 text-base font-black text-teal-700 flex items-center gap-2">
+                    <UserPlus size={18} /> Tạo lịch khám
+                  </h3>
+                  <div className="mt-1 text-xs font-medium text-slate-500">
+                    Bác sĩ: <strong className="text-slate-800">{selectedDoctorObj?.fullName}</strong>
+                    <br />
+                    Ca khám: <strong className="text-slate-800">{formatTime(selectedSlotObj?.startTime)} - {formatTime(selectedSlotObj?.endTime)}</strong>
+                    <br />
+                    Ngày: <strong className="text-slate-800">{selectedDate}</strong>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => { setSelectedSlotObj(null); setSelectedDoctorObj(null); }}
+                  className="text-slate-400 hover:text-slate-600 transition-colors p-1"
+                  title="Bỏ chọn ca này"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-3.5" noValidate>
+                {apiError && (
+                  <div className="flex items-center gap-2 bg-rose-50 border border-rose-200 rounded-xl p-3 text-rose-600 text-xs font-medium">
+                    <AlertCircle size={16} /> {apiError}
                   </div>
                 )}
-              </div>
 
-              {/* Patient Info Form */}
-              <div className={`p-5 rounded-2xl border ${selectedExistingPatient ? "bg-emerald-50/50 border-emerald-200" : "bg-slate-50 border-slate-200"}`}>
-                <div className="mb-4 flex justify-between items-center">
-                   <span className={`text-[13px] font-extrabold uppercase tracking-wider ${selectedExistingPatient ? "text-emerald-700" : "text-slate-500"}`}>
-                     {selectedExistingPatient ? "✅ Thông tin bệnh nhân đã lưu" : "📝 Thông tin bệnh nhân (Mới)"}
-                   </span>
-                   {selectedExistingPatient && (
-                     <button type="button" onClick={() => { setSelectedExistingPatient(null); setForm({...form, fullName: "", phone: "", dateOfBirth: "", gender: "OTHER"}); setPatientSearch(""); }} className="text-rose-600 text-[11px] font-extrabold uppercase tracking-wider hover:text-rose-700">✕ Hủy chọn</button>
-                   )}
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="sm:col-span-2">
-                    <label htmlFor="wi-fullName" className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">Họ và tên <Required /></label>
-                    <input id="wi-fullName" name="fullName" type="text" autoFocus={!selectedExistingPatient}
-                           value={form.fullName} onChange={handleChange} className={`${getInputClass(!!errors.fullName)} ${selectedExistingPatient ? "opacity-70" : ""}`} disabled={!!selectedExistingPatient} />
-                    <FieldError msg={errors.fullName} />
+                {/* Autocomplete Search Field */}
+                <div className="relative">
+                  <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">Tìm bệnh nhân cũ (SĐT/Tên)</label>
+                  <div className="relative flex items-center">
+                    <input 
+                      type="text" 
+                      placeholder="Nhập SĐT hoặc tên để tìm..." 
+                      value={patientSearch}
+                      onChange={(e) => {
+                        setPatientSearch(e.target.value);
+                        if (selectedExistingPatient) setSelectedExistingPatient(null);
+                      }}
+                      onFocus={() => { if(patientOptions.length > 0) setShowPatientDropdown(true); }}
+                      onBlur={() => setTimeout(() => setShowPatientDropdown(false), 200)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all pr-8"
+                    />
+                    {searchingPatient && <div className="absolute right-2.5 w-3.5 h-3.5 rounded-full border-2 border-slate-200 border-t-teal-500 animate-spin" />}
                   </div>
-                  <div>
-                    <label htmlFor="wi-phone" className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">Số điện thoại <Required /></label>
-                    <input id="wi-phone" name="phone" type="tel"
-                           value={form.phone} onChange={handleChange} className={`${getInputClass(!!errors.phone)} ${selectedExistingPatient ? "opacity-70" : ""}`} disabled={!!selectedExistingPatient} />
-                    <FieldError msg={errors.phone} />
-                  </div>
-                  <div>
-                    <label htmlFor="wi-dateOfBirth" className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">Ngày sinh</label>
-                    <input id="wi-dateOfBirth" name="dateOfBirth" type="date"
-                           value={form.dateOfBirth || ""} onChange={handleChange} className={`${getInputClass(false)} ${selectedExistingPatient ? "opacity-70" : ""}`} disabled={!!selectedExistingPatient} />
-                  </div>
-                  <div>
-                    <label htmlFor="wi-gender" className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">Giới tính</label>
-                    <select id="wi-gender" name="gender"
-                            value={form.gender} onChange={handleChange} className={`${getInputClass(false)} ${selectedExistingPatient ? "opacity-70" : ""}`} disabled={!!selectedExistingPatient}>
-                      {GENDER_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    </select>
-                  </div>
-                </div>
-              </div>
 
-              {/* Consultation Info */}
-              <div>
-                <label htmlFor="wi-reason" className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">Lý do khám / Triệu chứng</label>
-                <textarea id="wi-reason" name="reasonForVisit" rows={2}
-                          value={form.reasonForVisit} onChange={handleChange} className={`${getInputClass(false)} resize-y min-h-[60px]`} />
-              </div>
+                  {/* Dropdown */}
+                  {showPatientDropdown && patientOptions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-lg z-20 mt-1 max-h-48 overflow-y-auto">
+                      {patientOptions.map(p => (
+                        <div 
+                          key={p.patientId}
+                          onClick={() => handleSelectExistingPatient(p)}
+                          className="px-3 py-2 border-b border-slate-50 cursor-pointer hover:bg-slate-50 transition-colors"
+                        >
+                          <div className="font-bold text-teal-700 text-xs">{p.fullName}</div>
+                          <div className="text-[11px] font-medium text-slate-500">
+                            SĐT: {p.phone} • {p.gender === "MALE" ? "Nam" : p.gender === "FEMALE" ? "Nữ" : "Khác"}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-              <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100 flex flex-col gap-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-bold text-emerald-700">Phí khám bệnh</span>
-                  <span className="text-base font-black text-emerald-700">{consultationFee.toLocaleString("vi-VN")} VNĐ</span>
+                {/* Patient Form Fields */}
+                <div className={`p-3.5 rounded-xl border space-y-2.5 ${selectedExistingPatient ? "bg-emerald-50/50 border-emerald-200" : "bg-slate-50 border-slate-200"}`}>
+                  <div className="flex justify-between items-center">
+                    <span className={`text-[11px] font-extrabold uppercase tracking-wider ${selectedExistingPatient ? "text-emerald-700" : "text-slate-500"}`}>
+                      {selectedExistingPatient ? "✅ Bệnh nhân đã lưu" : "📝 Thông tin bệnh nhân"}
+                    </span>
+                    {selectedExistingPatient && (
+                      <button type="button" onClick={() => { setSelectedExistingPatient(null); setForm(prev=>({...prev, fullName: "", phone: "", dateOfBirth: "", gender: "OTHER"})); setPatientSearch(""); }} className="text-rose-600 text-[10px] font-extrabold uppercase hover:text-rose-700">✕ Hủy chọn</button>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div>
+                      <label htmlFor="wi-fullName" className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">Họ và tên <Required /></label>
+                      <input id="wi-fullName" name="fullName" type="text"
+                             value={form.fullName} onChange={handleChange} className={`${getInputClass(!!errors.fullName)} ${selectedExistingPatient ? "opacity-70" : ""}`} disabled={!!selectedExistingPatient} />
+                      <FieldError msg={errors.fullName} />
+                    </div>
+                    <div>
+                      <label htmlFor="wi-phone" className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">Số điện thoại <Required /></label>
+                      <input id="wi-phone" name="phone" type="tel"
+                             value={form.phone} onChange={handleChange} className={`${getInputClass(!!errors.phone)} ${selectedExistingPatient ? "opacity-70" : ""}`} disabled={!!selectedExistingPatient} />
+                      <FieldError msg={errors.phone} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label htmlFor="wi-dateOfBirth" className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">Ngày sinh</label>
+                        <input id="wi-dateOfBirth" name="dateOfBirth" type="date"
+                               value={form.dateOfBirth || ""} onChange={handleChange} className={`${getInputClass(false)} ${selectedExistingPatient ? "opacity-70" : ""}`} disabled={!!selectedExistingPatient} />
+                      </div>
+                      <div>
+                        <label htmlFor="wi-gender" className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">Giới tính</label>
+                        <select id="wi-gender" name="gender"
+                                value={form.gender} onChange={handleChange} className={`${getInputClass(false)} ${selectedExistingPatient ? "opacity-70" : ""}`} disabled={!!selectedExistingPatient}>
+                          {GENDER_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-xs font-medium text-emerald-600 flex gap-1.5 items-center">
-                  <AlertCircle size={14} /> Báo bệnh nhân thanh toán phí tại quầy để lấy số thứ tự.
-                </div>
-                <div className="flex justify-end mt-1">
-                  <button type="button" onClick={() => setShowPriceModal(true)} className="text-xs font-bold text-teal-600 hover:text-teal-700 underline underline-offset-2">
-                    Xem bảng giá dịch vụ chuyên khoa
-                  </button>
-                </div>
-              </div>
 
-              <div className="flex justify-end gap-3 pt-5 border-t border-slate-100 mt-2">
-                <button type="button" onClick={() => setShowModal(false)}
-                        className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold rounded-xl px-5 py-2.5 transition-all">
-                  Hủy bỏ
-                </button>
+                {/* Reason */}
+                <div>
+                  <label htmlFor="wi-reason" className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">Lý do khám / Triệu chứng</label>
+                  <textarea id="wi-reason" name="reasonForVisit" rows={2}
+                            value={form.reasonForVisit} onChange={handleChange} className={`${getInputClass(false)} resize-y min-h-[45px]`} />
+                </div>
+
+                {/* Fee */}
+                <div className="p-3 bg-emerald-50/50 rounded-xl border border-emerald-100 flex flex-col gap-1">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-bold text-emerald-700">Phí khám bệnh</span>
+                    <span className="font-black text-emerald-700">{consultationFee.toLocaleString("vi-VN")} VNĐ</span>
+                  </div>
+                  <div className="text-[11px] font-medium text-emerald-600 flex gap-1 items-center">
+                    <AlertCircle size={12} /> Thu phí tại quầy để cấp STT.
+                  </div>
+                </div>
+
                 <button type="submit" disabled={submitting}
-                        className={`px-5 py-2.5 rounded-xl font-bold transition-all text-white ${submitting ? "bg-teal-400 cursor-not-allowed" : "bg-[#1DB896] hover:bg-[#159a7c] shadow-md shadow-teal-500/20"}`}>
-                  {submitting ? "Đang xử lý..." : "Xác nhận đặt lịch"}
+                        className={`w-full py-2.5 rounded-xl font-bold transition-all text-white text-sm ${submitting ? "bg-teal-400 cursor-not-allowed" : "bg-[#1DB896] hover:bg-[#159a7c] shadow-md shadow-teal-500/20"}`}>
+                  {submitting ? "Đang xử lý..." : "Tạo lịch khám"}
                 </button>
+              </form>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 text-center text-slate-400 space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center mx-auto">
+                <UserPlus size={24} />
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+              <h4 className="m-0 text-sm font-bold text-slate-700">Ô lịch đang chọn</h4>
+              <p className="m-0 text-xs text-slate-500 leading-relaxed">
+                Chưa chọn ca khám. Vui lòng bấm vào một <strong>ô trống (màu xanh lục)</strong> trên lưới lịch khám để đặt lịch cho bệnh nhân.
+              </p>
+            </div>
+          )}
+        </aside>
+      </div>
 
       {/* Price List Modal */}
       {showPriceModal && (
@@ -547,7 +582,6 @@ export default function WalkInAppointmentPage() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
