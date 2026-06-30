@@ -55,13 +55,13 @@ export default function PharmacistSidebar() {
       initial={{ x: -100, opacity: 0 }}
       animate={{ x: 0, opacity: 1, width: isExpanded ? 230 : 70 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="hidden md:flex flex-col justify-between bg-white shadow-sm border border-slate-100 rounded-[2rem] py-6 h-[calc(100vh-104px)] sticky top-[80px] z-[100]"
+      className="hidden md:flex flex-col justify-between patient-glass-panel bg-white/10 shadow-xl border border-white/20 rounded-[2rem] py-6 h-[calc(100vh-104px)] sticky top-[80px] z-[100]"
     >
       <div className="flex flex-col gap-3 w-full px-3 relative h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
         {/* Expand Toggle Button */}
         <button 
           onClick={() => setIsExpanded(!isExpanded)}
-          className={`w-11 h-11 rounded-2xl flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-slate-700 transition-all shrink-0 ${isExpanded ? "self-end mr-1" : "mx-auto"}`}
+          className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white hover:bg-white/20 hover:text-white transition-all shrink-0 drop-shadow-md ${isExpanded ? "self-end mr-1" : "mx-auto"}`}
         >
           <ChevronRight size={22} className={`transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
         </button>
@@ -72,8 +72,8 @@ export default function PharmacistSidebar() {
               key={item.id}
               onClick={() => navigate(item.path)}
               className={`relative flex items-center h-12 rounded-2xl transition-all duration-300 group overflow-hidden shrink-0 ${activeNav === item.id
-                ? "text-[#0A604E] font-extrabold"
-                : "text-slate-500 font-bold hover:text-[#0A604E] hover:bg-[#F0F9F7]"
+                ? "text-white font-black drop-shadow-md"
+                : "text-white/90 font-bold hover:text-white hover:bg-white/20 drop-shadow-sm"
                 } ${isExpanded ? "px-4" : "justify-center"}`}
               title={!isExpanded ? item.label : ""}
             >
@@ -81,7 +81,7 @@ export default function PharmacistSidebar() {
               {activeNav === item.id && (
                 <motion.div 
                   layoutId="activePharmacistNav"
-                  className="absolute inset-0 bg-[#E2F2EE] border border-[#1DB896]/20 rounded-2xl"
+                  className="absolute inset-0 bg-white/30 border border-white/50 rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.6)]"
                   initial={false}
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
@@ -116,8 +116,8 @@ export default function PharmacistSidebar() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5 w-full px-3 relative pt-3 border-t border-slate-100 mt-2 shrink-0">
-        <button onClick={() => navigate('/dashboard/notifications')} className={`relative flex items-center h-12 rounded-2xl transition-all group overflow-hidden shrink-0 text-slate-500 font-bold hover:text-[#0A604E] hover:bg-[#F0F9F7] ${isExpanded ? "px-4" : "justify-center"}`}>
+      <div className="flex flex-col gap-1.5 w-full px-3 relative pt-3 border-t border-white/25 mt-2 shrink-0">
+        <button onClick={() => navigate('/dashboard/notifications')} className={`relative flex items-center h-12 rounded-2xl transition-all group overflow-hidden shrink-0 text-white/90 font-bold hover:text-white hover:bg-white/20 drop-shadow-sm ${isExpanded ? "px-4" : "justify-center"}`}>
           <div className={`relative z-10 flex items-center ${isExpanded ? "gap-4" : ""}`}>
             <div className="group-hover:scale-110 transition-transform duration-300"><Bell size={22} strokeWidth={2.5} /></div>
             <AnimatePresence>
@@ -126,7 +126,7 @@ export default function PharmacistSidebar() {
           </div>
           {!isExpanded && <div className="absolute left-14 bg-slate-800 text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[110]">Thông báo</div>}
         </button>
-        <button onClick={handleLogout} className={`w-full flex items-center h-12 rounded-2xl text-rose-500 font-bold hover:bg-rose-50 hover:text-rose-600 transition-all duration-300 group ${isExpanded ? "px-4 gap-4" : "justify-center"}`}
+        <button onClick={handleLogout} className={`w-full flex items-center h-12 rounded-2xl text-rose-100 font-bold hover:text-white hover:bg-rose-500/20 drop-shadow-sm transition-all duration-300 group ${isExpanded ? "px-4 gap-4" : "justify-center"}`}
           title={!isExpanded ? "Đăng xuất" : ""}
         >
           <LogOut size={22} strokeWidth={2.5} className="group-hover:-translate-x-1 transition-transform" />
