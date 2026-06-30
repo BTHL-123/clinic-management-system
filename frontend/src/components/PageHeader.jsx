@@ -36,7 +36,12 @@ export default function PageHeader({
     !roles.includes("LAB_TECHNICIAN") &&
     !isPatientOnly;
   const isReceptionistOnly = roles.includes("RECEPTIONIST") && !roles.includes("ADMIN");
-  const useLightHeader = isPatientOnly || isReceptionistOnly || isAdminShell;
+  const useLightHeader =
+    isPatientOnly ||
+    isReceptionistOnly ||
+    isAdminShell ||
+    roles.includes("PHARMACIST") ||
+    roles.includes("LAB_TECHNICIAN");
 
   const resolvedIconColor = iconColor === "text-white" ? "text-teal-500" : iconColor;
 

@@ -44,7 +44,7 @@ export default function DoctorSidebar() {
     { id: "patients", icon: <Users size={20} />, path: "/dashboard/patients", label: "Bệnh nhân" },
     { id: "schedule", icon: <CalendarDays size={20} />, path: "/dashboard/doctor-schedule", label: "Lịch làm việc" },
     { id: "calendar", icon: <CalendarDays size={20} />, path: "/dashboard/doctor-appointments", label: "Ca trực hôm nay" },
-    { id: "examination", icon: <Stethoscope size={20} />, path: "/dashboard/consultation", label: "Khám bệnh" },
+    { id: "examination", icon: <Stethoscope size={20} />, path: "/dashboard/examination", label: "Khám bệnh" },
     { id: "leave-requests", icon: <ClipboardList size={20} />, path: "/dashboard/doctor-leave-requests", label: "Nghỉ phép" },
     { id: "articles", icon: <FileText size={20} />, path: "/dashboard/articles", label: "Bài viết y tế" },
     { id: "settings", icon: <Settings size={20} />, path: "/dashboard/profile", label: "Cài đặt" },
@@ -53,9 +53,9 @@ export default function DoctorSidebar() {
   return (
     <motion.nav
       initial={{ x: -100, opacity: 0 }}
-      animate={{ x: 0, opacity: 1, width: isExpanded ? 240 : 68 }}
+      animate={{ x: 0, opacity: 1, width: isExpanded ? 260 : 68 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="hidden md:flex flex-col justify-between bg-white border-r border-slate-200/80 py-4 h-[calc(100vh-68px)] sticky top-[68px] z-[100] shadow-[1px_0_8px_rgba(0,0,0,0.03)]"
+      className="hidden md:flex flex-col justify-between bg-white border-r border-slate-200/80 py-4 h-[calc(100vh-68px)] sticky top-[68px] z-[100] shadow-[1px_0_8px_rgba(0,0,0,0.03)] shrink-0"
     >
       <div className="flex flex-col gap-2 w-full px-2.5 relative h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
         {/* Expand Toggle Button */}
@@ -71,17 +71,15 @@ export default function DoctorSidebar() {
             <button
               key={item.id}
               onClick={() => navigate(item.path)}
-              className={`relative flex items-center h-11 transition-all duration-200 group overflow-hidden shrink-0 ${
-                activeNav === item.id
-                  ? "bg-[#0A604E] text-white font-bold rounded-full shadow-[0_4px_12px_rgba(10,96,78,0.15)]"
-                  : "text-[#4A5D59] font-medium hover:text-slate-850 hover:bg-[#F0F9F7] rounded-xl"
-              } ${isExpanded ? "px-3" : "justify-center"}`}
+              className={`relative flex items-center h-11 transition-all duration-200 group overflow-hidden shrink-0 ${activeNav === item.id
+                ? "bg-[#0A604E] text-white font-bold rounded-full shadow-[0_4px_12px_rgba(10,96,78,0.15)]"
+                : "text-[#4A5D59] font-medium hover:text-slate-850 hover:bg-[#F0F9F7] rounded-xl"
+                } ${isExpanded ? "px-3" : "justify-center"}`}
               title={!isExpanded ? item.label : ""}
             >
               <div className={`relative z-10 flex items-center ${isExpanded ? "gap-3" : ""}`}>
-                <div className={`transition-colors duration-200 ${
-                  activeNav === item.id ? "text-white" : "text-[#4A5D59]/75 group-hover:text-slate-850"
-                }`}>
+                <div className={`transition-colors duration-200 ${activeNav === item.id ? "text-white" : "text-[#4A5D59]/75 group-hover:text-slate-850"
+                  }`}>
                   {item.icon}
                 </div>
                 {isExpanded && (
@@ -98,18 +96,33 @@ export default function DoctorSidebar() {
             </button>
           ))}
         </div>
+      </div>
 
-        {/* Bottom actions */}
-        <div className="w-full mt-auto pt-3 border-t border-slate-100 flex flex-col gap-1">
-          <button
-            onClick={handleLogout}
-            className={`w-full flex items-center h-11 rounded-xl text-[#4A5D59] font-medium hover:text-rose-600 hover:bg-rose-50 transition-all duration-200 group ${isExpanded ? "px-3 gap-3" : "justify-center"}`}
-            title={!isExpanded ? "Đăng xuất" : ""}
-          >
-            <LogOut size={20} className="group-hover:-translate-x-0.5 transition-transform shrink-0" />
-            {isExpanded && <span className="whitespace-nowrap tracking-wide text-[14px] font-semibold">Đăng xuất</span>}
-          </button>
-        </div>
+      <div className="flex flex-col gap-1.5 w-full px-2.5 mt-auto border-t border-slate-100 pt-3">
+        <button
+          onClick={() => navigate("/dashboard/notifications")}
+          className={`relative flex items-center h-10 transition-all duration-200 group overflow-hidden shrink-0 ${activeNav === "notifications"
+            ? "bg-[#0A604E] text-white font-bold rounded-full"
+            : "text-[#4A5D59] font-medium hover:text-slate-850 hover:bg-[#F0F9F7] rounded-xl"
+            } ${isExpanded ? "px-3" : "justify-center"}`}
+          title={!isExpanded ? "Thông báo" : ""}
+        >
+          <div className="relative z-10 flex items-center gap-3">
+            <Bell size={20} />
+            {isExpanded && <span className="whitespace-nowrap text-[14px] tracking-wide font-semibold text-sm">Thông báo</span>}
+          </div>
+        </button>
+
+        <button
+          onClick={handleLogout}
+          className={`relative flex items-center h-10 transition-all duration-200 group overflow-hidden shrink-0 text-rose-600 hover:bg-rose-50 hover:text-rose-700 rounded-xl ${isExpanded ? "px-3" : "justify-center"}`}
+          title={!isExpanded ? "Đăng xuất" : ""}
+        >
+          <div className="relative z-10 flex items-center gap-3">
+            <LogOut size={20} />
+            {isExpanded && <span className="whitespace-nowrap text-[14px] tracking-wide font-semibold text-sm">Đăng xuất</span>}
+          </div>
+        </button>
       </div>
     </motion.nav>
   );

@@ -1,4 +1,5 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { useEffect } from "react";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import DashboardLayout from "./layouts/DashboardLayout.jsx";
 import LoginPage from "./pages/auth/LoginPage.jsx";
 import RegisterPage from "./pages/auth/RegisterPage.jsx";
@@ -99,9 +100,21 @@ function AdminOnly({ children }) {
   return children;
 }
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+}
+
 export default function App() {
   return (
-    <Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
@@ -150,6 +163,7 @@ export default function App() {
         <Route path="patients" element={<PatientManagement />} />
         <Route path="patients/:patientId" element={<PatientDetailPage />} />
         <Route path="consultation" element={<ConsultationPage />} />
+        <Route path="examination" element={<ExaminationPage />} />
         <Route path="examination/:consultationId" element={<ExaminationPage />} />
         <Route path="lab-requests" element={<LabRequestPage />} />
         <Route path="lab-tests" element={<LabTestManagement />} />
@@ -165,6 +179,7 @@ export default function App() {
         <Route path="admin/doctor-leave-requests" element={<AdminDoctorLeaveRequestPage />} />
       </Route>
     </Routes>
+    </>
   );
 }
 
