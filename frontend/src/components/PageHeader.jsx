@@ -40,6 +40,7 @@ export default function PageHeader({
     isPatientOnly ||
     isReceptionistOnly ||
     isAdminShell ||
+    roles.includes("DOCTOR") ||
     roles.includes("PHARMACIST") ||
     roles.includes("LAB_TECHNICIAN");
 
