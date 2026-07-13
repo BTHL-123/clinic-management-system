@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -6,14 +6,24 @@ import {
   Bot,
   CalendarDays,
   CalendarPlus,
-  ChevronRight,
-  ClipboardList,
   Clock3,
   FileText,
   MapPin,
+  Activity,
+  Users,
+  Hash,
+  UserCheck
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/useAuth.js";
+import appointmentService from "../../services/appointmentService.js";
+import queueService from "../../services/queueService.js";
+import { getDoctors } from "../../services/doctorService.js";
+import notificationService from "../../services/notificationService.js";
+import { Client } from "@stomp/stompjs";
+import SockJS from "sockjs-client/dist/sockjs";
+import DoctorDetailModal from "../../components/DoctorDetailModal";
+
 import bookingCardImage from "../../assets/Icon/booking.png";
 import profileCardImage from "../../assets/Icon/profile.png";
 import clipboardDecoration from "../../assets/decorations/clipboard.png-removebg-preview.png";
@@ -45,8 +55,52 @@ const guides = [
   { title: "Tư vấn với AI", text: "Hỏi nhanh các vấn đề sức khỏe", icon: Bot, tone: "text-rose-700" },
 ];
 
-function DoctorAvatar({ index, className = "" }) {
-  return <img className={`object-cover ${className}`} src={doctorPhotos[index % doctorPhotos.length]} alt="Bác sĩ" />;
+const getStatusConfig = (status) => {
+  switch (status) {
+    case "PENDING_PAYMENT": return { label: "Chờ thanh toán", color: "bg-amber-50 text-amber-600" };
+    case "CONFIRMED": return { label: "Đã xác nhận", color: "bg-sky-50 text-sky-600" };
+    case "CHECKED_IN": return { label: "Đã tới viện", color: "bg-indigo-50 text-indigo-600" };
+    case "COMPLETED": return { label: "Hoàn thành", color: "bg-emerald-50 text-emerald-600" };
+    case "CANCELLED": return { label: "Đã hủy", color: "bg-rose-50 text-rose-600" };
+    case "NO_SHOW": return { label: "Vắng mặt", color: "bg-slate-100 text-slate-600" };
+    case "RESCHEDULED": return { label: "Đổi lịch", color: "bg-purple-50 text-purple-600" };
+    default: return { label: "Sắp tới", color: "bg-orange-50 text-orange-600" };
+  }
+};
+
+const APPOINTMENT_TABS = [
+  { key: "upcoming", label: "Sắp tới" },
+  { key: "history", label: "Lịch sử" },
+  { key: "all", label: "Tất cả" },
+];
+
+const TERMINAL_APPOINTMENT_STATUSES = new Set(["COMPLETED", "CANCELLED", "NO_SHOW", "RESCHEDULED"]);
+
+const getAppointmentStartDate = (appointment) => {
+  if (!appointment?.appointmentDate) return new Date(0);
+  const startTime = appointment.startTime ? String(appointment.startTime).slice(0, 8) : "00:00:00";
+  return new Date(`${appointment.appointmentDate}T${startTime}`);
+};
+
+const isUpcomingAppointment = (appointment, now = new Date()) => {
+  if (TERMINAL_APPOINTMENT_STATUSES.has(appointment?.status)) return false;
+  return getAppointmentStartDate(appointment) >= now;
+};
+
+const QUEUE_STATUS_CONFIG = {
+  WAITING: { label: "Đang chờ", color: "text-sky-800", bg: "bg-sky-500/20", border: "border-sky-500/30" },
+  CALLED: { label: "Đã được gọi", color: "text-amber-800", bg: "bg-amber-500/20", border: "border-amber-500/30" },
+  IN_CONSULTATION: { label: "Đang khám", color: "text-purple-800", bg: "bg-purple-500/20", border: "border-purple-500/30" },
+  COMPLETED: { label: "Hoàn tất", color: "text-emerald-800", bg: "bg-emerald-500/20", border: "border-emerald-500/30" },
+};
+
+function DoctorAvatar({ index, className = "", src, doctorName }) {
+  const isValidSrc = src && typeof src === "string" && src.trim() !== "" && src !== "null";
+  const defaultName = doctorName || "Bác sĩ";
+  const photo = isValidSrc 
+    ? src 
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(defaultName)}&background=e2e8f0&color=0f172a`;
+  return <img className={`object-cover ${className}`} src={photo} alt={defaultName} />;
 }
 
 export default function PatientHome() {
@@ -56,6 +110,95 @@ export default function PatientHome() {
   const [activeSlide, setActiveSlide] = useState(0);
   const [carouselOffset, setCarouselOffset] = useState(0);
   const patientName = user?.fullName || "Bệnh Nhân A";
+
+  const [appointments, setAppointments] = useState([]);
+  const [appointmentTab, setAppointmentTab] = useState("upcoming");
+  const [doctorsList, setDoctorsList] = useState([]);
+  const [queueData, setQueueData] = useState(null);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+
+  const fetchQueueStatus = useCallback(async () => {
+    try {
+      const result = await queueService.getMyQueueStatus();
+      console.log("Queue status fetched:", result);
+      setQueueData(result?.data ?? result);
+    } catch (err) {
+      console.error("Queue status error:", err);
+      setQueueData(null);
+    }
+  }, []);
+
+  const fetchHomeData = useCallback(async () => {
+    try {
+      const [apptsRes, docsRes, notifRes] = await Promise.all([
+        appointmentService.getMyAppointments(null, 0, 50),
+        getDoctors({ page: 0, size: 10, sortBy: 'yearsOfExperience', direction: 'DESC' }),
+        notificationService.getNotifications(0, 3)
+      ]);
+
+      const apptsData = apptsRes.data?.content || apptsRes.content || apptsRes.data || [];
+      setAppointments(apptsData);
+
+      const docsData = docsRes.data?.content || docsRes.content || docsRes.data || [];
+      setDoctorsList(docsData.length > 0 ? docsData : doctors); // fallback to mock if no doctors
+
+      const notifData = notifRes.data?.content || notifRes.content || notifRes.data || [];
+      setNotifications(notifData.slice(0, 3));
+    } catch (err) {
+      console.error("Failed to load home data", err);
+      setDoctorsList(doctors); // fallback
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchHomeData();
+    fetchQueueStatus();
+    
+    // Setup STOMP WebSocket for real-time queue updates
+    const socketUrl = import.meta.env.VITE_API_URL 
+      ? import.meta.env.VITE_API_URL.replace("/api", "") + "/ws-queue" 
+      : "http://localhost:8080/ws-queue";
+
+    const client = new Client({
+      webSocketFactory: () => new SockJS(socketUrl),
+      reconnectDelay: 5000,
+      onConnect: () => {
+        client.subscribe("/topic/queue", (message) => {
+          if (message.body === "QUEUE_UPDATED" || message.body === "CHECK_IN") {
+            fetchQueueStatus();
+          }
+        });
+      }
+    });
+
+    client.activate();
+
+    return () => {
+      client.deactivate();
+    };
+  }, [fetchHomeData, fetchQueueStatus]);
+
+  useEffect(() => {
+    const refreshHome = () => {
+      fetchHomeData();
+      fetchQueueStatus();
+    };
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") {
+        refreshHome();
+      }
+    };
+
+    window.addEventListener("appointment-updated", refreshHome);
+    window.addEventListener("focus", refreshHome);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      window.removeEventListener("appointment-updated", refreshHome);
+      window.removeEventListener("focus", refreshHome);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [fetchHomeData, fetchQueueStatus]);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -79,8 +222,8 @@ export default function PatientHome() {
     const card = rail?.querySelector("[data-doctor-card]");
     if (!rail || !card) return;
     if (rail.scrollWidth <= rail.clientWidth + 2) {
-      setCarouselOffset((offset) => (offset + direction + doctors.length) % doctors.length);
-      setActiveSlide((slide) => (slide + direction + doctors.length) % doctors.length);
+      setCarouselOffset((offset) => (offset + direction + doctorsList.length) % doctorsList.length);
+      setActiveSlide((slide) => (slide + direction + doctorsList.length) % doctorsList.length);
       return;
     }
     rail.scrollBy({ left: direction * (card.getBoundingClientRect().width + 16), behavior: "smooth" });
@@ -97,6 +240,27 @@ export default function PatientHome() {
     }
     rail.scrollTo({ left: index * (card.getBoundingClientRect().width + 16), behavior: "smooth" });
   };
+
+  const groupedAppointments = useMemo(() => {
+    const now = new Date();
+    const normalized = [...appointments].sort((left, right) => getAppointmentStartDate(left) - getAppointmentStartDate(right));
+    const upcoming = normalized.filter((appointment) => isUpcomingAppointment(appointment, now));
+    const history = normalized
+      .filter((appointment) => !isUpcomingAppointment(appointment, now))
+      .sort((left, right) => getAppointmentStartDate(right) - getAppointmentStartDate(left));
+    return {
+      upcoming,
+      history,
+      all: [...upcoming, ...history],
+    };
+  }, [appointments]);
+
+  const visibleAppointments = (groupedAppointments[appointmentTab] || []).slice(0, 4);
+  const appointmentEmptyText = appointmentTab === "upcoming"
+    ? "Bạn chưa có lịch hẹn sắp tới."
+    : appointmentTab === "history"
+      ? "Chưa có lịch sử lịch hẹn."
+      : "Bạn chưa có lịch hẹn nào.";
 
   return (
     <div className="patient-home relative mx-auto w-full max-w-[1200px] pb-24 text-slate-800">
@@ -124,28 +288,95 @@ export default function PatientHome() {
 
       <section className="relative mt-5 rounded-[22px] border border-[#DDEDEA] bg-white px-6 py-5 shadow-[0_10px_26px_rgba(22,78,65,.035)] md:px-7">
         <img src={clipboardDecoration} alt="" aria-hidden="true" className="pointer-events-none absolute -right-[116px] top-12 hidden h-[155px] w-[155px] -rotate-[10deg] object-contain opacity-70 xl:block" />
-        <div className="mb-4 flex items-center justify-between"><h2 className="flex items-center gap-3 text-[19px] font-black text-[#007D68]"><CalendarDays className="text-[#007D68]" size={20} /> Lịch hẹn của tôi</h2><button onClick={() => navigate("/dashboard/my-appointments")} className="text-sm font-bold text-[#007D68] hover:text-[#006955]">Xem tất cả <ArrowRight className="ml-1 inline" size={15} /></button></div>
-        <div className="space-y-3">
-          {[{ weekday: "Thứ Hai", day: "22", month: "Tháng 04", time: "19:30", room: "Phòng Chẩn Đoán (Lầu)", doctor: "BS. Hoàng Minh", status: "Sắp tới", color: "bg-orange-50 text-orange-600" }, { weekday: "Thứ Tư", day: "01", month: "Tháng 07", time: "10:00", room: "Phòng khám 2 (Tim mạch)", doctor: "BS. Trần Quốc", status: "Đã xác nhận", color: "bg-sky-50 text-sky-600" }].map((appointment, index) => (
-            <div key={appointment.time} className="grid min-h-[68px] items-center gap-4 rounded-xl border border-[#E8F1EF] px-4 py-3 transition hover:border-emerald-100 hover:bg-[#F8FFFC] md:grid-cols-[145px_72px_1fr_1fr_auto]">
-              <div className="border-r border-[#E8F1EF] pr-4"><p className="text-[11px] text-slate-500">{appointment.weekday}</p><p className="text-xl font-black">{appointment.day} <span className="text-[11px] font-semibold text-slate-500">{appointment.month}</span></p></div>
-              <p className="text-[15px] font-black text-slate-800">{appointment.time}</p>
-              <div className="flex items-center gap-2"><DoctorAvatar index={index} className="h-10 w-10 rounded-full" /><div><p className="text-xs text-slate-400">Bác sĩ khám</p><p className="text-sm font-bold">{appointment.doctor}</p></div></div>
-              <p className="flex items-center gap-1.5 text-sm text-slate-600"><MapPin size={15} className="text-emerald-600" /> {appointment.room}</p>
-              <span className={`w-max rounded-lg px-3 py-1.5 text-xs font-bold ${appointment.color}`}>{appointment.status}</span>
+        <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 className="flex items-center gap-3 text-[19px] font-black text-[#007D68]"><CalendarDays className="text-[#007D68]" size={20} /> Lịch hẹn của tôi</h2>
+            <p className="mt-1 text-xs font-semibold text-slate-400">Theo dõi lịch sắp tới, lịch đã qua và toàn bộ lịch hẹn ở cùng một nơi.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex rounded-2xl border border-emerald-100 bg-emerald-50/60 p-1">
+              {APPOINTMENT_TABS.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setAppointmentTab(tab.key)}
+                  className={`rounded-xl px-4 py-2 text-xs font-black transition ${appointmentTab === tab.key ? "bg-white text-emerald-700 shadow-sm" : "text-slate-500 hover:text-emerald-700"}`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
-          ))}
+            <button onClick={() => navigate("/dashboard/my-appointments")} className="text-sm font-bold text-[#007D68] hover:text-[#006955]">Xem tất cả <ArrowRight className="ml-1 inline" size={15} /></button>
+          </div>
+        </div>
+        <div className="space-y-3">
+          {visibleAppointments.length > 0 ? (
+            visibleAppointments.map((appointment, index) => {
+              const dateObj = new Date(appointment.appointmentDate);
+              const weekday = dateObj.toLocaleDateString("vi-VN", { weekday: "short" });
+              const day = dateObj.getDate().toString().padStart(2, "0");
+              const month = `Tháng ${String(dateObj.getMonth() + 1).padStart(2, "0")}`;
+              const time = appointment.startTime ? appointment.startTime.substring(0, 5) : "--:--";
+              const conf = getStatusConfig(appointment.status);
+              return (
+                <div key={appointment.appointmentId || index} className="grid min-h-[72px] items-center gap-4 rounded-xl border border-[#E8F1EF] px-4 py-3 transition hover:border-emerald-100 hover:bg-[#F8FFFC] md:grid-cols-[145px_72px_1fr_1fr_auto_auto]">
+                  <div className="border-r border-[#E8F1EF] pr-4"><p className="text-[11px] text-slate-500 capitalize">{weekday}</p><p className="text-xl font-black">{day} <span className="text-[11px] font-semibold text-slate-500">{month}</span></p></div>
+                  <p className="text-[15px] font-black text-slate-800">{time}</p>
+                  <div className="flex items-center gap-2"><DoctorAvatar index={index} doctorName={appointment.doctorName} className="h-10 w-10 rounded-full" src={appointment.doctorAvatar} /><div><p className="text-xs text-slate-400">Bác sĩ khám</p><p className="text-sm font-bold">BS. {appointment.doctorName}</p></div></div>
+                  <p className="flex items-center gap-1.5 text-sm text-slate-600"><MapPin size={15} className="text-emerald-600" /> {appointment.departmentName || "Phòng khám chung"}</p>
+                  <span className={`w-max rounded-lg px-3 py-1.5 text-xs font-bold ${conf.color}`}>{conf.label}</span>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/dashboard/appointments/${appointment.appointmentId}`)}
+                    className="w-max rounded-xl border border-emerald-100 px-3 py-2 text-xs font-black text-emerald-700 transition hover:bg-emerald-50"
+                  >
+                    Chi tiết
+                  </button>
+                </div>
+              );
+            })
+          ) : (
+            <div className="rounded-xl border border-dashed border-[#DDEDEA] px-4 py-8 text-center text-sm font-semibold text-slate-500">{appointmentEmptyText}</div>
+          )}
         </div>
       </section>
 
-      <section className="mt-3 rounded-[22px] border border-[#DDEDEA] bg-white p-5 shadow-[0_10px_26px_rgba(22,78,65,.035)] md:p-7">
-        <h2 className="mb-4 flex items-center gap-3 text-[19px] font-black text-[#007D68]"><ClipboardList className="text-[#007D68]" size={20} /> Phiếu khám / Lịch hẹn sắp tới</h2>
-        <div className="grid overflow-hidden rounded-xl border border-[#DDEDEA] bg-white md:grid-cols-[210px_1fr_auto]">
-          <div className="bg-[#F3FFFB] px-6 py-5"><p className="text-xs font-bold uppercase tracking-wider text-[#007D68]">Thứ Năm, 22 Tháng 04</p><p className="mt-2 text-3xl font-black">19:30</p><p className="mt-1 text-sm text-slate-500">Phòng Chẩn Đoán (Lầu)</p></div>
-          <div className="flex items-center gap-4 px-6 py-5"><DoctorAvatar index={0} className="h-14 w-14 rounded-2xl" /><div><p className="text-xs text-slate-400">Bác sĩ tư vấn</p><h3 className="font-black">BS. Hoàng Minh</h3><p className="mt-1 text-sm text-slate-500">Bác sĩ chuyên khoa Da liễu</p></div></div>
-          <div className="flex items-center px-6 py-5"><button onClick={() => navigate("/dashboard/my-appointments")} className="inline-flex items-center gap-2 rounded-xl border border-emerald-100 px-4 py-2.5 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50">Xem chi tiết <ChevronRight size={16} /></button></div>
-        </div>
-      </section>
+      {queueData && (
+        <section className="mt-3 rounded-[22px] border border-[#BEE7DD] bg-gradient-to-r from-emerald-50 to-teal-50 p-5 shadow-[0_10px_26px_rgba(22,78,65,.05)] md:p-7 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-bl-full pointer-events-none" />
+          <h2 className="mb-4 flex items-center gap-3 text-[19px] font-black text-[#007D68] cursor-pointer" onClick={() => navigate("/dashboard/queue-status")}>
+            <Activity className="text-[#007D68]" size={20} /> Đang trong hàng đợi khám
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse ml-2" />
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4" onClick={() => navigate("/dashboard/queue-status")}>
+            <div className="bg-white rounded-2xl p-4 border border-emerald-100 flex flex-col items-center justify-center cursor-pointer hover:shadow-md transition">
+              <span className="text-sm font-semibold text-slate-500 mb-1 flex items-center gap-1"><Hash size={14} /> Số của bạn</span>
+              <span className="text-4xl font-black text-teal-700">#{queueData.myQueueNumber}</span>
+            </div>
+            
+            <div className="bg-white rounded-2xl p-4 border border-emerald-100 flex flex-col items-center justify-center cursor-pointer hover:shadow-md transition">
+              <span className="text-sm font-semibold text-slate-500 mb-1 flex items-center gap-1"><Users size={14} /> Chờ phía trước</span>
+              <span className={`text-4xl font-black ${queueData.patientsAhead === 0 ? "text-emerald-600" : "text-amber-600"}`}>
+                {queueData.patientsAhead}
+              </span>
+            </div>
+
+            <div className="bg-white rounded-2xl p-4 border border-emerald-100 flex flex-col items-center justify-center cursor-pointer hover:shadow-md transition">
+              <span className="text-sm font-semibold text-slate-500 mb-1 flex items-center gap-1"><Clock3 size={14} /> Thời gian chờ</span>
+              <span className="text-4xl font-black text-purple-700">~{queueData.patientsAhead === 0 ? "0" : queueData.estimatedWaitMinutes}p</span>
+            </div>
+
+            <div className="bg-white rounded-2xl p-4 border border-emerald-100 flex flex-col items-center justify-center cursor-pointer hover:shadow-md transition">
+              <span className="text-sm font-semibold text-slate-500 mb-1 flex items-center gap-1"><UserCheck size={14} /> Trạng thái</span>
+              <span className={`mt-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${QUEUE_STATUS_CONFIG[queueData.queueStatus]?.bg} ${QUEUE_STATUS_CONFIG[queueData.queueStatus]?.color}`}>
+                {QUEUE_STATUS_CONFIG[queueData.queueStatus]?.label || queueData.queueStatus}
+              </span>
+            </div>
+          </div>
+          <p className="text-xs text-emerald-700 mt-4 font-medium text-center">Bấm vào các ô trên để xem chi tiết hàng đợi trực tiếp</p>
+        </section>
+      )}
 
       <section className="relative mt-9 overflow-visible rounded-[24px] border border-[#BEE7DD] bg-gradient-to-b from-[#F6FFFC] via-white to-white px-8 py-9 md:px-10">
         <div className="pointer-events-none absolute left-0 top-0 h-36 w-36 rounded-br-full border-b border-r border-[#DDEDEA]" />
@@ -153,15 +384,63 @@ export default function PatientHome() {
         <button aria-label="Bác sĩ trước" onClick={() => moveCarousel(-1)} className="absolute -left-6 top-[54%] z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-[#E8F1EF] bg-white text-[#007D68] shadow-[0_8px_20px_rgba(22,78,65,.10)] transition hover:bg-[#007D68] hover:text-white lg:flex"><ArrowLeft size={20} /></button>
         <button aria-label="Bác sĩ tiếp theo" onClick={() => moveCarousel(1)} className="absolute -right-6 top-[54%] z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-[#E8F1EF] bg-white text-[#007D68] shadow-[0_8px_20px_rgba(22,78,65,.10)] transition hover:bg-[#007D68] hover:text-white lg:flex"><ArrowRight size={20} /></button>
         <div ref={carouselRef} className="relative mt-7 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {doctors.map((_, index) => { const doctor = doctors[(index + carouselOffset) % doctors.length]; return <article data-doctor-card key={`${doctor.name}-${index}`} className="min-w-[220px] flex-1 snap-start rounded-2xl border border-[#E8F1EF] bg-white px-3 pb-4 pt-4 text-center shadow-[0_5px_14px_rgba(22,78,65,.035)] transition hover:-translate-y-1 hover:shadow-md md:min-w-[calc((100%-48px)/5)]"><DoctorAvatar index={(index + carouselOffset) % doctors.length} className="mx-auto h-[112px] w-[112px] rounded-t-[56px] rounded-b-[20px] bg-slate-50" /><span className="-mt-2 relative inline-flex rounded-full bg-[#E9FBF5] px-3 py-1 text-[10px] font-bold text-[#007D68]">{doctor.specialty}</span><h3 className="mt-2 text-[13px] font-black text-slate-800">{doctor.name}</h3><p className="mt-1 min-h-8 text-[10px] leading-4 text-slate-500">{doctor.detail}</p><p className="mt-2 text-[10px] font-semibold text-[#007D68]">✳ {doctor.experience}</p></article>; })}
+          {doctorsList.map((_, index) => { const doctor = doctorsList[(index + carouselOffset) % doctorsList.length]; return <article data-doctor-card key={`doc-${index}`} onClick={() => setSelectedDoctor(doctor)} className="cursor-pointer min-w-[220px] flex-1 snap-start rounded-2xl border border-[#E8F1EF] bg-white px-3 pb-4 pt-4 text-center shadow-[0_5px_14px_rgba(22,78,65,.035)] transition hover:-translate-y-1 hover:shadow-md md:min-w-[calc((100%-48px)/5)]"><DoctorAvatar index={(index + carouselOffset) % doctorsList.length} doctorName={doctor.fullName || doctor.name} src={doctor.avatarUrl} className="mx-auto h-[112px] w-[112px] rounded-t-[56px] rounded-b-[20px] bg-slate-50" /><span className="-mt-2 relative inline-flex rounded-full bg-[#E9FBF5] px-3 py-1 text-[10px] font-bold text-[#007D68]">{doctor.departmentName || doctor.specialty || "Bác sĩ"}</span><h3 className="mt-2 text-[13px] font-black text-slate-800">BS. {doctor.fullName || doctor.name}</h3><p className="mt-1 min-h-8 text-[10px] leading-4 text-slate-500 line-clamp-2">{doctor.biography || doctor.detail}</p><p className="mt-2 text-[10px] font-semibold text-[#007D68]">✳ {doctor.yearsOfExperience ? `${doctor.yearsOfExperience}+ năm kinh nghiệm` : doctor.experience}</p></article>; })}
         </div>
-        <div className="mt-3 flex justify-center gap-2">{doctors.map((doctor, index) => <button key={doctor.name} onClick={() => jumpToSlide(index)} aria-label={`Xem bác sĩ ${index + 1}`} className={`h-2.5 rounded-full transition-all ${activeSlide === index ? "w-6 bg-emerald-600" : "w-2.5 bg-emerald-100 hover:bg-emerald-300"}`} />)}</div>
-        <button onClick={() => navigate("/dashboard/our-doctors")} className="mx-auto mt-7 flex items-center gap-4 rounded-full bg-white py-2 pl-5 pr-3 text-sm font-bold text-emerald-800 shadow-md transition hover:-translate-y-0.5"><span>Xem tất cả bác sĩ</span><span className="flex -space-x-2">{doctorPhotos.slice(0, 4).map((_, index) => <DoctorAvatar key={index} index={index} className="h-7 w-7 rounded-full border-2 border-white" />)}</span><ArrowRight size={16} /></button>
+        <div className="mt-3 flex justify-center gap-2">{doctorsList.map((_, index) => <button key={`dot-${index}`} onClick={() => jumpToSlide(index)} aria-label={`Xem bác sĩ ${index + 1}`} className={`h-2.5 rounded-full transition-all ${activeSlide === index ? "w-6 bg-emerald-600" : "w-2.5 bg-emerald-100 hover:bg-emerald-300"}`} />)}</div>
+        <button onClick={() => navigate("/dashboard/our-doctors")} className="mx-auto mt-7 flex items-center gap-4 rounded-full bg-white py-2 pl-5 pr-3 text-sm font-bold text-emerald-800 shadow-md transition hover:-translate-y-0.5"><span>Xem tất cả bác sĩ</span><span className="flex -space-x-2">{doctorsList.slice(0, 4).map((doctor, index) => <DoctorAvatar key={index} index={index} doctorName={doctor.fullName || doctor.name} src={doctor.avatarUrl} className="h-7 w-7 rounded-full border-2 border-white" />)}</span><ArrowRight size={16} /></button>
       </section>
 
       <section className="mt-14"><h2 className="mb-5 text-2xl font-black text-[#007D68]">Hướng dẫn sử dụng nhanh</h2><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{guides.map((guide, index) => { const Icon = guide.icon; return <article key={guide.title} className={`${guide.tone} rounded-2xl border border-[#DDEDEA] bg-white p-5 shadow-[0_8px_20px_rgba(22,78,65,.035)] transition hover:-translate-y-1 hover:border-emerald-200 hover:shadow-md`}><div className="mb-5 flex items-center justify-between"><span className="text-2xl font-black opacity-40">{index + 1}</span><Icon size={22} /></div><h3 className="font-black text-slate-800">{guide.title}</h3><p className="mt-2 text-xs leading-5 text-slate-500">{guide.text}</p></article>; })}</div></section>
 
-      <section className="mt-14 grid gap-5 lg:grid-cols-2"><article className="rounded-[24px] border border-slate-100 bg-white p-6 shadow-[0_12px_30px_rgba(22,78,65,.05)]"><div className="flex items-center justify-between"><h2 className="flex items-center gap-3 text-xl font-black text-emerald-800"><Bell size={20} /> Thông báo</h2><button onClick={() => navigate("/dashboard/notifications")} className="text-sm font-bold text-emerald-700">Xem tất cả</button></div><div className="mt-5 divide-y divide-slate-100">{["Phiếu khám Phòng Khám Nhi ngày 25/04 - 19:15", "Nhắc nhở tái khám da liễu định kỳ", "Cập nhật hồ sơ sức khỏe"].map((notice, index) => <div key={notice} className="flex gap-3 py-4"><span className="mt-1 h-2 w-2 rounded-full bg-emerald-500" /><div><p className="text-sm font-bold">{notice}</p><p className="mt-1 text-xs text-slate-400">{index + 1} ngày trước</p></div></div>)}</div></article><article className="rounded-[24px] border border-slate-100 bg-white p-6 shadow-[0_12px_30px_rgba(22,78,65,.05)]"><h2 className="text-xl font-black text-emerald-800">Truy cập nhanh</h2><div className="mt-5 grid grid-cols-2 gap-3">{[["Thanh toán viện phí", "/dashboard/payments"], ["Bảo hiểm y tế", "/dashboard/profile"], ["Cài đặt hồ sơ", "/dashboard/profile"], ["Liên hệ hỗ trợ", "/dashboard/ai-chat"]].map(([label, path]) => <button key={label} onClick={() => navigate(path)} className="rounded-xl bg-slate-50 px-4 py-4 text-left text-sm font-bold text-slate-700 transition hover:bg-emerald-50 hover:text-emerald-800">{label}<ArrowRight className="float-right" size={16} /></button>)}</div></article></section>
+      <section className="mt-14 grid gap-5 lg:grid-cols-2">
+        <article className="rounded-[24px] border border-slate-100 bg-white p-6 shadow-[0_12px_30px_rgba(22,78,65,.05)]">
+          <div className="flex items-center justify-between">
+            <h2 className="flex items-center gap-3 text-xl font-black text-emerald-800"><Bell size={20} /> Thông báo</h2>
+            <button onClick={() => navigate("/dashboard/notifications")} className="text-sm font-bold text-emerald-700 hover:text-emerald-900 transition">Xem tất cả</button>
+          </div>
+          <div className="mt-5 divide-y divide-slate-100">
+            {notifications.length > 0 ? (
+              notifications.map((notice, index) => (
+                <div key={notice.notificationId || notice.id || index} className="flex gap-3 py-4">
+                  <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${notice.isRead ? 'bg-slate-300' : 'bg-emerald-500'}`} />
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">{notice.title || notice.message}</p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      {notice.createdAt ? new Date(notice.createdAt).toLocaleString("vi-VN", { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }) : "Mới đây"}
+                    </p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="py-6 text-center text-sm font-medium text-slate-400">Không có thông báo mới nào</div>
+            )}
+          </div>
+        </article>
+
+        <article className="rounded-[24px] border border-slate-100 bg-white p-6 shadow-[0_12px_30px_rgba(22,78,65,.05)]">
+          <div className="flex items-center justify-between">
+            <h2 className="flex items-center gap-3 text-xl font-black text-emerald-800"><Bot size={20} /> Trợ lý y tế AI</h2>
+            <button onClick={() => navigate("/dashboard/ai-chat")} className="text-sm font-bold text-emerald-700 hover:text-emerald-900 transition">Mở chat</button>
+          </div>
+          <div className="mt-5 text-sm text-slate-600 leading-relaxed bg-[#F0F9F7] p-5 rounded-xl border border-[#1DB896]/10 h-[calc(100%-48px)] flex flex-col justify-between">
+            <div>
+              <p className="mb-3 font-semibold text-slate-700">Bạn không biết nên đăng ký khám chuyên khoa nào? Đừng lo, hãy để Trợ lý AI của chúng tôi giúp bạn!</p>
+              <ul className="space-y-2.5 list-disc list-inside text-[13px]">
+                <li>Mô tả chi tiết triệu chứng (VD: "tôi bị đau đầu, buồn nôn, chóng mặt...")</li>
+                <li>AI sẽ tự động phân tích và chẩn đoán bệnh sơ bộ</li>
+                <li>Gợi ý chính xác chuyên khoa và bác sĩ phù hợp nhất</li>
+              </ul>
+            </div>
+            <button onClick={() => navigate("/dashboard/ai-chat")} className="mt-6 w-full bg-[#007D68] hover:bg-[#006955] text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-[0_4px_12px_rgba(0,125,104,0.2)]">
+              <Bot size={18} /> Nhắn tin với AI ngay
+            </button>
+          </div>
+        </article>
+      </section>
+      <DoctorDetailModal 
+        selectedDoctor={selectedDoctor} 
+        onClose={() => setSelectedDoctor(null)} 
+      />
     </div>
   );
 }

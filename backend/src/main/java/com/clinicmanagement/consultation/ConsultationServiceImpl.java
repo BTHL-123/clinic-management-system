@@ -1,6 +1,7 @@
 package com.clinicmanagement.consultation;
 
 import com.clinicmanagement.common.dto.PageResponse;
+import com.clinicmanagement.common.constants.BillingConstants.AppointmentStatus;
 import com.clinicmanagement.common.exception.BusinessException;
 import com.clinicmanagement.common.exception.ResourceNotFoundException;
 import com.clinicmanagement.consultation.dto.ChangeConsultationStatusRequest;
@@ -85,7 +86,7 @@ public class ConsultationServiceImpl implements ConsultationService {
         session.setCompletedAt(LocalDateTime.now());
         
         appointmentRepository.findById(session.getAppointmentId()).ifPresent(app -> {
-            app.setStatus("COMPLETED");
+            app.setStatus(AppointmentStatus.PAYMENT_DUE);
             appointmentRepository.save(app);
             
             queueTicketRepository.findByAppointment(app).ifPresent(ticket -> {

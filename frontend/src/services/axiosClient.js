@@ -24,6 +24,16 @@ axiosClient.interceptors.response.use(
     const err = new Error(message);
     err.status = error.response?.status;
     err.response = error.response;
+    
+    if (err.status === 401) {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      window.location.href = "/login";
+      if (error.config) {
+         error.config.skipErrorToast = true;
+      }
+    }
+
     // Attach structured conflict data when the backend returns it (leave-request conflict)
     if (data?.data?.conflictingAppointments) {
       err.conflictingAppointments = data.data.conflictingAppointments;

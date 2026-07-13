@@ -33,8 +33,8 @@ const appointmentService = {
     return axiosClient.put(`/receptionist/appointments/${appointmentId}/check-in`);
   },
 
-  cancelAppointment(id, cancellationReason) {
-    return axiosClient.put(`/appointments/${id}/cancel`, { cancellationReason });
+  cancelAppointment(id, payload) {
+    return axiosClient.put(`/appointments/${id}/cancel`, payload);
   },
 
   rescheduleAppointment(id, newSlotId, rescheduleReason) {

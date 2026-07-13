@@ -6,7 +6,7 @@ import java.util.List;
 
 /**
  * Thrown when a doctor's leave request overlaps with existing active
- * appointments (SCHEDULED / CONFIRMED / CHECKED_IN).
+ * appointments (PENDING_PAYMENT / CONFIRMED / CHECKED_IN / PAYMENT_DUE).
  * Carries the full list of conflicting appointments so the frontend
  * can display them in a table.
  */

@@ -18,12 +18,25 @@ public record InvoiceDetailResponse(
         String status,
         LocalDateTime createdAt,
         LocalDateTime paidAt,
+        BigDecimal paidAmount,
+        BigDecimal remainingAmount,
+        String paymentStatus,
         List<InvoiceItemResponse> items
 ) {
     public static InvoiceDetailResponse from(Invoice invoice) {
+        return from(invoice, BigDecimal.ZERO);
+    }
+
+    public static InvoiceDetailResponse from(Invoice invoice, BigDecimal paidAmount) {
         List<InvoiceItemResponse> itemResponses = invoice.getItems().stream()
                 .map(InvoiceItemResponse::from)
                 .toList();
+
+        BigDecimal normalizedPaid = paidAmount != null ? paidAmount : BigDecimal.ZERO;
+        BigDecimal remainingAmount = invoice.getFinalAmount().subtract(normalizedPaid);
+        if (remainingAmount.compareTo(BigDecimal.ZERO) < 0) {
+            remainingAmount = BigDecimal.ZERO;
+        }
 
         return new InvoiceDetailResponse(
                 invoice.getInvoiceId(),
@@ -37,6 +50,9 @@ public record InvoiceDetailResponse(
                 invoice.getStatus(),
                 invoice.getCreatedAt(),
                 invoice.getPaidAt(),
+                normalizedPaid,
+                remainingAmount,
+                invoice.getStatus(),
                 itemResponses
         );
     }

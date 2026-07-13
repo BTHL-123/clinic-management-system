@@ -2,6 +2,7 @@ package com.clinicmanagement.appointment;
 
 import com.clinicmanagement.appointment.dto.PatientQueueStatusResponse;
 import com.clinicmanagement.appointment.dto.QueueTicketResponse;
+import com.clinicmanagement.common.constants.BillingConstants.AppointmentStatus;
 import com.clinicmanagement.common.exception.BusinessException;
 import com.clinicmanagement.common.exception.ResourceNotFoundException;
 import com.clinicmanagement.consultation.ConsultationSession;
@@ -109,7 +110,7 @@ public class QueueServiceImpl implements QueueService {
         QueueTicket saved = queueTicketRepository.save(ticket);
 
         if (ticket.getAppointment() != null) {
-            ticket.getAppointment().setStatus("COMPLETED");
+            ticket.getAppointment().setStatus(AppointmentStatus.PAYMENT_DUE);
             appointmentRepository.save(ticket.getAppointment());
         }
 
@@ -169,14 +170,10 @@ public class QueueServiceImpl implements QueueService {
     @Override
     @Transactional(readOnly = true)
     public PatientQueueStatusResponse getPatientQueueStatus(Long userId) {
-        // 1. Find patient record for logged-in user
-        Patient patient = patientRepository.findByUser_UserId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hồ sơ bệnh nhân."));
-
-        // 2. Find ALL active tickets for today — ordered: CALLED first, then lowest queueNumber
+        // 1. Find ALL active tickets for the logged-in user today
         LocalDate today = LocalDate.now();
         List<QueueTicket> activeTickets = queueTicketRepository
-                .findActiveTicketsByPatientAndDate(patient.getPatientId(), today);
+                .findActiveTicketsByUserAndDate(userId, today);
 
         if (activeTickets.isEmpty()) {
             throw new BusinessException("No active queue found");
@@ -204,7 +201,7 @@ public class QueueServiceImpl implements QueueService {
         int estimatedWaitMinutes = patientsAhead * AVG_CONSULTATION_MINUTES;
 
         // 7. Build DTO
-        String patientName = patient.getFullName();
+        String patientName = ticket.getPatient() != null ? ticket.getPatient().getFullName() : "Bệnh nhân";
         String doctorName = ticket.getDoctor() != null && ticket.getDoctor().getUser() != null
                 ? ticket.getDoctor().getUser().getFullName() : "Bác sĩ";
         String appointmentCode = ticket.getAppointment() != null

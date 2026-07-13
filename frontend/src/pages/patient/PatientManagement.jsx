@@ -41,8 +41,9 @@ const EMPTY_FORM = {
 
 export default function PatientManagement() {
   const { user } = useAuth();
-  const isDoctor = user?.roles?.some(r => r === "DOCTOR" || r.roleName === "DOCTOR");
-  const isReceptionist = user?.roles?.some(r => r === "RECEPTIONIST" || r.roleName === "RECEPTIONIST");
+  const roles = (user?.roles || []).map(r => typeof r === "string" ? r : r.roleName);
+  const isDoctor = roles.some(r => r.includes("DOCTOR"));
+  const isReceptionistOnly = roles.some(r => r.includes("RECEPTIONIST")) && !roles.some(r => r.includes("ADMIN"));
 
   const navigate = useNavigate();
   const [patients, setPatients] = useState([]);
@@ -205,6 +206,44 @@ export default function PatientManagement() {
     }
   };
 
+  // Status mapper
+  const getMappedStatus = (p) => p.treatmentStatus || "Đang theo dõi";
+
+  const getStatusBadgeStyle = (status) => {
+    switch (status) {
+      case "Đang điều trị":
+      case "Đang theo dõi":
+        return "text-emerald-600 bg-emerald-50 border-emerald-100";
+      case "Đã xuất viện":
+        return "text-slate-600 bg-slate-50 border-slate-100";
+      case "Tái khám":
+        return "text-amber-600 bg-amber-50 border-amber-100";
+      default:
+        return "text-slate-600 bg-slate-50 border-slate-100";
+    }
+  };
+
+  const getStatusDotColor = (status) => {
+    switch (status) {
+      case "Đang điều trị":
+      case "Đang theo dõi":
+        return "bg-emerald-500";
+      case "Đã xuất viện": return "bg-slate-400";
+      case "Tái khám": return "bg-amber-500";
+      default: return "bg-slate-400";
+    }
+  };
+
+  // Diagnosis mapper
+  const getMappedDiagnosis = (p) => p.latestDiagnosis || p.medicalHistory || "Khám sức khỏe tổng quát";
+
+  // Last visit mapper
+  const getMappedLastVisit = (p) => {
+    if (!p.lastVisitDate) return "—";
+    const d = new Date(p.lastVisitDate);
+    return `${d.toLocaleDateString("vi-VN")} ${d.toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}`;
+  };
+
   // Filter & Search Logic
   const filteredPatients = patients.filter((p) => {
     const query = searchTerm.toLowerCase().trim();
@@ -277,57 +316,106 @@ export default function PatientManagement() {
                   <td colSpan={7} className="p-8 text-center text-slate-400 font-bold">Không tìm thấy bệnh nhân nào.</td>
                 </tr>
               ) : (
-                filteredPatients.map((patient) => (
-                  <tr key={patient.patientId} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="p-4 pl-6">
-                      <span className="font-mono text-teal-700 bg-teal-50 px-2.5 py-1 rounded-lg text-xs border border-teal-200/60 font-bold">{patient.patientCode}</span>
-                    </td>
-                    <td className="p-4 font-bold text-slate-800 text-sm">{patient.fullName || "—"}</td>
-                    <td className="p-4 text-slate-600 text-sm font-medium">{patient.gender === "MALE" ? "Nam" : patient.gender === "FEMALE" ? "Nữ" : "Khác"}</td>
-                    <td className="p-4 text-slate-800 text-sm font-semibold">{patient.phone || "—"}</td>
-                    <td className="p-4">
-                      {patient.identityNumber && <div className="text-xs text-slate-500 mb-0.5 font-medium">ID: <span className="text-slate-800 font-bold">{patient.identityNumber}</span></div>}
-                      {patient.insuranceNumber && <div className="text-xs text-teal-600 font-medium">BHYT: <span className="text-teal-700 font-bold">{patient.insuranceNumber}</span></div>}
-                      {!patient.identityNumber && !patient.insuranceNumber && <span className="text-slate-300">—</span>}
-                    </td>
-                    <td className="p-4">
-                      {patient.userName ? (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200/80 text-emerald-700 text-xs font-bold">{patient.userName}</span>
-                      ) : (
-                        <span className="text-slate-400 italic text-xs">Không có</span>
-                      )}
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => navigate(`/dashboard/patients/${patient.patientId}`)}
-                          title="Xem chi tiết"
-                          className="p-2 rounded-xl bg-sky-50 text-sky-600 hover:bg-sky-100 transition-colors"
-                        >
-                          <Eye size={16} />
-                        </button>
-                        {!isDoctor && (
-                          <>
+                filteredPatients.map((p) => {
+                  const status = getMappedStatus(p);
+                  const diagnosis = getMappedDiagnosis(p);
+                  const lastVisit = getMappedLastVisit(p);
+                  const initials = p.fullName
+                    ? p.fullName.split(" ").filter(Boolean).slice(-2).map((x) => x[0]).join("").toUpperCase()
+                    : "BN";
+
+                  return (
+                    <tr key={p.patientId} className="group hover:bg-slate-50/50 transition-colors">
+
+                      {/* Code */}
+                      <td className="py-4">
+                        <span className="font-mono text-[#1DB896] bg-teal-50 border border-teal-100/60 px-2 py-1 rounded text-xs font-bold">
+                          {p.patientCode}
+                        </span>
+                      </td>
+
+                      {/* Name */}
+                      <td className="py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-[#1DB896]/10 text-[#1DB896] flex items-center justify-center text-xs font-black">
+                            {initials}
+                          </div>
+                          <div>
+                            <div className="font-extrabold text-slate-800 text-sm">{p.fullName}</div>
+                            <div className="text-[11px] text-slate-400 font-semibold mt-0.5">{p.phone || "—"}</div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* DOB */}
+                      <td className="py-4 text-slate-600 font-bold text-sm">
+                        {p.dateOfBirth ? new Date(p.dateOfBirth).toLocaleDateString("vi-VN") : "12/05/1985"}
+                      </td>
+
+                      {/* Diagnosis */}
+                      <td className="py-4">
+                        <span className="text-slate-600 font-semibold text-sm max-w-[240px] truncate block">
+                          {diagnosis}
+                        </span>
+                      </td>
+
+                      {/* Last Visit */}
+                      <td className="py-4 text-slate-500 font-bold text-sm">
+                        {lastVisit}
+                      </td>
+
+                      {/* Status */}
+                      <td className="py-4">
+                        <span className={`px-2.5 py-1 text-[11px] font-bold rounded-full border flex items-center gap-1.5 w-fit ${getStatusBadgeStyle(status)}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(status)}`} />
+                          {status}
+                        </span>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-4">
+                        <div className="flex items-center justify-center gap-1.5">
+
+                          <button
+                            onClick={() => navigate(`/dashboard/patients/${p.patientId}`)}
+                            title="Hồ sơ chi tiết"
+                            className="p-2 rounded-lg bg-slate-50 text-slate-400 hover:bg-[#1DB896]/10 hover:text-[#1DB896] transition-colors"
+                          >
+                            <Eye size={15} />
+                          </button>
+
+                          {!isReceptionistOnly && (
                             <button
-                              onClick={() => openEdit(patient)}
-                              title="Chỉnh sửa"
-                              className="p-2 rounded-xl bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors"
+                              onClick={() => setShowHistoryFor(p.patientId)}
+                              title="Lịch sử bệnh án"
+                              className="p-2 rounded-lg bg-slate-50 text-slate-400 hover:bg-[#1DB896]/10 hover:text-[#1DB896] transition-colors"
                             >
-                              <Edit size={16} />
+                              <ClipboardList size={15} />
                             </button>
-                            <button
-                              onClick={() => setDeleteTarget(patient)}
-                              title="Xóa"
-                              className="p-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                          )}
+
+                          <button
+                            onClick={() => openEdit(p)}
+                            title="Chỉnh sửa"
+                            className="p-2 rounded-lg bg-slate-50 text-slate-400 hover:bg-[#1DB896]/10 hover:text-[#1DB896] transition-colors"
+                          >
+                            <Edit size={15} />
+                          </button>
+
+                          <button
+                            onClick={() => setDeleteTarget(p)}
+                            title="Xóa"
+                            className="p-2 rounded-lg bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-colors"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+
+                        </div>
+                      </td>
+
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

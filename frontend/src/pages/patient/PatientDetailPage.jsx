@@ -5,9 +5,18 @@ import { getPatientById } from "../../services/patientService";
 import MedicalHistory from "../../components/MedicalHistory";
 import PageHeader from "../../components/PageHeader";
 import { useAuth } from "../../context/useAuth";
-import { getInvoices } from "../../services/invoiceService";
+
+const TABS = [
+  { id: "info", label: "Thông tin hành chính", icon: User },
+  { id: "history", label: "Lịch sử bệnh án", icon: History },
+];
 
 export default function PatientDetailPage() {
+  const { user } = useAuth();
+  const roles = (user?.roles || []).map(r => typeof r === "string" ? r : r.roleName);
+  const isReceptionistOnly = roles.some(r => r.includes("RECEPTIONIST")) && !roles.some(r => r.includes("ADMIN"));
+  const visibleTabs = isReceptionistOnly ? TABS.filter(t => t.id !== "history") : TABS;
+
   const { patientId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -357,8 +366,8 @@ export default function PatientDetailPage() {
         icon={User}
         iconColor="text-white"
         subtitle={
-          <span className="flex items-center gap-2 justify-center">
-            <span className="bg-teal-500/20 text-teal-100 px-2 py-0.5 rounded-md font-bold border border-teal-500/30">
+          <span className="flex items-center gap-2 justify-center sm:justify-start">
+            <span className="bg-teal-100 text-teal-700 px-2 py-0.5 rounded-md font-bold border border-teal-200">
               {patient.patientCode}
             </span>
             • {genderLabel(patient.gender)}
@@ -371,7 +380,7 @@ export default function PatientDetailPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-slate-200/50 pb-px">
-        {tabs.map((tab) => {
+        {visibleTabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
           return (

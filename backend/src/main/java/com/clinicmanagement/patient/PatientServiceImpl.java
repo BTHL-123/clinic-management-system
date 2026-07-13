@@ -9,10 +9,13 @@ import com.clinicmanagement.patient.dto.PatientResponse;
 import com.clinicmanagement.user.User;
 import com.clinicmanagement.user.UserRepository;
 import com.clinicmanagement.appointment.AppointmentRepository;
+import com.clinicmanagement.medicalrecord.MedicalRecord;
+import com.clinicmanagement.medicalrecord.MedicalRecordRepository;
 import com.clinicmanagement.security.CustomUserDetails;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +29,7 @@ public class PatientServiceImpl implements PatientService {
     private final PatientRepository patientRepository;
     private final UserRepository userRepository;
     private final AppointmentRepository appointmentRepository;
+    private final MedicalRecordRepository medicalRecordRepository;
 
     private CustomUserDetails getCurrentUserDetails() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -51,9 +55,8 @@ public class PatientServiceImpl implements PatientService {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_DOCTOR"));
         if (isDoctor) {
             Long userId = currentUser.getUser().getUserId();
-            LocalDate today = LocalDate.now();
-            boolean hasAppointment = appointmentRepository.existsUpcomingAppointmentForDoctorAndPatient(
-                    userId, patientId, today
+            boolean hasAppointment = appointmentRepository.existsAppointmentForDoctorAndPatient(
+                    userId, patientId
             );
             if (!hasAppointment) {
                 throw new BusinessException("Bạn không có quyền xem thông tin của bệnh nhân này.");
@@ -88,11 +91,21 @@ public class PatientServiceImpl implements PatientService {
                 Long doctorUserId = currentUser.getUser().getUserId();
                 LocalDate today = LocalDate.now();
                 Page<Patient> page = patientRepository.searchDoctorPatients(keyword, doctorUserId, today, pageable);
-                return PageResponse.from(page.map(PatientResponse::from));
+                return PageResponse.from(page.map(this::mapToResponseWithRealData));
             }
         }
         Page<Patient> page = patientRepository.searchPatients(keyword, pageable);
-        return PageResponse.from(page.map(PatientResponse::from));
+        return PageResponse.from(page.map(this::mapToResponseWithRealData));
+    }
+
+    private PatientResponse mapToResponseWithRealData(Patient p) {
+        MedicalRecord latest = medicalRecordRepository.findFirstByPatientIdOrderByCreatedAtDesc(p.getPatientId()).orElse(null);
+        String diagnosis = (latest != null && latest.getDiagnosis() != null && !latest.getDiagnosis().isEmpty()) 
+                           ? latest.getDiagnosis() 
+                           : (p.getMedicalHistory() != null && !p.getMedicalHistory().isEmpty() ? p.getMedicalHistory() : "Khám sức khỏe");
+        LocalDateTime lastVisit = latest != null ? latest.getCreatedAt() : p.getCreatedAt();
+        String status = "Đang theo dõi";
+        return PatientResponse.from(p, null, diagnosis, lastVisit, status);
     }
 
     @Override
@@ -101,7 +114,7 @@ public class PatientServiceImpl implements PatientService {
         validateAccess(id);
         Patient patient = patientRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bệnh nhân với ID: " + id));
-        return PatientResponse.from(patient);
+        return mapToResponseWithRealData(patient);
     }
 
     @Override

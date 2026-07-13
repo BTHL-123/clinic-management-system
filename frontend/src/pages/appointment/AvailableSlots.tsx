@@ -13,6 +13,7 @@ import { getActiveMedicalServices } from "../../services/medicalServiceService";
 import { getActiveDepartments } from "../../services/departmentService";
 import { useToast } from "../../context/useToast";
 import { useAuth } from "../../context/useAuth.js";
+import { createOnlinePaymentUrl, verifySePayTransaction } from "../../services/paymentService";
 
 interface TimeSlot {
   slotId: number;
@@ -22,6 +23,7 @@ interface TimeSlot {
   status: string;
   doctorId?: number;
   doctorName?: string;
+  appointmentId?: number;
 }
 
 interface DoctorSchedule {
@@ -38,6 +40,7 @@ interface DoctorOption {
   fullName: string;
   departmentId?: number;
   departmentName?: string;
+  consultationFee?: number | string;
   doctorCode?: string;
   degree?: string;
   specialization?: string;
@@ -54,6 +57,13 @@ function formatTime(t: string): string {
   return String(t ?? "").slice(0, 5);
 }
 
+function secondsUntil(expiresAt?: string): number {
+  if (!expiresAt) return 600;
+  const expiryTime = new Date(expiresAt).getTime();
+  if (Number.isNaN(expiryTime)) return 600;
+  return Math.max(0, Math.ceil((expiryTime - Date.now()) / 1000));
+}
+
 export default function AvailableSlots() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -66,10 +76,14 @@ export default function AvailableSlots() {
   const initialDoctorId = searchParams.get("doctorId") || String((location.state as any)?.prefillDoctorId || "");
   const prefillDepartmentName = (location.state as any)?.prefillDepartmentName;
 
+  const getLocalISODate = (d: Date = new Date()) => {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
   // States
   const [workDate, setWorkDate] = useState<string>(() => {
     if (paramWorkDate) return paramWorkDate;
-    return new Date().toISOString().split("T")[0]; // default to today
+    return getLocalISODate(); // default to today
   });
   
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>("");
@@ -125,6 +139,9 @@ export default function AvailableSlots() {
   const [consultationFee, setConsultationFee] = useState<number>(300000); // Default to 300k
   const [specialtyServices, setSpecialtyServices] = useState<any[]>([]);
   const [showPriceModal, setShowPriceModal] = useState<boolean>(false);
+  const [bookingPayment, setBookingPayment] = useState<any>(null);
+  const [verifyingDeposit, setVerifyingDeposit] = useState(false);
+  const [submittingBooking, setSubmittingBooking] = useState(false);
 
   // Generate calendar grid
   const daysInGrid = useMemo(() => {
@@ -190,8 +207,8 @@ export default function AvailableSlots() {
           if (doc) {
             setSelectedDoctor(doc);
             // Search calendar for that doctor's active schedule and auto-set date
-            const todayStr = new Date().toISOString().split("T")[0];
-            const toDateStr = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+            const todayStr = getLocalISODate();
+            const toDateStr = getLocalISODate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
             const scheds: any = await getSchedules({ doctorId: initialDoctorId, fromDate: todayStr, toDate: toDateStr, status: "AVAILABLE" });
             const schedulesList = Array.isArray(scheds.data) ? scheds.data : [];
             if (schedulesList.length > 0) {
@@ -221,8 +238,8 @@ export default function AvailableSlots() {
     let isActive = true;
     const fetchSchedulesForIndicator = async () => {
       try {
-        const todayStr = new Date().toISOString().split("T")[0];
-        const endRangeStr = new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+        const todayStr = getLocalISODate();
+        const endRangeStr = getLocalISODate(new Date(Date.now() + 45 * 24 * 60 * 60 * 1000));
         const params: any = { fromDate: todayStr, toDate: endRangeStr, status: "AVAILABLE" };
         
         // If specific department or query is selected, we could filter but let's just get overall active dates
@@ -346,8 +363,8 @@ export default function AvailableSlots() {
   // Helper selectors
   const nextAvailableDateForDoctor = async (doc: DoctorOption) => {
     try {
-      const todayStr = new Date().toISOString().split("T")[0];
-      const endRangeStr = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      const todayStr = getLocalISODate();
+      const endRangeStr = getLocalISODate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
       const res: any = await getSchedules({ doctorId: doc.doctorId, fromDate: todayStr, toDate: endRangeStr, status: "AVAILABLE" });
       const schedulesList = Array.isArray(res.data) ? res.data : [];
       if (schedulesList.length > 0) {
@@ -393,8 +410,8 @@ export default function AvailableSlots() {
     }
 
     const fetchUpcomingDates = async () => {
-      const todayStr = new Date().toISOString().split("T")[0];
-      const endRangeStr = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      const todayStr = getLocalISODate();
+      const endRangeStr = getLocalISODate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
       
       const promises = unscheduledMatchingDoctors.map(async (doc) => {
         try {
@@ -427,6 +444,44 @@ export default function AvailableSlots() {
   }, [unscheduledMatchingDoctors]);
 
   // Button actions
+  const handleResumePayment = async (slot: TimeSlot, doc: DoctorOption) => {
+    if (!slot.appointmentId) return;
+    try {
+      setSlotsLoading(true);
+      const paymentApiRes: any = await createOnlinePaymentUrl({
+        appointmentId: slot.appointmentId
+      });
+      const paymentData = paymentApiRes.data ?? paymentApiRes;
+      
+      const resumedBookingRes = {
+        appointment: { appointmentId: slot.appointmentId },
+        depositPayment: {
+          paymentId: paymentData.paymentId,
+          paymentCode: paymentData.paymentCode,
+          amount: paymentData.amount,
+          expiresAt: paymentData.expiresAt
+        },
+        paymentUrl: paymentData.paymentUrl,
+        amount: paymentData.amount,
+        expiresAt: paymentData.expiresAt
+      };
+      
+      setSelectedSlot(slot);
+      setSelectedDoctor(doc);
+      setBookingPayment(resumedBookingRes);
+      setBookingStep(true);
+      setTimer(secondsUntil(paymentData.expiresAt));
+      setIsExpired(false);
+      setBookingSuccess(false);
+      toast.info("Vui lòng quét QR và xác nhận thanh toán.");
+    } catch (err: any) {
+      const apiMsg = err.response?.data?.message || err.message;
+      toast.error(apiMsg || "Không thể tải thông tin thanh toán.");
+    } finally {
+      setSlotsLoading(false);
+    }
+  };
+
   const handleSelectSlot = async (slot: TimeSlot, doc: DoctorOption) => {
     if (slot.status !== "AVAILABLE") return;
     try {
@@ -444,8 +499,8 @@ export default function AvailableSlots() {
     }
   };
 
-  const handleCancelBooking = async () => {
-    if (selectedSlot) {
+  const handleClosePaymentModal = async () => {
+    if (!bookingPayment && selectedSlot) {
       try {
         await releaseLock(selectedSlot.slotId);
       } catch (e) {}
@@ -453,6 +508,35 @@ export default function AvailableSlots() {
     setBookingStep(false);
     setSelectedSlot(null);
     setIsExpired(false);
+      setBookingPayment(null);
+    fetchDoctorsAndSlots(workDate, selectedDepartmentId, searchQuery);
+  };
+
+  const handleAbortBooking = async () => {
+    const apptId = bookingPayment?.appointment?.appointmentId || bookingPayment?.appointmentId;
+    if (apptId) {
+      const confirmCancel = window.confirm("Bạn có chắc chắn muốn hủy yêu cầu đặt lịch này không? Ca khám này sẽ được mở lại cho người khác.");
+      if (!confirmCancel) return;
+      try {
+        await appointmentService.cancelAppointment(apptId, {
+          cancellationReason: "Bệnh nhân hủy thanh toán cọc"
+        });
+        toast.success("Đã hủy yêu cầu đặt lịch và giải phóng ca khám.");
+      } catch (err: any) {
+        toast.error("Không thể hủy lịch hẹn: " + (err.response?.data?.message || err.message));
+        return;
+      }
+    } else {
+      if (selectedSlot) {
+        try {
+          await releaseLock(selectedSlot.slotId);
+        } catch (e) {}
+      }
+    }
+    setBookingStep(false);
+    setSelectedSlot(null);
+    setIsExpired(false);
+    setBookingPayment(null);
     fetchDoctorsAndSlots(workDate, selectedDepartmentId, searchQuery);
   };
 
@@ -476,29 +560,76 @@ export default function AvailableSlots() {
           ...newProfile,
           patientCode: `PAT${Date.now()}`
         });
-        finalPatientId = res.data.patientId;
+        finalPatientId = res.data?.patientId || res.patientId;
       }
 
-      await appointmentService.bookAppointment({
+      setSubmittingBooking(true);
+      const bookingApiRes: any = await appointmentService.bookAppointment({
         slotId: selectedSlot.slotId,
         patientId: finalPatientId!,
         reasonForVisit: visitReason,
         paymentMethod: paymentMethod
       });
-      
+      let bookingRes: any = bookingApiRes.data ?? bookingApiRes;
+
+      if (!bookingRes?.paymentUrl) {
+         try {
+           const paymentApiRes: any = await createOnlinePaymentUrl({
+             appointmentId: bookingRes.appointmentId
+           });
+           const paymentData = paymentApiRes.data ?? paymentApiRes;
+           bookingRes = {
+             appointment: bookingRes,
+             depositPayment: {
+               paymentId: paymentData.paymentId,
+               paymentCode: paymentData.paymentCode,
+               amount: paymentData.amount,
+               expiresAt: paymentData.expiresAt
+             },
+             paymentUrl: paymentData.paymentUrl,
+             amount: paymentData.amount,
+             expiresAt: paymentData.expiresAt
+           };
+         } catch (e) {
+           throw new Error("Không thể tạo mã QR thanh toán.");
+         }
+      }
+
+      setBookingPayment(bookingRes);
+      setTimer(secondsUntil(bookingRes.expiresAt || bookingRes.depositPayment?.expiresAt));
+      setSubmittingBooking(false);
+      toast.info("Lịch đã được tạm giữ. Vui lòng quét QR và xác nhận thanh toán.");
+    } catch (err: any) {
+      setSubmittingBooking(false);
+      const apiMsg = err.response?.data?.message || err.message;
+      toast.error(apiMsg || "Đặt lịch thất bại. Vui lòng thử lại.");
+    }
+  };
+
+  const handleVerifyDepositPayment = async () => {
+    const paymentId = bookingPayment?.depositPayment?.paymentId;
+    if (!paymentId) return;
+
+    try {
+      setVerifyingDeposit(true);
+      await verifySePayTransaction(paymentId);
       setBookingSuccess(true);
       window.dispatchEvent(new CustomEvent("notification-updated"));
-      
+      window.dispatchEvent(new CustomEvent("appointment-updated"));
+
       setTimeout(() => {
         setBookingStep(false);
         setSelectedSlot(null);
+        setBookingPayment(null);
         setShowAddProfile(false);
         setVisitReason("");
         fetchDoctorsAndSlots(workDate, selectedDepartmentId, searchQuery);
-      }, 2000);
+        navigate("/dashboard/my-appointments?tab=upcoming");
+      }, 1800);
     } catch (err: any) {
-      const apiMsg = err.response?.data?.message || err.message;
-      toast.error(apiMsg || "Đặt lịch thất bại. Vui lòng thử lại.");
+      toast.error(err.message || "Chưa tìm thấy giao dịch. Vui lòng thử lại sau.");
+    } finally {
+      setVerifyingDeposit(false);
     }
   };
 
@@ -530,11 +661,10 @@ export default function AvailableSlots() {
     return `Phòng 40${docId % 10 || 1}`;
   };
 
-  // Get pricing based on degree and experience
+  // Use the fee configured for the doctor on the backend. The QR amount is generated from this value.
   const getDoctorPrice = (doc: DoctorOption) => {
-    if (doc.degree?.includes("PGS") || doc.degree?.includes("GS")) return 500000;
-    if (doc.degree?.includes("ThS")) return 350000;
-    return 300000;
+    const doctorFee = Number(doc.consultationFee);
+    return Number.isFinite(doctorFee) && doctorFee > 0 ? doctorFee : consultationFee;
   };
 
   // Timer string helpers
@@ -603,7 +733,7 @@ export default function AvailableSlots() {
             {/* Days Grid */}
             <div className="grid grid-cols-7 gap-1">
               {daysInGrid.map((date, idx) => {
-                const dateStr = date.toISOString().split("T")[0];
+                const dateStr = getLocalISODate(date);
                 const isSelected = workDate === dateStr;
                 const isCurrentMonth = date.getMonth() === currentMonth;
                 const isPast = date < new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate());
@@ -733,8 +863,8 @@ export default function AvailableSlots() {
                       <div className="flex flex-row md:flex-col items-center gap-3 shrink-0">
                         <div className="w-24 h-24 rounded-2xl bg-teal-50 border-2 border-[#1DB896]/10 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
                           <img 
-                            src={`https://api.dicebear.com/7.x/notionists/svg?seed=${doc.doctorId}&backgroundColor=e2e8f0`} 
-                            alt="Avatar" 
+                            src={doc.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(doc.fullName)}&background=e2e8f0&color=0f172a`}
+                            alt={doc.fullName} 
                             className="w-full h-full object-cover"
                           />
                         </div>
@@ -777,23 +907,52 @@ export default function AvailableSlots() {
                             </span>
                           ) : (
                             <div className="flex flex-wrap gap-1.5">
-                              {slots.map((slot) => {
-                                const isAvailable = slot.status === "AVAILABLE";
-                                return (
-                                  <button
-                                    key={slot.slotId}
-                                    disabled={!isAvailable}
-                                    onClick={() => handleSelectSlot(slot, doc)}
-                                    className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all ${
-                                      isAvailable
-                                        ? "bg-slate-50 border border-slate-200 text-slate-700 hover:border-[#1DB896] hover:text-[#0A604E] hover:bg-[#D1F2EB] cursor-pointer"
-                                        : "bg-slate-100 border border-dashed border-slate-200 text-slate-400 cursor-not-allowed"
-                                    }`}
-                                  >
-                                    {formatTime(slot.startTime)}
-                                  </button>
-                                );
-                              })}
+                                {slots.map((slot) => {
+                                  let isAvailable = false;
+                                  let isResumePayment = false;
+                                  let statusText = "Trống";
+                                  let buttonClass = "";
+
+                                  if (slot.status === "AVAILABLE") {
+                                    isAvailable = true;
+                                    statusText = "Trống";
+                                    buttonClass = "bg-white border border-[#1DB896]/30 text-slate-700 hover:border-[#1DB896] hover:text-[#0A604E] hover:bg-[#D1F2EB] cursor-pointer shadow-sm";
+                                  } else if (slot.status === "PENDING_PAYMENT") {
+                                    isResumePayment = true;
+                                    statusText = "Thanh toán tiếp";
+                                    buttonClass = "bg-amber-50 border border-amber-300 text-amber-700 hover:bg-amber-100 hover:border-amber-400 cursor-pointer shadow-sm animate-pulse";
+                                  } else if (slot.status === "LOCKED") {
+                                    isResumePayment = true;
+                                    statusText = "Đang giữ";
+                                    buttonClass = "bg-cyan-50 border border-cyan-200 text-cyan-700 hover:bg-cyan-100 hover:border-cyan-300 cursor-pointer shadow-sm";
+                                  } else if (slot.status === "BOOKED" || slot.status === "BLOCKED") {
+                                    statusText = "Đã kín";
+                                    buttonClass = "bg-amber-50 border border-amber-200 text-amber-600 cursor-not-allowed opacity-90";
+                                  } else if (slot.status === "EXPIRED") {
+                                    statusText = "Đã qua";
+                                    buttonClass = "bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed opacity-70";
+                                  } else {
+                                    statusText = "Đã kín";
+                                    buttonClass = "bg-amber-50 border border-amber-200 text-amber-600 cursor-not-allowed opacity-90";
+                                  }
+
+                                  return (
+                                    <button
+                                      key={slot.slotId}
+                                      disabled={!isAvailable && !isResumePayment}
+                                      onClick={() => {
+                                        if ((slot.status === "PENDING_PAYMENT" || slot.status === "LOCKED") && slot.appointmentId) {
+                                          handleResumePayment(slot, doc);
+                                        } else if (!isResumePayment) {
+                                          handleSelectSlot(slot, doc);
+                                        }
+                                      }}
+                                      className={`px-3 py-2 rounded-xl font-bold text-[13px] transition-all flex items-center justify-center min-w-[120px] ${buttonClass}`}
+                                    >
+                                      {formatTime(slot.startTime)} - {statusText}
+                                    </button>
+                                  );
+                                })}
                             </div>
                           )}
                         </div>
@@ -929,7 +1088,7 @@ export default function AvailableSlots() {
                 <h3 className="text-md font-black text-slate-800">Xác nhận thông tin đặt lịch</h3>
               </div>
               <button 
-                onClick={handleCancelBooking} 
+                onClick={handleClosePaymentModal} 
                 className="text-slate-400 hover:text-rose-500 transition-colors p-1.5 hover:bg-slate-100 rounded-full cursor-pointer"
               >
                 <X size={18} />
@@ -980,169 +1139,206 @@ export default function AvailableSlots() {
                     </div>
                   </div>
 
-                  {/* Profile Selection */}
-                  <div className="flex flex-col gap-2">
-                    <label className="text-xs font-black text-slate-700 uppercase tracking-wider">Chọn Hồ sơ Bệnh nhân</label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {profiles.map((p) => (
-                        <label 
-                          key={p.patientId} 
-                          className={`flex items-center gap-3 p-3 rounded-2xl border-2 cursor-pointer transition-all ${
-                            selectedProfileId === p.patientId && !showAddProfile 
-                              ? 'border-[#0A604E] bg-teal-50/20' 
-                              : 'border-slate-200 hover:border-teal-200'
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name="profile"
-                            checked={selectedProfileId === p.patientId && !showAddProfile}
-                            onChange={() => {
-                              setSelectedProfileId(p.patientId);
-                              setShowAddProfile(false);
-                            }}
-                            className="w-4 h-4 text-[#0A604E] focus:ring-[#0A604E]/30"
-                          />
-                          <div className="flex flex-col">
-                            <span className="font-black text-xs text-slate-800">{p.fullName}</span>
-                            <span className="text-[10px] text-[#4A5D59] font-bold">
-                              {p.relationshipToUser === 'SELF' ? 'Bản thân' : p.relationshipToUser} • {p.phone}
-                            </span>
-                          </div>
-                        </label>
-                      ))}
-                      
-                      <label 
-                        className={`flex items-center gap-3 p-3 rounded-2xl border-2 cursor-pointer transition-all ${
-                          showAddProfile 
-                            ? 'border-[#0A604E] bg-teal-50/20' 
-                            : 'border-slate-200 hover:border-[#1DB896]/30'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="profile"
-                          checked={showAddProfile}
-                          onChange={() => setShowAddProfile(true)}
-                          className="w-4 h-4 text-[#0A604E] focus:ring-[#0A604E]/30"
-                        />
-                        <div className="flex flex-col">
-                          <span className="font-black text-xs text-[#0A604E] flex items-center gap-1">
-                            <Plus size={12} /> Thêm người thân
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-bold">Tạo hồ sơ bệnh nhân mới</span>
+                  {!bookingPayment ? (
+                    <>
+                      {/* Profile Selection */}
+                      <div className="flex flex-col gap-2">
+                        <label className="text-xs font-black text-slate-700 uppercase tracking-wider">Chọn Hồ sơ Bệnh nhân</label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {profiles.map((p) => (
+                            <label 
+                              key={p.patientId} 
+                              className={`flex items-center gap-3 p-3 rounded-2xl border-2 cursor-pointer transition-all ${
+                                selectedProfileId === p.patientId && !showAddProfile 
+                                  ? 'border-[#0A604E] bg-teal-50/20' 
+                                  : 'border-slate-200 hover:border-teal-200'
+                              }`}
+                            >
+                              <input
+                                  type="radio"
+                                  name="profile"
+                                  checked={selectedProfileId === p.patientId && !showAddProfile}
+                                  onChange={() => {
+                                    setSelectedProfileId(p.patientId);
+                                    setShowAddProfile(false);
+                                  }}
+                                  className="w-4 h-4 text-[#0A604E] focus:ring-[#0A604E]/30"
+                              />
+                              <div className="flex flex-col">
+                                <span className="font-black text-xs text-slate-800">{p.fullName}</span>
+                                <span className="text-[10px] text-[#4A5D59] font-bold">
+                                  {p.relationshipToUser === 'SELF' ? 'Bản thân' : p.relationshipToUser} • {p.phone}
+                                </span>
+                              </div>
+                            </label>
+                          ))}
+                          
+                          <label 
+                            className={`flex items-center gap-3 p-3 rounded-2xl border-2 cursor-pointer transition-all ${
+                              showAddProfile 
+                                ? 'border-[#0A604E] bg-teal-50/20' 
+                                : 'border-slate-200 hover:border-[#1DB896]/30'
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="profile"
+                              checked={showAddProfile}
+                              onChange={() => setShowAddProfile(true)}
+                              className="w-4 h-4 text-[#0A604E] focus:ring-[#0A604E]/30"
+                            />
+                            <div className="flex flex-col">
+                              <span className="font-black text-xs text-[#0A604E] flex items-center gap-1">
+                                <Plus size={12} /> Thêm người thân
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-bold">Tạo hồ sơ bệnh nhân mới</span>
+                            </div>
+                          </label>
                         </div>
-                      </label>
-                    </div>
-                  </div>
+                      </div>
 
-                  {/* Add Profile Form */}
-                  {showAddProfile && (
-                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col gap-4 animate-in fade-in slide-in-from-top-2">
+                      {/* Add Profile Form */}
+                      {showAddProfile && (
+                        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col gap-4 animate-in fade-in slide-in-from-top-2">
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[11px] font-black text-slate-700 uppercase">Họ tên Bệnh nhân *</label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="Nhập đầy đủ họ tên người thân"
+                              value={newProfile.fullName}
+                              onChange={(e) => setNewProfile({...newProfile, fullName: e.target.value})}
+                              className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold"
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-[11px] font-black text-slate-700 uppercase">Mối quan hệ *</label>
+                              <select
+                                value={newProfile.relationshipToUser}
+                                onChange={(e) => setNewProfile({...newProfile, relationshipToUser: e.target.value})}
+                                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold"
+                              >
+                                <option value="CHILD">Con cái</option>
+                                <option value="PARENT">Bố/Mẹ</option>
+                                <option value="SPOUSE">Vợ/Chồng</option>
+                                <option value="OTHER">Khác</option>
+                              </select>
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-[11px] font-black text-slate-700 uppercase">Số điện thoại *</label>
+                              <input
+                                type="tel"
+                                required
+                                placeholder="Số điện thoại"
+                                value={newProfile.phone}
+                                onChange={(e) => setNewProfile({...newProfile, phone: e.target.value})}
+                                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Visit Reason */}
                       <div className="flex flex-col gap-1.5">
-                        <label className="text-[11px] font-black text-slate-700 uppercase">Họ tên Bệnh nhân *</label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="Nhập đầy đủ họ tên người thân"
-                          value={newProfile.fullName}
-                          onChange={(e) => setNewProfile({...newProfile, fullName: e.target.value})}
-                          className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold"
+                        <label htmlFor="bk-reason" className="text-xs font-black text-slate-700 uppercase tracking-wider">
+                          Lý do khám bệnh
+                        </label>
+                        <textarea
+                          id="bk-reason"
+                          rows={2}
+                          placeholder="Mô tả tóm tắt triệu chứng hoặc lý do khám..."
+                          value={visitReason}
+                          onChange={(e) => setVisitReason(e.target.value)}
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-[#1DB896]/20 focus:border-[#1DB896] outline-none placeholder-slate-450"
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="flex flex-col gap-1.5">
-                          <label className="text-[11px] font-black text-slate-700 uppercase">Mối quan hệ *</label>
-                          <select
-                            value={newProfile.relationshipToUser}
-                            onChange={(e) => setNewProfile({...newProfile, relationshipToUser: e.target.value})}
-                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold"
-                          >
-                            <option value="CHILD">Con cái</option>
-                            <option value="PARENT">Bố/Mẹ</option>
-                            <option value="SPOUSE">Vợ/Chồng</option>
-                            <option value="OTHER">Khác</option>
-                          </select>
+
+                      {/* Fees Section */}
+                      <div className="bg-[#F0F9F7] border border-[#1DB896]/20 rounded-2xl p-4 flex flex-col gap-2.5 mt-2">
+                        <div className="flex justify-between items-center text-xs font-bold">
+                          <span className="text-[#4A5D59]">Phí tư vấn của Bác sĩ (Dự kiến)</span>
+                          <span className="text-slate-800">
+                            {selectedDoctor ? getDoctorPrice(selectedDoctor).toLocaleString("vi-VN") : consultationFee.toLocaleString("vi-VN")} đ
+                          </span>
                         </div>
-                        <div className="flex flex-col gap-1.5">
-                          <label className="text-[11px] font-black text-slate-700 uppercase">Số điện thoại *</label>
-                          <input
-                            type="tel"
-                            required
-                            placeholder="Số điện thoại"
-                            value={newProfile.phone}
-                            onChange={(e) => setNewProfile({...newProfile, phone: e.target.value})}
-                            className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold"
-                          />
+                        <div className="flex justify-between items-start pt-2.5 border-t border-teal-200/50">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                              Đặt cọc giữ ca (Thanh toán online)
+                              <span className="text-[9px] font-bold bg-[#D1F2EB] text-[#0A604E] px-1.5 py-0.5 rounded">Tạm giữ</span>
+                            </span>
+                            <span className="text-[10px] text-[#4A5D59] font-medium leading-relaxed mt-0.5">
+                              Phí này được hoàn trả/khấu trừ trực tiếp khi bạn đến khám.
+                            </span>
+                          </div>
+                          <span className="text-base font-black text-rose-600">
+                            {selectedDoctor ? getDoctorPrice(selectedDoctor).toLocaleString("vi-VN") : consultationFee.toLocaleString("vi-VN")} VNĐ
+                          </span>
                         </div>
+                      </div>
+
+                      {/* Pricing Reference Link */}
+                      <div className="flex justify-end pr-1">
+                        <button 
+                          type="button" 
+                          onClick={() => setShowPriceModal(true)} 
+                          className="text-[11px] font-bold text-[#0A604E] hover:text-[#1DB896] underline transition-colors cursor-pointer"
+                        >
+                          Xem bảng giá dịch vụ bổ sung tham khảo
+                        </button>
+                      </div>
+
+                      <div className="flex gap-3 mt-4">
+                        <button
+                          type="submit"
+                          disabled={submittingBooking}
+                          className="flex-1 bg-[#0A604E] hover:bg-[#084f40] text-white font-black text-xs py-3.5 rounded-xl hover:shadow-lg transition-all cursor-pointer disabled:opacity-50"
+                        >
+                          {submittingBooking ? "Đang tạo QR..." : "Tạo QR thanh toán cọc"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleClosePaymentModal}
+                          className="px-6 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs py-3.5 rounded-xl transition-all cursor-pointer"
+                        >
+                          Hủy bỏ
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center gap-4 py-4 animate-in fade-in zoom-in-95">
+                      <div className="p-2 border border-slate-200 rounded-2xl bg-white shadow-sm inline-block">
+                        <img 
+                          src={bookingPayment.paymentUrl} 
+                          alt="QR Code thanh toán" 
+                          className="w-48 h-48 rounded-xl object-contain"
+                        />
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-black text-slate-800">Thanh toán đặt cọc: {bookingPayment.amount?.toLocaleString("vi-VN")} đ</p>
+                        <p className="text-xs font-bold text-rose-500 mt-1">Mã đơn: {bookingPayment.depositPayment?.paymentCode}</p>
+                      </div>
+                      <div className="flex w-full gap-3 mt-2">
+                        <button
+                          type="button"
+                          onClick={handleVerifyDepositPayment}
+                          disabled={verifyingDeposit}
+                          className="flex-1 bg-[#1DB896] hover:bg-[#159f80] text-white font-black text-xs py-3.5 rounded-xl transition-all disabled:opacity-50"
+                        >
+                          {verifyingDeposit ? "Đang xác thực..." : "Đã thanh toán (Xác thực)"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleAbortBooking}
+                          className="px-6 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs py-3.5 rounded-xl transition-all"
+                        >
+                          Hủy bỏ
+                        </button>
                       </div>
                     </div>
                   )}
-
-                  {/* Visit Reason */}
-                  <div className="flex flex-col gap-1.5">
-                    <label htmlFor="bk-reason" className="text-xs font-black text-slate-700 uppercase tracking-wider">
-                      Lý do khám bệnh
-                    </label>
-                    <textarea
-                      id="bk-reason"
-                      rows={2}
-                      placeholder="Mô tả tóm tắt triệu chứng hoặc lý do khám..."
-                      value={visitReason}
-                      onChange={(e) => setVisitReason(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-[#1DB896]/20 focus:border-[#1DB896] outline-none placeholder-slate-400"
-                    />
-                  </div>
-
-                  {/* Fees Section */}
-                  <div className="bg-[#F0F9F7] border border-[#1DB896]/20 rounded-2xl p-4 flex flex-col gap-2.5 mt-2">
-                    <div className="flex justify-between items-center text-xs font-bold">
-                      <span className="text-[#4A5D59]">Phí tư vấn của Bác sĩ (Dự kiến)</span>
-                      <span className="text-slate-800">
-                        {selectedDoctor ? getDoctorPrice(selectedDoctor).toLocaleString("vi-VN") : consultationFee.toLocaleString("vi-VN")} đ
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-start pt-2.5 border-t border-teal-200/50">
-                      <div className="flex flex-col">
-                        <span className="text-xs font-black text-slate-800 flex items-center gap-1.5">
-                          Đặt cọc giữ ca (Thanh toán online)
-                          <span className="text-[9px] font-bold bg-[#D1F2EB] text-[#0A604E] px-1.5 py-0.5 rounded">Tạm giữ</span>
-                        </span>
-                        <span className="text-[10px] text-[#4A5D59] font-medium leading-relaxed mt-0.5">
-                          Phí này được hoàn trả/khấu trừ trực tiếp khi bạn đến khám.
-                        </span>
-                      </div>
-                      <span className="text-base font-black text-rose-600">50.000 VNĐ</span>
-                    </div>
-                  </div>
-
-                  {/* Pricing Reference Link */}
-                  <div className="flex justify-end pr-1">
-                    <button 
-                      type="button" 
-                      onClick={() => setShowPriceModal(true)} 
-                      className="text-[11px] font-bold text-[#0A604E] hover:text-[#1DB896] underline transition-colors cursor-pointer"
-                    >
-                      Xem bảng giá dịch vụ bổ sung tham khảo
-                    </button>
-                  </div>
-
-                  {/* Submit Button Actions */}
-                  <div className="flex gap-3 mt-4">
-                    <button
-                      type="submit"
-                      className="flex-1 bg-[#0A604E] hover:bg-[#084f40] text-white font-black text-xs py-3.5 rounded-xl hover:shadow-lg transition-all cursor-pointer"
-                    >
-                      Xác nhận Đặt lịch ngay
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleCancelBooking}
-                      className="px-6 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs py-3.5 rounded-xl transition-all cursor-pointer"
-                    >
-                      Hủy bỏ
-                    </button>
-                  </div>
                 </form>
               )}
             </div>
