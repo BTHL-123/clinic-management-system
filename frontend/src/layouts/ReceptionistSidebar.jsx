@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
+  Bell,
   CalendarDays,
   ChevronRight,
   CreditCard,
@@ -98,6 +99,28 @@ export default function ReceptionistSidebar() {
         </div>
 
         <div className="w-full mt-auto pt-4 border-t border-teal-900/10">
+          <button
+            type="button"
+            onClick={() => navigate("/dashboard/notifications")}
+            className={`relative flex w-full items-center h-12 mb-2 rounded-2xl transition-all duration-300 group overflow-hidden shrink-0 font-bold ${
+              location.pathname.startsWith("/dashboard/notifications") ? "text-white shadow-md shadow-teal-900/20" : "text-[#1E3E37] hover:text-[#0A604E] hover:bg-teal-50/80"
+            } ${isExpanded ? "px-4" : "justify-center"}`}
+            title={!isExpanded ? "Thông báo" : ""}
+          >
+            {location.pathname.startsWith("/dashboard/notifications") && (
+              <motion.div
+                layoutId="activeReceptionistNav"
+                className="absolute inset-0 bg-gradient-to-r from-[#0A604E] to-[#0D7862] rounded-2xl shadow-[0_4px_14px_rgba(10,96,78,0.3)]"
+                initial={false}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              />
+            )}
+            <span className={`relative z-10 flex items-center ${isExpanded ? "gap-4" : ""}`}>
+              <Bell size={22} className="group-hover:scale-110 transition-transform" />
+              {isExpanded && <span className="whitespace-nowrap tracking-wide text-[15px]">Thông báo</span>}
+            </span>
+          </button>
+
           <button
             type="button"
             onClick={handleLogout}
