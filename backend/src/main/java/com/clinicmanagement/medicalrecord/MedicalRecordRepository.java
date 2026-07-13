@@ -19,6 +19,9 @@ public interface MedicalRecordRepository extends JpaRepository<MedicalRecord, Lo
     // Lấy toàn bộ lịch sử bệnh án của 1 bệnh nhân (dùng cho medical history)
     List<MedicalRecord> findByPatientIdOrderByCreatedAtDesc(Long patientId);
 
+    // Lấy bệnh án mới nhất của bệnh nhân
+    Optional<MedicalRecord> findFirstByPatientIdOrderByCreatedAtDesc(Long patientId);
+
     // Lọc theo patientId, doctorId (optional)
     @Query("""
             SELECT m FROM MedicalRecord m

@@ -40,7 +40,9 @@ const EMPTY_FORM = {
 
 export default function PatientManagement() {
   const { user } = useAuth();
-  const isDoctor = user?.roles?.some(r => r === "DOCTOR" || r.roleName === "DOCTOR");
+  const roles = (user?.roles || []).map(r => typeof r === "string" ? r : r.roleName);
+  const isDoctor = roles.some(r => r.includes("DOCTOR"));
+  const isReceptionistOnly = roles.some(r => r.includes("RECEPTIONIST")) && !roles.some(r => r.includes("ADMIN"));
 
   const navigate = useNavigate();
   const [patients, setPatients] = useState([]);
@@ -204,16 +206,12 @@ export default function PatientManagement() {
   };
 
   // Status mapper
-  const getMappedStatus = (p) => {
-    const idNum = p.patientId || 0;
-    if (idNum % 3 === 0) return "Đang điều trị";
-    if (idNum % 3 === 1) return "Đã xuất viện";
-    return "Tái khám";
-  };
+  const getMappedStatus = (p) => p.treatmentStatus || "Đang theo dõi";
 
   const getStatusBadgeStyle = (status) => {
     switch (status) {
       case "Đang điều trị":
+      case "Đang theo dõi":
         return "text-emerald-600 bg-emerald-50 border-emerald-100";
       case "Đã xuất viện":
         return "text-slate-600 bg-slate-50 border-slate-100";
@@ -226,7 +224,9 @@ export default function PatientManagement() {
 
   const getStatusDotColor = (status) => {
     switch (status) {
-      case "Đang điều trị": return "bg-emerald-500";
+      case "Đang điều trị":
+      case "Đang theo dõi":
+        return "bg-emerald-500";
       case "Đã xuất viện": return "bg-slate-400";
       case "Tái khám": return "bg-amber-500";
       default: return "bg-slate-400";
@@ -234,25 +234,13 @@ export default function PatientManagement() {
   };
 
   // Diagnosis mapper
-  const getMappedDiagnosis = (p) => {
-    if (p.medicalHistory) return p.medicalHistory;
-    const idNum = p.patientId || 0;
-    const list = [
-      "Rối loạn nhịp tim mạn tính",
-      "Viêm phế quản cấp tính",
-      "Suy thận độ 3, tiểu đường type 2",
-      "Theo dõi sau phẫu thuật ruột thừa",
-      "Rối loạn tiêu hóa cấp tính"
-    ];
-    return list[idNum % list.length];
-  };
+  const getMappedDiagnosis = (p) => p.latestDiagnosis || p.medicalHistory || "Khám sức khỏe tổng quát";
 
   // Last visit mapper
   const getMappedLastVisit = (p) => {
-    const idNum = p.patientId || 0;
-    if (idNum % 3 === 0) return "Hôm nay, 08:30";
-    if (idNum % 3 === 1) return "Hôm qua, 14:15";
-    return "15/10/2023";
+    if (!p.lastVisitDate) return "—";
+    const d = new Date(p.lastVisitDate);
+    return `${d.toLocaleDateString("vi-VN")} ${d.toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}`;
   };
 
   // Filter & Search Logic
@@ -438,13 +426,15 @@ export default function PatientManagement() {
                             <Eye size={15} />
                           </button>
 
-                          <button
-                            onClick={() => setShowHistoryFor(p.patientId)}
-                            title="Lịch sử bệnh án"
-                            className="p-2 rounded-lg bg-slate-50 text-slate-400 hover:bg-[#1DB896]/10 hover:text-[#1DB896] transition-colors"
-                          >
-                            <ClipboardList size={15} />
-                          </button>
+                          {!isReceptionistOnly && (
+                            <button
+                              onClick={() => setShowHistoryFor(p.patientId)}
+                              title="Lịch sử bệnh án"
+                              className="p-2 rounded-lg bg-slate-50 text-slate-400 hover:bg-[#1DB896]/10 hover:text-[#1DB896] transition-colors"
+                            >
+                              <ClipboardList size={15} />
+                            </button>
+                          )}
 
                           <button
                             onClick={() => openEdit(p)}

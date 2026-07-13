@@ -27,6 +27,7 @@ export default function DoctorSchedulePage() {
   const toast = useToast();
 
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState("week"); // 'week' or 'month'
   const [doctorProfile, setDoctorProfile] = useState(null);
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -63,6 +64,18 @@ export default function DoctorSchedulePage() {
     return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
   };
 
+  // Month grid calculations
+  const monthYear = currentDate.getFullYear();
+  const monthIndex = currentDate.getMonth();
+  const daysInMonth = new Date(monthYear, monthIndex + 1, 0).getDate();
+  const firstDayOfMonth = new Date(monthYear, monthIndex, 1).getDay();
+  const offset = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1; // 0 for Monday
+  
+  const monthDaysArray = Array.from({ length: daysInMonth }, (_, i) => {
+    return new Date(monthYear, monthIndex, i + 1, 12, 0, 0); // set to noon to avoid timezone shift
+  });
+  const emptyDays = Array.from({ length: offset });
+
   // Helper to fetch data
   const fetchDoctorAndSchedules = useCallback(async () => {
     setLoading(true);
@@ -73,8 +86,23 @@ export default function DoctorSchedulePage() {
       setDoctorProfile(profile);
 
       if (profile && profile.doctorId) {
-        const fromDateStr = weekDays[0].toISOString().split("T")[0];
-        const toDateStr = weekDays[6].toISOString().split("T")[0];
+        let fromDateStr, toDateStr;
+        if (viewMode === "week") {
+          fromDateStr = weekDays[0].toISOString().split("T")[0];
+          toDateStr = weekDays[6].toISOString().split("T")[0];
+        } else {
+          // fetch for full month
+          const firstDay = new Date(monthYear, monthIndex, 1, 12, 0, 0);
+          const lastDay = new Date(monthYear, monthIndex + 1, 0, 12, 0, 0);
+          
+          // stretch to cover the visual grid
+          const startCal = getMonday(firstDay);
+          const endCal = new Date(lastDay);
+          endCal.setDate(endCal.getDate() + (7 - endCal.getDay()) % 7);
+          
+          fromDateStr = startCal.toISOString().split("T")[0];
+          toDateStr = endCal.toISOString().split("T")[0];
+        }
 
         const schedRes = await getSchedules({
           doctorId: profile.doctorId,
@@ -94,7 +122,7 @@ export default function DoctorSchedulePage() {
 
   useEffect(() => {
     fetchDoctorAndSchedules();
-  }, [fetchDoctorAndSchedules]);
+  }, [fetchDoctorAndSchedules, viewMode]);
 
   // Handle schedule select
   const handleScheduleSelect = async (sched) => {
@@ -149,18 +177,20 @@ export default function DoctorSchedulePage() {
     }
   }, [schedules]);
 
-  const handlePrevWeek = () => {
+  const handlePrev = () => {
     setCurrentDate(prev => {
       const next = new Date(prev);
-      next.setDate(next.getDate() - 7);
+      if (viewMode === "week") next.setDate(next.getDate() - 7);
+      else next.setMonth(next.getMonth() - 1);
       return next;
     });
   };
 
-  const handleNextWeek = () => {
+  const handleNext = () => {
     setCurrentDate(prev => {
       const next = new Date(prev);
-      next.setDate(next.getDate() + 7);
+      if (viewMode === "week") next.setDate(next.getDate() + 7);
+      else next.setMonth(next.getMonth() + 1);
       return next;
     });
   };
@@ -179,12 +209,12 @@ export default function DoctorSchedulePage() {
 
   // Start examination
   const handleStartExam = async (appt) => {
-    if (!appt.queueTicket) {
-      toast?.info("Bệnh nhân chưa có trong hàng đợi khám.");
+    if (!appt.queueTicketId) {
+      toast?.info("Bệnh nhân chưa có trong hàng đợi khám (hoặc chưa check-in).");
       return;
     }
     try {
-      const res = await queueTicketService.startExamination(appt.queueTicket.queueTicketId);
+      const res = await queueTicketService.startExamination(appt.queueTicketId);
       toast?.success("Bắt đầu khám thành công!");
       if (res.data?.consultationId) {
         navigate(`/dashboard/examination/${res.data.consultationId}`);
@@ -206,6 +236,9 @@ export default function DoctorSchedulePage() {
     return reason.includes("khẩn cấp") || reason.includes("cấp cứu") || reason.includes("đau ngực") || reason.includes("nguy kịch");
   };
 
+  const todayStr = new Date().toISOString().split("T")[0];
+  const isPastSchedule = selectedDate ? selectedDate < todayStr : false;
+
   return (
     <div className="w-full flex flex-col gap-6 p-1">
       {/* Title & Navigation Bar */}
@@ -215,25 +248,43 @@ export default function DoctorSchedulePage() {
           <p className="text-slate-500 font-bold text-xs mt-0.5">Lịch trực và danh sách bệnh nhân</p>
         </div>
 
-        {/* Week navigation control */}
+        {/* Week/Month navigation control */}
         <div className="flex items-center gap-3">
+          <div className="flex bg-slate-100 rounded-xl p-1 shadow-inner">
+            <button
+              onClick={() => setViewMode("week")}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === "week" ? "bg-white text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
+            >
+              Tuần
+            </button>
+            <button
+              onClick={() => setViewMode("month")}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === "month" ? "bg-white text-slate-800 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
+            >
+              Tháng
+            </button>
+          </div>
+
           <div className="flex items-center bg-white border border-slate-200/80 rounded-2xl p-1 shadow-sm">
             <button
-              onClick={handlePrevWeek}
+              onClick={handlePrev}
               className="p-2 rounded-xl text-slate-500 hover:bg-slate-50 transition-colors"
-              title="Tuần trước"
+              title={viewMode === "week" ? "Tuần trước" : "Tháng trước"}
             >
               <ChevronLeft size={18} />
             </button>
 
             <span className="px-4 text-xs font-bold text-slate-700 tracking-wide">
-              Tuần {getWeekNumber(monday)} – {formatDayMonth(weekDays[0])} đến {formatDayMonth(weekDays[6])}/{weekDays[6].getFullYear()}
+              {viewMode === "week" 
+                ? `Tuần ${getWeekNumber(monday)} – ${formatDayMonth(weekDays[0])} đến ${formatDayMonth(weekDays[6])}/${weekDays[6].getFullYear()}`
+                : `Tháng ${monthIndex + 1}, ${monthYear}`
+              }
             </span>
 
             <button
-              onClick={handleNextWeek}
+              onClick={handleNext}
               className="p-2 rounded-xl text-slate-500 hover:bg-slate-50 transition-colors"
-              title="Tuần sau"
+              title={viewMode === "week" ? "Tuần sau" : "Tháng sau"}
             >
               <ChevronRight size={18} />
             </button>
@@ -264,10 +315,10 @@ export default function DoctorSchedulePage() {
           {loading ? (
             <div className="h-[400px] flex flex-col items-center justify-center gap-3 text-slate-400 font-medium">
               <RefreshCw size={32} className="animate-spin text-teal-500" />
-              <span>Đang tải lịch trực tuần này...</span>
+              <span>Đang tải lịch trực...</span>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4">
+          ) : viewMode === "week" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-7 gap-2">
               {weekDays.map((day, idx) => {
                 const dateStr = day.toISOString().split("T")[0];
                 const schedsForDay = schedules.filter(s => s.workDate === dateStr);
@@ -277,11 +328,11 @@ export default function DoctorSchedulePage() {
                 return (
                   <div
                     key={idx}
-                    className={`flex flex-col gap-3 min-h-[400px] p-2 rounded-2xl transition-all ${isToday ? "bg-emerald-50/20 border border-emerald-100/50" : ""
+                    className={`flex flex-col gap-3 min-h-[400px] p-1.5 rounded-2xl transition-all ${isToday ? "bg-emerald-50/40 border border-emerald-100/50" : ""
                       }`}
                   >
                     {/* Column Day Header */}
-                    <div className="text-center py-2 flex flex-col items-center gap-1">
+                    <div className="text-center py-1 flex flex-col items-center gap-1">
                       <span className={`text-[10px] font-extrabold tracking-wider ${isWeekend ? "text-rose-400" : "text-slate-400"
                         }`}>
                       {DAYS_OF_WEEK[idx]}
@@ -327,10 +378,10 @@ export default function DoctorSchedulePage() {
                             <button
                               key={sIdx}
                               onClick={() => handleScheduleSelect(sched)}
-                              className={`w-full rounded-2xl p-4 text-left transition-all flex flex-col gap-2.5 ${borderStyle} ${cardBg}`}
+                              className={`w-full aspect-square rounded-[1.25rem] p-3 text-left transition-all flex flex-col justify-between shadow-sm hover:shadow-md ${borderStyle} ${cardBg}`}
                             >
-                              <div className="flex items-center justify-between">
-                                <span className={`text-xs font-black px-2 py-0.5 rounded-lg ${hasEmergency
+                              <div className="flex items-start justify-between">
+                                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md ${hasEmergency
                                     ? "bg-rose-100 text-rose-700"
                                     : isSelected
                                       ? "bg-teal-100/60 text-teal-850"
@@ -340,12 +391,12 @@ export default function DoctorSchedulePage() {
                                 </span>
 
                                 {isToday && !isNightShift && sched.status === "AVAILABLE" && (
-                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse mt-1" />
                                 )}
                               </div>
 
-                              <div className="flex flex-col">
-                                <span className="text-xs font-extrabold tracking-tight">
+                              <div className="flex flex-col mt-auto mb-1.5">
+                                <span className="text-[12px] leading-snug font-extrabold tracking-tight line-clamp-2">
                                   {hasEmergency
                                     ? "Hội chẩn khẩn"
                                     : isNightShift
@@ -359,7 +410,7 @@ export default function DoctorSchedulePage() {
                                 )}
                               </div>
 
-                              <span className="text-[10px] opacity-75 font-semibold font-sans mt-auto">
+                              <span className="text-[9px] font-bold font-sans opacity-80">
                                 {sched.startTime.slice(0, 5)} - {sched.endTime.slice(0, 5)}
                               </span>
                             </button>
@@ -370,6 +421,54 @@ export default function DoctorSchedulePage() {
                   </div>
                 );
               })}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2 h-full">
+              {/* Month grid headers */}
+              <div className="grid grid-cols-7 gap-2 mb-2">
+                {DAYS_OF_WEEK.map(d => (
+                  <div key={d} className="text-center text-[11px] font-extrabold text-slate-400 py-1 uppercase">
+                    {d}
+                  </div>
+                ))}
+              </div>
+              {/* Month grid days */}
+              <div className="grid grid-cols-7 gap-2 flex-1">
+                {emptyDays.map((_, i) => <div key={`empty-${i}`} className="min-h-[100px] rounded-2xl bg-slate-50/50 border border-slate-100/50"></div>)}
+                {monthDaysArray.map((day, idx) => {
+                   const dateStr = day.toISOString().split("T")[0];
+                   const schedsForDay = schedules.filter(s => s.workDate === dateStr);
+                   const isToday = isDateToday(day);
+                   
+                   return (
+                     <div 
+                       key={idx} 
+                       onClick={() => schedsForDay.length > 0 && handleScheduleSelect(schedsForDay[0])}
+                       className={`min-h-[100px] p-2 flex flex-col gap-1.5 rounded-2xl transition-all cursor-pointer hover:border-teal-400/50 hover:shadow-md ${isToday ? "bg-emerald-50/40 border border-emerald-200" : "bg-white border border-slate-200/60"}`}
+                     >
+                       <span className={`text-xs font-black ${isToday ? "text-[#0A604E]" : "text-slate-600"}`}>
+                         {day.getDate()}
+                       </span>
+                       <div className="flex flex-col gap-1 mt-1">
+                         {schedsForDay.map((sched, sIdx) => {
+                           const isSelected = selectedSchedule?.scheduleId === sched.scheduleId;
+                           const hasEmergency = sched.status === "EMERGENCY" || (sched.bookedSlots > 0 && sIdx % 3 === 2);
+                           
+                           let colorClass = "bg-slate-100 text-slate-600";
+                           if(isSelected) colorClass = "bg-[#0A604E] text-white shadow-md";
+                           else if(hasEmergency) colorClass = "bg-rose-100 text-rose-700";
+                           
+                           return (
+                             <div key={sIdx} className={`text-[10px] font-extrabold px-1.5 py-1 rounded-lg truncate ${colorClass}`}>
+                               {sched.startTime.slice(0,5)} {hasEmergency ? " (Khẩn)" : ""}
+                             </div>
+                           );
+                         })}
+                       </div>
+                     </div>
+                   );
+                })}
+              </div>
             </div>
           )}
 
@@ -387,7 +486,7 @@ export default function DoctorSchedulePage() {
         </div>
 
         {/* Right Side: Shift Details / Patient Queue */}
-        <div className="w-full xl:w-[420px] shrink-0 bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sticky top-6">
+        <div className="w-full xl:w-[340px] shrink-0 bg-white rounded-3xl border border-slate-200/80 shadow-sm p-5 sticky top-6">
           {!selectedDate ? (
             <div className="text-center py-16 text-slate-400 flex flex-col items-center gap-4">
               <div className="w-16 h-16 rounded-3xl bg-slate-50 flex items-center justify-center border border-slate-100">
@@ -413,9 +512,9 @@ export default function DoctorSchedulePage() {
                 </div>
 
                 {selectedSchedule && (
-                  <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${selectedSchedule.status === "AVAILABLE" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" : "bg-rose-50 text-rose-600 border border-rose-100"
+                  <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${isPastSchedule ? "bg-slate-100 text-slate-500 border border-slate-200" : selectedSchedule.status === "AVAILABLE" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" : "bg-rose-50 text-rose-600 border border-rose-100"
                     }`}>
-                    {selectedSchedule.status === "AVAILABLE" ? "Hoạt động" : "Đã hủy"}
+                    {isPastSchedule ? "Đã kết thúc" : selectedSchedule.status === "AVAILABLE" ? "Hoạt động" : "Đã hủy"}
                   </span>
                 )}
               </div>
@@ -485,15 +584,17 @@ export default function DoctorSchedulePage() {
                             Hồ sơ
                           </button>
 
-                          <button
-                            onClick={() => handleStartExam(appt)}
-                            className={`flex-1 py-2 font-extrabold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 ${isUrgent
-                                ? "bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/10"
-                                : "bg-[#0A604E] hover:bg-[#1DB896] text-white shadow-teal-500/10"
-                              }`}
-                          >
-                            {isUrgent ? "XỬ LÝ NGAY" : "Bắt đầu"}
-                          </button>
+                          {!isPastSchedule && (
+                            <button
+                              onClick={() => handleStartExam(appt)}
+                              className={`flex-1 py-2 font-extrabold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 ${isUrgent
+                                  ? "bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/10"
+                                  : "bg-[#0A604E] hover:bg-[#1DB896] text-white shadow-teal-500/10"
+                                }`}
+                            >
+                              {isUrgent ? "XỬ LÝ NGAY" : "Bắt đầu"}
+                            </button>
+                          )}
                         </div>
                       </div>
                     );
@@ -514,23 +615,25 @@ export default function DoctorSchedulePage() {
                   In danh sách ca trực
                 </button>
 
-                <button
-                  onClick={() => navigate("/dashboard/doctor-leave-requests", {
-                    state: { prefillDate: selectedDate }
-                  })}
-                  className="w-full flex items-center justify-between p-3.5 bg-rose-50/30 hover:bg-rose-50 border border-rose-100 rounded-xl transition-all group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center">
-                      <ClipboardList size={16} />
+                {!isPastSchedule && (
+                  <button
+                    onClick={() => navigate("/dashboard/doctor-leave-requests", {
+                      state: { prefillDate: selectedDate }
+                    })}
+                    className="w-full flex items-center justify-between p-3.5 bg-rose-50/30 hover:bg-rose-50 border border-rose-100 rounded-xl transition-all group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center">
+                        <ClipboardList size={16} />
+                      </div>
+                      <div className="text-left">
+                        <strong className="block text-xs text-rose-800">Xin nghỉ phép / Đổi lịch</strong>
+                        <span className="block text-[10px] text-rose-500 mt-0.5">Gửi yêu cầu đổi ca trực</span>
+                      </div>
                     </div>
-                    <div className="text-left">
-                      <strong className="block text-xs text-rose-800">Xin nghỉ phép / Đổi lịch</strong>
-                      <span className="block text-[10px] text-rose-500 mt-0.5">Gửi yêu cầu đổi ca trực</span>
-                    </div>
-                  </div>
-                  <ArrowRight size={16} className="text-rose-400 group-hover:translate-x-0.5 transition-transform" />
-                </button>
+                    <ArrowRight size={16} className="text-rose-400 group-hover:translate-x-0.5 transition-transform" />
+                  </button>
+                )}
               </div>
 
             </div>

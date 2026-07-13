@@ -94,16 +94,18 @@ public class DoctorScheduleController {
             @RequestParam Long doctorId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate workDate
     ) {
-        List<TimeSlotResponse> response = doctorScheduleService.getAvailableSlots(doctorId, workDate, false);
+        List<TimeSlotResponse> response = doctorScheduleService.getAvailableSlots(doctorId, workDate, false, null);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @GetMapping("/available-slots/patient")
     public ResponseEntity<ApiResponse<List<TimeSlotResponse>>> getAvailableSlotsForPatient(
             @RequestParam Long doctorId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate workDate
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate workDate,
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        List<TimeSlotResponse> response = doctorScheduleService.getAvailableSlots(doctorId, workDate, true);
+        Long userId = userDetails != null ? userDetails.getUser().getUserId() : null;
+        List<TimeSlotResponse> response = doctorScheduleService.getAvailableSlots(doctorId, workDate, true, userId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

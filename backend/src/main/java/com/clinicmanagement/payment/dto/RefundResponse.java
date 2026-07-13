@@ -17,7 +17,14 @@ public record RefundResponse(
         String approvedByName,
         LocalDateTime requestedAt,
         LocalDateTime approvedAt,
-        LocalDateTime completedAt
+        LocalDateTime completedAt,
+        String refundMethod,
+        String bankName,
+        String bankAccountNumber,
+        String accountHolderName,
+        String refundTransactionRef,
+        String processedByName,
+        LocalDateTime processedAt
 ) {
     public static RefundResponse from(Refund refund) {
         return new RefundResponse(
@@ -33,7 +40,14 @@ public record RefundResponse(
                 refund.getApprovedBy() != null ? refund.getApprovedBy().getFullName() : null,
                 refund.getRequestedAt(),
                 refund.getApprovedAt(),
-                refund.getCompletedAt()
+                refund.getCompletedAt(),
+                refund.getRefundMethod(),
+                refund.getBankName(),
+                refund.getBankAccountNumber(),
+                refund.getAccountHolderName(),
+                refund.getRefundTransactionRef(),
+                refund.getProcessedBy() != null ? refund.getProcessedBy().getFullName() : null,
+                refund.getProcessedAt()
         );
     }
 }

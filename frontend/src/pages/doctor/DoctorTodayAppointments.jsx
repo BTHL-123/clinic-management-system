@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Calendar,
@@ -18,6 +18,7 @@ import appointmentService from "../../services/appointmentService";
 import queueService from "../../services/queueService";
 import queueTicketService from "../../services/queueTicketService";
 import { getMyDoctorProfile } from "../../services/doctorService";
+import { getSchedules } from "../../services/scheduleService";
 import { useToast } from "../../context/useToast.js";
 import PatientRecordModal from "../../components/PatientRecordModal";
 
@@ -26,6 +27,7 @@ export default function DoctorTodayAppointments() {
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState([]);
   const [queueTickets, setQueueTickets] = useState([]);
+  const [todaySchedules, setTodaySchedules] = useState([]);
   const [doctor, setDoctor] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -70,6 +72,12 @@ export default function DoctorTodayAppointments() {
           doctorId: currentDoctor.doctorId
         });
         setQueueTickets(queueRes?.data || []);
+
+        const schedRes = await getSchedules({
+          doctorId: currentDoctor.doctorId,
+          workDate: todayStr
+        });
+        setTodaySchedules(schedRes?.data?.content || schedRes?.data || []);
       }
     } catch (err) {
       console.error(err);
@@ -83,12 +91,43 @@ export default function DoctorTodayAppointments() {
     fetchData();
   }, [fetchData]);
 
+  const { shiftStart, shiftEnd } = useMemo(() => {
+    let sH = 8, sM = 0;
+    let eH = 17, eM = 0;
+
+    if (todaySchedules && todaySchedules.length > 0) {
+      const startTimes = todaySchedules.map(s => {
+        if (!s.startTime) return 8 * 60;
+        const parts = s.startTime.split(":");
+        return parseInt(parts[0], 10) * 60 + parseInt(parts[1] || 0, 10);
+      });
+      const endTimes = todaySchedules.map(s => {
+        if (!s.endTime) return 17 * 60;
+        const parts = s.endTime.split(":");
+        return parseInt(parts[0], 10) * 60 + parseInt(parts[1] || 0, 10);
+      });
+
+      const minStart = Math.min(...startTimes);
+      const maxEnd = Math.max(...endTimes);
+
+      sH = Math.floor(minStart / 60);
+      sM = minStart % 60;
+      eH = Math.floor(maxEnd / 60);
+      eM = maxEnd % 60;
+    }
+
+    return { 
+      shiftStart: { hour: sH, min: sM }, 
+      shiftEnd: { hour: eH, min: eM } 
+    };
+  }, [todaySchedules]);
+
   // Real-time countdown timer & shift progress bar updater
   useEffect(() => {
     const updateTimeAndProgress = () => {
       const now = new Date();
       const endShift = new Date();
-      endShift.setHours(17, 0, 0, 0); // shift ends at 17:00 PM
+      endShift.setHours(shiftEnd.hour, shiftEnd.min, 0, 0);
 
       const diff = endShift - now;
       if (diff <= 0) {
@@ -101,7 +140,8 @@ export default function DoctorTodayAppointments() {
       }
 
       const startShift = new Date();
-      startShift.setHours(8, 0, 0, 0);
+      startShift.setHours(shiftStart.hour, shiftStart.min, 0, 0);
+      
       if (now < startShift) {
         setProgress(0);
       } else if (now > endShift) {
@@ -116,7 +156,7 @@ export default function DoctorTodayAppointments() {
     updateTimeAndProgress();
     const timer = setInterval(updateTimeAndProgress, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [shiftStart, shiftEnd]);
 
   // Queue actions
   const handleCall = async (id) => {
@@ -162,7 +202,7 @@ export default function DoctorTodayAppointments() {
   };
 
   // Group tickets by queueStatus
-  const calledTicket = queueTickets.find(t => t.queueStatus === "CALLED");
+  const calledTicket = queueTickets.find(t => t.queueStatus === "CALLED" || t.queueStatus === "IN_EXAMINATION");
   const waitingTickets = queueTickets.filter(t => t.queueStatus === "WAITING" || t.queueStatus === "SKIPPED");
   const completedTickets = queueTickets.filter(t => t.queueStatus === "COMPLETED" || t.queueStatus === "DONE");
 
@@ -222,9 +262,9 @@ export default function DoctorTodayAppointments() {
           {/* Shift progress bar */}
           <div className="mt-1">
             <div className="flex justify-between text-[9px] text-slate-400 font-bold mb-1">
-              <span>08:00 AM</span>
+              <span>{String(shiftStart.hour).padStart(2, '0')}:{String(shiftStart.min).padStart(2, '0')}</span>
               <span>SHIFT PROGRESS: {progress}%</span>
-              <span>17:00 PM</span>
+              <span>{String(shiftEnd.hour).padStart(2, '0')}:{String(shiftEnd.min).padStart(2, '0')}</span>
             </div>
             <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
               <div
@@ -304,12 +344,27 @@ export default function DoctorTodayAppointments() {
                   Hồ sơ cũ
                 </button>
 
-                <button
-                  onClick={() => handleComplete(calledTicket.queueTicketId)}
-                  className="flex-1 py-3 bg-[#0A604E] hover:bg-[#1DB896] text-white font-extrabold text-xs rounded-xl transition-all shadow-sm active:scale-95"
-                >
-                  Hoàn thành
-                </button>
+                {calledTicket.queueStatus === "IN_EXAMINATION" ? (
+                  <button
+                    onClick={() => {
+                      if (calledTicket.consultationId) {
+                        navigate(`/dashboard/examination/${calledTicket.consultationId}`);
+                      } else {
+                        handleExamine(calledTicket.queueTicketId);
+                      }
+                    }}
+                    className="flex-1 py-3 bg-[#0A604E] hover:bg-[#1DB896] text-white font-extrabold text-xs rounded-xl transition-all shadow-sm active:scale-95"
+                  >
+                    Tiếp tục khám
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleExamine(calledTicket.queueTicketId)}
+                    className="flex-1 py-3 bg-[#0A604E] hover:bg-[#1DB896] text-white font-extrabold text-xs rounded-xl transition-all shadow-sm active:scale-95"
+                  >
+                    Bắt đầu khám
+                  </button>
+                )}
               </div>
             </div>
           ) : (

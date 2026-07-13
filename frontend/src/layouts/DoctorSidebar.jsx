@@ -52,45 +52,46 @@ export default function DoctorSidebar() {
 
   return (
     <motion.nav
-      initial={{ x: -100, opacity: 0 }}
-      animate={{ x: 0, opacity: 1, width: isExpanded ? 260 : 68 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className="hidden md:flex flex-col justify-between bg-white border-r border-slate-200/80 py-4 h-[calc(100vh-68px)] sticky top-[68px] z-[100] shadow-[1px_0_8px_rgba(0,0,0,0.03)] shrink-0"
+      initial={{ x: -80, opacity: 0 }}
+      animate={{ x: 0, opacity: 1, width: isExpanded ? 244 : 70 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+      className="hidden md:flex flex-col justify-between bg-white/90 backdrop-blur-xl border border-teal-900/10 shadow-[0_8px_30px_rgba(0,0,0,0.06)] rounded-[2rem] py-6 h-[calc(100vh-104px)] sticky top-[80px] z-[100]"
     >
-      <div className="flex flex-col gap-2 w-full px-2.5 relative h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
+      <div className="flex flex-col gap-4 w-full px-3 h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
         {/* Expand Toggle Button */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className={`w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all shrink-0 ${isExpanded ? "self-end mr-0.5" : "mx-auto"}`}
+          className={`w-11 h-11 rounded-2xl flex items-center justify-center text-slate-500 hover:text-teal-800 hover:bg-teal-50 transition-all shrink-0 ${isExpanded ? "self-end mr-1" : "mx-auto"}`}
         >
-          <ChevronRight size={18} className={`transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
+          <ChevronRight size={22} className={`transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
         </button>
 
-        <div className="flex flex-col gap-1 w-full mt-1 flex-1">
+        <div className="flex flex-col gap-1.5 w-full mt-2 flex-1">
           {navItems.map(item => (
             <button
               key={item.id}
               onClick={() => navigate(item.path)}
-              className={`relative flex items-center h-11 transition-all duration-200 group overflow-hidden shrink-0 ${activeNav === item.id
-                ? "bg-[#0A604E] text-white font-bold rounded-full shadow-[0_4px_12px_rgba(10,96,78,0.15)]"
-                : "text-[#4A5D59] font-medium hover:text-slate-850 hover:bg-[#F0F9F7] rounded-xl"
-                } ${isExpanded ? "px-3" : "justify-center"}`}
+              className={`relative flex items-center h-12 rounded-2xl transition-all duration-300 group overflow-hidden shrink-0 font-bold ${
+                activeNav === item.id ? "text-white shadow-md shadow-teal-900/20" : "text-[#1E3E37] hover:text-[#0A604E] hover:bg-teal-50/80"
+              } ${isExpanded ? "px-4" : "justify-center"}`}
               title={!isExpanded ? item.label : ""}
             >
-              <div className={`relative z-10 flex items-center ${isExpanded ? "gap-3" : ""}`}>
-                <div className={`transition-colors duration-200 ${activeNav === item.id ? "text-white" : "text-[#4A5D59]/75 group-hover:text-slate-850"
-                  }`}>
+              {activeNav === item.id && (
+                <motion.div
+                  layoutId="activeDoctorNav"
+                  className="absolute inset-0 bg-gradient-to-r from-[#0A604E] to-[#0D7862] rounded-2xl shadow-[0_4px_14px_rgba(10,96,78,0.3)]"
+                  initial={false}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                />
+              )}
+              <div className={`relative z-10 flex items-center ${isExpanded ? "gap-4" : ""}`}>
+                <div className="group-hover:scale-110 transition-transform">
                   {item.icon}
                 </div>
                 {isExpanded && (
-                  <motion.span
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    className="whitespace-nowrap text-[14px] tracking-wide font-semibold text-sm"
-                  >
+                  <span className="whitespace-nowrap text-[15px] tracking-wide font-bold">
                     {item.label}
-                  </motion.span>
+                  </span>
                 )}
               </div>
             </button>
@@ -98,30 +99,37 @@ export default function DoctorSidebar() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5 w-full px-2.5 mt-auto border-t border-slate-100 pt-3">
+      <div className="w-full px-3 mt-auto pt-4 border-t border-teal-900/10">
         <button
           onClick={() => navigate("/dashboard/notifications")}
-          className={`relative flex items-center h-10 transition-all duration-200 group overflow-hidden shrink-0 ${activeNav === "notifications"
-            ? "bg-[#0A604E] text-white font-bold rounded-full"
-            : "text-[#4A5D59] font-medium hover:text-slate-850 hover:bg-[#F0F9F7] rounded-xl"
-            } ${isExpanded ? "px-3" : "justify-center"}`}
+          className={`relative flex w-full items-center h-12 mb-2 rounded-2xl transition-all duration-300 group overflow-hidden shrink-0 font-bold ${
+            activeNav === "notifications" ? "text-white shadow-md shadow-teal-900/20" : "text-[#1E3E37] hover:text-[#0A604E] hover:bg-teal-50/80"
+          } ${isExpanded ? "px-4" : "justify-center"}`}
           title={!isExpanded ? "Thông báo" : ""}
         >
-          <div className="relative z-10 flex items-center gap-3">
-            <Bell size={20} />
-            {isExpanded && <span className="whitespace-nowrap text-[14px] tracking-wide font-semibold text-sm">Thông báo</span>}
+          {activeNav === "notifications" && (
+            <motion.div
+              layoutId="activeDoctorNav"
+              className="absolute inset-0 bg-gradient-to-r from-[#0A604E] to-[#0D7862] rounded-2xl shadow-[0_4px_14px_rgba(10,96,78,0.3)]"
+              initial={false}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            />
+          )}
+          <div className="relative z-10 flex items-center gap-4">
+            <Bell size={22} className="group-hover:scale-110 transition-transform" />
+            {isExpanded && <span className="whitespace-nowrap tracking-wide text-[15px] font-bold">Thông báo</span>}
           </div>
         </button>
 
         <button
           onClick={handleLogout}
-          className={`relative flex items-center h-10 transition-all duration-200 group overflow-hidden shrink-0 text-rose-600 hover:bg-rose-50 hover:text-rose-700 rounded-xl ${isExpanded ? "px-3" : "justify-center"}`}
+          className={`w-full flex items-center h-12 rounded-2xl text-rose-600 font-bold hover:text-rose-700 hover:bg-rose-50 transition-all group ${
+            isExpanded ? "px-4 gap-4" : "justify-center"
+          }`}
           title={!isExpanded ? "Đăng xuất" : ""}
         >
-          <div className="relative z-10 flex items-center gap-3">
-            <LogOut size={20} />
-            {isExpanded && <span className="whitespace-nowrap text-[14px] tracking-wide font-semibold text-sm">Đăng xuất</span>}
-          </div>
+          <LogOut size={22} className="group-hover:-translate-x-1 transition-transform text-rose-600" />
+          {isExpanded && <span className="whitespace-nowrap tracking-wide text-[15px] font-bold">Đăng xuất</span>}
         </button>
       </div>
     </motion.nav>

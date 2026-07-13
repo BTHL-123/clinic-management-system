@@ -15,9 +15,21 @@ public record InvoiceResponse(
         BigDecimal finalAmount,
         String status,
         LocalDateTime createdAt,
-        LocalDateTime paidAt
+        LocalDateTime paidAt,
+        BigDecimal paidAmount,
+        BigDecimal remainingAmount,
+        String paymentStatus
 ) {
     public static InvoiceResponse from(Invoice invoice) {
+        return from(invoice, BigDecimal.ZERO);
+    }
+
+    public static InvoiceResponse from(Invoice invoice, BigDecimal paidAmount) {
+        BigDecimal normalizedPaid = paidAmount != null ? paidAmount : BigDecimal.ZERO;
+        BigDecimal remainingAmount = invoice.getFinalAmount().subtract(normalizedPaid);
+        if (remainingAmount.compareTo(BigDecimal.ZERO) < 0) {
+            remainingAmount = BigDecimal.ZERO;
+        }
         return new InvoiceResponse(
                 invoice.getInvoiceId(),
                 invoice.getInvoiceCode(),
@@ -29,7 +41,10 @@ public record InvoiceResponse(
                 invoice.getFinalAmount(),
                 invoice.getStatus(),
                 invoice.getCreatedAt(),
-                invoice.getPaidAt()
+                invoice.getPaidAt(),
+                normalizedPaid,
+                remainingAmount,
+                invoice.getStatus()
         );
     }
 }

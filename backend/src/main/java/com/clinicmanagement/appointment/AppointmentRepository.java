@@ -86,7 +86,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long>,
            "a.appointmentDate = :date AND " +
            "a.startTime < :endTime AND " +
            "a.endTime > :startTime AND " +
-           "a.status IN ('SCHEDULED', 'CONFIRMED', 'CHECKED_IN')")
+           "a.status IN ('PENDING_PAYMENT', 'CONFIRMED', 'CHECKED_IN', 'PAYMENT_DUE')")
     boolean existsOverlappingPendingAppointments(
             @Param("doctorId") Long doctorId,
             @Param("date") LocalDate date,
@@ -97,7 +97,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long>,
     /**
      * Returns the full list of active appointments that overlap a requested
      * leave window. Used to build the conflict table shown to the doctor.
-     * Statuses included: SCHEDULED, CONFIRMED, CHECKED_IN.
+     * Statuses included: PENDING_PAYMENT, CONFIRMED, CHECKED_IN, PAYMENT_DUE.
      * Statuses excluded: CANCELLED, COMPLETED, NO_SHOW.
      */
     @Query("SELECT a FROM Appointment a WHERE " +
@@ -105,7 +105,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long>,
            "a.appointmentDate = :date AND " +
            "a.startTime < :endTime AND " +
            "a.endTime > :startTime AND " +
-           "a.status IN ('SCHEDULED', 'CONFIRMED', 'CHECKED_IN') " +
+           "a.status IN ('PENDING_PAYMENT', 'CONFIRMED', 'CHECKED_IN', 'PAYMENT_DUE') " +
            "ORDER BY a.startTime ASC")
     java.util.List<Appointment> findOverlappingActiveAppointments(
             @Param("doctorId") Long doctorId,
@@ -119,7 +119,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long>,
            "a.appointmentDate = :date AND " +
            "a.startTime = :startTime AND " +
            "a.endTime = :endTime AND " +
-           "a.status IN ('SCHEDULED', 'CONFIRMED', 'CHECKED_IN')")
+           "a.status IN ('PENDING_PAYMENT', 'CONFIRMED', 'CHECKED_IN', 'PAYMENT_DUE')")
     boolean existsPendingAppointmentForSlot(
             @Param("doctorId") Long doctorId,
             @Param("date") LocalDate date,
@@ -183,5 +183,13 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long>,
             @Param("doctorUserId") Long doctorUserId,
             @Param("patientId") Long patientId,
             @Param("currentDate") LocalDate currentDate
+    );
+
+    @Query("SELECT COUNT(a) > 0 FROM Appointment a WHERE " +
+           "a.doctor.user.userId = :doctorUserId AND " +
+           "a.patient.patientId = :patientId")
+    boolean existsAppointmentForDoctorAndPatient(
+            @Param("doctorUserId") Long doctorUserId,
+            @Param("patientId") Long patientId
     );
 }

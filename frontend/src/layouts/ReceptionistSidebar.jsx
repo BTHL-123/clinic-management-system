@@ -8,6 +8,7 @@ import {
   Home,
   ListOrdered,
   LogOut,
+  RotateCcw,
   Settings,
   UserCheck,
   UserPlus,
@@ -23,6 +24,7 @@ const navItems = [
   { id: "appointments", icon: CalendarDays, path: "/dashboard/appointments", label: "Lịch khám" },
   { id: "patients", icon: Users, path: "/dashboard/patients", label: "Bệnh nhân" },
   { id: "payments", icon: CreditCard, path: "/dashboard/payments", label: "Thanh toán" },
+  { id: "refunds", icon: RotateCcw, path: "/dashboard/refunds", label: "Hoàn tiền" },
   { id: "settings", icon: Settings, path: "/dashboard/profile", label: "Cài đặt" },
 ];
 

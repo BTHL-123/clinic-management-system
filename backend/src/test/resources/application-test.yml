@@ -10,3 +10,9 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
+app:
+  sepay:
+    api-key: test-api-key
+    bank-account: 0123456789
+    bank-code: TESTBANK
+    webhook-requires-verification: false

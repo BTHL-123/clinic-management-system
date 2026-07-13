@@ -299,6 +299,7 @@ CREATE TABLE appointments (
             'CHECKED_IN',
             'WAITING',
             'IN_PROGRESS',
+            'PAYMENT_DUE',
             'COMPLETED',
             'CANCELLED',
             'NO_SHOW',
@@ -815,7 +816,7 @@ CREATE TABLE stock_transactions (
     quantity INT NOT NULL CHECK (quantity > 0),
 
     reference_type VARCHAR(30) NOT NULL DEFAULT 'OTHER'
-        CHECK (reference_type IN ('PRESCRIPTION', 'MANUAL', 'SUPPLIER_IMPORT', 'OTHER')),
+        CHECK (reference_type IN ('PRESCRIPTION', 'MANUAL', 'SUPPLIER_IMPORT', 'INVOICE', 'OTHER')),
 
     reference_id BIGINT,
     note TEXT,
@@ -881,7 +882,7 @@ CREATE TABLE invoices (
     final_amount NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (final_amount >= 0),
 
     status VARCHAR(20) NOT NULL DEFAULT 'UNPAID'
-        CHECK (status IN ('UNPAID', 'PENDING', 'PAID', 'FAILED', 'REFUNDED', 'CANCELLED')),
+        CHECK (status IN ('UNPAID', 'PARTIALLY_PAID', 'PAID', 'FAILED', 'REFUNDED', 'CANCELLED')),
 
     created_by BIGINT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -937,7 +938,7 @@ CREATE TABLE payments (
     amount NUMERIC(12,2) NOT NULL CHECK (amount >= 0),
 
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
-        CHECK (status IN ('UNPAID', 'PENDING', 'PAID', 'FAILED', 'REFUNDED', 'CANCELLED')),
+        CHECK (status IN ('PENDING', 'PAID', 'FAILED', 'REFUNDED', 'CANCELLED')),
 
     gateway_provider VARCHAR(100),
     gateway_transaction_id VARCHAR(255),
@@ -946,6 +947,7 @@ CREATE TABLE payments (
     confirmed_by BIGINT,
 
     paid_at TIMESTAMP,
+    expires_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_payments_invoice
@@ -974,16 +976,23 @@ CREATE TABLE refunds (
     refund_amount NUMERIC(12,2) NOT NULL CHECK (refund_amount >= 0),
     reason TEXT,
     reject_reason TEXT,
+    refund_method VARCHAR(30),
+    bank_name VARCHAR(100),
+    bank_account_number VARCHAR(50),
+    account_holder_name VARCHAR(150),
+    refund_transaction_ref VARCHAR(255),
 
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
         CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED', 'COMPLETED', 'FAILED')),
 
     requested_by BIGINT,
     approved_by BIGINT,
+    processed_by BIGINT,
 
     requested_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     approved_at TIMESTAMP,
     completed_at TIMESTAMP,
+    processed_at TIMESTAMP,
 
     CONSTRAINT fk_refunds_payment
         FOREIGN KEY (payment_id) REFERENCES payments(payment_id)
@@ -995,6 +1004,10 @@ CREATE TABLE refunds (
 
     CONSTRAINT fk_refunds_approved_by
         FOREIGN KEY (approved_by) REFERENCES users(user_id)
+        ON DELETE SET NULL,
+
+    CONSTRAINT fk_refunds_processed_by
+        FOREIGN KEY (processed_by) REFERENCES users(user_id)
         ON DELETE SET NULL
 );
 
