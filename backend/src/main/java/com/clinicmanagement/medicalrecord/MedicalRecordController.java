@@ -79,7 +79,7 @@ public class MedicalRecordController {
 
     /**
      * GET /api/patients/{patientId}/medical-history
-     * ADMIN, DOCTOR, PATIENT, RECEPTIONIST
+     * ADMIN, DOCTOR, PATIENT
      */
     @GetMapping("/patients/{patientId}/medical-history")
     @PreAuthorize("hasAnyRole('ADMIN','DOCTOR','PATIENT','RECEPTIONIST')")

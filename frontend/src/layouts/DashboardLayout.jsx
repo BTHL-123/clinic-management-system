@@ -229,7 +229,7 @@ export default function DashboardLayout() {
   const renderAdminHeader = () => (
     <header className="admin-topbar">
       <div className="admin-topbar-inner">
-        <div className="admin-topbar-title cursor-pointer" onClick={() => navigate("/dashboard")} title="Trang chủ Dashboard">
+        <div className="admin-topbar-title">
           <span className="admin-topbar-mark"><LogoSVG className="w-8 h-8" /></span>
           <div>
             <span className="admin-topbar-kicker">Medical Clinic</span>
@@ -267,92 +267,6 @@ export default function DashboardLayout() {
               </div>
             )}
           </div>
-        </div>
-      </div>
-    </header>
-  );
-
-  /* ─── RECEPTIONIST: Header matching exact screenshot ─── */
-  const renderReceptionistHeader = () => (
-    <header className="fixed top-0 left-0 right-0 h-[64px] bg-white border-b border-slate-100 z-50 flex items-center justify-between px-6 shadow-xs">
-      {/* Left / Title-aligned Logo matching Admin logo */}
-      <div className="flex items-center gap-3 cursor-pointer select-none pl-[260px] group" onClick={() => navigate('/dashboard')}>
-        <LogoSVG className="w-9 h-9 drop-shadow-sm group-hover:scale-105 transition-transform" />
-        <div className="flex flex-col justify-center leading-none">
-          <span className="font-extrabold text-[1.1rem] tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-emerald-500">Medical</span>
-          <span className="font-semibold text-[0.7rem] tracking-widest text-teal-600">Clinic</span>
-        </div>
-      </div>
-
-      {/* Right User Controls matching screenshot */}
-      <div className="flex items-center justify-end gap-3">
-        <button
-          onClick={() => navigate('/dashboard')}
-          className="w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-slate-200/80 text-slate-500 hover:text-teal-600 hover:border-teal-200 transition-all"
-          title="Trang chủ"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
-        </button>
-
-        <div className="w-9 h-9 rounded-xl bg-white border border-slate-200/80 flex items-center justify-center text-slate-500 hover:text-teal-600 transition-all">
-          <NotificationBell />
-        </div>
-
-        <div className="h-6 w-[1px] bg-slate-300/80 mx-1"></div>
-
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setAccountMenuOpen((open) => !open)}
-            className="flex items-center gap-2.5 cursor-pointer hover:opacity-90 transition-opacity focus:outline-none select-none"
-            aria-label="Menu tài khoản"
-            aria-expanded={accountMenuOpen}
-          >
-            <div className="flex flex-col items-end leading-tight">
-              <strong className="text-xs font-black text-slate-800 uppercase">{user?.fullName || user?.username || "letan"}</strong>
-              <span className="text-[9px] font-extrabold text-[#0D9488] uppercase tracking-wider">RECEPTIONIST</span>
-            </div>
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex items-center justify-center font-extrabold text-xs shadow-sm border border-white overflow-hidden shrink-0">
-              {user?.avatarUrl ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" /> : initials}
-            </div>
-            <ChevronDown size={14} className={`text-slate-500 transition-transform duration-200 ${accountMenuOpen ? "rotate-180" : ""}`} />
-          </button>
-
-          {accountMenuOpen && (
-            <div className="absolute right-0 top-[calc(100%+12px)] z-[60] w-52 overflow-hidden rounded-2xl border border-[#DDEDEA] bg-white p-1.5 shadow-[0_16px_36px_rgba(15,23,42,.14)]">
-              <button
-                type="button"
-                onClick={() => {
-                  setAccountMenuOpen(false);
-                  navigate("/dashboard/profile");
-                }}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:bg-[#F3FFFB] hover:text-[#007D68]"
-              >
-                <UserSquare size={17} /> Hồ sơ cá nhân
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setAccountMenuOpen(false);
-                  navigate("/dashboard/change-password");
-                }}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:bg-[#F3FFFB] hover:text-[#007D68]"
-              >
-                <KeyRound size={17} /> Đổi mật khẩu
-              </button>
-              <div className="mx-2 my-1 border-t border-[#E8F1EF]" />
-              <button
-                type="button"
-                onClick={() => {
-                  setAccountMenuOpen(false);
-                  handleLogout();
-                }}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
-              >
-                <LogOut size={17} /> Đăng xuất
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </header>
@@ -398,7 +312,7 @@ export default function DashboardLayout() {
       )}
 
       {/* Header */}
-      {isAdminShell ? renderAdminHeader() : isPatientOnly ? renderPatientHeader() : isReceptionist ? renderReceptionistHeader() : renderOriginalHeader()}
+      {isAdminShell ? renderAdminHeader() : useTopNavbarLayout ? renderPatientHeader() : renderOriginalHeader()}
 
       <motion.div
         key={location.pathname}
@@ -408,7 +322,7 @@ export default function DashboardLayout() {
         transition={{ duration: 0.25, ease: "easeOut" }}
         className="flex-1 w-full relative z-10 flex flex-col"
       >
-        <main className={`flex-1 w-full mx-auto ${useTopNavbarLayout ? (isPatientOnly ? "pt-[68px] px-0 pb-0 max-w-[1240px]" : isReceptionist ? "w-full pt-[64px] px-0 pb-0" : "pt-[68px] px-0 pb-0 max-w-[1440px]") : isAdminShell ? "admin-main" : "max-w-[1700px] pt-[80px] px-4 md:px-6 pb-4 md:pb-6"} flex ${isReceptionist ? "gap-0" : "gap-6"} h-full`}>
+        <main className={`flex-1 w-full mx-auto ${useTopNavbarLayout ? (isPatientOnly ? "pt-[68px] px-0 pb-0 max-w-[1240px]" : "pt-[68px] px-0 pb-0 max-w-[1440px]") : isAdminShell ? "admin-main" : "max-w-[1700px] pt-[80px] px-4 md:px-6 pb-4 md:pb-6"} flex gap-6 h-full`}>
           {isAdminShell ? (
             <AdminSidebar />
           ) : roles.includes("DOCTOR") ? (

@@ -58,7 +58,7 @@ public class PrescriptionController {
      * GET /api/prescriptions/{prescriptionId}
      */
     @GetMapping("/{prescriptionId}")
-    @PreAuthorize("hasAnyRole('ADMIN','DOCTOR','PATIENT','PHARMACIST')")
+    @PreAuthorize("hasAnyRole('ADMIN','DOCTOR','PATIENT','RECEPTIONIST','PHARMACIST')")
     public ResponseEntity<ApiResponse<PrescriptionResponse>> getById(
             @PathVariable Long prescriptionId) {
         return ResponseEntity.ok(ApiResponse.success(
@@ -69,7 +69,7 @@ public class PrescriptionController {
      * GET /api/prescriptions/by-consultation/{consultationId}
      */
     @GetMapping("/by-consultation/{consultationId}")
-    @PreAuthorize("hasAnyRole('ADMIN','DOCTOR','PATIENT','PHARMACIST')")
+    @PreAuthorize("hasAnyRole('ADMIN','DOCTOR','PATIENT','RECEPTIONIST','PHARMACIST')")
     public ResponseEntity<ApiResponse<PrescriptionResponse>> getByConsultationId(
             @PathVariable Long consultationId) {
         return ResponseEntity.ok(ApiResponse.success(

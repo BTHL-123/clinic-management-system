@@ -41,7 +41,7 @@ public class UserController {
     }
 
     @GetMapping("/eligible-for-doctor")
-    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<java.util.List<UserSummaryResponse>> getUsersEligibleForDoctor() {
         return ApiResponse.success(userService.getUsersEligibleForDoctor());
     }

@@ -120,7 +120,7 @@
 
 .appointment-main-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 350px;
+  grid-template-columns: minmax(0, 1fr) 360px;
   gap: 16px;
   align-items: start;
 }
@@ -462,14 +462,6 @@
 .appointment-resource-slot.selected {
   border-color: #0f766e;
   box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
-}
-
-.appointment-resource-slot.free.selected-empty-slot {
-  background-color: #ccfbf1 !important;
-  border-color: #0d9488 !important;
-  color: #0f766e !important;
-  font-weight: bold;
-  box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.3);
 }
 
 .appointment-resource-empty {

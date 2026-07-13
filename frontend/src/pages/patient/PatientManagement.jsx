@@ -10,7 +10,6 @@ import {
 import { getUsers } from "../../services/userService";
 import MedicalHistory from "../../components/MedicalHistory";
 import { useAuth } from "../../context/useAuth";
-import PageHeader from "../../components/PageHeader.jsx";
 
 const EMPTY_FORM = {
   userId: "",
@@ -247,73 +246,116 @@ export default function PatientManagement() {
   // Filter & Search Logic
   const filteredPatients = patients.filter((p) => {
     const query = searchTerm.toLowerCase().trim();
-    return (
+    const matchSearch =
       (p.fullName || "").toLowerCase().includes(query) ||
       (p.patientCode || "").toLowerCase().includes(query) ||
-      (p.phone || "").toLowerCase().includes(query)
-    );
+      (p.phone || "").toLowerCase().includes(query);
+
+    const status = getMappedStatus(p);
+    if (activeFilter === "Tất cả") return matchSearch;
+    return matchSearch && status === activeFilter;
   });
 
   return (
-    <div className="flex flex-col h-full gap-6 pb-6">
-      {/* ── Page Header ────────────────────────────────── */}
-      <PageHeader
-        title="Hồ sơ bệnh nhân"
-        icon={Users}
-        iconColor="text-white"
-        onBack={() => navigate("/dashboard")}
-        rightContent={
-          !isDoctor && (
-            <button
-              className="bg-[#0F766E] hover:bg-[#095650] text-white font-bold px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-md shadow-teal-700/20 text-sm"
-              onClick={openCreate}
-            >
-              <Plus size={16} />
-              Thêm bệnh nhân
-            </button>
-          )
-        }
-      />
+    <div className="w-full flex flex-col gap-6 p-1 pb-10">
 
-      {/* ── Filters ────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex gap-4">
-        <div className="relative flex-1 max-w-[420px]">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Tìm theo tên, mã bệnh nhân hoặc SĐT..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 text-slate-800 placeholder-slate-400 text-sm rounded-xl py-2.5 pl-11 pr-4 focus:outline-none focus:bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all font-medium"
-          />
+      {/* ── 1. HEADER SECTION ────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-4">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-teal-50 text-[#1DB896] flex items-center justify-center border border-teal-100 shadow-sm">
+            <Users size={24} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-slate-800 tracking-tight">Bệnh nhân của tôi</h1>
+            <p className="text-slate-400 text-xs font-semibold mt-0.5">Quản lý và theo dõi hồ sơ bệnh án định kỳ</p>
+          </div>
         </div>
+
+        <button
+          onClick={openCreate}
+          className="bg-[#1DB896] hover:bg-[#159a7c] text-white font-bold px-5 py-2.5 rounded-xl transition-all shadow-md shadow-teal-500/20 flex items-center gap-2"
+        >
+          <Plus size={16} />
+          Thêm bệnh nhân mới
+        </button>
       </div>
 
-      {error && <div className="bg-rose-50 border border-rose-200 text-rose-600 p-4 rounded-xl text-sm font-medium">{error}</div>}
+      {/* ── 2. FILTERS & SEARCH ROW ────────────────────────────── */}
+      <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4">
 
-      {/* ── Table ──────────────────────────────────────── */}
-      <div className="flex-1 bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm w-full flex flex-col min-h-0 overflow-hidden">
-        <div className="flex-1 overflow-auto custom-scrollbar">
+        {/* Filter Tabs */}
+        <div className="flex flex-wrap gap-2">
+          {["Tất cả", "Đang điều trị", "Đã xuất viện", "Tái khám"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveFilter(tab)}
+              className={`px-4 py-2 rounded-full font-bold text-sm border transition-all ${activeFilter === tab
+                  ? "bg-teal-50 border-teal-100 text-[#1DB896]"
+                  : "bg-white border-slate-200/60 text-slate-500 hover:bg-slate-50"
+                }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        {/* Right Info: Search Box & New Patients group */}
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+
+          {/* Avatar Group */}
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="flex -space-x-2">
+              <img className="w-7 h-7 rounded-full border-2 border-white object-cover" src="https://i.pravatar.cc/100?img=33" alt="" />
+              <img className="w-7 h-7 rounded-full border-2 border-white object-cover" src="https://i.pravatar.cc/100?img=12" alt="" />
+              <img className="w-7 h-7 rounded-full border-2 border-white object-cover" src="https://i.pravatar.cc/100?img=47" alt="" />
+              <div className="w-7 h-7 rounded-full bg-[#1DB896]/10 text-[#1DB896] text-[10px] font-black flex items-center justify-center border-2 border-white">
+                +12
+              </div>
+            </div>
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">BN mới trong tuần</span>
+          </div>
+
+          {/* Search Box */}
+          <div className="relative w-full sm:w-72">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Tìm kiếm hồ sơ bệnh nhân..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200/60 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 text-slate-800 placeholder-slate-400 font-semibold"
+            />
+          </div>
+
+        </div>
+
+      </div>
+
+      {error && <div className="bg-rose-500/10 border border-rose-500/20 text-rose-600 p-4 rounded-xl text-sm font-bold">{error}</div>}
+
+      {/* ── 3. DATA TABLE CARD ─────────────────────────────────── */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col">
+        <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse whitespace-nowrap">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 text-xs font-extrabold uppercase tracking-wider sticky top-0 z-10">
-              <tr>
-                <th className="p-4 pl-6">Mã BN</th>
-                <th className="p-4">Họ và tên</th>
-                <th className="p-4">Giới tính</th>
-                <th className="p-4">SĐT</th>
-                <th className="p-4">CCCD / BHYT</th>
-                <th className="p-4">Tài khoản</th>
-                <th className="p-4 text-center">Hành động</th>
+            <thead>
+              <tr className="border-b border-slate-100 text-slate-400 text-xs font-extrabold uppercase tracking-wider">
+                <th className="pb-3 w-[140px]">Mã BN</th>
+                <th className="pb-3">Họ tên</th>
+                <th className="pb-3 w-[140px]">Ngày sinh</th>
+                <th className="pb-3">Chẩn đoán</th>
+                <th className="pb-3 w-[160px]">Lần khám cuối</th>
+                <th className="pb-3 w-[140px]">Trạng thái</th>
+                <th className="pb-3 w-[120px] text-center">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-50">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-slate-400 font-bold">Đang tải dữ liệu...</td>
+                  <td colSpan={7} className="py-8 text-center text-slate-400 font-bold">Đang tải dữ liệu...</td>
                 </tr>
               ) : filteredPatients.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-slate-400 font-bold">Không tìm thấy bệnh nhân nào.</td>
+                  <td colSpan={7} className="py-8 text-center text-slate-400 font-bold">Không tìm thấy bệnh nhân nào.</td>
                 </tr>
               ) : (
                 filteredPatients.map((p) => {
@@ -428,7 +470,7 @@ export default function PatientManagement() {
           </span>
           <div className="flex items-center gap-1">
             <button className="p-2 rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50 transition-colors">
-              <i className="ti ti-chevron-left"></i>
+              <i className="ti ti-chevron-left" />
             </button>
             <button className="w-8 h-8 rounded-lg bg-[#1DB896] text-white font-extrabold text-xs">1</button>
             <button className="w-8 h-8 rounded-lg text-slate-700 hover:bg-slate-50 text-xs font-bold">2</button>
@@ -436,7 +478,7 @@ export default function PatientManagement() {
             <span className="text-slate-400 px-1 font-bold">...</span>
             <button className="w-8 h-8 rounded-lg text-slate-700 hover:bg-slate-50 text-xs font-bold">125</button>
             <button className="p-2 rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50 transition-colors">
-              <i className="ti ti-chevron-right"></i>
+              <i className="ti ti-chevron-right" />
             </button>
           </div>
         </div>
@@ -553,7 +595,7 @@ export default function PatientManagement() {
 
                   <div className="flex flex-col gap-1.5 md:col-span-2">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Dị ứng (Nếu có)</label>
-                    <textarea name="allergies" rows={2} value={formData.allergies} onChange={handleChange} placeholder="Thuốc, thực phẩm..." className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 text-slate-800 placeholder-slate-400 font-semibold text-sm resize-none"></textarea>
+                    <textarea name="allergies" rows={2} value={formData.allergies} onChange={handleChange} placeholder="Thuốc, thực phẩm..." className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 text-slate-800 placeholder-slate-400 font-semibold text-sm resize-none" />
                   </div>
 
                   <div className="flex flex-col gap-1.5 md:col-span-2">
@@ -566,12 +608,10 @@ export default function PatientManagement() {
                     <input name="occupation" value={formData.occupation} onChange={handleChange} className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 text-slate-800 placeholder-slate-400 font-semibold text-sm" />
                   </div>
 
-                  {!isReceptionist && (
-                    <div className="flex flex-col gap-1.5 md:col-span-2">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tiền sử bệnh lý (Bản thân)</label>
-                      <textarea name="medicalHistory" rows={2} value={formData.medicalHistory} onChange={handleChange} placeholder="Các bệnh từng mắc, phẫu thuật..." className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 text-slate-800 placeholder-slate-400 font-semibold text-sm resize-none"></textarea>
-                    </div>
-                  )}
+                  <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tiền sử bệnh lý (Bản thân)</label>
+                    <textarea name="medicalHistory" rows={2} value={formData.medicalHistory} onChange={handleChange} placeholder="Các bệnh từng mắc, phẫu thuật..." className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 text-slate-800 placeholder-slate-400 font-semibold text-sm resize-none" />
+                  </div>
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-2">

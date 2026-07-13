@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ClipboardList, X, FileText, ExternalLink, Activity, ChevronDown, ChevronUp, CheckCircle2, User, Stethoscope, ArrowLeft, Calendar, ShieldAlert } from "lucide-react";
+import { ClipboardList, X, FileText, ExternalLink, Activity, ChevronDown, ChevronUp, CheckCircle2, User, Stethoscope, ArrowLeft, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getPatientMedicalHistory } from "../services/medicalRecordService";
 import PrescriptionDetailView from "./PrescriptionDetailView";
@@ -204,7 +204,7 @@ export default function MedicalHistory({ patientId, onClose, inline = false, isP
                     </div>
                     
                     <h4 className="text-xl font-extrabold text-slate-800 leading-tight">
-                      Chẩn đoán: {isReceptionist ? <span className="text-slate-400 italic font-normal text-sm">[Ẩn - Quyền Lễ tân]</span> : (record.diagnosis || "Chưa xác định")}
+                      Chẩn đoán: {record.diagnosis || "Chưa xác định"}
                     </h4>
                     
                     <p className="text-sm font-medium text-slate-650 leading-relaxed">
