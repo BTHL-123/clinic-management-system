@@ -50,10 +50,10 @@ public class LabTestController {
 
     /**
      * POST /api/lab-tests
-     * ADMIN
+     * ADMIN, LAB_TECHNICIAN
      */
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LAB_TECHNICIAN')")
     public ResponseEntity<ApiResponse<LabTestResponse>> create(
             @Valid @RequestBody LabTestRequest request
     ) {
@@ -64,10 +64,10 @@ public class LabTestController {
 
     /**
      * PUT /api/lab-tests/{labTestId}
-     * ADMIN
+     * ADMIN, LAB_TECHNICIAN
      */
     @PutMapping("/{labTestId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LAB_TECHNICIAN')")
     public ResponseEntity<ApiResponse<LabTestResponse>> update(
             @PathVariable Long labTestId,
             @Valid @RequestBody LabTestRequest request
@@ -78,10 +78,10 @@ public class LabTestController {
 
     /**
      * DELETE /api/lab-tests/{labTestId}
-     * ADMIN
+     * ADMIN, LAB_TECHNICIAN
      */
     @DeleteMapping("/{labTestId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LAB_TECHNICIAN')")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long labTestId) {
         labTestService.delete(labTestId);
         return ResponseEntity.ok(ApiResponse.success("Xóa xét nghiệm thành công", null));

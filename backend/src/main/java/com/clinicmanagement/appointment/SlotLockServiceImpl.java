@@ -26,6 +26,7 @@ public class SlotLockServiceImpl implements SlotLockService {
     private final TimeSlotRepository timeSlotRepository;
     private final PatientRepository patientRepository;
     private final UserRepository userRepository;
+    private final AppointmentRepository appointmentRepository;
 
     @Override
     @Transactional
@@ -86,6 +87,9 @@ public class SlotLockServiceImpl implements SlotLockService {
             return;
         }
         for (TimeSlot slot : expired) {
+            if (appointmentRepository.findActiveByTimeSlotId(slot.getId()).isPresent()) {
+                continue;
+            }
             slot.setStatus("AVAILABLE");
             slot.setLockedUntil(null);
             slot.setLockedByPatientId(null);

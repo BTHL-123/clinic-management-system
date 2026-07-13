@@ -2,8 +2,13 @@ import { Bell, Calendar, Info, AlertTriangle, Loader2, Check } from "lucide-reac
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import notificationService from "../services/notificationService";
+import { useAuth } from "../context/useAuth.js";
+import { Client } from "@stomp/stompjs";
+import SockJS from "sockjs-client/dist/sockjs";
+import { emitToast } from "../services/toastService.js";
 
 export default function NotificationBell({ theme = "dark" }) {
+  const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -31,12 +36,52 @@ export default function NotificationBell({ theme = "dark" }) {
 
     window.addEventListener("notification-updated", fetchNotifications);
 
+    // Setup STOMP WebSocket for real-time notifications
+    let stompClient = null;
+    if (user?.userId) {
+      const socketUrl = import.meta.env.VITE_API_URL 
+        ? import.meta.env.VITE_API_URL.replace("/api", "") + "/ws-queue" 
+        : "http://localhost:8080/ws-queue";
+
+      stompClient = new Client({
+        webSocketFactory: () => new SockJS(socketUrl),
+        reconnectDelay: 5000,
+        heartbeatIncoming: 4000,
+        heartbeatOutgoing: 4000,
+      });
+
+      stompClient.onConnect = () => {
+        stompClient.subscribe(`/topic/notifications/${user.userId}`, (message) => {
+          if (message.body) {
+            const notif = JSON.parse(message.body);
+            // Trigger toast
+            emitToast({
+              type: "success",
+              title: notif.title || "Thông báo mới",
+              message: notif.message,
+            });
+            // Update unread count and list
+            fetchNotifications();
+          }
+        });
+      };
+
+      stompClient.onStompError = (frame) => {
+        console.error("STOMP error in NotificationBell:", frame.headers["message"]);
+      };
+
+      stompClient.activate();
+    }
+
     return () => {
       clearTimeout(timeout);
       clearInterval(interval);
       window.removeEventListener("notification-updated", fetchNotifications);
+      if (stompClient) {
+        stompClient.deactivate();
+      }
     };
-  }, [fetchNotifications]);
+  }, [fetchNotifications, user?.userId]);
 
   const handleBellClick = () => {
     setShowDropdown(!showDropdown);

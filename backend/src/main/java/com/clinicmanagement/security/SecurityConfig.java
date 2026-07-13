@@ -67,7 +67,9 @@ public class SecurityConfig {
                                 "/doctor-schedules/**",
                                 "/doctor-schedules",
                                 "/doctors/**",
-                                "/doctors"
+                                "/doctors",
+                                "/medical-services/**",
+                                "/medical-services"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

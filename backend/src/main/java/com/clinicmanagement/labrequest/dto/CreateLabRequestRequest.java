@@ -16,7 +16,7 @@ public record CreateLabRequestRequest(
         Long doctorId,
 
         @NotEmpty(message = "Phải chọn ít nhất một loại xét nghiệm")
-        List<Long> labTestIds,
+        List<CreateLabRequestItemDto> items,
 
         String note
 ) {}

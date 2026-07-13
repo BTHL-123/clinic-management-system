@@ -10,6 +10,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long>, JpaSpec
 
     Optional<Invoice> findTopByOrderByInvoiceIdDesc();
 
+    Optional<Invoice> findByAppointmentId(Long appointmentId);
+
     Page<Invoice> findAllByPatientPatientId(Long patientId, Pageable pageable);
 
     Page<Invoice> findAllByStatus(String status, Pageable pageable);

@@ -9,17 +9,29 @@ import appointmentService from "../../services/appointmentService.js";
 import { createReview } from "../../services/reviewService.js";
 import { useAuth } from "../../context/useAuth.js";
 import RescheduleModal from "../appointment/RescheduleModal.jsx";
-import { getPayments } from "../../services/paymentService.js";
+import { getPayments, createOnlinePaymentUrl, verifySePayTransaction } from "../../services/paymentService.js";
 import { getRefunds } from "../../services/refundService.js";
 import { getDoctors } from "../../services/doctorService.js";
 import { getActiveDepartments } from "../../services/departmentService.js";
 import RefundRequestModal from "./RefundRequestModal.jsx";
 
 // Modal Component for Cancelling Appointment
-function CancelModal({ isOpen, onClose, onConfirm, busy }) {
+function CancelModal({ isOpen, onClose, onConfirm, busy, appointment }) {
   const [reason, setReason] = useState("");
+  const [bankName, setBankName] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [accountName, setAccountName] = useState("");
 
   if (!isOpen) return null;
+
+  const apptDate = new Date(`${appointment?.appointmentDate}T${appointment?.startTime}`);
+  const diffHours = (apptDate - new Date()) / (1000 * 60 * 60);
+  const isTooClose = diffHours < 2;
+
+  const requiresRefund = appointment?.status === "CONFIRMED" && appointment?.depositAmount > 0 && !isTooClose;
+  const showNoRefundWarning = appointment?.status === "CONFIRMED" && appointment?.depositAmount > 0 && isTooClose;
+
+  const isFormValid = reason.trim() && (!requiresRefund || (bankName.trim() && accountNumber.trim() && accountName.trim()));
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
@@ -28,6 +40,26 @@ function CancelModal({ isOpen, onClose, onConfirm, busy }) {
         <p className="text-[#4A5D59] text-xs font-semibold mb-5">
           Vui lòng nhập lý do hủy lịch hẹn này. Thao tác này sẽ giải phóng ca khám và không thể hoàn tác.
         </p>
+
+        {showNoRefundWarning && (
+          <div className="mb-4 bg-red-50 p-3 rounded-xl border border-red-100">
+            <p className="text-red-800 text-xs font-semibold">
+              Cảnh báo: Bạn đang hủy lịch quá sát giờ khám (dưới 2 tiếng). Theo chính sách, bạn sẽ <b>KHÔNG được hoàn lại tiền cọc</b>. Bạn có chắc chắn muốn hủy không?
+            </p>
+          </div>
+        )}
+
+        {requiresRefund && (
+          <div className="mb-4 bg-blue-50 p-3 rounded-xl border border-blue-100">
+            <p className="text-blue-800 text-xs font-semibold mb-3">Lịch hẹn này đã đặt cọc. Vui lòng nhập thông tin ngân hàng để được hoàn tiền theo chính sách.</p>
+            <div className="flex flex-col gap-3">
+              <input type="text" placeholder="Ngân hàng (VD: Vietcombank)" value={bankName} onChange={e => setBankName(e.target.value)} className="w-full px-4 py-2.5 rounded-lg border border-blue-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-xs font-bold" />
+              <input type="text" placeholder="Số tài khoản" value={accountNumber} onChange={e => setAccountNumber(e.target.value)} className="w-full px-4 py-2.5 rounded-lg border border-blue-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-xs font-bold" />
+              <input type="text" placeholder="Tên chủ tài khoản" value={accountName} onChange={e => setAccountName(e.target.value)} className="w-full px-4 py-2.5 rounded-lg border border-blue-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-xs font-bold uppercase" />
+            </div>
+          </div>
+        )}
+
         <textarea
           value={reason}
           onChange={(e) => setReason(e.target.value)}
@@ -44,9 +76,9 @@ function CancelModal({ isOpen, onClose, onConfirm, busy }) {
             Đóng
           </button>
           <button
-            onClick={() => onConfirm(reason)}
-            disabled={busy || !reason.trim()}
-            className="px-5 py-2.5 rounded-xl bg-red-650 text-white font-black hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs cursor-pointer"
+            onClick={() => onConfirm({ cancellationReason: reason, bankName, bankAccountNumber: accountNumber, accountHolderName: accountName.toUpperCase() })}
+            disabled={busy || !isFormValid}
+            className="px-5 py-2.5 rounded-xl bg-red-600 text-white font-black hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs cursor-pointer"
           >
             {busy ? "Đang xử lý..." : "Xác nhận hủy"}
           </button>
@@ -106,6 +138,108 @@ function ReviewModal({ isOpen, onClose, onConfirm, busy }) {
           >
             {busy ? "Đang gửi..." : "Gửi đánh giá"}
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PaymentModal({ isOpen, onClose, paymentData, onPaymentSuccess }) {
+  const [verifying, setVerifying] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (isOpen) {
+      setSuccess(false);
+      setError("");
+    }
+  }, [isOpen]);
+
+  if (!isOpen || !paymentData) return null;
+
+  const handleVerify = async () => {
+    setError("");
+    setVerifying(true);
+    try {
+      await verifySePayTransaction(paymentData.paymentId);
+      setSuccess(true);
+      setTimeout(() => {
+        onPaymentSuccess();
+        onClose();
+      }, 2000);
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || "Xác thực thanh toán thất bại.");
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
+      <div className="bg-white rounded-3xl w-full max-w-[420px] shadow-2xl overflow-hidden flex flex-col relative max-h-[90vh]">
+        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <h3 className="text-md font-black text-slate-800">Thanh toán cọc giữ ca khám</h3>
+          <button onClick={onClose} disabled={verifying} className="text-slate-400 hover:text-rose-500 transition-colors p-1.5 hover:bg-slate-100 rounded-full cursor-pointer">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="p-6 flex flex-col items-center overflow-y-auto">
+          {success ? (
+            <div className="text-center py-8 flex flex-col items-center animate-in fade-in zoom-in-95">
+              <CheckCircle size={60} className="text-emerald-600 mb-4" strokeWidth={1.5} />
+              <h4 className="text-lg font-black mb-1">Thanh toán thành công!</h4>
+              <p className="text-xs text-slate-500 max-w-[280px]">
+                Giao dịch của bạn đã được xác thực thành công. Lịch khám đã được xác nhận.
+              </p>
+            </div>
+          ) : (
+            <div className="w-full flex flex-col items-center">
+              <div className="mb-4 bg-teal-50 text-teal-800 border-teal-100 px-4 py-2.5 rounded-xl border text-center text-xs font-semibold">
+                Vui lòng quét mã QR dưới đây để thực hiện thanh toán cọc.
+              </div>
+
+              <div className="p-2 border border-slate-200 rounded-2xl bg-white shadow-sm inline-block mb-4">
+                <img 
+                  src={paymentData.paymentUrl} 
+                  alt="QR Code thanh toán" 
+                  className="w-48 h-48 rounded-xl object-contain"
+                />
+              </div>
+
+              <div className="text-center mb-6">
+                <p className="text-sm font-black text-slate-800">Số tiền: {paymentData.amount?.toLocaleString("vi-VN")} đ</p>
+                <p className="text-xs font-bold text-rose-500 mt-1">Mã đơn: {paymentData.paymentCode}</p>
+              </div>
+
+              {error && (
+                <div className="w-full mb-4 bg-rose-50 border border-rose-250 text-rose-700 text-xs font-bold px-4 py-3 rounded-xl flex items-center gap-2">
+                  <AlertCircle size={14} />
+                  {error}
+                </div>
+              )}
+
+              <div className="flex w-full gap-3">
+                <button
+                  type="button"
+                  onClick={handleVerify}
+                  disabled={verifying}
+                  className="flex-1 bg-[#1DB896] hover:bg-[#159f80] text-white font-black text-xs py-3 rounded-xl transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  {verifying ? "Đang xác thực..." : "Đã thanh toán (Xác thực)"}
+                </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  disabled={verifying}
+                  className="px-5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs py-3 rounded-xl transition-all cursor-pointer"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -186,11 +320,33 @@ export default function MyAppointmentsPage() {
   // Cancel logic
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancelTargetId, setCancelTargetId] = useState(null);
+  const [cancelTargetAppt, setCancelTargetAppt] = useState(null);
   const [cancelling, setCancelling] = useState(false);
 
-  const handleCancelRequest = (id) => {
-    setCancelTargetId(id);
+  const handleCancelRequest = (appt) => {
+    setCancelTargetId(appt.appointmentId);
+    setCancelTargetAppt(appt);
     setCancelModalOpen(true);
+  };
+
+  // Online Payment resume logic
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [activePaymentData, setActivePaymentData] = useState(null);
+  const [loadingPayment, setLoadingPayment] = useState(false);
+
+  const handleStartOnlinePayment = async (appt) => {
+    setLoadingPayment(true);
+    setError(null);
+    try {
+      const res = await createOnlinePaymentUrl({ appointmentId: appt.appointmentId });
+      const paymentData = res.data ?? res;
+      setActivePaymentData(paymentData);
+      setPaymentModalOpen(true);
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || "Không thể khởi tạo thanh toán.");
+    } finally {
+      setLoadingPayment(false);
+    }
   };
 
   // Refund logic
@@ -265,16 +421,17 @@ export default function MyAppointmentsPage() {
     }
   };
 
-  const handleConfirmCancel = async (reason) => {
+  const handleConfirmCancel = async (payload) => {
     if (!cancelTargetId) return;
     setCancelling(true);
     setError(null);
     setSuccessMsg("");
     try {
-      await appointmentService.cancelAppointment(cancelTargetId, reason);
+      await appointmentService.cancelAppointment(cancelTargetId, payload);
       setSuccessMsg("Đã hủy lịch khám thành công.");
       setCancelModalOpen(false);
       setCancelTargetId(null);
+      setCancelTargetAppt(null);
       loadData();
     } catch (err) {
       setError(err.message || "Không thể hủy lịch.");
@@ -704,6 +861,16 @@ export default function MyAppointmentsPage() {
                           <>
                             {new Date() < new Date(`${selectedAppt.appointmentDate}T${selectedAppt.startTime}`) ? (
                               <>
+                                {selectedAppt.status === "PENDING_PAYMENT" && (
+                                  <button
+                                    onClick={() => handleStartOnlinePayment(selectedAppt)}
+                                    disabled={loadingPayment}
+                                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 text-xs font-black transition-colors cursor-pointer animate-pulse"
+                                  >
+                                    <Coins size={12} className="text-amber-500" />
+                                    {loadingPayment ? "Đang xử lý..." : "Thanh toán cọc"}
+                                  </button>
+                                )}
                                 <button
                                   onClick={() => handleRescheduleRequest(selectedAppt)}
                                   className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100 text-xs font-black transition-colors cursor-pointer"
@@ -712,7 +879,7 @@ export default function MyAppointmentsPage() {
                                   Dời lịch khám
                                 </button>
                                 <button
-                                  onClick={() => handleCancelRequest(selectedAppt.appointmentId)}
+                                  onClick={() => handleCancelRequest(selectedAppt)}
                                   className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 text-xs font-black transition-colors cursor-pointer"
                                 >
                                   <XCircle size={12} />
@@ -821,6 +988,7 @@ export default function MyAppointmentsPage() {
         onClose={() => { if (!cancelling) setCancelModalOpen(false); }}
         onConfirm={handleConfirmCancel}
         busy={cancelling}
+        appointment={cancelTargetAppt}
       />
 
       <RescheduleModal
@@ -850,6 +1018,16 @@ export default function MyAppointmentsPage() {
         onClose={() => { if (!submittingReview) setReviewModalOpen(false); }}
         onConfirm={handleConfirmReview}
         busy={submittingReview}
+      />
+
+      <PaymentModal
+        isOpen={paymentModalOpen}
+        onClose={() => setPaymentModalOpen(false)}
+        paymentData={activePaymentData}
+        onPaymentSuccess={() => {
+          setSuccessMsg("Thanh toán cọc thành công! Lịch hẹn đã được xác nhận.");
+          loadData();
+        }}
       />
 
       <style>{`

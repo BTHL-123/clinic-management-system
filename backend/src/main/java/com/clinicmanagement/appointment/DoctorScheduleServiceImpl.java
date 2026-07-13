@@ -28,6 +28,8 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     private final com.clinicmanagement.systemsetting.SystemSettingRepository systemSettingRepository;
     private final com.clinicmanagement.auditlog.AuditLogRepository auditLogRepository;
     private final com.clinicmanagement.user.UserRepository userRepository;
+    private final AppointmentRepository appointmentRepository;
+    private final com.clinicmanagement.payment.PaymentRepository paymentRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -38,7 +40,9 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
             DoctorRepository doctorRepository,
             com.clinicmanagement.systemsetting.SystemSettingRepository systemSettingRepository,
             com.clinicmanagement.auditlog.AuditLogRepository auditLogRepository,
-            com.clinicmanagement.user.UserRepository userRepository
+            com.clinicmanagement.user.UserRepository userRepository,
+            AppointmentRepository appointmentRepository,
+            com.clinicmanagement.payment.PaymentRepository paymentRepository
     ) {
         this.doctorScheduleRepository = doctorScheduleRepository;
         this.timeSlotRepository = timeSlotRepository;
@@ -46,6 +50,8 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         this.systemSettingRepository = systemSettingRepository;
         this.auditLogRepository = auditLogRepository;
         this.userRepository = userRepository;
+        this.appointmentRepository = appointmentRepository;
+        this.paymentRepository = paymentRepository;
     }
 
     private int getSlotDurationMinutes(Integer requestedDuration) {
@@ -355,8 +361,8 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     }
 
     @Override
-    @Transactional
-    public List<TimeSlotResponse> getAvailableSlots(Long doctorId, LocalDate workDate, boolean isPatient) {
+    @Transactional(readOnly = true)
+    public List<TimeSlotResponse> getAvailableSlots(Long doctorId, LocalDate workDate, boolean isPatient, Long currentUserId) {
         ensureDoctorExists(doctorId);
 
         List<TimeSlot> slots = timeSlotRepository.findAllSlotsByDoctorAndDate(doctorId, workDate);
@@ -364,31 +370,38 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
         LocalDate today = LocalDate.now();
         LocalTime currentTime = LocalTime.now();
         boolean isToday = workDate.equals(today);
+        boolean isPast = workDate.isBefore(today);
 
         return slots.stream()
                 .filter(ts -> !"CANCELLED".equals(ts.getStatus()))
-                .filter(ts -> {
-                    // For patient, filter out BLOCKED slots completely
-                    if (isPatient && "BLOCKED".equals(ts.getStatus())) {
-                        return false;
-                    }
-                    // For patient, filter out EXPIRED slots completely (where endTime has passed today)
-                    if (isPatient && isToday && ts.getEndTime().isBefore(currentTime)) {
-                        return false;
-                    }
-                    return true;
-                })
                 .map(ts -> {
                     String status = ts.getStatus();
+                    Long appointmentId = null;
                     
                     if ("LOCKED".equals(status) && ts.getLockedUntil() != null && ts.getLockedUntil().isBefore(now)) {
                         status = "AVAILABLE";
                     }
 
-                    // For receptionist, map past AVAILABLE/LOCKED slots to EXPIRED for clear UI indication
-                    if (!isPatient && isToday && ts.getEndTime().isBefore(currentTime)) {
-                        if ("AVAILABLE".equals(status) || "LOCKED".equals(status)) {
-                            status = "EXPIRED";
+                    // Map past slots to EXPIRED for clear UI indication
+                    if (isPast || (isToday && ts.getEndTime().isBefore(currentTime))) {
+                        status = "EXPIRED";
+                    }
+
+                    if (("BOOKED".equals(status) || "LOCKED".equals(status)) && currentUserId != null) {
+                        java.util.Optional<Appointment> activeApptOpt = appointmentRepository.findActiveByTimeSlotId(ts.getId());
+                        if (activeApptOpt.isPresent()) {
+                            Appointment appt = activeApptOpt.get();
+                            if (appt.getPatient() != null && appt.getPatient().getUser() != null &&
+                                    appt.getPatient().getUser().getUserId().equals(currentUserId)) {
+                                
+                                java.util.Optional<com.clinicmanagement.payment.Payment> depositOpt = paymentRepository
+                                        .findFirstByAppointmentIdAndPaymentTypeOrderByPaymentIdDesc(appt.getAppointmentId(), "DEPOSIT");
+                                
+                                if (depositOpt.isPresent() && "PENDING".equals(depositOpt.get().getStatus())) {
+                                    status = "PENDING_PAYMENT";
+                                    appointmentId = appt.getAppointmentId();
+                                }
+                            }
                         }
                     }
 
@@ -397,7 +410,8 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
                             ts.getDoctorSchedule().getId(),
                             ts.getStartTime(),
                             ts.getEndTime(),
-                            status
+                            status,
+                            appointmentId
                     );
                 })
                 .collect(Collectors.toList());
