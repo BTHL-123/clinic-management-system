@@ -57,6 +57,18 @@ public interface QueueTicketRepository extends JpaRepository<QueueTicket, Long>,
             @Param("date") LocalDate date
     );
 
+    @Query("""
+            SELECT q FROM QueueTicket q
+            WHERE q.patient.user.userId = :userId
+              AND q.queueDate = :date
+              AND q.status IN ('WAITING', 'CALLED')
+            ORDER BY q.queueNumber ASC
+            """)
+    List<QueueTicket> findActiveTicketsByUserAndDate(
+            @Param("userId") Long userId,
+            @Param("date") LocalDate date
+    );
+
     /**
      * Find the smallest queue number currently being served (CALLED)
      * for a given doctor today. Returns 0 if none is being called.

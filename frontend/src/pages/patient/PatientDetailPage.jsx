@@ -11,9 +11,11 @@ export default function PatientDetailPage() {
   const { patientId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+
+  const roles = (user?.roles || []).map(r => typeof r === "string" ? r : r.roleName);
   const isReceptionist = user?.roles?.some(r => r === "RECEPTIONIST" || r.roleName === "RECEPTIONIST");
   const isAdmin = user?.roles?.some(r => r === "ADMIN" || r.roleName === "ADMIN");
+  const isReceptionistOnly = isReceptionist && !isAdmin;
 
   const [patient, setPatient] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -357,8 +359,8 @@ export default function PatientDetailPage() {
         icon={User}
         iconColor="text-white"
         subtitle={
-          <span className="flex items-center gap-2 justify-center">
-            <span className="bg-teal-500/20 text-teal-100 px-2 py-0.5 rounded-md font-bold border border-teal-500/30">
+          <span className="flex items-center gap-2 justify-center sm:justify-start">
+            <span className="bg-teal-100 text-teal-700 px-2 py-0.5 rounded-md font-bold border border-teal-200">
               {patient.patientCode}
             </span>
             • {genderLabel(patient.gender)}

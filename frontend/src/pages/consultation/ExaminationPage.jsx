@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Stethoscope,
@@ -26,8 +26,11 @@ import {
   ChevronRight,
   ClipboardList,
   Users,
-  X
+  X,
+  PlayCircle
 } from "lucide-react";
+import { Client } from "@stomp/stompjs";
+import SockJS from "sockjs-client/dist/sockjs";
 import consultationService from "../../services/consultationService";
 import queueTicketService from "../../services/queueTicketService";
 import {
@@ -130,6 +133,8 @@ export default function ExaminationPage() {
   const [showAdvancedDiagnosis, setShowAdvancedDiagnosis] = useState(false);
   const [expandedRxRow, setExpandedRxRow] = useState(null);
   const [showVitalsForm, setShowVitalsForm] = useState(false);
+  const [labSearchTerm, setLabSearchTerm] = useState("");
+  const [showLabDropdown, setShowLabDropdown] = useState(false);
 
   // Patient lookup/search states (when no consultationId is active)
   const [recentPatients, setRecentPatients] = useState([]);
@@ -270,7 +275,7 @@ export default function ExaminationPage() {
     }
   }, [searchTerm, consultationId]);
 
-  const fetchQueueTickets = async () => {
+  const fetchQueueTickets = useCallback(async () => {
     if (!queueDoctor?.doctorId) return;
     setQueueLoading(true);
     try {
@@ -279,9 +284,7 @@ export default function ExaminationPage() {
         queueDoctor.doctorId,
         todayStr
       );
-      // axiosClient unwraps HTTP body → res = ApiResponse { data: [...] }
       const rawList = Array.isArray(res.data) ? res.data : [];
-      // Only show tickets still in queue (not done/cancelled/in_examination)
       const activeList = rawList.filter(
         (t) => t.queueStatus === "WAITING" || t.queueStatus === "CALLED"
       );
@@ -292,13 +295,36 @@ export default function ExaminationPage() {
     } finally {
       setQueueLoading(false);
     }
-  };
+  }, [queueDoctor?.doctorId]);
 
   useEffect(() => {
-    if (showQueueModal && queueDoctor?.doctorId) {
+    if ((showQueueModal || !consultationId) && queueDoctor?.doctorId) {
       fetchQueueTickets();
     }
-  }, [showQueueModal, queueDoctor?.doctorId]);
+  }, [showQueueModal, consultationId, queueDoctor?.doctorId, fetchQueueTickets]);
+
+  useEffect(() => {
+    if (!queueDoctor?.doctorId) return;
+    const socketUrl = import.meta.env.VITE_API_URL 
+      ? import.meta.env.VITE_API_URL.replace("/api", "") + "/ws-queue" 
+      : "http://localhost:8080/ws-queue";
+
+    const stompClient = new Client({
+      webSocketFactory: () => new SockJS(socketUrl),
+      reconnectDelay: 5000,
+    });
+
+    stompClient.onConnect = () => {
+      stompClient.subscribe(`/topic/queue`, () => {
+        if (showQueueModal || !consultationId) {
+          fetchQueueTickets();
+        }
+      });
+    };
+    stompClient.activate();
+
+    return () => stompClient.deactivate();
+  }, [showQueueModal, consultationId, queueDoctor?.doctorId, fetchQueueTickets]);
 
   const handleStartExamFromQueue = async (ticketId) => {
     try {
@@ -379,9 +405,15 @@ export default function ExaminationPage() {
   };
 
   const toggleLabTest = (id) => {
-    setSelectedLabTests((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+    setSelectedLabTests((prev) => {
+      const exists = prev.find(x => x.labTestId === id);
+      if (exists) return prev.filter(x => x.labTestId !== id);
+      return [...prev, { labTestId: id, note: "" }];
+    });
+  };
+
+  const handleLabTestNoteChange = (id, note) => {
+    setSelectedLabTests((prev) => prev.map(x => x.labTestId === id ? { ...x, note } : x));
   };
 
   const handleCreateLabRequest = async () => {
@@ -395,7 +427,7 @@ export default function ExaminationPage() {
         consultationId: Number(consultationId),
         patientId: consultation.patientId,
         doctorId: consultation.doctorId,
-        labTestIds: selectedLabTests,
+        items: selectedLabTests.map(x => ({ labTestId: Number(x.labTestId), note: x.note || null })),
         note: labNote || null,
       });
       setSavedLabRequests((prev) => [...prev, res.data]);
@@ -864,107 +896,104 @@ export default function ExaminationPage() {
           <h1 className="text-2xl font-black text-slate-800 tracking-tight">Khám bệnh</h1>
         </div>
 
-        {/* Empty State Panel */}
-        <div className="w-full bg-white/70 backdrop-blur-xl border border-slate-100 rounded-[2rem] p-8 md:p-12 shadow-[0_10px_35px_rgba(0,0,0,0.02)] text-center flex flex-col items-center">
-          <div className="w-20 h-20 rounded-full bg-slate-50 border border-slate-150 flex items-center justify-center shadow-sm text-[#0A604E] mb-6">
-            <Users size={36} className="stroke-[1.5]" />
+        {/* Empty State Panel - Modified to show queue directly */}
+        <div className="w-full bg-white/70 backdrop-blur-xl border border-slate-100 rounded-[2rem] p-8 shadow-[0_10px_35px_rgba(0,0,0,0.02)] flex flex-col items-center">
+          
+          <div className="flex flex-col items-center mb-8">
+            <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center shadow-sm text-[#0A604E] mb-4">
+              <Users size={28} className="stroke-[2]" />
+            </div>
+            <h2 className="text-xl font-extrabold text-slate-800 tracking-tight">
+              Chưa có bệnh nhân đang khám
+            </h2>
+            <p className="text-sm text-slate-400 font-bold max-w-sm mt-2 leading-relaxed text-center">
+              Dưới đây là danh sách hàng đợi của bạn. Nhấn "Bắt đầu khám" để gọi bệnh nhân vào phòng.
+            </p>
           </div>
 
-          <h2 className="text-xl font-extrabold text-slate-800 tracking-tight">
-            Chưa có bệnh nhân đang khám
-          </h2>
-          <p className="text-sm text-slate-400 font-bold max-w-sm mt-2 leading-relaxed">
-            Vui lòng chọn bệnh nhân từ hàng chờ hoặc tìm kiếm hồ sơ bệnh nhân để bắt đầu ca khám mới.
-          </p>
+          <div className="w-full bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                <h3 className="text-sm font-extrabold text-slate-800">Danh sách chờ khám</h3>
+                <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-[10px] font-black">
+                  {queueList.length} bệnh nhân
+                </span>
+              </div>
+              <button 
+                onClick={fetchQueueTickets}
+                className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-[#0A604E] transition-colors"
+              >
+                <RefreshCw size={14} className={queueLoading ? "animate-spin" : ""} />
+                Làm mới
+              </button>
+            </div>
 
-          <button
-            onClick={() => setShowQueueModal(true)}
-            className="mt-6 px-6 py-3 bg-[#0A604E] hover:bg-[#07473a] active:scale-95 text-white font-extrabold text-xs rounded-xl shadow-[0_6px_20px_rgba(10,96,78,0.2)] transition-all flex items-center gap-2"
-          >
-            <ClipboardList size={14} />
-            Chọn bệnh nhân từ hàng chờ
-          </button>
-        </div>
-
-        {/* Suggested & Search Section */}
-        <div className="w-full flex flex-col gap-6">
-          <div className="flex items-center gap-4 w-full">
-            <div className="h-[1px] bg-slate-200/65 flex-1"></div>
-            <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">GỢI Ý</span>
-            <div className="h-[1px] bg-slate-200/65 flex-1"></div>
-          </div>
-
-          {/* Search Box */}
-          <div className="relative w-full max-w-md mx-auto">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-              <Search size={16} />
-            </span>
-            <input
-              type="text"
-              placeholder="Tìm kiếm tên hoặc mã bệnh nhân..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-white border border-slate-200 focus:border-[#0A604E] rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-700 font-bold outline-none transition-all shadow-sm placeholder:text-slate-400"
-            />
-            {searching && (
-              <span className="absolute right-4 top-1/2 -translate-y-1/2">
-                <RefreshCw size={14} className="animate-spin text-[#0A604E]" />
-              </span>
-            )}
-          </div>
-
-          {/* List or Suggestions */}
-          {searchTerm.trim() !== "" ? (
-            <div className="w-full flex flex-col gap-3">
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                Kết quả tìm kiếm ({searchResults.length})
-              </h3>
-              {searchResults.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {searchResults.map((patient) => (
-                    <PatientCard
-                      key={patient.patientId}
-                      patient={patient}
-                      onClick={() => navigate(`/dashboard/patients/${patient.patientId}`)}
-                    />
-                  ))}
+            <div className="w-full overflow-x-auto min-h-[150px] flex flex-col relative">
+              {queueLoading && queueList.length === 0 ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm z-10">
+                  <RefreshCw className="animate-spin text-[#0A604E]" size={24} />
                 </div>
+              ) : queueList.length > 0 ? (
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                      <th className="py-3 px-4 w-16">STT</th>
+                      <th className="py-3 px-4 w-64">Bệnh nhân</th>
+                      <th className="py-3 px-4 w-40">Trạng thái</th>
+                      <th className="py-3 px-4 text-right">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {queueList.map((ticket, idx) => (
+                      <tr key={ticket.queueTicketId} className="hover:bg-slate-50/50 transition-colors group">
+                        <td className="py-4 px-4 font-extrabold text-slate-800 text-xs">#{ticket.queueNumber}</td>
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 font-bold text-xs flex items-center justify-center shrink-0 border border-emerald-100">
+                              {(ticket.patientName || "BN").split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase()}
+                            </div>
+                            <div>
+                              <h4 className="font-extrabold text-slate-800 text-xs group-hover:text-[#0A604E] transition-colors">{ticket.patientName}</h4>
+                              <p className="text-[10px] text-slate-400 font-bold mt-0.5">SĐT: {ticket.patientPhone || "—"}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          {ticket.priorityLevel === "EMERGENCY" ? (
+                            <span className="bg-rose-50 border border-rose-100 text-rose-700 text-[9px] font-extrabold px-2.5 py-1 rounded-md uppercase">▲ Cấp cứu</span>
+                          ) : ticket.priorityLevel === "PRIORITY" ? (
+                            <span className="bg-amber-50 border border-amber-100 text-amber-700 text-[9px] font-extrabold px-2.5 py-1 rounded-md uppercase">★ Ưu tiên</span>
+                          ) : ticket.priorityLevel === "REEXAMINATION" ? (
+                            <span className="bg-sky-50 border border-sky-100 text-sky-700 text-[9px] font-extrabold px-2.5 py-1 rounded-md uppercase">Tái khám</span>
+                          ) : (
+                            <span className="bg-slate-50 border border-slate-200 text-slate-600 text-[9px] font-extrabold px-2.5 py-1 rounded-md uppercase">Khám mới</span>
+                          )}
+                        </td>
+                        <td className="py-4 px-4 text-right">
+                          <button
+                            onClick={() => handleStartExamFromQueue(ticket.queueTicketId)}
+                            className="inline-flex items-center gap-1.5 bg-[#0A604E] hover:bg-[#07473a] text-white px-4 py-2 rounded-xl text-[10px] font-extrabold uppercase tracking-wide transition-all shadow-sm active:scale-95"
+                          >
+                            <PlayCircle size={14} /> Bắt đầu khám
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               ) : (
-                <div className="text-center py-6 text-slate-400 font-bold text-xs bg-white/40 border border-slate-100 rounded-2xl">
-                  Không tìm thấy bệnh nhân nào khớp với từ khóa.
+                <div className="flex-1 flex flex-col items-center justify-center py-10 text-center">
+                  <div className="w-12 h-12 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mb-3">
+                    <ClipboardList size={20} />
+                  </div>
+                  <p className="text-xs text-slate-500 font-bold">Không có bệnh nhân nào đang đợi khám.</p>
                 </div>
               )}
             </div>
-          ) : (
-            <div className="w-full flex flex-col gap-3">
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                Bệnh nhân vừa xem gần đây
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {recentPatients.length > 0 ? (
-                  recentPatients.slice(0, 2).map((patient) => (
-                    <PatientCard
-                      key={patient.patientId}
-                      patient={patient}
-                      onClick={() => navigate(`/dashboard/patients/${patient.patientId}`)}
-                    />
-                  ))
-                ) : (
-                  <>
-                    <PatientCard
-                      patient={{ fullName: "Lê Hoàng Nam", patientCode: "BN-99281" }}
-                      onClick={() => navigate("/dashboard/patients")}
-                    />
-                    <PatientCard
-                      patient={{ fullName: "Phạm Minh Tuyết", patientCode: "BN-88102" }}
-                      onClick={() => navigate("/dashboard/patients")}
-                    />
-                  </>
-                )}
-              </div>
-            </div>
-          )}
+          </div>
         </div>
+
+
         {renderQueueModal()}
       </div>
     );
@@ -977,6 +1006,17 @@ export default function ExaminationPage() {
 
   const allergyList = patientInfo?.allergies ? patientInfo.allergies.split('\n').filter(Boolean) : [];
   const historyList = patientInfo?.medicalHistory ? patientInfo.medicalHistory.split('\n').filter(Boolean) : [];
+
+  const filteredLabTests = labTests.filter(t => 
+    !selectedLabTests.some(x => x.labTestId === t.labTestId) &&
+    (t.testName.toLowerCase().includes(labSearchTerm.toLowerCase()) || 
+     t.testCode.toLowerCase().includes(labSearchTerm.toLowerCase()))
+  );
+  
+  const selectedTestsData = selectedLabTests.map(item => {
+    const t = labTests.find(x => x.labTestId === item.labTestId);
+    return t ? { ...t, note: item.note } : null;
+  }).filter(Boolean);
 
   return (
     <div className="w-full max-w-[1280px] mx-auto p-4 md:p-6 lg:p-8 flex flex-col gap-6 relative pb-8">
@@ -1527,6 +1567,7 @@ export default function ExaminationPage() {
                     <thead>
                       <tr className="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider">
                         <th className="py-3 pr-2">Tên thuốc</th>
+                        <th className="py-3 px-2 w-16">Đ.Vị</th>
                         <th className="py-3 px-2 w-28">Liều dùng</th>
                         <th className="py-3 px-2 w-20">S.Lượng</th>
                         <th className="py-3 px-2">Cách dùng</th>
@@ -1551,13 +1592,20 @@ export default function ExaminationPage() {
                               ))}
                             </select>
                           </td>
+                          
+                          <td className="py-2.5 px-2 text-xs font-bold text-emerald-600">
+                            {(() => {
+                              const m = medicines.find(x => x.medicineId.toString() === item.medicineId?.toString());
+                              return m?.unit || "—";
+                            })()}
+                          </td>
 
                           <td className="py-2.5 px-2">
                             <input
                               type="text"
                               value={item.dosage}
                               onChange={(e) => handleRxItemChange(index, "dosage", e.target.value)}
-                              placeholder="1 viên/lần"
+                              placeholder="VD: 1 viên, 5ml, 1 gói..."
                               className="w-full bg-white border border-slate-200 rounded-xl px-2 py-1.5 text-xs text-slate-700 font-bold focus:border-emerald-500 outline-none"
                             />
                           </td>
@@ -1578,7 +1626,7 @@ export default function ExaminationPage() {
                               type="text"
                               value={item.instructions}
                               onChange={(e) => handleRxItemChange(index, "instructions", e.target.value)}
-                              placeholder="Uống sáng sau ăn"
+                              placeholder="VD: Uống, bôi, tiêm..."
                               className="w-full bg-white border border-slate-200 rounded-xl px-2 py-1.5 text-xs text-slate-700 font-medium focus:border-emerald-500 outline-none"
                             />
                           </td>
@@ -1621,7 +1669,7 @@ export default function ExaminationPage() {
                           type="text"
                           value={rxItems[expandedRxRow].frequency}
                           onChange={(e) => handleRxItemChange(expandedRxRow, "frequency", e.target.value)}
-                          placeholder="2 lần/ngày"
+                          placeholder="VD: 2 lần/ngày"
                           className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 font-bold focus:border-emerald-500 outline-none"
                         />
                       </div>
@@ -1631,7 +1679,7 @@ export default function ExaminationPage() {
                           type="text"
                           value={rxItems[expandedRxRow].duration}
                           onChange={(e) => handleRxItemChange(expandedRxRow, "duration", e.target.value)}
-                          placeholder="7 ngày"
+                          placeholder="VD: 7 ngày"
                           className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 font-bold focus:border-emerald-500 outline-none"
                         />
                       </div>
@@ -1641,7 +1689,7 @@ export default function ExaminationPage() {
                           type="text"
                           value={rxItems[expandedRxRow].morningDose}
                           onChange={(e) => handleRxItemChange(expandedRxRow, "morningDose", e.target.value)}
-                          placeholder="1"
+                          placeholder="VD: 1 viên, 5ml..."
                           className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 font-bold focus:border-emerald-500 outline-none"
                         />
                       </div>
@@ -1651,7 +1699,7 @@ export default function ExaminationPage() {
                           type="text"
                           value={rxItems[expandedRxRow].noonDose}
                           onChange={(e) => handleRxItemChange(expandedRxRow, "noonDose", e.target.value)}
-                          placeholder="0"
+                          placeholder="VD: 1 viên, 5ml..."
                           className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 font-bold focus:border-emerald-500 outline-none"
                         />
                       </div>
@@ -1661,7 +1709,7 @@ export default function ExaminationPage() {
                           type="text"
                           value={rxItems[expandedRxRow].eveningDose}
                           onChange={(e) => handleRxItemChange(expandedRxRow, "eveningDose", e.target.value)}
-                          placeholder="0"
+                          placeholder="VD: 1 viên, 5ml..."
                           className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 font-bold focus:border-emerald-500 outline-none"
                         />
                       </div>
@@ -1671,7 +1719,7 @@ export default function ExaminationPage() {
                           type="text"
                           value={rxItems[expandedRxRow].nightDose}
                           onChange={(e) => handleRxItemChange(expandedRxRow, "nightDose", e.target.value)}
-                          placeholder="1"
+                          placeholder="VD: 1 viên, 5ml..."
                           className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 font-bold focus:border-emerald-500 outline-none"
                         />
                       </div>
@@ -1737,30 +1785,89 @@ export default function ExaminationPage() {
             </div>
 
             {labTests.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                {labTests.map((t) => {
-                  const isSelected = selectedLabTests.includes(t.labTestId);
-                  return (
-                    <label
-                      key={t.labTestId}
-                      className={`flex items-start gap-2.5 p-3 rounded-2xl border cursor-pointer transition-all ${isSelected
-                          ? "border-cyan-500 bg-cyan-50/50 text-cyan-800 shadow-sm"
-                          : "border-slate-100 bg-slate-50/50 text-slate-700 hover:bg-slate-50"
-                        }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleLabTest(t.labTestId)}
-                        className="mt-0.5 w-4 h-4 text-cyan-600 border-slate-300 rounded focus:ring-cyan-500"
-                      />
-                      <div className="flex flex-col">
-                        <span className="text-xs font-extrabold leading-tight">{t.testName}</span>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase">{t.testCode}</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-5">
+                {/* Cột trái: Tìm kiếm & Chọn */}
+                <div className="flex flex-col gap-3 relative">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-0.5">Tìm kiếm & Thêm xét nghiệm</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Search size={16} className="text-slate-400" />
+                    </div>
+                    <input
+                      type="text"
+                      value={labSearchTerm}
+                      onChange={(e) => setLabSearchTerm(e.target.value)}
+                      onFocus={() => setShowLabDropdown(true)}
+                      onBlur={() => setTimeout(() => setShowLabDropdown(false), 200)}
+                      placeholder="Gõ tên hoặc mã (VD: Máu...)"
+                      className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-700 font-medium focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition-all"
+                    />
+                  </div>
+
+                  {/* Dropdown List */}
+                  {showLabDropdown && filteredLabTests.length > 0 && (
+                    <div className="absolute top-[calc(100%+0.5rem)] left-0 right-0 max-h-[250px] overflow-y-auto custom-scrollbar border border-slate-100 rounded-xl bg-white shadow-xl z-20 flex flex-col divide-y divide-slate-50">
+                      {filteredLabTests.map(t => (
+                        <button
+                          key={t.labTestId}
+                          type="button"
+                          onClick={() => {
+                            toggleLabTest(t.labTestId);
+                            setLabSearchTerm("");
+                          }}
+                          className="flex items-center justify-between p-3 hover:bg-cyan-50/60 transition-colors text-left"
+                        >
+                          <div className="flex flex-col">
+                            <span className="text-xs font-extrabold text-slate-700">{t.testName}</span>
+                            <span className="text-[10px] text-slate-400 font-bold uppercase">{t.testCode}</span>
+                          </div>
+                          <Plus size={16} className="text-cyan-500" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {showLabDropdown && filteredLabTests.length === 0 && (
+                    <div className="absolute top-[calc(100%+0.5rem)] left-0 right-0 text-center p-4 text-slate-500 text-xs font-medium border border-slate-100 rounded-xl bg-white shadow-xl z-20">
+                      Không tìm thấy xét nghiệm phù hợp.
+                    </div>
+                  )}
+                </div>
+
+                {/* Cột phải: Danh sách đã chọn & Ghi chú */}
+                <div className="flex flex-col gap-3">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-0.5">
+                    Đã chọn ({selectedTestsData.length})
+                  </label>
+                  <div className="flex flex-col gap-2 min-h-[120px] max-h-[400px] overflow-y-auto custom-scrollbar pr-1">
+                    {selectedTestsData.length === 0 ? (
+                      <div className="h-full min-h-[120px] flex items-center justify-center border-2 border-dashed border-slate-100 rounded-xl text-slate-400 text-xs font-medium italic">
+                        Chưa chọn xét nghiệm nào
                       </div>
-                    </label>
-                  );
-                })}
+                    ) : (
+                      selectedTestsData.map(t => (
+                        <div key={t.labTestId} className="flex flex-col gap-2 p-3 bg-cyan-50/30 border border-cyan-100/50 rounded-xl transition-all hover:border-cyan-300 shadow-sm">
+                          <div className="flex justify-between items-start gap-2">
+                            <span className="text-xs font-extrabold text-cyan-900 leading-tight flex-1">{t.testName}</span>
+                            <button
+                              type="button"
+                              onClick={() => toggleLabTest(t.labTestId)}
+                              className="text-slate-400 hover:text-rose-500 transition-colors p-0.5 bg-white rounded-md border border-slate-100"
+                            >
+                              <X size={14} strokeWidth={3} />
+                            </button>
+                          </div>
+                          <input
+                            type="text"
+                            value={t.note || ""}
+                            onChange={(e) => handleLabTestNoteChange(t.labTestId, e.target.value)}
+                            placeholder="Ghi chú cho xét nghiệm này..."
+                            className="w-full bg-white border border-cyan-100 rounded-lg px-3 py-1.5 text-xs text-slate-700 focus:border-cyan-400 outline-none transition-all placeholder:text-slate-300"
+                          />
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
               </div>
             ) : (
               <p className="text-slate-400 font-medium italic text-xs mb-4">Không có xét nghiệm khả dụng.</p>
@@ -1826,6 +1933,12 @@ export default function ExaminationPage() {
                               <span className="text-slate-400 text-[9px] font-extrabold bg-slate-100 px-2 py-0.5 rounded-md">Chờ KQ</span>
                             )}
                           </div>
+                          
+                          {item.note && (
+                            <div className="mt-1.5 px-3 py-1.5 bg-slate-50 border-l-2 border-slate-300 rounded-r-lg text-[11px] text-slate-600 font-medium italic">
+                              <span className="font-bold">Ghi chú:</span> {item.note}
+                            </div>
+                          )}
 
                           {item.labResult && (
                             <div className="mt-2.5 pt-2.5 border-t border-slate-50 grid grid-cols-2 gap-2">

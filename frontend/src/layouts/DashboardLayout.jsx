@@ -359,19 +359,19 @@ export default function DashboardLayout() {
   );
 
   return (
-    <div className={`flex flex-col min-h-screen w-full relative selection:bg-teal-200 selection:text-teal-900 font-sans overflow-y-auto overflow-x-hidden ${useTopNavbarLayout ? "" : usePatientVisualShell ? "patient-shell" : ""} ${isAdminShell ? "admin-shell" : ""} ${isReceptionist ? "receptionist-shell" : ""} ${isPatientOnly ? "patient-web-theme" : ""} ${isDoctor || isPharmacist || isLabTechnician ? "doctor-layout-bg" : ""}`}>
+    <div className={`flex flex-col min-h-screen w-full relative selection:bg-teal-200 selection:text-teal-900 font-sans overflow-y-auto overflow-x-hidden ${useTopNavbarLayout ? "" : usePatientVisualShell ? "patient-shell" : ""} ${isAdminShell ? "admin-shell" : ""} ${isReceptionist || isDoctor || isPharmacist || isLabTechnician ? "receptionist-shell" : ""}`}>
       {/* Global Background */}
       {isAdminShell ? (
         <div className="admin-page-background" />
-      ) : isDoctor || isPharmacist || isLabTechnician ? (
-        /* ─── DOCTOR: Solid light teal background matching design ─── */
-        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#E2F2EE]" />
       ) : isPatientOnly ? (
         /* ─── PATIENT: Solid light teal background matching design ─── */
         <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#F8FFFC]" />
       ) : isReceptionist ? (
         /* ─── RECEPTIONIST: Solid mint green background matching doctor design ─── */
         <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#E8F4F1]" />
+      ) : isDoctor || isPharmacist || isLabTechnician ? (
+        /* ─── STAFF (Doctor/Pharmacist/LabTechnician): Solid slate background ─── */
+        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-slate-50" />
       ) : usePatientVisualShell ? (
         <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#0a3d38]">
           {/* Rich teal base — darker & more saturated */}

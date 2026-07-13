@@ -23,7 +23,7 @@ public class PatientController {
     private final PatientService patientService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'DOCTOR', 'LAB_TECHNICIAN')")
     public ResponseEntity<ApiResponse<PageResponse<PatientResponse>>> getAll(
             @RequestParam(required = false, defaultValue = "") String keyword,
             @RequestParam(defaultValue = "0") int page,
@@ -42,7 +42,7 @@ public class PatientController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'DOCTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'DOCTOR', 'LAB_TECHNICIAN')")
     public ResponseEntity<ApiResponse<PatientResponse>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(patientService.getById(id)));
     }

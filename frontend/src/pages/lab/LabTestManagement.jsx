@@ -253,9 +253,9 @@ export default function LabTestManagement() {
                       <div className="h-px bg-slate-100 w-full"></div>
 
                       {/* Name */}
-                      <h4 className="text-xs font-black text-slate-800 leading-snug line-clamp-2">
+                      <div className="text-[13px] font-black text-slate-800 leading-relaxed break-words py-1">
                         {t.testName}
-                      </h4>
+                      </div>
 
                       <div className="h-px bg-slate-50 w-full"></div>
 
@@ -412,11 +412,13 @@ export default function LabTestManagement() {
                 <div>
                   <label className="block text-xs font-extrabold uppercase tracking-wider text-[#4A5D59] mb-1.5">Giá tiền (VNĐ)</label>
                   <input
-                    type="number"
-                    min="0"
-                    step="1000"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                    type="text"
+                    value={formData.price === 0 ? '' : formData.price.toLocaleString("vi-VN")}
+                    onChange={(e) => {
+                      const rawValue = e.target.value.replace(/[^0-9]/g, '');
+                      setFormData({ ...formData, price: Number(rawValue) });
+                    }}
+                    placeholder="VD: 100,000"
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#1DB896]/20 focus:border-[#1DB896] text-xs font-bold text-slate-800 transition-all"
                   />
                 </div>

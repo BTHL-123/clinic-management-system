@@ -8,6 +8,7 @@ public record LabRequestItemResponse(
         String testName,
         String testCode,
         String status,
+        String note,
         LabResultResponse labResult
 ) {
     public static LabRequestItemResponse from(LabRequestItem item) {
@@ -17,6 +18,7 @@ public record LabRequestItemResponse(
                 item.getLabTest().getTestName(),
                 item.getLabTest().getTestCode(),
                 item.getStatus(),
+                item.getNote(),
                 item.getLabResult() != null ? LabResultResponse.from(item.getLabResult()) : null
         );
     }

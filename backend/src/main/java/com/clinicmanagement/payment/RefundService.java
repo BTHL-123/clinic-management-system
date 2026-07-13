@@ -4,6 +4,7 @@ import com.clinicmanagement.common.dto.PageResponse;
 import com.clinicmanagement.invoice.Invoice;
 import com.clinicmanagement.invoice.InvoiceRepository;
 import com.clinicmanagement.payment.dto.CreateRefundRequest;
+import com.clinicmanagement.payment.dto.CompleteRefundRequest;
 import com.clinicmanagement.payment.dto.RefundResponse;
 import com.clinicmanagement.payment.dto.RejectRefundRequest;
 import com.clinicmanagement.user.User;
@@ -22,7 +23,11 @@ public interface RefundService {
 
     RefundResponse approve(Long refundId, User currentUser);
 
+    RefundResponse complete(Long refundId, CompleteRefundRequest request, User currentUser);
+
     RefundResponse reject(Long refundId, RejectRefundRequest request, User currentUser);
 
     RefundResponse requestRefund(CreateRefundRequest request, User currentUser);
+
+    void createForAppointmentCancellation(Long paymentId, Long appointmentId, boolean clinicCancellation, User currentUser, String reason, String bankName, String bankAccountNumber, String accountHolderName);
 }

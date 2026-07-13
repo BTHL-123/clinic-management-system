@@ -15,7 +15,8 @@ public record PaymentResponse(
         BigDecimal amount,
         String gatewayTransactionId,
         LocalDateTime paidAt,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        LocalDateTime expiresAt
 ) {
     public static PaymentResponse from(Payment payment) {
         return new PaymentResponse(
@@ -29,7 +30,8 @@ public record PaymentResponse(
                 payment.getAmount(),
                 payment.getGatewayTransactionId(),
                 payment.getPaidAt(),
-                payment.getCreatedAt()
+                payment.getCreatedAt(),
+                payment.getExpiresAt()
         );
     }
 }

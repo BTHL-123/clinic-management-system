@@ -20,7 +20,7 @@ import {
   getInvoices,
   updateInvoice,
 } from "../../services/invoiceService";
-import { createPayment, confirmCashPayment, createOnlinePaymentUrl } from "../../services/paymentService";
+import { createPayment, confirmCashPayment, createOnlinePaymentUrl, verifySePayTransaction } from "../../services/paymentService";
 import { getMedicines } from "../../services/medicineService";
 import PageHeader from "../../components/PageHeader";
 
@@ -78,6 +78,10 @@ export default function InvoiceManagement() {
   const [payMethod, setPayMethod] = useState("CASH");
   const [paySubmitting, setPaySubmitting] = useState(false);
   const [payError, setPayError] = useState("");
+
+  // qr payment modal
+  const [qrPaymentData, setQrPaymentData] = useState(null);
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
 
   // medicines list
   const [medicinesList, setMedicinesList] = useState([]);
@@ -302,9 +306,16 @@ export default function InvoiceManagement() {
           amount: payTarget.finalAmount,
         });
         if (res.data && res.data.paymentUrl) {
-          window.location.href = res.data.paymentUrl;
+          setQrPaymentData({
+            paymentId: res.data.paymentId,
+            paymentUrl: res.data.paymentUrl,
+            invoiceCode: payTarget.invoiceCode,
+            finalAmount: payTarget.finalAmount,
+            patientName: payTarget.patientName
+          });
+          setPayTarget(null); // Đóng modal chọn phương thức
         }
-        return; // Dừng lại ở đây vì trình duyệt sẽ redirect
+        return;
       }
 
       const res = await createPayment({
@@ -323,6 +334,21 @@ export default function InvoiceManagement() {
       setPayError(err.message);
     } finally {
       setPaySubmitting(false);
+    }
+  };
+
+  const handleVerifyPayment = async () => {
+    if (!qrPaymentData) return;
+    try {
+      setVerifyingPayment(true);
+      await verifySePayTransaction(qrPaymentData.paymentId);
+      setQrPaymentData(null);
+      await fetchInvoices();
+      alert("Xác nhận thanh toán thành công!");
+    } catch (err) {
+      alert(err.message || "Giao dịch chưa hoàn tất. Vui lòng thử lại sau ít phút.");
+    } finally {
+      setVerifyingPayment(false);
     }
   };
 
@@ -854,8 +880,60 @@ export default function InvoiceManagement() {
                 {paySubmitting ? (
                   <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> Đang xử lý...</>
                 ) : (
-                  <><CheckCircle2 size={16} /> {payMethod === "CASH" ? "Xác nhận thu tiền" : "Tạo giao dịch"}</>
+                  <><CheckCircle2 size={16} /> {payMethod === "CASH" ? "Xác nhận thu tiền" : "Tạo mã QR"}</>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── QR Payment Modal ──────────────────────────────────── */}
+      {qrPaymentData && (
+        <div className="modal-overlay" onClick={() => setQrPaymentData(null)}>
+          <div className="modal-card" style={{ maxWidth: 450, textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Thanh toán chuyển khoản</h2>
+              <button className="icon-button" onClick={() => setQrPaymentData(null)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <p>Mã hóa đơn: <strong>{qrPaymentData.invoiceCode}</strong></p>
+              <p>Bệnh nhân: <strong>{qrPaymentData.patientName}</strong></p>
+              <p style={{ fontSize: "1.2rem", fontWeight: 700, color: "#0f766e", marginTop: 8 }}>
+                {formatPrice(qrPaymentData.finalAmount)}
+              </p>
+            </div>
+
+            <div style={{ background: "#f8fafc", padding: 16, borderRadius: 12, display: "inline-block", marginBottom: 20 }}>
+              <img
+                src={qrPaymentData.paymentUrl}
+                alt="QR Code Thanh Toán"
+                style={{ width: "100%", maxWidth: 280, height: "auto", borderRadius: 8 }}
+              />
+              <p style={{ fontSize: "0.85rem", color: "#64748b", marginTop: 12 }}>
+                Sử dụng App Ngân hàng để quét mã QR.<br />
+                Vui lòng <strong>không thay đổi nội dung chuyển khoản</strong>.
+              </p>
+            </div>
+
+            <div className="form-actions" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <button
+                className="primary-button"
+                style={{ width: "100%", justifyContent: "center" }}
+                onClick={handleVerifyPayment}
+                disabled={verifyingPayment}
+              >
+                {verifyingPayment ? "Đang đối soát..." : "Tôi đã chuyển khoản"}
+              </button>
+              <button
+                className="secondary-button"
+                style={{ width: "100%", justifyContent: "center" }}
+                onClick={() => setQrPaymentData(null)}
+              >
+                Đóng
               </button>
             </div>
           </div>

@@ -33,9 +33,21 @@ public record PatientResponse(
         String currentMedications,
         String lifestyleHabits,
         String avatarUrl,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        Boolean hasAccessToMedicalHistory,
+        String latestDiagnosis,
+        LocalDateTime lastVisitDate,
+        String treatmentStatus
 ) {
     public static PatientResponse from(Patient p) {
+        return from(p, null, null, null, null);
+    }
+
+    public static PatientResponse from(Patient p, Boolean hasAccess) {
+        return from(p, hasAccess, null, null, null);
+    }
+
+    public static PatientResponse from(Patient p, Boolean hasAccess, String latestDiagnosis, LocalDateTime lastVisitDate, String treatmentStatus) {
         return new PatientResponse(
                 p.getPatientId(),
                 p.getUser() != null ? p.getUser().getUserId() : null,
@@ -64,7 +76,11 @@ public record PatientResponse(
                 p.getCurrentMedications(),
                 p.getLifestyleHabits(),
                 p.getAvatarUrl(),
-                p.getCreatedAt()
+                p.getCreatedAt(),
+                hasAccess,
+                latestDiagnosis,
+                lastVisitDate,
+                treatmentStatus
         );
     }
 }

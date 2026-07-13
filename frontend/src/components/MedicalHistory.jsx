@@ -5,12 +5,16 @@ import { getPatientMedicalHistory } from "../services/medicalRecordService";
 import PrescriptionDetailView from "./PrescriptionDetailView";
 import LabResultView from "./LabResultView";
 import { getPrescriptionByConsultationId } from "../services/prescriptionService";
-import { useAuth } from "../context/useAuth";
+import { useAuth } from "../context/useAuth.js";
 
 export default function MedicalHistory({ patientId, onClose, inline = false, isPatientView = false }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isReceptionist = user?.roles?.some(r => r === "RECEPTIONIST" || r.roleName === "RECEPTIONIST");
+
+  const roles = (user?.roles || []).map((r) => (typeof r === "string" ? r : r.roleName).replace(/^ROLE_/, ""));
+  const isReceptionistOnly = roles.includes("RECEPTIONIST") && !roles.includes("ADMIN");
+
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
