@@ -5,13 +5,18 @@ import { getPatientMedicalHistory } from "../services/medicalRecordService";
 import PrescriptionDetailView from "./PrescriptionDetailView";
 import LabResultView from "./LabResultView";
 import { getPrescriptionByConsultationId } from "../services/prescriptionService";
+import { useAuth } from "../context/useAuth.js";
 
 export default function MedicalHistory({ patientId, onClose, inline = false, isPatientView = false }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedRecord, setSelectedRecord] = useState(null);
+
+  const roles = (user?.roles || []).map((r) => (typeof r === "string" ? r : r.roleName).replace(/^ROLE_/, ""));
+  const isReceptionistOnly = roles.includes("RECEPTIONIST") && !roles.includes("ADMIN");
   
   // State for tracking pagination
   const [visibleCount, setVisibleCount] = useState(3);
@@ -203,71 +208,81 @@ export default function MedicalHistory({ patientId, onClose, inline = false, isP
                     </h4>
                     
                     <p className="text-sm font-medium text-slate-650 leading-relaxed">
-                      {record.symptoms || "Không ghi nhận triệu chứng bất thường."}
+                      {!isReceptionistOnly ? (record.symptoms || "Không ghi nhận triệu chứng bất thường.") : "Đã cập nhật"}
                     </p>
 
                     {/* Action Links */}
-                    <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t border-slate-100">
-                      {record.hasPrescription && (
-                        <button
-                          onClick={() => togglePrescription(record.consultationId)}
-                          className="flex items-center gap-2 text-sm font-bold text-[#1DB896] hover:text-[#0A604E] transition-colors"
-                        >
-                          <FileText size={16} />
-                          <span>
-                            {isPrescriptionExpanded 
-                              ? "Ẩn đơn thuốc" 
-                              : `Xem đơn thuốc${prescriptionData ? ` (${prescriptionData.items?.length || 0} mục)` : ""}`}
-                          </span>
-                          {isPrescriptionExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                        </button>
-                      )}
-                      
-                      {record.hasLabResult && (
-                        <button
-                          onClick={() => toggleLab(record.consultationId)}
-                          className="flex items-center gap-2 text-sm font-bold text-[#1DB896] hover:text-[#0A604E] transition-colors"
-                        >
-                          <Activity size={16} />
-                          <span>{isLabExpanded ? "Ẩn kết quả xét nghiệm" : "Kết quả xét nghiệm"}</span>
-                          {isLabExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                        </button>
-                      )}
-                    </div>
+                    {!isReceptionistOnly && (
+                      <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t border-slate-100">
+                        {record.hasPrescription && (
+                          <button
+                            onClick={() => togglePrescription(record.consultationId)}
+                            className="flex items-center gap-2 text-sm font-bold text-[#1DB896] hover:text-[#0A604E] transition-colors"
+                          >
+                            <FileText size={16} />
+                            <span>
+                              {isPrescriptionExpanded 
+                                ? "Ẩn đơn thuốc" 
+                                : `Xem đơn thuốc${prescriptionData ? ` (${prescriptionData.items?.length || 0} mục)` : ""}`}
+                            </span>
+                            {isPrescriptionExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                          </button>
+                        )}
+                        
+                        {record.hasLabResult && (
+                          <button
+                            onClick={() => toggleLab(record.consultationId)}
+                            className="flex items-center gap-2 text-sm font-bold text-[#1DB896] hover:text-[#0A604E] transition-colors"
+                          >
+                            <Activity size={16} />
+                            <span>{isLabExpanded ? "Ẩn kết quả xét nghiệm" : "Kết quả xét nghiệm"}</span>
+                            {isLabExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Right Column: Doctor Notes checklist & Detail Button */}
                   <div className="lg:col-span-4 lg:border-l lg:border-slate-100 lg:pl-6 flex flex-col justify-between h-full min-h-[140px]">
-                    <div>
-                      {notes.length > 0 ? (
-                        <>
-                          <span className="block text-[11px] font-extrabold text-[#4A5D59]/80 uppercase tracking-widest mb-3">
-                            Ghi chú từ bác sĩ
-                          </span>
-                          <ul className="flex flex-col gap-2">
-                            {notes.map((note, i) => (
-                              <li key={i} className="flex items-start gap-2.5 text-xs font-semibold text-slate-700 leading-normal">
-                                <CheckCircle2 size={15} className="text-[#1DB896] shrink-0 mt-0.5" />
-                                <span>{note}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </>
-                      ) : (
-                        <div className="text-slate-400 italic text-xs font-medium py-2">
-                          Không có ghi chú thêm từ bác sĩ.
-                        </div>
-                      )}
-                    </div>
+                    {!isReceptionistOnly ? (
+                      <div>
+                        {notes.length > 0 ? (
+                          <>
+                            <span className="block text-[11px] font-extrabold text-[#4A5D59]/80 uppercase tracking-widest mb-3">
+                              Ghi chú từ bác sĩ
+                            </span>
+                            <ul className="flex flex-col gap-2">
+                              {notes.map((note, i) => (
+                                <li key={i} className="flex items-start gap-2.5 text-xs font-semibold text-slate-700 leading-normal">
+                                  <CheckCircle2 size={15} className="text-[#1DB896] shrink-0 mt-0.5" />
+                                  <span>{note}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </>
+                        ) : (
+                          <div className="text-slate-400 italic text-xs font-medium py-2">
+                            Không có ghi chú thêm từ bác sĩ.
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-slate-400 italic text-xs font-medium py-2">
+                        Thông tin được bảo mật
+                      </div>
+                    )}
 
-                    <div className="mt-6 lg:mt-auto">
-                      <button
-                        onClick={() => setSelectedRecord(record)}
-                        className="w-full py-2.5 px-4 rounded-xl bg-[#0A604E] hover:bg-[#1DB896] text-white font-extrabold text-sm transition-all duration-300 shadow-sm shadow-[#0A604E]/15 hover:shadow-md flex items-center justify-center gap-2"
-                      >
-                        Chi tiết lần khám
-                      </button>
-                    </div>
+                    {!isReceptionistOnly && (
+                      <div className="mt-6 lg:mt-auto">
+                        <button
+                          onClick={() => setSelectedRecord(record)}
+                          className="w-full py-2.5 px-4 rounded-xl bg-[#0A604E] hover:bg-[#1DB896] text-white font-extrabold text-sm transition-all duration-300 shadow-sm shadow-[#0A604E]/15 hover:shadow-md flex items-center justify-center gap-2"
+                        >
+                          Chi tiết lần khám
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                 </div>

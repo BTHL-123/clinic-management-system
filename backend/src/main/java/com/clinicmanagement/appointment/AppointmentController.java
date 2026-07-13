@@ -1,6 +1,7 @@
 package com.clinicmanagement.appointment;
 
 import com.clinicmanagement.appointment.dto.AppointmentResponse;
+import com.clinicmanagement.appointment.dto.BookAppointmentResponse;
 import com.clinicmanagement.appointment.dto.BookAppointmentRequest;
 import com.clinicmanagement.appointment.dto.CancelAppointmentRequest;
 import com.clinicmanagement.appointment.dto.RescheduleAppointmentRequest;
@@ -120,12 +121,12 @@ public class AppointmentController {
 
     @PostMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<AppointmentResponse>> bookAppointment(
+    public ResponseEntity<ApiResponse<BookAppointmentResponse>> bookAppointment(
             @Valid @RequestBody BookAppointmentRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        AppointmentResponse response = appointmentService.bookAppointment(request, userDetails.getUser().getUserId());
-        return ResponseEntity.ok(ApiResponse.success("Đặt lịch khám thành công", response));
+        BookAppointmentResponse response = appointmentService.bookAppointment(request, userDetails.getUser().getUserId());
+        return ResponseEntity.ok(ApiResponse.success("Đã tạo yêu cầu giữ chỗ. Vui lòng thanh toán cọc để xác nhận lịch khám.", response));
     }
 
     @PutMapping("/{id}/cancel")
@@ -140,7 +141,7 @@ public class AppointmentController {
         
         AppointmentResponse response = appointmentService.cancelAppointment(
                 id,
-                request.cancellationReason(),
+                request,
                 userDetails.getUser().getUserId(),
                 isReceptionist
         );

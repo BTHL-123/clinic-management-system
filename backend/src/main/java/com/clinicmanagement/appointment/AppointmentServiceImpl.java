@@ -1,8 +1,14 @@
 package com.clinicmanagement.appointment;
 
 import com.clinicmanagement.appointment.dto.AppointmentResponse;
+import com.clinicmanagement.appointment.dto.BookAppointmentResponse;
 import com.clinicmanagement.appointment.dto.BookAppointmentRequest;
+import com.clinicmanagement.appointment.dto.CancelAppointmentRequest;
 import com.clinicmanagement.appointment.dto.RescheduleAppointmentRequest;
+import com.clinicmanagement.common.constants.BillingConstants.AppointmentStatus;
+import com.clinicmanagement.common.constants.BillingConstants.PaymentMethod;
+import com.clinicmanagement.common.constants.BillingConstants.PaymentStatus;
+import com.clinicmanagement.common.constants.BillingConstants.PaymentType;
 import com.clinicmanagement.common.dto.PageResponse;
 import com.clinicmanagement.common.exception.BusinessException;
 import com.clinicmanagement.common.exception.ResourceNotFoundException;
@@ -26,6 +32,8 @@ import com.clinicmanagement.notification.NotificationService;
 import com.clinicmanagement.review.ReviewRepository;
 import com.clinicmanagement.payment.Payment;
 import com.clinicmanagement.payment.PaymentRepository;
+import com.clinicmanagement.payment.RefundService;
+import com.clinicmanagement.payment.SePayUrlBuilder;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -45,6 +53,9 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final EmailService emailService;
     private final ConsultationSessionRepository consultationSessionRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final RefundService refundService;
+    private final com.clinicmanagement.payment.PaymentPolicyService paymentPolicyService;
+    private final SePayUrlBuilder sePayUrlBuilder;
 
     public AppointmentServiceImpl(
             AppointmentRepository appointmentRepository,
@@ -58,7 +69,10 @@ public class AppointmentServiceImpl implements AppointmentService {
             PaymentRepository paymentRepository,
             EmailService emailService,
             ConsultationSessionRepository consultationSessionRepository,
-            SimpMessagingTemplate messagingTemplate
+            SimpMessagingTemplate messagingTemplate,
+            RefundService refundService,
+            com.clinicmanagement.payment.PaymentPolicyService paymentPolicyService,
+            SePayUrlBuilder sePayUrlBuilder
     ) {
         this.appointmentRepository = appointmentRepository;
         this.timeSlotRepository = timeSlotRepository;
@@ -72,6 +86,9 @@ public class AppointmentServiceImpl implements AppointmentService {
         this.emailService = emailService;
         this.consultationSessionRepository = consultationSessionRepository;
         this.messagingTemplate = messagingTemplate;
+        this.refundService = refundService;
+        this.paymentPolicyService = paymentPolicyService;
+        this.sePayUrlBuilder = sePayUrlBuilder;
     }
 
     @Override
@@ -177,13 +194,14 @@ public class AppointmentServiceImpl implements AppointmentService {
                 app.getCheckedInAt(),
                 queueNumber,
                 queueStatus,
-                hasReviewed
+                hasReviewed,
+                app.getQueueTicket() != null ? app.getQueueTicket().getQueueTicketId() : null
         );
     }
 
     @Override
     @Transactional
-    public AppointmentResponse bookAppointment(BookAppointmentRequest request, Long userId) {
+    public BookAppointmentResponse bookAppointment(BookAppointmentRequest request, Long userId) {
         // Issue #3: Dùng pessimistic write lock để tránh race condition
         TimeSlot slot = timeSlotRepository.findByIdWithPessimisticLock(request.slotId())
                 .orElseThrow(() -> new ResourceNotFoundException("Ca khám không tồn tại với id: " + request.slotId()));
@@ -255,11 +273,6 @@ public class AppointmentServiceImpl implements AppointmentService {
             throw new BusinessException("Ca khám này không còn khả dụng.");
         }
 
-        slot.setStatus("BOOKED");
-        slot.setLockedUntil(null);
-        slot.setLockedByPatientId(null);
-        timeSlotRepository.save(slot);
-
         Doctor doctor = doctorRepository.findById(slot.getDoctorSchedule().getDoctorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Bác sĩ không tồn tại với id: " + slot.getDoctorSchedule().getDoctorId()));
 
@@ -271,27 +284,54 @@ public class AppointmentServiceImpl implements AppointmentService {
         app.setAppointmentDate(slot.getDoctorSchedule().getWorkDate());
         app.setStartTime(slot.getStartTime());
         app.setEndTime(slot.getEndTime());
-        app.setStatus("CONFIRMED");
+        java.math.BigDecimal consultationFee = doctor.getConsultationFee();
+        if (consultationFee != null && consultationFee.compareTo(java.math.BigDecimal.ZERO) > 0) {
+            app.setStatus(AppointmentStatus.PENDING_PAYMENT);
+        } else {
+            app.setStatus(AppointmentStatus.CONFIRMED);
+        }
         app.setReasonForVisit(request.reasonForVisit());
         app.setBookingType("ONLINE");
-        app.setDepositAmount(doctor.getConsultationFee());
+        app.setDepositAmount(consultationFee);
         app.setAppointmentCode("APT" + System.currentTimeMillis());
 
         Appointment savedApp = appointmentRepository.save(app);
+
+        if (!AppointmentStatus.PENDING_PAYMENT.equals(savedApp.getStatus())) {
+            slot.setStatus("BOOKED");
+            slot.setLockedUntil(null);
+            slot.setLockedByPatientId(null);
+            timeSlotRepository.save(slot);
+
+            return new BookAppointmentResponse(
+                    mapToResponse(savedApp),
+                    null,
+                    null,
+                    null,
+                    java.math.BigDecimal.ZERO
+            );
+        }
 
         // Tạo Payment DEPOSIT/PENDING
         Payment payment = new Payment();
         payment.setAppointmentId(savedApp.getAppointmentId());
         // Generate a random payment code
         payment.setPaymentCode("PAY-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-        payment.setPaymentType("DEPOSIT");
-        payment.setPaymentMethod(request.paymentMethod() != null ? request.paymentMethod() : "CASH");
-        payment.setAmount(doctor.getConsultationFee());
-        payment.setStatus("PENDING");
+        payment.setPaymentType(PaymentType.DEPOSIT);
+        payment.setPaymentMethod(request.paymentMethod() != null ? request.paymentMethod() : PaymentMethod.ONLINE);
+        payment.setAmount(consultationFee);
+        payment.setStatus(PaymentStatus.PENDING);
         payment.setPaidBy(user);
-        paymentRepository.save(payment);
+        LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(paymentPolicyService.depositExpiryMinutes());
+        payment.setExpiresAt(expiresAt);
+        payment = paymentRepository.save(payment);
 
-        try {
+        slot.setStatus("LOCKED");
+        slot.setLockedUntil(expiresAt);
+        slot.setLockedByPatientId(patient.getPatientId());
+        timeSlotRepository.save(slot);
+
+        /*
             notificationService.createNotification(
                     userId,
                     "Đặt lịch khám thành công",
@@ -315,27 +355,37 @@ public class AppointmentServiceImpl implements AppointmentService {
             log.error("Failed to process notifications/emails for appointment booking", e);
         }
 
-        return mapToResponse(savedApp);
+        */
+        return new BookAppointmentResponse(
+                mapToResponse(savedApp),
+                com.clinicmanagement.payment.dto.PaymentResponse.from(payment),
+                sePayUrlBuilder.build(payment),
+                expiresAt,
+                payment.getAmount()
+        );
     }
 
     @Override
     @Transactional
     public AppointmentResponse cancelAppointment(
             Long appointmentId,
-            String cancellationReason,
+            CancelAppointmentRequest request,
             Long currentUserId,
             boolean isReceptionist
     ) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Lịch hẹn không tồn tại với id: " + appointmentId));
 
-        // 1. Kiểm tra quyền: PATIENT chỉ được hủy lịch của chính mình
         if (!isReceptionist) {
-            Long ownerId = appointment.getPatient() != null
-                    && appointment.getPatient().getUser() != null
-                    ? appointment.getPatient().getUser().getUserId()
-                    : null;
-            if (!currentUserId.equals(ownerId)) {
+            Long ownerId = null;
+            if (appointment.getPatient() != null) {
+                if (appointment.getPatient().getUser() != null) {
+                    ownerId = appointment.getPatient().getUser().getUserId();
+                } else if (appointment.getPatient().getCreatedBy() != null) {
+                    ownerId = appointment.getPatient().getCreatedBy().getUserId();
+                }
+            }
+            if (ownerId == null || !currentUserId.equals(ownerId)) {
                 throw new BusinessException("Bạn không có quyền hủy lịch hẹn này.");
             }
         }
@@ -361,17 +411,29 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         // 4. Cập nhật appointment
         appointment.setStatus("CANCELLED");
-        appointment.setCancellationReason(cancellationReason);
+        appointment.setCancellationReason(request.cancellationReason());
         appointment.setCancelledAt(java.time.LocalDateTime.now());
         appointment.setCancelledBy(currentUserId);
         appointmentRepository.save(appointment);
 
         // Xử lý Payment khi hủy lịch
         java.util.List<Payment> payments = paymentRepository.findByAppointmentId(appointmentId);
+        User currentUser = userRepository.findById(currentUserId).orElse(null);
         for (Payment p : payments) {
             if ("PENDING".equals(p.getStatus())) {
                 p.setStatus("CANCELLED");
                 paymentRepository.save(p);
+            } else if ("PAID".equals(p.getStatus()) && "DEPOSIT".equals(p.getPaymentType()) && currentUser != null) {
+                refundService.createForAppointmentCancellation(
+                        p.getPaymentId(),
+                        appointment.getAppointmentId(),
+                        isReceptionist,
+                        currentUser,
+                        request.cancellationReason(),
+                        request.bankName(),
+                        request.bankAccountNumber(),
+                        request.accountHolderName()
+                );
             }
         }
 
@@ -389,7 +451,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                 notificationService.createNotification(
                         appointment.getPatient().getUser().getUserId(),
                         "Lịch hẹn đã bị hủy",
-                        "Lịch hẹn mã " + appointment.getAppointmentCode() + " với bác sĩ " + (appointment.getDoctor() != null && appointment.getDoctor().getUser() != null ? appointment.getDoctor().getUser().getFullName() : "Bác sĩ") + " vào ngày " + appointment.getAppointmentDate() + " đã bị hủy. Lý do: " + cancellationReason,
+                        "Lịch hẹn mã " + appointment.getAppointmentCode() + " với bác sĩ " + (appointment.getDoctor() != null && appointment.getDoctor().getUser() != null ? appointment.getDoctor().getUser().getFullName() : "Bác sĩ") + " vào ngày " + appointment.getAppointmentDate() + " đã bị hủy. Lý do: " + request.cancellationReason(),
                         "APPOINTMENT"
                 );
             }
@@ -397,7 +459,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                 notificationService.createNotification(
                         appointment.getDoctor().getUser().getUserId(),
                         "Lịch hẹn đã bị hủy",
-                        "Lịch hẹn mã " + appointment.getAppointmentCode() + " của bệnh nhân " + (appointment.getPatient() != null ? appointment.getPatient().getFullName() : "") + " vào ngày " + appointment.getAppointmentDate() + " đã bị hủy. Lý do: " + cancellationReason,
+                        "Lịch hẹn mã " + appointment.getAppointmentCode() + " của bệnh nhân " + (appointment.getPatient() != null ? appointment.getPatient().getFullName() : "") + " vào ngày " + appointment.getAppointmentDate() + " đã bị hủy. Lý do: " + request.cancellationReason(),
                         "APPOINTMENT"
                 );
             }
@@ -420,11 +482,15 @@ public class AppointmentServiceImpl implements AppointmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Lịch hẹn không tồn tại với id: " + appointmentId));
 
         if (!isPrivileged) {
-            Long ownerId = appointment.getPatient() != null
-                    && appointment.getPatient().getUser() != null
-                    ? appointment.getPatient().getUser().getUserId()
-                    : null;
-            if (!currentUserId.equals(ownerId)) {
+            Long ownerId = null;
+            if (appointment.getPatient() != null) {
+                if (appointment.getPatient().getUser() != null) {
+                    ownerId = appointment.getPatient().getUser().getUserId();
+                } else if (appointment.getPatient().getCreatedBy() != null) {
+                    ownerId = appointment.getPatient().getCreatedBy().getUserId();
+                }
+            }
+            if (ownerId == null || !currentUserId.equals(ownerId)) {
                 throw new BusinessException("Bạn không có quyền dời lịch hẹn này.");
             }
         }

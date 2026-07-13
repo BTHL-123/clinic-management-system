@@ -30,6 +30,9 @@ public class LabRequestItem {
     @Builder.Default
     private String status = "REQUESTED";
 
+    @Column(length = 500)
+    private String note;
+
     @OneToOne(mappedBy = "labRequestItem", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private LabResult labResult;
 }

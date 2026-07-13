@@ -344,11 +344,11 @@ public class GeminiService {
         messages.add(Map.of("role", "system", "content",
                 "Bạn là một AI CHUYÊN TRÍCH XUẤT THÔNG TIN Y TẾ. Nhiệm vụ của bạn LÀ CHUẨN HÓA GHI CHÚ THÔ thành JSON, TUYỆT ĐỐI KHÔNG tự chẩn đoán, KHÔNG tự kê thuốc, KHÔNG suy diễn.\n" +
                 "Đọc ghi chú thô và trích xuất nguyên văn/tóm tắt vào 5 trường sau:\n" +
-                "1. 'symptoms': CHỈ triệu chứng cơ năng bệnh nhân tự cảm nhận (VD: đau bụng, ho, sốt...).\n" +
+                "1. 'symptoms': CHỈ triệu chứng cơ năng bệnh nhân tự cảm nhận (VD: đau bụng, ho, sốt...) VÀ thời gian kéo dài triệu chứng (VD: kéo dài 3 ngày nay, xuất hiện từ hôm qua). Bỏ qua các thông tin cá nhân như (Bệnh nhân nam, nữ, tuổi).\n" +
                 "2. 'clinicalFindings': Kết quả khám thực thể do bác sĩ khám (VD: ấn đau, phản ứng thành bụng, đề kháng, Murphy (+), Rovsing (+), họng đỏ, phổi ran, tim đều...). Ưu tiên đưa vào đây, không để nhầm vào symptoms.\n" +
-                "3. 'diagnosis': Chẩn đoán XÁC ĐỊNH bệnh. NẾU input có các từ: 'nghi', 'theo dõi', 'rule out', 'chưa loại trừ', 'khả năng' => KHÔNG ĐƯỢC để vào diagnosis mà phải chuyển xuống doctorNote. Nếu không có chẩn đoán xác định, để rỗng \"\".\n" +
+                "3. 'diagnosis': Chẩn đoán XÁC ĐỊNH bệnh. Bạn PHẢI tra cứu mã ICD-10 tương ứng và trả về theo định dạng: [MÃ_ICD10] Tên Bệnh (VD: [J02.9] Viêm họng cấp). NẾU input có các từ: 'nghi', 'theo dõi', 'rule out', 'chưa loại trừ', 'khả năng' => KHÔNG ĐƯỢC để vào diagnosis mà phải chuyển xuống doctorNote. Nếu không có chẩn đoán xác định, để rỗng \"\".\n" +
                 "4. 'treatmentPlan': Thuốc, KẾ HOẠCH ĐIỀU TRỊ hoặc CẬN LÂM SÀNG (VD: chỉ định, xét nghiệm, siêu âm, CT, MRI, X-quang, công thức máu, nội soi...). Ưu tiên đưa vào đây.\n" +
-                "5. 'doctorNote': Lời dặn, thông tin nền (tuổi, giới...), và các chẩn đoán chưa xác định (VD: nghi viêm ruột thừa...).\n" +
+                "5. 'doctorNote': Lời dặn dò của bác sĩ đối với bệnh nhân (kiêng cữ, sinh hoạt), hoặc các chẩn đoán chưa xác định (VD: nghi viêm ruột thừa). KHÔNG ghi lại thông tin hành chính (bệnh nhân nam, tuổi...) trừ khi cần thiết.\n" +
                 "Trả về ĐÚNG MỘT JSON OBJECT với 5 trường trên. Nếu thông tin nào không có, hãy để trống chuỗi (\"\"). Chỉ trả về JSON thuần hợp lệ, không bọc bằng ```json hay markdown, không chứa text nào khác."));
         messages.add(Map.of("role", "user", "content", "Ghi chú thô:\n" + rawNote + "\nPhân tích và trả về JSON."));
 
@@ -498,11 +498,11 @@ public class GeminiService {
         Map<String, Object> systemParts = new HashMap<>();
         systemParts.put("text", "Bạn là một AI CHUYÊN TRÍCH XUẤT THÔNG TIN Y TẾ. Nhiệm vụ của bạn LÀ CHUẨN HÓA GHI CHÚ THÔ thành JSON, TUYỆT ĐỐI KHÔNG tự chẩn đoán, KHÔNG tự kê thuốc, KHÔNG suy diễn.\n" +
                 "Đọc ghi chú thô và trích xuất nguyên văn/tóm tắt vào 5 trường sau:\n" +
-                "1. 'symptoms': CHỈ triệu chứng cơ năng bệnh nhân tự cảm nhận (VD: đau bụng, ho, sốt...).\n" +
+                "1. 'symptoms': CHỈ triệu chứng cơ năng bệnh nhân tự cảm nhận (VD: đau bụng, ho, sốt...) VÀ thời gian kéo dài triệu chứng (VD: kéo dài 3 ngày nay, xuất hiện từ hôm qua). Bỏ qua các thông tin cá nhân như (Bệnh nhân nam, nữ, tuổi).\n" +
                 "2. 'clinicalFindings': Kết quả khám thực thể do bác sĩ khám (VD: ấn đau, phản ứng thành bụng, đề kháng, Murphy (+), Rovsing (+), họng đỏ, phổi ran, tim đều...). Ưu tiên đưa vào đây, không để nhầm vào symptoms.\n" +
-                "3. 'diagnosis': Chẩn đoán XÁC ĐỊNH bệnh. NẾU input có các từ: 'nghi', 'theo dõi', 'rule out', 'chưa loại trừ', 'khả năng' => KHÔNG ĐƯỢC để vào diagnosis mà phải chuyển xuống doctorNote. Nếu không có chẩn đoán xác định, để rỗng \"\".\n" +
+                "3. 'diagnosis': Chẩn đoán XÁC ĐỊNH bệnh. Bạn PHẢI tra cứu mã ICD-10 tương ứng và trả về theo định dạng: [MÃ_ICD10] Tên Bệnh (VD: [J02.9] Viêm họng cấp). NẾU input có các từ: 'nghi', 'theo dõi', 'rule out', 'chưa loại trừ', 'khả năng' => KHÔNG ĐƯỢC để vào diagnosis mà phải chuyển xuống doctorNote. Nếu không có chẩn đoán xác định, để rỗng \"\".\n" +
                 "4. 'treatmentPlan': Thuốc, KẾ HOẠCH ĐIỀU TRỊ hoặc CẬN LÂM SÀNG (VD: chỉ định, xét nghiệm, siêu âm, CT, MRI, X-quang, công thức máu, nội soi...). Ưu tiên đưa vào đây.\n" +
-                "5. 'doctorNote': Lời dặn, thông tin nền (tuổi, giới...), và các chẩn đoán chưa xác định (VD: nghi viêm ruột thừa...).\n" +
+                "5. 'doctorNote': Lời dặn dò của bác sĩ đối với bệnh nhân (kiêng cữ, sinh hoạt), hoặc các chẩn đoán chưa xác định (VD: nghi viêm ruột thừa). KHÔNG ghi lại thông tin hành chính (bệnh nhân nam, tuổi...) trừ khi cần thiết.\n" +
                 "Trả về ĐÚNG MỘT JSON OBJECT với 5 trường trên. Nếu thông tin nào không có, hãy để trống chuỗi (\"\"). Chỉ trả về JSON thuần hợp lệ, không bọc bằng ```json hay markdown, không chứa text nào khác.");
         systemInstruction.put("parts", List.of(systemParts));
         requestBody.put("system_instruction", systemInstruction);

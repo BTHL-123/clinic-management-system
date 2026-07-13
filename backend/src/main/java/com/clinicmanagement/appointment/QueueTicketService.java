@@ -3,6 +3,7 @@ package com.clinicmanagement.appointment;
 import com.clinicmanagement.appointment.dto.QueueTicketResponse;
 import com.clinicmanagement.appointment.dto.SkipQueueRequest;
 import com.clinicmanagement.appointment.dto.StartExaminationResponse;
+import com.clinicmanagement.common.constants.BillingConstants.AppointmentStatus;
 import com.clinicmanagement.common.exception.BusinessException;
 import com.clinicmanagement.common.exception.ResourceNotFoundException;
 import com.clinicmanagement.consultation.ConsultationSession;
@@ -110,7 +111,7 @@ public class QueueTicketService {
         queueTicketRepository.save(ticket);
         
         if (ticket.getAppointment() != null) {
-            ticket.getAppointment().setStatus("COMPLETED");
+            ticket.getAppointment().setStatus(AppointmentStatus.PAYMENT_DUE);
         }
         
         return QueueTicketResponse.from(ticket, getConsultationId(ticket));

@@ -5,12 +5,17 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 public record CreateRefundRequest(
-        @NotNull(message = "Payment ID không được để trống")
+        @NotNull(message = "Payment ID is required")
         Long paymentId,
 
-        @NotNull(message = "Số tiền hoàn không được để trống")
-        @DecimalMin(value = "0.01", message = "Số tiền hoàn phải lớn hơn 0")
+        @NotNull(message = "Refund amount is required")
+        @DecimalMin(value = "0.01", message = "Refund amount must be greater than 0")
         BigDecimal refundAmount,
 
-        String reason
-) {}
+        String reason,
+        String refundMethod,
+        String bankName,
+        String bankAccountNumber,
+        String accountHolderName
+) {
+}

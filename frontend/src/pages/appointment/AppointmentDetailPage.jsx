@@ -8,61 +8,71 @@ import { useAuth } from "../../context/useAuth.js";
 import PageHeader from "../../components/PageHeader";
 
 // Reuse CancelModal
-function CancelModal({ isOpen, onClose, onConfirm, busy }) {
+function CancelModal({ isOpen, onClose, onConfirm, busy, appointment }) {
   const [reason, setReason] = useState("");
+  const [bankName, setBankName] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [accountName, setAccountName] = useState("");
 
   if (!isOpen) return null;
 
+  const apptDate = new Date(`${appointment?.appointmentDate}T${appointment?.startTime}`);
+  const diffHours = (apptDate - new Date()) / (1000 * 60 * 60);
+  const isTooClose = diffHours < 2;
+
+  const requiresRefund = appointment?.status === "CONFIRMED" && appointment?.depositAmount > 0 && !isTooClose;
+  const showNoRefundWarning = appointment?.status === "CONFIRMED" && appointment?.depositAmount > 0 && isTooClose;
+
+  const isFormValid = reason.trim() && (!requiresRefund || (bankName.trim() && accountNumber.trim() && accountName.trim()));
+
   return (
-    <div style={{
-      position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: "rgba(13, 76, 70, 0.25)", backdropFilter: "blur(8px)",
-      display: "flex", alignItems: "center", justifycontent: "center", zIndex: 1000
-    }}>
-      <div style={{
-        background: "rgba(255, 255, 255, 0.85)", backdropFilter: "blur(20px)",
-        padding: "28px", borderRadius: "24px", border: "1px solid rgba(255,255,255,0.5)",
-        width: "90%", maxWidth: "400px", boxShadow: "0 10px 40px rgba(0,0,0,0.12)"
-      }}>
-        <h3 style={{ margin: "0 0 16px", color: "#0f172a", fontSize: "1.2rem", fontWeight: 800 }}>Xác nhận hủy lịch</h3>
-        <p style={{ margin: "0 0 16px", color: "#475569", fontSize: "14px", fontWeight: 500 }}>
-          Vui lòng nhập lý do hủy lịch hẹn này. Thao tác này không thể hoàn tác.
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+      <div className="bg-white rounded-3xl p-7 w-[90%] max-w-[420px] shadow-2xl border border-slate-100 animate-[fadeIn_0.2s_ease]">
+        <h3 className="text-lg font-black text-slate-900 mb-2">Xác nhận hủy lịch khám</h3>
+        <p className="text-[#4A5D59] text-xs font-semibold mb-5">
+          Vui lòng nhập lý do hủy lịch hẹn này. Thao tác này sẽ giải phóng ca khám và không thể hoàn tác.
         </p>
+
+        {showNoRefundWarning && (
+          <div className="mb-4 bg-red-50 p-3 rounded-xl border border-red-100">
+            <p className="text-red-800 text-xs font-semibold">
+              Cảnh báo: Bạn đang hủy lịch quá sát giờ khám (dưới 2 tiếng). Theo chính sách, bạn sẽ <b>KHÔNG được hoàn lại tiền cọc</b>. Bạn có chắc chắn muốn hủy không?
+            </p>
+          </div>
+        )}
+
+        {requiresRefund && (
+          <div className="mb-4 bg-blue-50 p-3 rounded-xl border border-blue-100">
+            <p className="text-blue-800 text-xs font-semibold mb-3">Lịch hẹn này đã đặt cọc. Vui lòng nhập thông tin ngân hàng để được hoàn tiền theo chính sách.</p>
+            <div className="flex flex-col gap-3">
+              <input type="text" placeholder="Ngân hàng (VD: Vietcombank)" value={bankName} onChange={e => setBankName(e.target.value)} className="w-full px-4 py-2.5 rounded-lg border border-blue-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-xs font-bold" />
+              <input type="text" placeholder="Số tài khoản" value={accountNumber} onChange={e => setAccountNumber(e.target.value)} className="w-full px-4 py-2.5 rounded-lg border border-blue-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-xs font-bold" />
+              <input type="text" placeholder="Tên chủ tài khoản" value={accountName} onChange={e => setAccountName(e.target.value)} className="w-full px-4 py-2.5 rounded-lg border border-blue-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-xs font-bold uppercase" />
+            </div>
+          </div>
+        )}
+
         <textarea
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          placeholder="Lý do hủy..."
+          placeholder="Lý do hủy lịch..."
           rows={3}
-          style={{
-            width: "100%", padding: "10px", borderRadius: "8px",
-            border: "1px solid rgba(255, 255, 255, 0.6)", background: "rgba(255,255,255,0.4)",
-            outline: "none", resize: "none",
-            marginBottom: "16px", fontFamily: "inherit", fontSize: "14px",
-            boxSizing: "border-box"
-          }}
+          className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#1DB896]/20 focus:border-[#1DB896] resize-none text-xs font-bold mb-5 placeholder-slate-450 text-slate-800"
         />
-        <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+        <div className="flex gap-3 justify-end">
           <button
             onClick={onClose}
             disabled={busy}
-            style={{
-              padding: "8px 16px", borderRadius: "8px", border: "1px solid rgba(255, 255, 255, 0.6)",
-              background: "rgba(255, 255, 255, 0.6)", cursor: "pointer", fontWeight: 600, color: "#475569"
-            }}
+            className="px-5 py-2.5 rounded-xl border border-slate-200 bg-white text-[#4A5D59] font-black hover:bg-slate-50 transition-colors text-xs cursor-pointer"
           >
             Đóng
           </button>
           <button
-            onClick={() => onConfirm(reason)}
-            disabled={busy || !reason.trim()}
-            style={{
-              padding: "8px 16px", borderRadius: "8px", border: "none",
-              background: (busy || !reason.trim()) ? "#fca5a5" : "#dc2626",
-              color: "#fff", cursor: (busy || !reason.trim()) ? "not-allowed" : "pointer",
-              fontWeight: 600
-            }}
+            onClick={() => onConfirm({ cancellationReason: reason, bankName, bankAccountNumber: accountNumber, accountHolderName: accountName.toUpperCase() })}
+            disabled={busy || !isFormValid}
+            className="px-5 py-2.5 rounded-xl bg-red-600 text-white font-black hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs cursor-pointer"
           >
-            {busy ? "Đang xử lý..." : "Hủy lịch"}
+            {busy ? "Đang xử lý..." : "Xác nhận hủy"}
           </button>
         </div>
       </div>
@@ -97,10 +107,10 @@ export default function AppointmentDetailPage() {
     loadData();
   }, [id]);
 
-  const handleCancel = async (reason) => {
+  const handleCancel = async (payload) => {
     setCancelling(true);
     try {
-      await appointmentService.cancelAppointment(id, reason);
+      await appointmentService.cancelAppointment(id, payload);
       setCancelModalOpen(false);
       toast.success("Đã hủy lịch hẹn.");
       loadData();
@@ -214,6 +224,7 @@ export default function AppointmentDetailPage() {
         onClose={() => { if(!cancelling) setCancelModalOpen(false); }}
         onConfirm={handleCancel}
         busy={cancelling}
+        appointment={appt}
       />
 
       <RescheduleModal
