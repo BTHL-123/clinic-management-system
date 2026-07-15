@@ -181,8 +181,8 @@ export default function WalkInAppointmentPage() {
   };
 
   // ── Load data ────────────────────────────────────────────────
-  const fetchData = useCallback(async () => {
-    setLoading(true);
+  const fetchData = useCallback(async (isPolling = false) => {
+    if (!isPolling) setLoading(true);
     try {
       const docRes = await getDoctors({ page: 0, size: 200, status: "ACTIVE" });
       const docs = Array.isArray(docRes?.data?.content) 
@@ -216,9 +216,9 @@ export default function WalkInAppointmentPage() {
       setSlotsBySchedule(slotsMap);
 
     } catch (err) {
-      toast.error(err, "Không thể tải dữ liệu.");
+      if (!isPolling) toast.error(err, "Không thể tải dữ liệu.");
     } finally {
-      setLoading(false);
+      if (!isPolling) setLoading(false);
     }
   }, [selectedDate, toast]);
 
@@ -237,7 +237,7 @@ export default function WalkInAppointmentPage() {
       }
     }).catch(console.error);
 
-    const intv = setInterval(fetchData, 15000);
+    const intv = setInterval(() => fetchData(true), 15000);
     return () => clearInterval(intv);
   }, [selectedDate, fetchData]);
 
@@ -372,7 +372,7 @@ export default function WalkInAppointmentPage() {
               </div>
             </div>
             <button 
-              onClick={fetchData} 
+              onClick={() => fetchData(false)} 
               disabled={loading}
               className="bg-white hover:bg-slate-50 text-teal-700 border border-slate-200 font-bold rounded-xl px-5 py-2.5 transition-all flex items-center gap-2 justify-center shadow-sm"
             >

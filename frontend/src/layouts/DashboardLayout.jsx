@@ -78,7 +78,7 @@ export default function DashboardLayout() {
   /* ─── PATIENT & DOCTOR: Full-width top header bar (matching landing page) ─── */
   const renderPatientHeader = () => (
     <header className="fixed top-0 left-0 right-0 z-[120] bg-white/80 backdrop-blur-2xl border-b border-slate-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-      <div className={`mx-auto flex h-16 w-full items-center justify-between px-5 md:px-7 ${isPatientOnly ? "max-w-[1240px]" : "max-w-[1440px]"}`}>
+      <div className={`mx-auto flex h-16 w-full items-center justify-between px-5 md:px-7 ${isPatientOnly ? "max-w-[1240px]" : "max-w-full"}`}>
         {/* Left: Logo + Brand */}
         <div className="flex items-center gap-3 cursor-pointer group shrink-0" onClick={() => navigate(isPatientOnly ? "/" : "/dashboard")}>
           <LogoSVG className="w-9 h-9 drop-shadow-sm group-hover:scale-105 transition-transform" />
@@ -322,7 +322,7 @@ export default function DashboardLayout() {
         transition={{ duration: 0.25, ease: "easeOut" }}
         className="flex-1 w-full relative z-10 flex flex-col"
       >
-        <main className={`flex-1 w-full mx-auto ${useTopNavbarLayout ? (isPatientOnly ? "pt-[68px] px-0 pb-0 max-w-[1240px]" : "pt-[68px] px-0 pb-0 max-w-[1440px]") : isAdminShell ? "admin-main" : "max-w-[1700px] pt-[80px] px-4 md:px-6 pb-4 md:pb-6"} flex gap-6 h-full`}>
+        <main className={`flex-1 w-full mx-auto ${useTopNavbarLayout ? (isPatientOnly ? "pt-[68px] px-0 pb-0 max-w-[1240px]" : "pt-[68px] px-2 md:px-4 pb-0 max-w-full") : isAdminShell ? "admin-main" : "max-w-full pt-[80px] px-4 md:px-6 pb-4 md:pb-6"} flex gap-6 h-full`}>
           {isAdminShell ? (
             <AdminSidebar />
           ) : roles.includes("DOCTOR") ? (

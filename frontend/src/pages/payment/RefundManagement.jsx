@@ -340,7 +340,7 @@ export default function RefundManagement() {
                 <th className="px-5 py-4 font-black text-slate-500 min-w-[280px]">Thong tin nhan tien</th>
                 <th className="px-5 py-4 font-black text-slate-500">Trang thai</th>
                 <th className="px-5 py-4 font-black text-slate-500">Chung tu / ghi chu</th>
-                <th className="px-5 py-4 font-black text-slate-500">Thao tac</th>
+                <th className="px-5 py-4 font-black text-slate-500 min-w-[160px]">Thao tac</th>
               </tr>
             </thead>
             <tbody>

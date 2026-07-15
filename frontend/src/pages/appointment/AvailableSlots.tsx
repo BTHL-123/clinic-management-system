@@ -14,6 +14,7 @@ import { getActiveDepartments } from "../../services/departmentService";
 import { useToast } from "../../context/useToast";
 import { useAuth } from "../../context/useAuth.js";
 import { createOnlinePaymentUrl, verifySePayTransaction } from "../../services/paymentService";
+import DoctorDetailModal from "../../components/DoctorDetailModal";
 
 interface TimeSlot {
   slotId: number;
@@ -92,6 +93,7 @@ export default function AvailableSlots() {
   // Base Data States
   const [departments, setDepartments] = useState<any[]>([]);
   const [allDoctors, setAllDoctors] = useState<DoctorOption[]>([]);
+  const [viewDoctorDetail, setViewDoctorDetail] = useState<DoctorOption | null>(null);
   
   // Interactive Calendar States
   const todayDate = useMemo(() => new Date(), []);
@@ -633,6 +635,36 @@ export default function AvailableSlots() {
     }
   };
 
+  // Auto-polling for QR payment
+  useEffect(() => {
+    const paymentId = bookingPayment?.depositPayment?.paymentId;
+    if (!paymentId || bookingSuccess || isExpired) return;
+
+    const intervalId = setInterval(async () => {
+      try {
+        await verifySePayTransaction(paymentId, { skipErrorToast: true });
+        setBookingSuccess(true);
+        clearInterval(intervalId);
+        window.dispatchEvent(new CustomEvent("notification-updated"));
+        window.dispatchEvent(new CustomEvent("appointment-updated"));
+
+        setTimeout(() => {
+          setBookingStep(false);
+          setSelectedSlot(null);
+          setBookingPayment(null);
+          setShowAddProfile(false);
+          setVisitReason("");
+          fetchDoctorsAndSlots(workDate, selectedDepartmentId, searchQuery);
+          navigate("/dashboard/my-appointments?tab=upcoming");
+        }, 1800);
+      } catch (err) {
+        // Continue polling
+      }
+    }, 4000);
+
+    return () => clearInterval(intervalId);
+  }, [bookingPayment, bookingSuccess, isExpired, workDate, selectedDepartmentId, searchQuery, fetchDoctorsAndSlots, navigate]);
+
   // Handle Month Changing
   const handlePrevMonth = () => {
     setCurrentMonth((m) => {
@@ -720,6 +752,14 @@ export default function AvailableSlots() {
                 </button>
               </div>
             </div>
+
+            {/* Doctor Detail Modal */}
+            {viewDoctorDetail && (
+              <DoctorDetailModal
+                selectedDoctor={viewDoctorDetail}
+                onClose={() => setViewDoctorDetail(null)}
+              />
+            )}
 
             {/* Days Grid Header */}
             <div className="grid grid-cols-7 gap-1 text-center mb-2">
@@ -861,7 +901,10 @@ export default function AvailableSlots() {
                     >
                       {/* Left: Avatar & Rating */}
                       <div className="flex flex-row md:flex-col items-center gap-3 shrink-0">
-                        <div className="w-24 h-24 rounded-2xl bg-teal-50 border-2 border-[#1DB896]/10 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
+                        <div 
+                          className="w-24 h-24 rounded-2xl bg-teal-50 border-2 border-[#1DB896]/10 flex items-center justify-center overflow-hidden shrink-0 shadow-inner cursor-pointer hover:border-[#1DB896]/50 transition-colors"
+                          onClick={() => setViewDoctorDetail(doc)}
+                        >
                           <img 
                             src={doc.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(doc.fullName)}&background=e2e8f0&color=0f172a`}
                             alt={doc.fullName} 
@@ -882,7 +925,10 @@ export default function AvailableSlots() {
                             Kinh nghiệm {exp} năm
                           </span>
                           
-                          <h3 className="text-lg font-black text-slate-800 pr-24 mb-1">
+                          <h3 
+                            className="text-lg font-black text-slate-800 pr-24 mb-1 cursor-pointer hover:text-[#0A604E] transition-colors"
+                            onClick={() => setViewDoctorDetail(doc)}
+                          >
                             {doc.degree ? `${doc.degree}. ` : "BS. "}{doc.fullName}
                           </h3>
                           <p className="text-[13px] font-extrabold text-[#198E75] mb-2">
@@ -1001,15 +1047,23 @@ export default function AvailableSlots() {
                             className="bg-slate-50 border border-slate-200 rounded-3xl p-4 flex flex-col gap-3 group relative hover:bg-white hover:border-[#1DB896] hover:shadow-md transition-all"
                           >
                             <div className="flex gap-4 items-center w-full">
-                              <div className="w-16 h-16 rounded-xl bg-slate-200 shrink-0 overflow-hidden border border-white">
+                              <div 
+                                className="w-16 h-16 rounded-xl bg-slate-200 shrink-0 overflow-hidden border border-white cursor-pointer hover:border-[#1DB896]"
+                                onClick={() => setViewDoctorDetail(doc)}
+                              >
                                 <img 
-                                  src={`https://api.dicebear.com/7.x/notionists/svg?seed=${doc.doctorId}&backgroundColor=cbd5e1`} 
+                                  src={doc.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(doc.fullName)}&background=e2e8f0&color=0f172a`} 
                                   alt="" 
                                   className="w-full h-full object-cover"
                                 />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <h5 className="font-black text-slate-800 text-sm truncate">{doc.degree ? `${doc.degree}. ` : "BS. "}{doc.fullName}</h5>
+                                <h5 
+                                  className="font-black text-slate-800 text-sm truncate cursor-pointer hover:text-[#0A604E]"
+                                  onClick={() => setViewDoctorDetail(doc)}
+                                >
+                                  {doc.degree ? `${doc.degree}. ` : "BS. "}{doc.fullName}
+                                </h5>
                                 <p className="text-xs text-[#198E75] font-bold truncate mb-1">Khoa: {doc.departmentName || doc.specialization}</p>
                                 <span className="text-[10px] text-slate-500 font-bold bg-slate-200/50 px-1.5 py-0.5 rounded">
                                   {exp} năm kinh nghiệm
@@ -1119,7 +1173,7 @@ export default function AvailableSlots() {
                   <div className="bg-[#F0F9F7] border border-[#1DB896]/15 rounded-2xl p-4 flex gap-4 items-center">
                     <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden">
                       <img 
-                        src={`https://api.dicebear.com/7.x/notionists/svg?seed=${selectedDoctor?.doctorId}&backgroundColor=e2e8f0`} 
+                        src={selectedDoctor?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedDoctor?.fullName || "BS")}&background=e2e8f0&color=0f172a`} 
                         alt="" 
                         className="w-full h-full object-cover"
                       />
@@ -1317,22 +1371,22 @@ export default function AvailableSlots() {
                         />
                       </div>
                       <div className="text-center">
-                        <p className="text-sm font-black text-slate-800">Thanh toán đặt cọc: {bookingPayment.amount?.toLocaleString("vi-VN")} đ</p>
+                        <p className="text-sm font-black text-slate-800 mt-3">Thanh toán đặt cọc: {bookingPayment.amount?.toLocaleString("vi-VN")} đ</p>
                         <p className="text-xs font-bold text-rose-500 mt-1">Mã đơn: {bookingPayment.depositPayment?.paymentCode}</p>
                       </div>
-                      <div className="flex w-full gap-3 mt-2">
+                      <div className="flex flex-col w-full gap-3 mt-4">
                         <button
                           type="button"
-                          onClick={handleVerifyDepositPayment}
-                          disabled={verifyingDeposit}
-                          className="flex-1 bg-[#1DB896] hover:bg-[#159f80] text-white font-black text-xs py-3.5 rounded-xl transition-all disabled:opacity-50"
+                          className="w-full bg-[#f1f5f9] text-[#64748b] border border-[#cbd5e1] font-black text-xs py-3.5 rounded-xl flex items-center justify-center cursor-wait"
+                          disabled
                         >
-                          {verifyingDeposit ? "Đang xác thực..." : "Đã thanh toán (Xác thực)"}
+                          <div style={{ display: "inline-block", width: 14, height: 14, border: "2px solid #cbd5e1", borderTopColor: "#64748b", borderRadius: "50%", animation: "spin 1s linear infinite", marginRight: 8 }}></div>
+                          Đang chờ nhận tiền tự động...
                         </button>
                         <button
                           type="button"
                           onClick={handleAbortBooking}
-                          className="px-6 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs py-3.5 rounded-xl transition-all"
+                          className="w-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-500 font-black text-xs py-3.5 rounded-xl transition-all cursor-pointer"
                         >
                           Hủy bỏ
                         </button>

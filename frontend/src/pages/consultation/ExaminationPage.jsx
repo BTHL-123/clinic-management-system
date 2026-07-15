@@ -640,6 +640,19 @@ export default function ExaminationPage() {
   };
 
   const handleComplete = async () => {
+    // Kiểm tra xem có đơn thuốc chưa lưu không
+    const validRxItems = rxItems.filter((i) => i.medicineId && i.quantity);
+    if (validRxItems.length > 0) {
+      showToast("Bạn có đơn thuốc đang soạn dở. Vui lòng bấm 'Lưu đơn thuốc' trước khi hoàn tất phiên khám!", "error");
+      return;
+    }
+
+    // Kiểm tra xem có xét nghiệm chưa lưu không
+    if (selectedLabTests.length > 0) {
+      showToast("Bạn có chỉ định xét nghiệm chưa được lưu. Vui lòng bấm 'Lưu chỉ định' trước khi hoàn tất!", "error");
+      return;
+    }
+
     if (!window.confirm("Xác nhận hoàn tất phiên khám?\nThao tác này sẽ cập nhật trạng thái lịch hẹn thành COMPLETED.")) return;
     setCompleting(true);
     setError("");
