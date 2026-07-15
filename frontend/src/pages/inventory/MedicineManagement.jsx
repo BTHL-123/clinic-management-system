@@ -223,8 +223,8 @@ export default function MedicineManagement() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
-            {/* Left Column: List (5/12 width) */}
-            <div className="lg:col-span-5 flex flex-col gap-4 max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar pr-1">
+            {/* Left Column: List (7/12 width) */}
+            <div className="lg:col-span-7 flex flex-col gap-4 max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar pr-1">
               {filtered.map((med) => {
                 const isSelected = med.medicineId === selectedMedId;
                 return (
@@ -242,8 +242,8 @@ export default function MedicineManagement() {
                     )}
                     
                     {/* Top Row: Code & Status */}
-                    <div className="flex justify-between items-center w-full">
-                      <span className="font-mono text-teal-700 bg-teal-50/80 border border-teal-200/50 px-2 py-0.5 rounded text-[11px] font-bold">
+                    <div className="flex justify-between items-center gap-2 flex-wrap w-full">
+                      <span className="font-mono text-teal-700 bg-teal-50/80 border border-teal-200/50 px-2 py-0.5 rounded text-[11px] font-bold break-all">
                         {med.medicineCode}
                       </span>
                       <span className={`px-2 py-0.5 rounded-full text-[9px] font-black border uppercase tracking-wider ${
@@ -281,8 +281,8 @@ export default function MedicineManagement() {
               })}
             </div>
 
-            {/* Right Column: Sticky Detail Panel (7/12 width) */}
-            <div className="lg:col-span-7 sticky top-6">
+            {/* Right Column: Sticky Detail Panel (5/12 width) */}
+            <div className="lg:col-span-5 sticky top-6">
               {selectedMed ? (
                 <div className="bg-white rounded-[2rem] border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.03)] p-6 flex flex-col gap-6 animate-[fadeIn_0.25s_ease]">
                   

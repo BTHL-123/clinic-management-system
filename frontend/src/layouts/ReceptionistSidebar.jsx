@@ -14,6 +14,7 @@ import {
   UserCheck,
   UserPlus,
   Users,
+  Receipt,
 } from "lucide-react";
 import { useAuth } from "../context/useAuth.js";
 
@@ -24,6 +25,7 @@ const navItems = [
   { id: "walk-in", icon: UserPlus, path: "/dashboard/walk-in", label: "Khám trực tiếp" },
   { id: "appointments", icon: CalendarDays, path: "/dashboard/appointments", label: "Lịch khám" },
   { id: "patients", icon: Users, path: "/dashboard/patients", label: "Bệnh nhân" },
+  { id: "invoices", icon: Receipt, path: "/dashboard/invoices", label: "Hóa đơn" },
   { id: "payments", icon: CreditCard, path: "/dashboard/payments", label: "Thanh toán" },
   { id: "refunds", icon: RotateCcw, path: "/dashboard/refunds", label: "Hoàn tiền" },
   { id: "settings", icon: Settings, path: "/dashboard/profile", label: "Cài đặt" },

@@ -801,7 +801,7 @@ export default function MyAppointmentsPage() {
                               <img src={selectedDocDetails.avatarUrl} alt="" className="w-full h-full object-cover" />
                             ) : (
                               <img 
-                                src={`https://api.dicebear.com/7.x/notionists/svg?seed=${selectedAppt.doctorId || 1}&backgroundColor=e2e8f0`} 
+                                src={selectedAppt.doctorAvatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedAppt.doctorName)}&background=e2e8f0&color=0f172a`} 
                                 alt="" 
                                 className="w-full h-full object-cover"
                               />

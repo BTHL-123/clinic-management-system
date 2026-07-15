@@ -86,7 +86,7 @@ public class PaymentController {
     }
 
     @PostMapping("/online/create-url")
-    @PreAuthorize("hasAnyRole('PATIENT', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('PATIENT', 'ADMIN', 'RECEPTIONIST')")
     public ResponseEntity<ApiResponse<OnlinePaymentUrlResponse>> createOnlineUrl(
             @Valid @RequestBody CreateOnlinePaymentUrlRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails

@@ -12,7 +12,12 @@ import {
   Activity,
   Users,
   Hash,
-  UserCheck
+  UserCheck,
+  Stethoscope,
+  TestTube,
+  Smile,
+  Bone,
+  HeartPulse
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/useAuth.js";
@@ -388,6 +393,41 @@ export default function PatientHome() {
         </div>
         <div className="mt-3 flex justify-center gap-2">{doctorsList.map((_, index) => <button key={`dot-${index}`} onClick={() => jumpToSlide(index)} aria-label={`Xem bác sĩ ${index + 1}`} className={`h-2.5 rounded-full transition-all ${activeSlide === index ? "w-6 bg-emerald-600" : "w-2.5 bg-emerald-100 hover:bg-emerald-300"}`} />)}</div>
         <button onClick={() => navigate("/dashboard/our-doctors")} className="mx-auto mt-7 flex items-center gap-4 rounded-full bg-white py-2 pl-5 pr-3 text-sm font-bold text-emerald-800 shadow-md transition hover:-translate-y-0.5"><span>Xem tất cả bác sĩ</span><span className="flex -space-x-2">{doctorsList.slice(0, 4).map((doctor, index) => <DoctorAvatar key={index} index={index} doctorName={doctor.fullName || doctor.name} src={doctor.avatarUrl} className="h-7 w-7 rounded-full border-2 border-white" />)}</span><ArrowRight size={16} /></button>
+      </section>
+
+      <section className="relative mt-9 overflow-visible rounded-[24px] border border-[#BEE7DD] bg-gradient-to-b from-[#F6FFFC] via-white to-white px-8 py-9 md:px-10">
+        <div className="relative mx-auto max-w-3xl text-center">
+          <p className="inline-flex rounded-full border border-[#DDEDEA] bg-white px-3 py-1 text-[10px] font-bold tracking-wide text-[#007D68]">DỊCH VỤ NỔI BẬT</p>
+          <h2 className="mt-2 text-3xl font-black tracking-[-0.035em] text-[#007D68] md:text-[34px]">Các Dịch Vụ Y Tế</h2>
+          <p className="mt-2 text-[13px] text-slate-500">Đa dạng các dịch vụ khám, xét nghiệm và tầm soát với công nghệ hiện đại nhất.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-8">
+          {[
+            { serviceName: "Khám Tổng quát", description: "Đánh giá toàn diện chức năng các cơ quan", price: 500000, icon: Stethoscope },
+            { serviceName: "Nội soi Tiêu hóa", description: "Công nghệ NBI phóng đại không đau", price: 1200000, icon: Activity },
+            { serviceName: "Xét nghiệm Máu", description: "Bộ 20 chỉ số cơ bản và nâng cao", price: 350000, icon: TestTube },
+            { serviceName: "Siêu âm 4D", description: "Tầm soát dị tật thai nhi chính xác cao", price: 400000, icon: Smile },
+            { serviceName: "Chụp X-Quang", description: "Hệ thống X-Quang kỹ thuật số liều thấp", price: 200000, icon: Bone },
+            { serviceName: "Điện tim (ECG)", description: "Phát hiện sớm các bất thường về tim mạch", price: 150000, icon: HeartPulse }
+          ].map((srv, i) => {
+            const Icon = srv.icon;
+            return (
+              <div key={i} onClick={() => navigate('/dashboard/available-slots')} className="group flex cursor-pointer items-start gap-4 rounded-2xl border border-[#E8F1EF] bg-white p-5 shadow-[0_5px_14px_rgba(22,78,65,.025)] transition duration-300 hover:-translate-y-1 hover:border-emerald-200 hover:shadow-md">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-emerald-50 text-emerald-600 transition-colors group-hover:bg-emerald-600 group-hover:text-white">
+                  <Icon size={24} strokeWidth={1.5} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-800 transition-colors group-hover:text-emerald-700">{srv.serviceName}</h3>
+                  <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-slate-500">{srv.description}</p>
+                  <p className="mt-2 text-sm font-black text-emerald-600">
+                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(srv.price)}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </section>
 
       <section className="mt-14"><h2 className="mb-5 text-2xl font-black text-[#007D68]">Hướng dẫn sử dụng nhanh</h2><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{guides.map((guide, index) => { const Icon = guide.icon; return <article key={guide.title} className={`${guide.tone} rounded-2xl border border-[#DDEDEA] bg-white p-5 shadow-[0_8px_20px_rgba(22,78,65,.035)] transition hover:-translate-y-1 hover:border-emerald-200 hover:shadow-md`}><div className="mb-5 flex items-center justify-between"><span className="text-2xl font-black opacity-40">{index + 1}</span><Icon size={22} /></div><h3 className="font-black text-slate-800">{guide.title}</h3><p className="mt-2 text-xs leading-5 text-slate-500">{guide.text}</p></article>; })}</div></section>

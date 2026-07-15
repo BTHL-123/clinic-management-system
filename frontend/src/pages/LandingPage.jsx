@@ -4,12 +4,19 @@ import { useAuth } from '../context/useAuth.js';
 import {
   Search, MapPin, Calendar, PhoneCall, FileText,
   Clock, ShieldCheck, Stethoscope, UserCircle2,
-  CheckCircle2, Building2, ChevronRight, Activity, HeartPulse, Brain, Eye, Droplet
+  CheckCircle2, Building2, ChevronRight, Activity, HeartPulse, Brain, Eye, Droplet,
+  Bone, Wind, TestTube, Smile, Sparkles
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { getActiveDepartments } from '../services/departmentService';
+import { getDoctors } from '../services/doctorService';
+import { getMedicalServices } from '../services/medicalServiceService';
+import { getArticles } from '../services/articleService';
+import DoctorDetailModal from '../components/DoctorDetailModal';
+import ArticleDetailModal from '../components/ArticleDetailModal';
 
 const LogoSVG = ({ className, scrolled }) => (
   <svg viewBox="0 0 100 100" className={className} xmlns="http://www.w3.org/2000/svg" style={{ filter: scrolled ? 'none' : 'drop-shadow(0 0 8px rgba(255,255,255,0.8))' }}>
@@ -30,6 +37,33 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  const [departments, setDepartments] = useState([]);
+  const [doctors, setDoctors] = useState([]);
+  const [packages, setPackages] = useState([]);
+  const [articles, setArticles] = useState([]);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [selectedArticle, setSelectedArticle] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [depRes, docRes, pkgRes, artRes] = await Promise.all([
+          getActiveDepartments(),
+          getDoctors({ size: 10, status: 'ACTIVE' }),
+          getMedicalServices({ page: 0, size: 10, type: 'PACKAGE' }),
+          getArticles({ status: 'PUBLISHED', page: 0, size: 3, sortBy: 'createdAt', direction: 'desc' })
+        ]);
+        setDepartments(depRes.data || []);
+        setDoctors(docRes.data?.content || []);
+        setPackages(pkgRes.data?.content || []);
+        setArticles(artRes.data?.content || []);
+      } catch (error) {
+        console.error("Error fetching landing page data:", error);
+      }
+    };
+    fetchData();
+  }, []);
+
   // Handle scroll for header glass effect
   useEffect(() => {
     const handleScroll = () => {
@@ -38,6 +72,23 @@ const LandingPage = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const getDepartmentIcon = (name) => {
+    if (!name) return Stethoscope;
+    const n = name.toLowerCase();
+    if (n.includes('tim')) return HeartPulse;
+    if (n.includes('tiêu hóa')) return Activity;
+    if (n.includes('thần kinh')) return Brain;
+    if (n.includes('mắt')) return Eye;
+    if (n.includes('nội tiết')) return Droplet;
+    if (n.includes('nhi')) return UserCircle2;
+    if (n.includes('chấn thương') || n.includes('xương')) return Bone;
+    if (n.includes('hô hấp')) return Wind;
+    if (n.includes('huyết học') || n.includes('máu')) return TestTube;
+    if (n.includes('răng')) return Smile;
+    if (n.includes('da liễu')) return Sparkles;
+    return Stethoscope;
+  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans selection:bg-teal-200 selection:text-teal-900 overflow-x-hidden relative">
@@ -179,7 +230,10 @@ const LandingPage = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <Button className="absolute right-2 top-1/2 -translate-y-1/2 h-12 rounded-full bg-teal-800 hover:bg-teal-950 text-white font-bold px-8 transition-colors">
+              <Button 
+                onClick={() => navigate('/login')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-12 rounded-full bg-teal-800 hover:bg-teal-950 text-white font-bold px-8 transition-colors"
+              >
                 Tìm kiếm
               </Button>
             </div>
@@ -257,7 +311,11 @@ const LandingPage = () => {
             <p className="text-slate-600 font-medium text-lg max-w-2xl mx-auto mb-6">
               Tìm kiếm bác sĩ theo từng chuyên khoa cụ thể
             </p>
-            <Button variant="ghost" className="text-teal-700 font-bold hover:text-teal-800 hover:bg-white/50 group backdrop-blur-md rounded-full px-6 border border-teal-200/50 shadow-sm">
+            <Button 
+              onClick={() => navigate('/login')}
+              variant="ghost" 
+              className="text-teal-700 font-bold hover:text-teal-800 hover:bg-white/50 group backdrop-blur-md rounded-full px-6 border border-teal-200/50 shadow-sm"
+            >
               Xem tất cả <ChevronRight className="ml-1 group-hover:translate-x-1 transition-transform" size={18} />
             </Button>
           </div>
@@ -268,28 +326,40 @@ const LandingPage = () => {
 
             <div className="relative z-10 w-full max-w-4xl mx-auto px-4 md:px-0">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
-                {[
-                  { name: "Tim mạch", icon: HeartPulse },
-                  { name: "Tiêu hóa", icon: Activity },
-                  { name: "Thần kinh", icon: Brain },
-                  { name: "Mắt", icon: Eye },
-                  { name: "Nội tiết", icon: Droplet },
-                  { name: "Đa khoa", icon: Stethoscope }
-                ].map((spec, i) => (
-                  <div key={i} className="group bg-white/95 backdrop-blur-xl rounded-[1.5rem] p-8 flex flex-col items-center justify-center gap-5 shadow-[0_8px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_40px_rgba(20,184,166,0.1)] transition-all duration-300 hover:-translate-y-2 cursor-pointer border border-white">
+                {(() => {
+                  if (departments.length === 0) return [
+                    { departmentName: "Tim mạch" }, { departmentName: "Tiêu hóa" }, { departmentName: "Thần kinh" },
+                    { departmentName: "Mắt" }, { departmentName: "Nội tiết" }, { departmentName: "Đa khoa" }
+                  ];
+                  
+                  const uniqueDepts = [];
+                  const seen = new Set();
+                  for (const d of departments) {
+                    if (!d.departmentName) continue;
+                    const cleanName = d.departmentName.replace(/:$/, '').trim();
+                    if (!seen.has(cleanName.toLowerCase())) {
+                      seen.add(cleanName.toLowerCase());
+                      uniqueDepts.push({ ...d, departmentName: cleanName });
+                    }
+                  }
+                  return uniqueDepts.slice(0, 6);
+                })().map((spec, i) => {
+                  const Icon = getDepartmentIcon(spec.departmentName);
+                  return (
+                  <div key={spec.departmentId || i} className="group bg-white/95 backdrop-blur-xl rounded-[1.5rem] p-8 flex flex-col items-center justify-center gap-5 shadow-[0_8px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_40px_rgba(20,184,166,0.1)] transition-all duration-300 hover:-translate-y-2 cursor-pointer border border-white">
 
                     <div className="relative">
                       {/* Ambient hover glow behind icon */}
                       <div className="absolute inset-0 bg-teal-400 opacity-0 group-hover:opacity-20 blur-xl transition-all duration-300 rounded-full scale-150"></div>
-                      <spec.icon size={56} strokeWidth={1.5} className="text-teal-700 relative z-10 transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
+                      <Icon size={56} strokeWidth={1.5} className="text-teal-700 relative z-10 transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
                     </div>
 
                     <span className="font-extrabold text-slate-800 text-[16px] text-center leading-tight transition-colors duration-300 group-hover:text-teal-800">
-                      {spec.name}
+                      {spec.departmentName}
                     </span>
 
                   </div>
-                ))}
+                )})}
               </div>
             </div>
           </div>
@@ -325,43 +395,99 @@ const LandingPage = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-6 max-w-[1400px] mx-auto w-full">
-            {[
-              { name: "BS. Tâm", spec: "Tim mạch", exp: "15 năm KN", tags: ["Tim mạch"], color: "from-teal-400 to-teal-600", bg: "bg-teal-50", image: "/doctor_1_1780660389804.png" },
-              { name: "BS. Mai", spec: "Nội tiết", exp: "10 năm KN", tags: ["Tiểu đường"], color: "from-teal-400 to-teal-600", bg: "bg-teal-50", image: "/doctor_2_1780660400471.png" },
-              { name: "BS. Sơn", spec: "Ngoại TK", exp: "20 năm KN", tags: ["Cột sống"], color: "from-teal-400 to-teal-600", bg: "bg-teal-50", image: "/doctor_3_1780660412435.png" },
-              { name: "BS. Hương", spec: "Khoa Nhi", exp: "12 năm KN", tags: ["Khám nhi"], color: "from-teal-400 to-teal-600", bg: "bg-teal-50", image: "/doctor_4_1780660424305.png" },
-              { name: "BS. Huy", spec: "Xương khớp", exp: "8 năm KN", tags: ["Phục hồi"], color: "from-teal-400 to-teal-600", bg: "bg-teal-50", image: "/doctor_5_1780660436162.png" }
-            ].map((doc, i) => (
-              <Card key={i} className="group overflow-hidden border-2 border-white shadow-[0_15px_30px_-10px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-10px_rgba(20,184,166,0.15)] transition-all duration-500 bg-white/80 backdrop-blur-xl rounded-[2rem] flex flex-col hover:-translate-y-3 relative w-full">
-                <div className={`aspect-square ${doc.bg} relative overflow-hidden flex items-end justify-center pt-6 rounded-t-[2rem] border-b border-white`}>
+            {(doctors.length > 0 ? doctors.slice(0, 5) : [
+              { fullName: "BS. Tâm", specialization: "Tim mạch", yearsOfExperience: 15, departmentName: "Tim mạch", avatarUrl: "/doctor_1_1780660389804.png" },
+              { fullName: "BS. Mai", specialization: "Nội tiết", yearsOfExperience: 10, departmentName: "Tiểu đường", avatarUrl: "/doctor_2_1780660400471.png" },
+              { fullName: "BS. Sơn", specialization: "Ngoại TK", yearsOfExperience: 20, departmentName: "Cột sống", avatarUrl: "/doctor_3_1780660412435.png" },
+              { fullName: "BS. Hương", specialization: "Khoa Nhi", yearsOfExperience: 12, departmentName: "Khám nhi", avatarUrl: "/doctor_4_1780660424305.png" },
+              { fullName: "BS. Huy", specialization: "Xương khớp", yearsOfExperience: 8, departmentName: "Phục hồi", avatarUrl: "/doctor_5_1780660436162.png" }
+            ]).map((doc, i) => {
+              const bgColors = ["bg-teal-50", "bg-blue-50", "bg-emerald-50", "bg-purple-50", "bg-rose-50"];
+              const glowColors = ["from-teal-400 to-teal-600", "from-blue-400 to-blue-600", "from-emerald-400 to-emerald-600", "from-purple-400 to-purple-600", "from-rose-400 to-rose-600"];
+              const bgColor = bgColors[i % bgColors.length];
+              const glowColor = glowColors[i % glowColors.length];
+              const displayAvatar = doc.avatarUrl || "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=400&h=400&fit=crop";
+
+              return (
+              <Card key={i} onClick={() => setSelectedDoctor(doc)} className="group overflow-hidden border-2 border-white shadow-[0_15px_30px_-10px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-10px_rgba(20,184,166,0.15)] transition-all duration-500 bg-white/80 backdrop-blur-xl rounded-[2rem] flex flex-col hover:-translate-y-3 relative w-full cursor-pointer">
+                <div className={`aspect-square ${bgColor} relative overflow-hidden flex items-end justify-center pt-6 rounded-t-[2rem] border-b border-white`}>
                   <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-2 py-1 rounded-full text-xs font-extrabold text-amber-500 shadow-sm flex items-center gap-1 z-20">
                     ★ 5.0
                   </div>
                   {/* Decorative glowing blob behind doctor */}
-                  <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 rounded-full blur-[30px] opacity-40 bg-gradient-to-r ${doc.color} group-hover:scale-125 transition-transform duration-700`}></div>
+                  <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 rounded-full blur-[30px] opacity-40 bg-gradient-to-r ${glowColor} group-hover:scale-125 transition-transform duration-700`}></div>
 
                   {/* Avatar wrapper */}
                   <div className="relative z-10 flex items-end justify-center w-full h-full">
-                    <div className="w-32 h-32 bg-white/50 backdrop-blur-xl border border-white/80 rounded-t-full flex items-center justify-center shadow-lg group-hover:h-36 transition-all duration-500 overflow-hidden relative">
-                      <div className={`absolute inset-0 opacity-20 bg-gradient-to-t ${doc.color}`}></div>
-                      <img src={doc.image} alt={doc.name} className="w-full h-full object-cover relative z-10 group-hover:scale-110 transition-transform duration-500" />
+                    <div className="w-44 h-44 bg-white/50 backdrop-blur-xl border border-white/80 rounded-t-full flex items-center justify-center shadow-lg group-hover:h-48 transition-all duration-500 overflow-hidden relative">
+                      <div className={`absolute inset-0 opacity-20 bg-gradient-to-t ${glowColor}`}></div>
+                      <img src={displayAvatar} alt={doc.fullName} className="w-full h-full object-cover relative z-10 group-hover:scale-110 transition-transform duration-500" />
                     </div>
                   </div>
                 </div>
                 <CardContent className="p-6 text-center space-y-3 flex-1 relative z-10 bg-gradient-to-b from-white/40 to-transparent">
                   <div>
-                    <h3 className="font-extrabold text-xl text-slate-900 group-hover:text-teal-700 transition-colors whitespace-nowrap overflow-hidden text-ellipsis">{doc.name}</h3>
-                    <p className="text-sm text-teal-600 font-extrabold mt-1">{doc.spec}</p>
+                    <h3 className="font-extrabold text-xl text-slate-900 group-hover:text-teal-700 transition-colors whitespace-nowrap overflow-hidden text-ellipsis">{doc.fullName}</h3>
+                    <p className="text-sm text-teal-600 font-extrabold mt-1">{doc.departmentName || doc.specialization}</p>
                   </div>
-                  <p className="text-sm text-slate-500 font-medium">{doc.exp}</p>
+                  <p className="text-sm text-slate-500 font-medium">{doc.yearsOfExperience} năm KN</p>
                 </CardContent>
                 <div className="p-6 pt-0 relative z-10">
-                  <Button className="w-full rounded-full bg-slate-900 hover:bg-teal-700 text-white font-extrabold h-12 text-sm shadow-lg shadow-slate-900/10 group-hover:shadow-teal-700/20 transition-all hover:-translate-y-1">
+                  <Button 
+                    onClick={(e) => { e.stopPropagation(); navigate('/login'); }}
+                    className="w-full rounded-full bg-slate-900 hover:bg-teal-700 text-white font-extrabold h-12 text-sm shadow-lg shadow-slate-900/10 group-hover:shadow-teal-700/20 transition-all hover:-translate-y-1"
+                  >
                     Đặt lịch
                   </Button>
                 </div>
               </Card>
-            ))}
+            )})}
+          </div>
+        </div>
+      </section>
+
+      {/* Services */}
+      <section className="py-24 relative overflow-hidden bg-transparent">
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <div className="absolute top-[20%] left-[10%] w-[30%] h-[40%] bg-blue-300/10 rounded-full blur-[100px]"></div>
+          <div className="absolute bottom-[10%] right-[10%] w-[40%] h-[50%] bg-teal-300/10 rounded-full blur-[120px]"></div>
+        </div>
+
+        <div className="container mx-auto px-4 max-w-[1400px] relative z-10">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight uppercase">Dịch vụ <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-blue-500">Y Tế</span></h2>
+            <p className="text-slate-500 mt-4 font-medium text-lg max-w-2xl mx-auto">Đa dạng các dịch vụ khám, xét nghiệm và tầm soát với công nghệ hiện đại nhất.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            {[
+              { serviceName: "Khám Tổng quát", description: "Đánh giá toàn diện chức năng các cơ quan", price: 500000 },
+              { serviceName: "Nội soi Tiêu hóa", description: "Công nghệ NBI phóng đại không đau", price: 1200000 },
+              { serviceName: "Xét nghiệm Máu", description: "Bộ 20 chỉ số cơ bản và nâng cao", price: 350000 },
+              { serviceName: "Siêu âm 4D", description: "Tầm soát dị tật thai nhi chính xác cao", price: 400000 },
+              { serviceName: "Chụp X-Quang", description: "Hệ thống X-Quang kỹ thuật số liều thấp", price: 200000 },
+              { serviceName: "Điện tim (ECG)", description: "Phát hiện sớm các bất thường về tim mạch", price: 150000 }
+            ].map((srv, i) => {
+              const icons = [Stethoscope, Activity, TestTube, Smile, Bone, HeartPulse];
+              const Icon = icons[i % icons.length];
+              return (
+                <div key={i} onClick={() => navigate('/login')} className="group bg-white/80 backdrop-blur-xl rounded-3xl p-6 border-2 border-white shadow-[0_10px_30px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-15px_rgba(20,184,166,0.15)] transition-all duration-300 hover:-translate-y-2 cursor-pointer flex gap-5 items-start">
+                  <div className="w-14 h-14 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 group-hover:bg-teal-500 group-hover:text-white transition-colors duration-300 shadow-sm border border-teal-100/50">
+                    <Icon size={28} strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-lg text-slate-800 mb-1 group-hover:text-teal-700 transition-colors">{srv.serviceName}</h3>
+                    <p className="text-slate-500 font-medium text-xs leading-relaxed mb-1 line-clamp-2">{srv.description}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          
+          <div className="mt-12 text-center">
+            <Button onClick={() => navigate('/login')} variant="outline" className="rounded-full px-8 h-12 font-bold border-teal-200 text-teal-700 hover:bg-teal-50 hover:text-teal-800 transition-colors shadow-sm bg-white/50 backdrop-blur-md">
+              Xem tất cả dịch vụ
+            </Button>
           </div>
         </div>
       </section>
@@ -385,49 +511,112 @@ const LandingPage = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-6xl mx-auto items-center">
-            {[
-              { name: "Cơ Bản", price: "2.500k", desc: "Phù hợp kiểm tra sức khỏe định kỳ hàng năm.", popular: false, color: "from-teal-400 to-teal-600", lightBg: "bg-teal-50", icon: ShieldCheck },
-              { name: "Tiêu Chuẩn", price: "5.800k", desc: "Khám chuyên sâu các chức năng cơ thể, tầm soát bệnh lý phổ biến.", popular: true, color: "from-teal-400 to-teal-600", lightBg: "bg-teal-50", icon: CheckCircle2 },
-              { name: "Nâng Cao", price: "8.500k", desc: "Khám toàn diện kết hợp công nghệ cao MRI/CT.", popular: false, color: "from-teal-400 to-teal-600", lightBg: "bg-teal-50", icon: UserCircle2 }
-            ].map((pkg, i) => (
-              <Card key={i} className={`relative border-0 rounded-[3rem] flex flex-col transition-all duration-500 overflow-hidden ${pkg.popular ? 'bg-gradient-to-b from-slate-900 to-teal-950 text-white shadow-[0_30px_60px_-15px_rgba(20,184,166,0.4)] md:scale-110 z-20 ring-4 ring-teal-500/30 hover:shadow-[0_40px_80px_-15px_rgba(20,184,166,0.5)] hover:-translate-y-2' : 'bg-white/60 backdrop-blur-2xl border-2 border-white shadow-[0_20px_50px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] hover:-translate-y-2 z-10'}`}>
+            {(packages.length > 0 ? packages.slice(0, 3) : [
+              { serviceName: "Cơ Bản", price: 2500000, description: "Phù hợp kiểm tra sức khỏe định kỳ hàng năm.", popular: false },
+              { serviceName: "Tiêu Chuẩn", price: 5800000, description: "Khám chuyên sâu các chức năng cơ thể, tầm soát bệnh lý phổ biến.", popular: true },
+              { serviceName: "Nâng Cao", price: 8500000, description: "Khám toàn diện kết hợp công nghệ cao MRI/CT.", popular: false }
+            ]).map((pkg, i) => {
+              const icons = [ShieldCheck, CheckCircle2, UserCircle2];
+              const Icon = icons[i % icons.length];
+              const isPopular = pkg.popular !== undefined ? pkg.popular : (i === 1);
+              
+              return (
+              <Card key={i} className={`relative border-0 rounded-[3rem] flex flex-col transition-all duration-500 overflow-hidden ${isPopular ? 'bg-gradient-to-b from-slate-900 to-teal-950 text-white shadow-[0_30px_60px_-15px_rgba(20,184,166,0.4)] md:scale-110 z-20 ring-4 ring-teal-500/30 hover:shadow-[0_40px_80px_-15px_rgba(20,184,166,0.5)] hover:-translate-y-2' : 'bg-white/60 backdrop-blur-2xl border-2 border-white shadow-[0_20px_50px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] hover:-translate-y-2 z-10'}`}>
                 {/* Glow effect inside card */}
-                {pkg.popular && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-teal-500/20 blur-[60px] pointer-events-none"></div>}
-                {!pkg.popular && <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 ${pkg.lightBg} blur-[60px] pointer-events-none`}></div>}
+                {isPopular && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-teal-500/20 blur-[60px] pointer-events-none"></div>}
+                {!isPopular && <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-teal-50 blur-[60px] pointer-events-none`}></div>}
 
-                {pkg.popular && (
+                {isPopular && (
                   <div className="absolute top-6 right-6 bg-gradient-to-r from-amber-400 to-orange-500 text-white px-5 py-2 rounded-full text-sm font-extrabold shadow-xl z-30 animate-pulse">
                     Phổ Biến Nhất
                   </div>
                 )}
 
-                <div className={`p-10 md:p-12 text-center relative z-20 ${pkg.popular ? 'border-b border-white/10' : 'border-b border-slate-200/50'}`}>
-                  <div className={`w-20 h-20 mx-auto rounded-[1.5rem] flex items-center justify-center mb-8 shadow-lg bg-gradient-to-br ${pkg.color} text-white`}>
-                    <pkg.icon size={40} />
+                <div className={`p-10 md:p-12 text-center relative z-20 ${isPopular ? 'border-b border-white/10' : 'border-b border-slate-200/50'}`}>
+                  <div className={`w-20 h-20 mx-auto rounded-[1.5rem] flex items-center justify-center mb-8 shadow-lg bg-gradient-to-br from-teal-400 to-teal-600 text-white`}>
+                    <Icon size={40} />
                   </div>
-                  <h3 className={`font-extrabold text-2xl mb-4 ${pkg.popular ? 'text-teal-50' : 'text-slate-800'}`}>{pkg.name}</h3>
+                  <h3 className={`font-extrabold text-2xl mb-4 ${isPopular ? 'text-teal-50' : 'text-slate-800'}`}>{pkg.serviceName}</h3>
                   <div className="flex items-start justify-center gap-1">
-                    <span className="text-6xl font-extrabold tracking-tighter drop-shadow-sm">{pkg.price}</span>
+                    <span className="text-4xl lg:text-5xl font-extrabold tracking-tighter drop-shadow-sm">
+                      {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(pkg.price)}
+                    </span>
                   </div>
-                  <p className={`mt-6 text-base font-medium leading-relaxed ${pkg.popular ? 'text-teal-200' : 'text-slate-500'}`}>{pkg.desc}</p>
+                  <p className={`mt-6 text-base font-medium leading-relaxed ${isPopular ? 'text-teal-200' : 'text-slate-500'}`}>{pkg.description}</p>
                 </div>
 
                 <CardContent className="p-10 md:p-12 flex-1 relative z-20">
-                  <ul className={`space-y-6 text-lg font-bold ${pkg.popular ? 'text-slate-200' : 'text-slate-700'}`}>
-                    <li className="flex items-center gap-4"><CheckCircle2 size={24} className={pkg.popular ? 'text-teal-400' : 'text-blue-500'} /> Khám lâm sàng tổng quát</li>
-                    <li className="flex items-center gap-4"><CheckCircle2 size={24} className={pkg.popular ? 'text-teal-400' : 'text-blue-500'} /> Xét nghiệm máu cơ bản</li>
-                    <li className="flex items-center gap-4"><CheckCircle2 size={24} className={pkg.popular ? 'text-teal-400' : 'text-blue-500'} /> Siêu âm ổ bụng</li>
-                    <li className="flex items-center gap-4"><CheckCircle2 size={24} className={pkg.popular ? 'text-teal-400' : 'text-blue-500'} /> Chụp X-Quang tim phổi</li>
+                  <ul className={`space-y-6 text-lg font-bold ${isPopular ? 'text-slate-200' : 'text-slate-700'}`}>
+                    <li className="flex items-center gap-4"><CheckCircle2 size={24} className={isPopular ? 'text-teal-400' : 'text-blue-500'} /> Khám lâm sàng tổng quát</li>
+                    <li className="flex items-center gap-4"><CheckCircle2 size={24} className={isPopular ? 'text-teal-400' : 'text-blue-500'} /> Xét nghiệm máu cơ bản</li>
+                    <li className="flex items-center gap-4"><CheckCircle2 size={24} className={isPopular ? 'text-teal-400' : 'text-blue-500'} /> Siêu âm ổ bụng</li>
+                    <li className="flex items-center gap-4"><CheckCircle2 size={24} className={isPopular ? 'text-teal-400' : 'text-blue-500'} /> Chụp X-Quang tim phổi</li>
                   </ul>
                 </CardContent>
                 <div className="p-10 pt-0 relative z-20">
-                  <Button className={`w-full rounded-full h-16 text-lg font-extrabold transition-all hover:scale-105 shadow-xl ${pkg.popular ? 'bg-gradient-to-r from-teal-400 to-emerald-400 text-teal-950 hover:from-teal-300 hover:to-emerald-300 hover:shadow-teal-400/50' : 'bg-slate-900 hover:bg-slate-800 text-white'}`}>
+                  <Button 
+                    onClick={(e) => { e.stopPropagation(); navigate('/login'); }}
+                    className={`w-full rounded-full h-16 text-lg font-extrabold transition-all hover:scale-105 shadow-xl ${isPopular ? 'bg-gradient-to-r from-teal-400 to-emerald-400 text-teal-950 hover:from-teal-300 hover:to-emerald-300 hover:shadow-teal-400/50' : 'bg-slate-900 hover:bg-slate-800 text-white'}`}>
                     Chọn gói này
                   </Button>
                 </div>
               </Card>
-            ))}
+            )})}
           </div>
+        </div>
+      </section>
+
+      {/* Articles */}
+      <section className="py-32 relative overflow-hidden bg-transparent">
+        {/* Abstract background elements */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[60%] bg-teal-200/30 rounded-full blur-[120px]"></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[60%] bg-emerald-200/20 rounded-full blur-[120px]"></div>
+        </div>
+
+        <div className="container mx-auto px-4 max-w-[1400px] relative z-10">
+          <div className="text-center mb-24">
+            <h2 className="text-5xl font-extrabold text-slate-900 tracking-tight uppercase">Bài Viết <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-blue-500">Y Tế</span></h2>
+            <p className="text-slate-500 mt-6 font-medium text-xl max-w-2xl mx-auto">Cập nhật những kiến thức y khoa, thông tin sức khỏe mới nhất từ các chuyên gia.</p>
+          </div>
+
+          {articles && articles.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-6xl mx-auto">
+              {articles.map((article, i) => {
+                const displayAvatar = article.thumbnailUrl || "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=80";
+                return (
+                  <div key={article.articleId || i} onClick={() => setSelectedArticle(article)} className="group flex flex-col bg-white rounded-[2rem] border-2 border-white shadow-[0_15px_30px_-10px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-10px_rgba(20,184,166,0.15)] transition-all duration-500 hover:-translate-y-3 overflow-hidden cursor-pointer">
+                    <div className="w-full h-56 relative overflow-hidden">
+                      <img src={displayAvatar} alt={article.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                      <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-extrabold text-teal-600 shadow-sm flex items-center gap-1 z-20">
+                        Kiến thức
+                      </div>
+                    </div>
+                    <div className="p-8 flex flex-col flex-1">
+                      <div className="flex items-center gap-3 text-sm text-slate-500 font-medium mb-4">
+                        <span>{new Date(article.createdAt || Date.now()).toLocaleDateString("vi-VN")}</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                        <span>{article.authorName || "Đội ngũ y bác sĩ"}</span>
+                      </div>
+                      <h3 className="font-extrabold text-2xl text-slate-900 leading-snug group-hover:text-teal-700 transition-colors line-clamp-3 mb-6 flex-1">
+                        {article.title}
+                      </h3>
+                      <Button 
+                        onClick={(e) => { e.stopPropagation(); setSelectedArticle(article); }}
+                        variant="ghost" 
+                        className="w-full justify-between px-0 hover:bg-transparent text-teal-700 font-bold group/btn mt-auto"
+                      >
+                        <span>Đọc tiếp</span>
+                        <ChevronRight size={20} className="group-hover/btn:translate-x-1 transition-transform" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center text-slate-500 font-medium">Đang cập nhật bài viết mới...</div>
+          )}
         </div>
       </section>
 
@@ -481,7 +670,10 @@ const LandingPage = () => {
                 placeholder="Nhập email của bạn..."
                 className="bg-white/10 border-white/20 text-white placeholder:text-teal-200/50 min-w-[300px] rounded-full h-14 px-6 font-medium focus-visible:ring-teal-400 backdrop-blur-sm"
               />
-              <Button className="bg-teal-400 hover:bg-teal-300 text-teal-950 rounded-full px-10 h-14 font-extrabold shadow-lg hover:shadow-teal-400/25 transition-all hover:-translate-y-0.5">
+              <Button 
+                onClick={() => navigate('/login')}
+                className="bg-teal-400 hover:bg-teal-300 text-teal-950 rounded-full px-10 h-14 font-extrabold shadow-lg hover:shadow-teal-400/25 transition-all hover:-translate-y-0.5"
+              >
                 Đăng ký
               </Button>
             </div>
@@ -571,6 +763,25 @@ const LandingPage = () => {
           </div>
         </div>
       </footer>
+
+      {/* Modals */}
+      {selectedDoctor && (
+        <DoctorDetailModal 
+          selectedDoctor={selectedDoctor} 
+          onClose={() => setSelectedDoctor(null)}
+          onBookClick={() => {
+            setSelectedDoctor(null);
+            navigate('/login');
+          }}
+        />
+      )}
+
+      {selectedArticle && (
+        <ArticleDetailModal
+          article={selectedArticle}
+          onClose={() => setSelectedArticle(null)}
+        />
+      )}
     </div>
   );
 };
