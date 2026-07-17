@@ -888,7 +888,7 @@ export default function AvailableSlots() {
               <>
                 {/* Active Doctors on Date */}
                 {scheduledDoctors.map((doc) => {
-                  const slots = doctorSlotsMap[doc.doctorId] || [];
+                  const slots = (doctorSlotsMap[doc.doctorId] || []).filter(slot => slot.status !== "EXPIRED");
                   const rating = doc.doctorId % 3 === 0 ? 5.0 : doc.doctorId % 2 === 0 ? 4.8 : 4.9;
                   const exp = doc.yearsOfExperience || 10;
                   const price = getDoctorPrice(doc);
