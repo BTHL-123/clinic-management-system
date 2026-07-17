@@ -33,6 +33,7 @@ public class DataSeeder implements CommandLineRunner {
     @Override
     public void run(String... args) {
         migrateCheckConstraint();
+        seedBillingSettings();
         seedRoles();
         seedPermissions();
         seedAdmin();
@@ -42,6 +43,48 @@ public class DataSeeder implements CommandLineRunner {
         seedLabTests();
         seedMedicalServices();
         syncPostgresSequences();
+        updateExistingBiographies();
+    }
+
+    private void updateExistingBiographies() {
+        jdbcTemplate.update("UPDATE doctors SET biography = ? WHERE doctor_code = ?", 
+            "Bác sĩ Hoàng Minh là chuyên gia hàng đầu trong lĩnh vực Da liễu với hơn 12 năm kinh nghiệm. Bác sĩ chuyên điều trị các bệnh lý về da phức tạp như mụn trứng cá nặng, viêm da cơ địa, vảy nến, và áp dụng công nghệ laser tiên tiến trong thẩm mỹ. Với phương châm 'Chăm sóc da từ gốc', bác sĩ luôn chú trọng phác đồ cá nhân hóa, mang lại làn da khỏe mạnh cho hàng ngàn bệnh nhân.", 
+            "DOC001");
+        jdbcTemplate.update("UPDATE doctors SET biography = ? WHERE doctor_code = ?", 
+            "Bác sĩ Lan Anh có hơn 8 năm gắn bó với chuyên ngành Nội khoa tổng quát. Bác sĩ nổi tiếng với sự tỉ mỉ trong chẩn đoán và điều trị các bệnh lý mạn tính như tiểu đường, huyết áp. Không chỉ điều trị triệu chứng, bác sĩ luôn dành thời gian tư vấn kỹ lưỡng về chế độ dinh dưỡng và lối sống, giúp bệnh nhân quản lý sức khỏe toàn diện và phòng ngừa biến chứng hiệu quả.", 
+            "DOC002");
+        jdbcTemplate.update("UPDATE doctors SET biography = ? WHERE doctor_code = ?", 
+            "Với 12 năm kinh nghiệm tại khoa Tim mạch, Bác sĩ Trần Quốc là người đồng hành đáng tin cậy bảo vệ nhịp đập trái tim của bạn. Bác sĩ chuyên khám, siêu âm tim và điều trị chuyên sâu các bệnh lý như suy tim, rối loạn nhịp. Sự điềm tĩnh và chuyên môn sâu rộng của bác sĩ đã cải thiện chất lượng cuộc sống cho rất nhiều người bệnh.", 
+            "DOC003");
+        jdbcTemplate.update("UPDATE doctors SET biography = ? WHERE doctor_code = ?", 
+            "Bác sĩ Ngọc Mai được các bậc phụ huynh yêu mến gọi là 'người bạn của mọi mầm non'. Hơn 9 năm kinh nghiệm Nhi khoa giúp bác sĩ thấu hiểu tâm lý trẻ nhỏ, mang đến những buổi thăm khám nhẹ nhàng, không nước mắt. Bác sĩ có thế mạnh trong điều trị bệnh lý hô hấp, tiêu hóa, và tư vấn dinh dưỡng, đồng hành cùng ba mẹ trong hành trình khôn lớn của con.", 
+            "DOC004");
+        jdbcTemplate.update("UPDATE doctors SET biography = ? WHERE doctor_code = ?", 
+            "Bác sĩ Kim Oanh là chuyên gia tận tâm trong lĩnh vực Sản phụ khoa với 10 năm kinh nghiệm. Thấu hiểu trăn trở của phái đẹp, bác sĩ chuyên điều trị bệnh lý phụ khoa, tư vấn sức khỏe sinh sản, và đồng hành cùng các mẹ bầu. Bằng sự ân cần và chuyên môn vững vàng, bác sĩ luôn mang đến cảm giác an tâm tuyệt đối cho chị em phụ nữ.", 
+            "DOC005");
+    }
+
+    private void seedBillingSettings() {
+        upsertDefaultSetting("payment.deposit.expiry_minutes", "10", "Online deposit payment expiry in minutes");
+        upsertDefaultSetting("refund.full_before_hours", "24", "Hours before appointment for full deposit refund");
+        upsertDefaultSetting("refund.partial_before_hours", "2", "Hours before appointment for partial deposit refund");
+        upsertDefaultSetting("refund.partial_percent", "50", "Partial refund percentage for late cancellations");
+    }
+
+    private void upsertDefaultSetting(String key, String value, String description) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM system_settings WHERE setting_key = ?",
+                Integer.class,
+                key
+        );
+        if (count == null || count == 0) {
+            jdbcTemplate.update(
+                    "INSERT INTO system_settings (setting_key, setting_value, description, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)",
+                    key,
+                    value,
+                    description
+            );
+        }
     }
 
     private void seedLabTests() {
@@ -94,6 +137,32 @@ public class DataSeeder implements CommandLineRunner {
 
                     statement.execute("ALTER TABLE medical_services DROP CONSTRAINT IF EXISTS medical_services_service_type_check");
                     statement.execute("ALTER TABLE medical_services ADD CONSTRAINT medical_services_service_type_check CHECK (service_type IN ('CONSULTATION', 'LAB_TEST', 'PACKAGE', 'OTHER', 'IMAGING', 'TESTING', 'PROCEDURE'))");
+
+                    statement.execute("ALTER TABLE appointments DROP CONSTRAINT IF EXISTS appointments_status_check");
+                    statement.execute("ALTER TABLE appointments ADD CONSTRAINT appointments_status_check CHECK (status IN ('PENDING_PAYMENT', 'CONFIRMED', 'CHECKED_IN', 'WAITING', 'IN_PROGRESS', 'PAYMENT_DUE', 'COMPLETED', 'CANCELLED', 'NO_SHOW', 'RESCHEDULED'))");
+
+                    statement.execute("ALTER TABLE invoices DROP CONSTRAINT IF EXISTS invoices_status_check");
+                    statement.execute("UPDATE invoices SET status = 'UNPAID' WHERE status = 'PENDING'");
+                    statement.execute("ALTER TABLE invoices ADD CONSTRAINT invoices_status_check CHECK (status IN ('UNPAID', 'PARTIALLY_PAID', 'PAID', 'FAILED', 'REFUNDED', 'CANCELLED'))");
+
+                    statement.execute("ALTER TABLE invoice_items DROP CONSTRAINT IF EXISTS invoice_items_item_type_check");
+                    statement.execute("ALTER TABLE invoice_items ADD CONSTRAINT invoice_items_item_type_check CHECK (item_type IN ('CONSULTATION', 'LAB_TEST', 'MEDICINE', 'SERVICE', 'DEPOSIT'))");
+
+                    statement.execute("ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_status_check");
+                    statement.execute("UPDATE payments SET status = 'PENDING' WHERE status = 'UNPAID'");
+                    statement.execute("ALTER TABLE payments ADD CONSTRAINT payments_status_check CHECK (status IN ('PENDING', 'PAID', 'FAILED', 'REFUNDED', 'CANCELLED'))");
+                    statement.execute("ALTER TABLE payments ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP");
+
+                    statement.execute("ALTER TABLE refunds ADD COLUMN IF NOT EXISTS refund_method VARCHAR(30)");
+                    statement.execute("ALTER TABLE refunds ADD COLUMN IF NOT EXISTS bank_name VARCHAR(100)");
+                    statement.execute("ALTER TABLE refunds ADD COLUMN IF NOT EXISTS bank_account_number VARCHAR(50)");
+                    statement.execute("ALTER TABLE refunds ADD COLUMN IF NOT EXISTS account_holder_name VARCHAR(150)");
+                    statement.execute("ALTER TABLE refunds ADD COLUMN IF NOT EXISTS refund_transaction_ref VARCHAR(255)");
+                    statement.execute("ALTER TABLE refunds ADD COLUMN IF NOT EXISTS processed_by BIGINT");
+                    statement.execute("ALTER TABLE refunds ADD COLUMN IF NOT EXISTS processed_at TIMESTAMP");
+
+                    statement.execute("ALTER TABLE stock_transactions DROP CONSTRAINT IF EXISTS stock_transactions_reference_type_check");
+                    statement.execute("ALTER TABLE stock_transactions ADD CONSTRAINT stock_transactions_reference_type_check CHECK (reference_type IN ('PRESCRIPTION', 'MANUAL', 'SUPPLIER_IMPORT', 'INVOICE', 'OTHER'))");
                 } catch (Exception e) {
                     System.err.println("Migration of check constraints failed: " + e.getMessage());
                 }
@@ -162,10 +231,27 @@ public class DataSeeder implements CommandLineRunner {
         Role doctorRole = roleRepository.findByRoleName("DOCTOR")
                 .orElseThrow(() -> new IllegalStateException("DOCTOR role has not been seeded"));
 
-        String[] emails = {"doctor@example.com", "doctor2@example.com", "doctor3@example.com"};
-        String[] names = {"Dr. John Doe", "Dr. Jane Smith", "Dr. Robert Lee"};
-        String[] codes = {"DOC001", "DOC002", "DOC003"};
-        String[] phones = {"0912345678", "0987654321", "0909090909"};
+        String[] emails = {"doctor@example.com", "doctor2@example.com", "doctor3@example.com", "doctor4@example.com", "doctor5@example.com"};
+        String[] names = {"BS. Hoàng Minh", "BS. Lan Anh", "BS. Trần Quốc", "BS. Ngọc Mai", "BS. Kim Oanh"};
+        String[] codes = {"DOC001", "DOC002", "DOC003", "DOC004", "DOC005"};
+        String[] phones = {"0912345678", "0987654321", "0909090909", "0911111111", "0922222222"};
+        String[] avatars = {
+            "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&w=420&q=85",
+            "https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&w=420&q=85",
+            "https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&w=420&q=85",
+            "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=420&q=85",
+            "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=420&q=85"
+        };
+        String[] specialties = {"Da liễu", "Nội khoa", "Tim mạch", "Nhi khoa", "Sản phụ khoa"};
+        int[] exps = {12, 8, 12, 9, 10};
+        String[] biographies = {
+            "Bác sĩ Hoàng Minh là chuyên gia hàng đầu trong lĩnh vực Da liễu với hơn 12 năm kinh nghiệm. Bác sĩ chuyên điều trị các bệnh lý về da phức tạp như mụn trứng cá nặng, viêm da cơ địa, vảy nến, và áp dụng công nghệ laser tiên tiến trong thẩm mỹ. Với phương châm 'Chăm sóc da từ gốc', bác sĩ luôn chú trọng phác đồ cá nhân hóa, mang lại làn da khỏe mạnh cho hàng ngàn bệnh nhân.",
+            "Bác sĩ Lan Anh có hơn 8 năm gắn bó với chuyên ngành Nội khoa tổng quát. Bác sĩ nổi tiếng với sự tỉ mỉ trong chẩn đoán và điều trị các bệnh lý mạn tính như tiểu đường, huyết áp. Không chỉ điều trị triệu chứng, bác sĩ luôn dành thời gian tư vấn kỹ lưỡng về chế độ dinh dưỡng và lối sống, giúp bệnh nhân quản lý sức khỏe toàn diện và phòng ngừa biến chứng hiệu quả.",
+            "Với 12 năm kinh nghiệm tại khoa Tim mạch, Bác sĩ Trần Quốc là người đồng hành đáng tin cậy bảo vệ nhịp đập trái tim của bạn. Bác sĩ chuyên khám, siêu âm tim và điều trị chuyên sâu các bệnh lý như suy tim, rối loạn nhịp. Sự điềm tĩnh và chuyên môn sâu rộng của bác sĩ đã cải thiện chất lượng cuộc sống cho rất nhiều người bệnh.",
+            "Bác sĩ Ngọc Mai được các bậc phụ huynh yêu mến gọi là 'người bạn của mọi mầm non'. Hơn 9 năm kinh nghiệm Nhi khoa giúp bác sĩ thấu hiểu tâm lý trẻ nhỏ, mang đến những buổi thăm khám nhẹ nhàng, không nước mắt. Bác sĩ có thế mạnh trong điều trị bệnh lý hô hấp, tiêu hóa, và tư vấn dinh dưỡng, đồng hành cùng ba mẹ trong hành trình khôn lớn của con.",
+            "Bác sĩ Kim Oanh là chuyên gia tận tâm trong lĩnh vực Sản phụ khoa với 10 năm kinh nghiệm. Thấu hiểu trăn trở của phái đẹp, bác sĩ chuyên điều trị bệnh lý phụ khoa, tư vấn sức khỏe sinh sản, và đồng hành cùng các mẹ bầu. Bằng sự ân cần và chuyên môn vững vàng, bác sĩ luôn mang đến cảm giác an tâm tuyệt đối cho chị em phụ nữ."
+        };
+        String[] hometowns = {"Hà Nội", "Hồ Chí Minh", "Đà Nẵng", "Hải Phòng", "Cần Thơ"};
 
         for (int i = 0; i < emails.length; i++) {
             String email = emails[i];
@@ -173,20 +259,23 @@ public class DataSeeder implements CommandLineRunner {
             List<Long> userIds = jdbcTemplate.query("SELECT user_id FROM users WHERE email = ?",
                     (rs, rowNum) -> rs.getLong("user_id"), email);
             if (userIds.isEmpty()) {
-                jdbcTemplate.update("INSERT INTO users (email, password_hash, full_name, phone, auth_provider, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
-                        email, passwordEncoder.encode("123456"), names[i], phones[i], "LOCAL", "ACTIVE");
+                jdbcTemplate.update("INSERT INTO users (email, password_hash, full_name, avatar_url, phone, auth_provider, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                        email, passwordEncoder.encode("123456"), names[i], avatars[i], phones[i], "LOCAL", "ACTIVE");
                 doctorUserId = jdbcTemplate.queryForObject("SELECT user_id FROM users WHERE email = ?", Long.class, email);
                 jdbcTemplate.update("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", doctorUserId, doctorRole.getRoleId());
             } else {
                 doctorUserId = userIds.get(0);
+                jdbcTemplate.update("UPDATE users SET full_name = ?, avatar_url = ? WHERE user_id = ?", names[i], avatars[i], doctorUserId);
             }
 
             List<Long> existingDoc = jdbcTemplate.query("SELECT doctor_id FROM doctors WHERE user_id = ?",
                     (rs, rowNum) -> rs.getLong("doctor_id"), doctorUserId);
             
             if (existingDoc.isEmpty()) {
-                jdbcTemplate.update("INSERT INTO doctors (user_id, department_id, doctor_code, degree, specialization, years_of_experience, biography, consultation_fee, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
-                        doctorUserId, departmentId, codes[i], "MD", "General Practitioner", 10 + i, "A highly experienced practitioner", 150000.0, "ACTIVE");
+                jdbcTemplate.update("INSERT INTO doctors (user_id, department_id, doctor_code, degree, specialization, years_of_experience, biography, hometown, consultation_fee, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                        doctorUserId, departmentId, codes[i], "MD", specialties[i], exps[i], biographies[i], hometowns[i], 150000.0, "ACTIVE");
+            } else {
+                jdbcTemplate.update("UPDATE doctors SET specialization = ?, years_of_experience = ?, biography = ?, hometown = ? WHERE doctor_id = ?", specialties[i], exps[i], biographies[i], hometowns[i], existingDoc.get(0));
             }
         }
         List<Long> doctorIds = jdbcTemplate.query("SELECT doctor_id FROM doctors", (rs, rowNum) -> rs.getLong("doctor_id"));

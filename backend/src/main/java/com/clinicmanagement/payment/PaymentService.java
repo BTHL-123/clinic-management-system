@@ -28,4 +28,6 @@ public interface PaymentService {
     OnlinePaymentUrlResponse createOnlineUrl(CreateOnlinePaymentUrlRequest request, User currentUser);
 
     PaymentResponse processCallback(PaymentCallbackRequest request);
+
+    PaymentResponse verifySePayTransaction(Long paymentId, User currentUser);
 }

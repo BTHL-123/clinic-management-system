@@ -31,7 +31,6 @@ public class MedicalServiceController {
     private final MedicalServiceService medicalServiceService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'DOCTOR', 'PATIENT')")
     public ResponseEntity<ApiResponse<PageResponse<MedicalServiceResponse>>> getAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -46,13 +45,11 @@ public class MedicalServiceController {
     }
 
     @GetMapping("/active")
-    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'DOCTOR', 'PATIENT')")
     public ResponseEntity<ApiResponse<List<MedicalServiceResponse>>> getAllActive() {
         return ResponseEntity.ok(ApiResponse.success(medicalServiceService.getAllActive()));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST', 'DOCTOR', 'PATIENT')")
     public ResponseEntity<ApiResponse<MedicalServiceResponse>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(medicalServiceService.getById(id)));
     }

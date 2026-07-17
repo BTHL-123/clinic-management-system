@@ -3,6 +3,7 @@ package com.clinicmanagement.payment;
 import com.clinicmanagement.common.dto.ApiResponse;
 import com.clinicmanagement.common.dto.PageResponse;
 import com.clinicmanagement.payment.dto.CreateRefundRequest;
+import com.clinicmanagement.payment.dto.CompleteRefundRequest;
 import com.clinicmanagement.payment.dto.RefundResponse;
 import com.clinicmanagement.payment.dto.RejectRefundRequest;
 import com.clinicmanagement.security.CustomUserDetails;
@@ -73,7 +74,7 @@ public class RefundController {
     }
 
     @PutMapping("/{id}/approve")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
     public ResponseEntity<ApiResponse<RefundResponse>> approve(
             @PathVariable Long id,
             @AuthenticationPrincipal CustomUserDetails userDetails
@@ -83,7 +84,7 @@ public class RefundController {
     }
 
     @PutMapping("/{id}/reject")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
     public ResponseEntity<ApiResponse<RefundResponse>> reject(
             @PathVariable Long id,
             @Valid @RequestBody RejectRefundRequest request,
@@ -91,6 +92,17 @@ public class RefundController {
     ) {
         RefundResponse response = refundService.reject(id, request, userDetails.getUser());
         return ResponseEntity.ok(ApiResponse.success("Từ chối hoàn tiền thành công", response));
+    }
+
+    @PutMapping("/{id}/complete")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTIONIST')")
+    public ResponseEntity<ApiResponse<RefundResponse>> complete(
+            @PathVariable Long id,
+            @Valid @RequestBody CompleteRefundRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        RefundResponse response = refundService.complete(id, request, userDetails.getUser());
+        return ResponseEntity.ok(ApiResponse.success("Xác nhận chuyển tiền thành công", response));
     }
 
     @PostMapping("/request")

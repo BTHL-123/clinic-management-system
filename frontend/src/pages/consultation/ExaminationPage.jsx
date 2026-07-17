@@ -1,17 +1,48 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Stethoscope, Save, ArrowLeft, CheckCircle, Activity, FlaskConical, Pill, ExternalLink, User, Clock, AlertCircle, RefreshCw } from "lucide-react";
+import {
+  Stethoscope,
+  Save,
+  ArrowLeft,
+  CheckCircle,
+  Activity,
+  FlaskConical,
+  Pill,
+  ExternalLink,
+  User,
+  Clock,
+  AlertCircle,
+  RefreshCw,
+  AlertTriangle,
+  Trash2,
+  Plus,
+  ChevronDown,
+  ChevronUp,
+  FileText,
+  Sparkles,
+  Eye,
+  Bot,
+  Search,
+  ChevronRight,
+  ClipboardList,
+  Users,
+  X,
+  PlayCircle
+} from "lucide-react";
+import { Client } from "@stomp/stompjs";
+import SockJS from "sockjs-client/dist/sockjs";
 import consultationService from "../../services/consultationService";
+import queueTicketService from "../../services/queueTicketService";
 import {
   createMedicalRecord,
   getMedicalRecords,
   updateMedicalRecord,
+  getPatientMedicalHistory,
 } from "../../services/medicalRecordService";
 import vitalSignService from "../../services/vitalSignService";
 import { createLabRequest, getLabRequestsByConsultationId } from "../../services/labRequestService";
 import { getLabTests } from "../../services/labTestService";
 import { standardizeClinicalNote } from "../../services/aiChatService";
-import { Bot } from "lucide-react";
 import PatientRecordModal from "../../components/PatientRecordModal";
 import {
   createPrescription,
@@ -20,10 +51,11 @@ import {
   checkInteractionsDraft,
 } from "../../services/prescriptionService";
 import { getMedicines } from "../../services/medicineService";
-import { getPatientById } from "../../services/patientService";
-import { getDoctorById } from "../../services/doctorService";
+import { getPatientById, getPatients } from "../../services/patientService";
+import { getDoctorById, getMyDoctorProfile } from "../../services/doctorService";
 import { useToast } from "../../context/useToast.js";
-import PageHeader from "../../components/PageHeader";
+import { toLocalDateString } from "../../lib/utils";
+
 
 const EMPTY_FORM = {
   symptoms: "",
@@ -68,6 +100,7 @@ export default function ExaminationPage() {
   const [patientInfo, setPatientInfo] = useState(null);
   const [doctorInfo, setDoctorInfo] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [icd10, setIcd10] = useState("");
   const [existingRecordId, setExistingRecordId] = useState(null);
   const [vitals, setVitals] = useState(EMPTY_VITALS);
   const [savedVitals, setSavedVitals] = useState([]);
@@ -77,6 +110,7 @@ export default function ExaminationPage() {
   const [labNote, setLabNote] = useState("");
   const [savedLabRequests, setSavedLabRequests] = useState([]);
   const [savingLab, setSavingLab] = useState(false);
+
   // Prescription states
   const [medicines, setMedicines] = useState([]);
   const [rxItems, setRxItems] = useState([{ ...EMPTY_RX_ITEM }]);
@@ -84,6 +118,9 @@ export default function ExaminationPage() {
   const [savedPrescription, setSavedPrescription] = useState(null);
   const [savingRx, setSavingRx] = useState(false);
   const [checkingInteractions, setCheckingInteractions] = useState(false);
+  const [medSearchTerm, setMedSearchTerm] = useState("");
+  const [showMedDropdown, setShowMedDropdown] = useState(false);
+
   const [completing, setCompleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -93,9 +130,46 @@ export default function ExaminationPage() {
   const [aiProcessing, setAiProcessing] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
 
-  // Load consultation + bệnh án hiện có (nếu có)
+  // New UI states
+  const [historyRecords, setHistoryRecords] = useState([]);
+  const [showAdvancedDiagnosis, setShowAdvancedDiagnosis] = useState(false);
+  const [expandedRxRow, setExpandedRxRow] = useState(null);
+  const [showVitalsForm, setShowVitalsForm] = useState(false);
+  const [labSearchTerm, setLabSearchTerm] = useState("");
+  const [showLabDropdown, setShowLabDropdown] = useState(false);
+
+  // Patient lookup/search states (when no consultationId is active)
+  const [recentPatients, setRecentPatients] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+
+  // Queue modal states
+  const [showQueueModal, setShowQueueModal] = useState(false);
+  const [queueList, setQueueList] = useState([]);
+  const [queueLoading, setQueueLoading] = useState(false);
+  const [queueSearch, setQueueSearch] = useState("");
+  const [queueFilter, setQueueFilter] = useState("Tất cả"); // Tất cả, Cấp cứu, Ưu tiên, Tái khám, Khám mới
+  const [queueDoctor, setQueueDoctor] = useState(null);
+  const [queuePage, setQueuePage] = useState(1);
+
+  // Load consultation + existing medical record + histories
   useEffect(() => {
-    if (!consultationId) return;
+    // Always fetch logged-in doctor profile
+    getMyDoctorProfile()
+      .then((res) => setQueueDoctor(res.data))
+      .catch((err) => console.error("Không thể tải thông tin bác sĩ:", err));
+
+    if (!consultationId) {
+      setLoading(true);
+      getPatients({ size: 100 })
+        .then((res) => {
+          setRecentPatients(res.data?.content || []);
+        })
+        .catch((err) => console.error("Không thể tải gợi ý bệnh nhân:", err))
+        .finally(() => setLoading(false));
+      return;
+    }
     setLoading(true);
 
     Promise.all([
@@ -109,17 +183,19 @@ export default function ExaminationPage() {
       .then(async ([consultRes, vitalsRes, labTestsRes, labReqRes, medicinesRes, rxRes]) => {
         const c = consultRes.data;
         setConsultation(c);
-        
-        // Lấy thêm thông tin Bệnh nhân và Bác sĩ
+
+        // Fetch Patient, Doctor and Historical records
         try {
-          const [pRes, dRes] = await Promise.all([
+          const [pRes, dRes, historyRes] = await Promise.all([
             getPatientById(c.patientId),
-            getDoctorById(c.doctorId)
+            getDoctorById(c.doctorId),
+            getPatientMedicalHistory(c.patientId).catch(() => ({ data: [] }))
           ]);
           setPatientInfo(pRes.data);
           setDoctorInfo(dRes.data);
+          setHistoryRecords(historyRes.data || []);
         } catch (err) {
-          console.error("Không thể tải thông tin bệnh nhân/bác sĩ", err);
+          console.error("Không thể tải thông tin bệnh nhân/bác sĩ/lịch sử", err);
         }
 
         setSavedVitals(vitalsRes.data || []);
@@ -130,7 +206,7 @@ export default function ExaminationPage() {
           setSavedPrescription(rxRes.data);
         }
 
-        // Tìm bệnh án đã tồn tại cho consultation này
+        // Search for existing medical record of this consultation session
         try {
           const recRes = await getMedicalRecords({
             patientId: c.patientId,
@@ -142,23 +218,129 @@ export default function ExaminationPage() {
           );
           if (existing) {
             setExistingRecordId(existing.medicalRecordId);
-            setForm({
-              symptoms: existing.symptoms || "",
-              clinicalFindings: existing.clinicalFindings || "",
-              diagnosis: existing.diagnosis || "",
-              treatmentPlan: existing.treatmentPlan || "",
-              doctorNote: existing.doctorNote || "",
-              followUpDate: existing.followUpDate || "",
-              followUpNote: existing.followUpNote || "",
-            });
+            const diag = existing.diagnosis || "";
+            const match = diag.match(/^\[(.*?)\]\s*(.*)$/);
+            if (match) {
+              setIcd10(match[1]);
+              setForm({
+                symptoms: existing.symptoms || "",
+                clinicalFindings: existing.clinicalFindings || "",
+                diagnosis: match[2],
+                treatmentPlan: existing.treatmentPlan || "",
+                doctorNote: existing.doctorNote || "",
+                followUpDate: existing.followUpDate || "",
+                followUpNote: existing.followUpNote || "",
+              });
+            } else {
+              setIcd10("");
+              setForm({
+                symptoms: existing.symptoms || "",
+                clinicalFindings: existing.clinicalFindings || "",
+                diagnosis: diag,
+                treatmentPlan: existing.treatmentPlan || "",
+                doctorNote: existing.doctorNote || "",
+                followUpDate: existing.followUpDate || "",
+                followUpNote: existing.followUpNote || "",
+              });
+            }
           }
         } catch {
-          // Chưa có bệnh án — bình thường
+          // No record yet
         }
       })
       .catch((err) => setError(err.message || "Không thể tải thông tin phiên khám."))
       .finally(() => setLoading(false));
   }, [consultationId]);
+
+  // Debounced search for suggestion screen when no consultation is active
+  useEffect(() => {
+    if (!consultationId && searchTerm.trim() !== "") {
+      const delayDebounceFn = setTimeout(() => {
+        setSearching(true);
+        getPatients({ size: 100 })
+          .then((res) => {
+            const list = res.data?.content || [];
+            const query = searchTerm.toLowerCase().trim();
+            const filtered = list.filter(p => 
+              (p.fullName || "").toLowerCase().includes(query) ||
+              (p.patientCode || "").toLowerCase().includes(query) ||
+              (p.phone || "").toLowerCase().includes(query)
+            );
+            setSearchResults(filtered);
+          })
+          .catch((err) => console.error(err))
+          .finally(() => setSearching(false));
+      }, 300);
+      return () => clearTimeout(delayDebounceFn);
+    } else {
+      setSearchResults([]);
+    }
+  }, [searchTerm, consultationId]);
+
+  const fetchQueueTickets = useCallback(async () => {
+    if (!queueDoctor?.doctorId) return;
+    setQueueLoading(true);
+    try {
+      const todayStr = toLocalDateString(new Date());
+      const res = await queueTicketService.getQueue(
+        queueDoctor.doctorId,
+        todayStr
+      );
+      const rawList = Array.isArray(res.data) ? res.data : [];
+      const activeList = rawList.filter(
+        (t) => t.queueStatus === "WAITING" || t.queueStatus === "CALLED"
+      );
+      setQueueList(activeList);
+    } catch (err) {
+      console.error("Không thể tải hàng đợi bệnh nhân:", err);
+      showToast("Không thể tải hàng đợi bệnh nhân.", "error");
+    } finally {
+      setQueueLoading(false);
+    }
+  }, [queueDoctor?.doctorId]);
+
+  useEffect(() => {
+    if ((showQueueModal || !consultationId) && queueDoctor?.doctorId) {
+      fetchQueueTickets();
+    }
+  }, [showQueueModal, consultationId, queueDoctor?.doctorId, fetchQueueTickets]);
+
+  useEffect(() => {
+    if (!queueDoctor?.doctorId) return;
+    const socketUrl = import.meta.env.VITE_API_URL 
+      ? import.meta.env.VITE_API_URL.replace("/api", "") + "/ws-queue" 
+      : "http://localhost:8080/ws-queue";
+
+    const stompClient = new Client({
+      webSocketFactory: () => new SockJS(socketUrl),
+      reconnectDelay: 5000,
+    });
+
+    stompClient.onConnect = () => {
+      stompClient.subscribe(`/topic/queue`, () => {
+        if (showQueueModal || !consultationId) {
+          fetchQueueTickets();
+        }
+      });
+    };
+    stompClient.activate();
+
+    return () => stompClient.deactivate();
+  }, [showQueueModal, consultationId, queueDoctor?.doctorId, fetchQueueTickets]);
+
+  const handleStartExamFromQueue = async (ticketId) => {
+    try {
+      const res = await queueTicketService.startExamination(ticketId);
+      showToast("Bắt đầu khám thành công!");
+      setShowQueueModal(false);
+      if (res.data?.consultationId) {
+        navigate(`/dashboard/examination/${res.data.consultationId}`);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Không thể bắt đầu ca khám: " + (err.response?.data?.message || err.message), "error");
+    }
+  };
 
   const showToast = (message, type = "success") => {
     if (type === "error") {
@@ -183,7 +365,6 @@ export default function ExaminationPage() {
       return;
     }
 
-    // Validation
     if (vitals.temperatureC) {
       const temp = parseFloat(vitals.temperatureC);
       if (temp < 30 || temp > 45) {
@@ -217,6 +398,7 @@ export default function ExaminationPage() {
       setSavedVitals((prev) => [res.data, ...prev]);
       setVitals(EMPTY_VITALS);
       showToast("Đã lưu chỉ số sinh tồn.");
+      setShowVitalsForm(false);
     } catch (err) {
       showToast(err.message || "Không thể lưu chỉ số sinh tồn.", "error");
     } finally {
@@ -225,9 +407,15 @@ export default function ExaminationPage() {
   };
 
   const toggleLabTest = (id) => {
-    setSelectedLabTests((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+    setSelectedLabTests((prev) => {
+      const exists = prev.find(x => x.labTestId === id);
+      if (exists) return prev.filter(x => x.labTestId !== id);
+      return [...prev, { labTestId: id, note: "" }];
+    });
+  };
+
+  const handleLabTestNoteChange = (id, note) => {
+    setSelectedLabTests((prev) => prev.map(x => x.labTestId === id ? { ...x, note } : x));
   };
 
   const handleCreateLabRequest = async () => {
@@ -241,7 +429,7 @@ export default function ExaminationPage() {
         consultationId: Number(consultationId),
         patientId: consultation.patientId,
         doctorId: consultation.doctorId,
-        labTestIds: selectedLabTests,
+        items: selectedLabTests.map(x => ({ labTestId: Number(x.labTestId), note: x.note || null })),
         note: labNote || null,
       });
       setSavedLabRequests((prev) => [...prev, res.data]);
@@ -265,12 +453,12 @@ export default function ExaminationPage() {
     }
   };
 
-  // ── Prescription handlers ────────────────────────────────────────────────
+  // Prescription Handlers
   const handleRxItemChange = (index, field, value) => {
     setRxItems((prev) => {
       const updated = [...prev];
       updated[index] = { ...updated[index], [field]: value };
-      
+
       if (field === "medicineId" && value) {
         const selectedMed = medicines.find(m => m.medicineId.toString() === value.toString());
         if (selectedMed && selectedMed.usageInstructions) {
@@ -283,6 +471,58 @@ export default function ExaminationPage() {
 
   const addRxItem = () => setRxItems((prev) => [...prev, { ...EMPTY_RX_ITEM }]);
 
+  const handleAddMedication = (med) => {
+    setRxItems((prev) => {
+      const isEmpty = prev.length === 1 && !prev[0].medicineId;
+      const newItem = { ...EMPTY_RX_ITEM, medicineId: med.medicineId, instructions: med.usageInstructions || "", quantity: 1 };
+      if (isEmpty) return [newItem];
+      if (prev.some(item => item.medicineId?.toString() === med.medicineId?.toString())) {
+        showToast(`Thuốc ${med.medicineName} đã có trong đơn.`, "error");
+        return prev;
+      }
+      return [...prev, newItem];
+    });
+    setMedSearchTerm("");
+    setShowMedDropdown(false);
+  };
+
+  const handleMedQuantityChange = (index, delta) => {
+    setRxItems((prev) => {
+      const updated = [...prev];
+      const currentQty = parseInt(updated[index].quantity) || 0;
+      const newQty = Math.max(1, currentQty + delta);
+      updated[index] = { ...updated[index], quantity: newQty };
+      return updated;
+    });
+  };
+
+  const handleAppendDosage = (index, text) => {
+    setRxItems((prev) => {
+      const updated = [...prev];
+      const current = updated[index].dosage || "";
+      updated[index] = { ...updated[index], dosage: current ? `${current}, ${text}` : text };
+      return updated;
+    });
+  };
+
+  const handleAppendInstruction = (index, text) => {
+    setRxItems((prev) => {
+      const updated = [...prev];
+      const current = updated[index].instructions || "";
+      updated[index] = { ...updated[index], instructions: current ? `${current}, ${text}` : text };
+      return updated;
+    });
+  };
+
+  const handleAppendFrequency = (index, text) => {
+    setRxItems((prev) => {
+      const updated = [...prev];
+      const current = updated[index].frequency || "";
+      updated[index] = { ...updated[index], frequency: current ? `${current}, ${text}` : text };
+      return updated;
+    });
+  };
+
   const removeRxItem = (index) =>
     setRxItems((prev) => prev.filter((_, i) => i !== index));
 
@@ -294,7 +534,6 @@ export default function ExaminationPage() {
     }
     setSavingRx(true);
     try {
-      // 1. Gọi API kiểm tra tương tác nháp
       const draftIds = validItems.map(i => Number(i.medicineId));
       if (draftIds.length > 1) {
         const interactionRes = await checkInteractionsDraft(draftIds);
@@ -302,13 +541,12 @@ export default function ExaminationPage() {
         if (warningLevel !== "NONE") {
           const confirmMsg = `Phát hiện tương tác thuốc nguy hiểm (Mức độ: ${warningLevel}):\n\n${warningMessage}\n\nBạn có chắc chắn muốn tiếp tục kê đơn này không?`;
           if (!window.confirm(confirmMsg)) {
-             setSavingRx(false);
-             return;
+            setSavingRx(false);
+            return;
           }
         }
       }
 
-      // 2. Lưu đơn thuốc thật
       const res = await createPrescription({
         consultationId: Number(consultationId),
         patientId: consultation.patientId,
@@ -356,18 +594,17 @@ export default function ExaminationPage() {
     }
   };
 
-  // ── Medical record save ───────────────────────────────────────────────────
+  // Medical Record Handlers
   const handleSave = async () => {
     if (!form.diagnosis.trim()) {
       setError("Chẩn đoán không được để trống.");
       return false;
     }
-    
-    // Validation
+
     if (form.followUpDate) {
       const followUpDate = new Date(form.followUpDate);
       const today = new Date();
-      today.setHours(0, 0, 0, 0); // Reset time to compare dates only
+      today.setHours(0, 0, 0, 0);
       if (followUpDate < today) {
         setError("Ngày tái khám không được ở trong quá khứ.");
         return false;
@@ -376,12 +613,14 @@ export default function ExaminationPage() {
 
     setSaving(true);
     setError("");
+    const finalDiagnosis = icd10.trim() ? `[${icd10.trim()}] ${form.diagnosis.trim()}` : form.diagnosis.trim();
+
     try {
       if (existingRecordId) {
         await updateMedicalRecord(existingRecordId, {
           symptoms: form.symptoms || null,
           clinicalFindings: form.clinicalFindings || null,
-          diagnosis: form.diagnosis,
+          diagnosis: finalDiagnosis,
           treatmentPlan: form.treatmentPlan || null,
           doctorNote: form.doctorNote || null,
           followUpDate: form.followUpDate || null,
@@ -395,7 +634,7 @@ export default function ExaminationPage() {
           doctorId: consultation.doctorId,
           symptoms: form.symptoms || null,
           clinicalFindings: form.clinicalFindings || null,
-          diagnosis: form.diagnosis,
+          diagnosis: finalDiagnosis,
           treatmentPlan: form.treatmentPlan || null,
           doctorNote: form.doctorNote || null,
           followUpDate: form.followUpDate || null,
@@ -422,14 +661,29 @@ export default function ExaminationPage() {
     try {
       const res = await standardizeClinicalNote(rawNote);
       const data = res.data;
-      setForm((prev) => ({
-        ...prev,
-        symptoms: data.symptoms || prev.symptoms,
-        clinicalFindings: data.clinicalFindings || prev.clinicalFindings,
-        diagnosis: data.diagnosis || prev.diagnosis,
-        treatmentPlan: data.treatmentPlan || prev.treatmentPlan,
-        doctorNote: data.doctorNote || prev.doctorNote,
-      }));
+
+      const diag = data.diagnosis || "";
+      const match = diag.match(/^\[(.*?)\]\s*(.*)$/);
+      if (match) {
+        setIcd10(match[1]);
+        setForm((prev) => ({
+          ...prev,
+          symptoms: data.symptoms || prev.symptoms,
+          clinicalFindings: data.clinicalFindings || prev.clinicalFindings,
+          diagnosis: match[2],
+          treatmentPlan: data.treatmentPlan || prev.treatmentPlan,
+          doctorNote: data.doctorNote || prev.doctorNote,
+        }));
+      } else {
+        setForm((prev) => ({
+          ...prev,
+          symptoms: data.symptoms || prev.symptoms,
+          clinicalFindings: data.clinicalFindings || prev.clinicalFindings,
+          diagnosis: diag || prev.diagnosis,
+          treatmentPlan: data.treatmentPlan || prev.treatmentPlan,
+          doctorNote: data.doctorNote || prev.doctorNote,
+        }));
+      }
       setRawNote("");
       showToast("Đã chuẩn hóa và điền tự động thành công!");
     } catch (err) {
@@ -440,687 +694,1426 @@ export default function ExaminationPage() {
   };
 
   const handleComplete = async () => {
+    // Kiểm tra xem có đơn thuốc chưa lưu không
+    const validRxItems = rxItems.filter((i) => i.medicineId && i.quantity);
+    if (validRxItems.length > 0) {
+      showToast("Bạn có đơn thuốc đang soạn dở. Vui lòng bấm 'Lưu đơn thuốc' trước khi hoàn tất phiên khám!", "error");
+      return;
+    }
+
+    // Kiểm tra xem có xét nghiệm chưa lưu không
+    if (selectedLabTests.length > 0) {
+      showToast("Bạn có chỉ định xét nghiệm chưa được lưu. Vui lòng bấm 'Lưu chỉ định' trước khi hoàn tất!", "error");
+      return;
+    }
+
     if (!window.confirm("Xác nhận hoàn tất phiên khám?\nThao tác này sẽ cập nhật trạng thái lịch hẹn thành COMPLETED.")) return;
     setCompleting(true);
     setError("");
     try {
-      // Lưu bệnh án trước
       const saved = await handleSave();
       if (!saved) {
         setCompleting(false);
         return;
       }
-      // Hoàn thành phiên khám
       await consultationService.complete(consultationId);
       showToast("Phiên khám đã hoàn thành! Đang chuyển về hàng đợi...");
-      setTimeout(() => navigate("/dashboard/consultation"), 1800);
+      setTimeout(() => navigate("/dashboard/examination"), 1800);
     } catch (err) {
-      setError(err.message || "Không thể hoàn thành phiên khám.");
+      setError(err.message || "Không thể hoàn tất phiên khám.");
     } finally {
       setCompleting(false);
     }
   };
 
+  const getAge = (dobString) => {
+    if (!dobString) return "—";
+    const birthDate = new Date(dobString);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return `${age} Tuổi`;
+  };
+
+  const renderQueueModal = () => {
+    if (!showQueueModal) return null;
+
+    const filteredList = queueList.filter((ticket) => {
+      const query = queueSearch.toLowerCase().trim();
+      const matchSearch =
+        (ticket.patientName || "").toLowerCase().includes(query) ||
+        (ticket.patientPhone || "").toLowerCase().includes(query);
+
+      if (!matchSearch) return false;
+
+      if (queueFilter === "Tất cả") return true;
+      if (queueFilter === "Cấp cứu") return ticket.priorityLevel === "EMERGENCY";
+      if (queueFilter === "Ưu tiên") return ticket.priorityLevel === "PRIORITY";
+      if (queueFilter === "Tái khám") return ticket.priorityLevel === "REEXAMINATION";
+      if (queueFilter === "Khám mới") {
+        return ticket.priorityLevel !== "EMERGENCY" && ticket.priorityLevel !== "PRIORITY" && ticket.priorityLevel !== "REEXAMINATION";
+      }
+      return true;
+    });
+
+    const itemsPerPage = 4;
+    const totalItems = filteredList.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+    const startIndex = (queuePage - 1) * itemsPerPage;
+    const paginatedList = filteredList.slice(startIndex, startIndex + itemsPerPage);
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+        <div className="bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.15)] w-full max-w-4xl overflow-hidden border border-slate-100 flex flex-col max-h-[90vh]">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
+            <div>
+              <h3 className="text-lg font-black text-slate-800 tracking-tight">Danh sách bệnh nhân chờ khám</h3>
+              <p className="text-xs text-slate-400 font-bold mt-1">
+                {queueList.filter(t => t.queueStatus === 'WAITING' || t.queueStatus === 'CALLED').length} bệnh nhân đang chờ
+              </p>
+            </div>
+            <button
+              onClick={() => setShowQueueModal(false)}
+              className="w-10 h-10 rounded-full hover:bg-slate-50 text-slate-450 hover:text-slate-600 flex items-center justify-center transition-colors"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Filters and Search */}
+          <div className="p-6 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-50 shrink-0 bg-slate-50/30">
+            {/* Search Input */}
+            <div className="relative w-full max-w-xs">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <Search size={14} />
+              </span>
+              <input
+                type="text"
+                placeholder="Tìm theo tên hoặc mã Bệnh nhân..."
+                value={queueSearch}
+                onChange={(e) => {
+                  setQueueSearch(e.target.value);
+                  setQueuePage(1);
+                }}
+                className="w-full bg-white border border-slate-200 focus:border-[#0A604E] rounded-xl pl-9 pr-3 py-2 text-[11px] text-slate-700 font-bold outline-none transition-all placeholder:text-slate-450"
+              />
+            </div>
+
+            {/* Filter Tabs */}
+            <div className="flex flex-wrap gap-1.5 bg-slate-100/80 p-1 rounded-xl">
+              {[
+                { key: "Tất cả", label: `Tất cả (${queueList.length})` },
+                { key: "Cấp cứu", label: `Cấp cứu (${queueList.filter(t => t.priorityLevel === "EMERGENCY").length})` },
+                { key: "Ưu tiên", label: `Ưu tiên (${queueList.filter(t => t.priorityLevel === "PRIORITY").length})` },
+                { key: "Tái khám", label: `Tái khám (${queueList.filter(t => t.priorityLevel === "REEXAMINATION").length})` },
+                { key: "Khám mới", label: `Khám mới (${queueList.filter(t => t.priorityLevel !== "EMERGENCY" && t.priorityLevel !== "PRIORITY" && t.priorityLevel !== "REEXAMINATION").length})` }
+              ].map((tab) => {
+                const isActive = queueFilter === tab.key;
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() => {
+                      setQueueFilter(tab.key);
+                      setQueuePage(1);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-black tracking-wide transition-all ${
+                      isActive
+                        ? "bg-white text-slate-800 shadow-sm"
+                        : "text-slate-500 hover:text-slate-750"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Table Area */}
+          <div className="flex-1 overflow-y-auto p-6 min-h-[250px]">
+            {queueLoading ? (
+              <div className="w-full h-full flex flex-col items-center justify-center gap-3">
+                <RefreshCw size={24} className="animate-spin text-[#0A604E]" />
+                <span className="text-[11px] text-slate-400 font-bold">Đang tải danh sách chờ...</span>
+              </div>
+            ) : paginatedList.length > 0 ? (
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                    <th className="pb-3 pl-2 w-16">STT</th>
+                    <th className="pb-3 w-64">Patient Info</th>
+                    <th className="pb-3 w-32">Time</th>
+                    <th className="pb-3 w-40">Status/Priority</th>
+                    <th className="pb-3">Reason</th>
+                    <th className="pb-3 text-right pr-2 w-40">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedList.map((ticket, index) => {
+                    const initials = (ticket.patientName || "BN").split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
+
+                    let priorityBadge = null;
+                    if (ticket.priorityLevel === "EMERGENCY") {
+                      priorityBadge = <span className="bg-rose-50 border border-rose-100 text-rose-700 text-[9px] font-extrabold px-2.5 py-1 rounded-md uppercase">▲ Cấp cứu</span>;
+                    } else if (ticket.priorityLevel === "PRIORITY") {
+                      priorityBadge = <span className="bg-amber-50 border border-amber-100 text-amber-700 text-[9px] font-extrabold px-2.5 py-1 rounded-md uppercase">★ Ưu tiên</span>;
+                    } else if (ticket.priorityLevel === "REEXAMINATION") {
+                      priorityBadge = <span className="bg-sky-50 border border-sky-100 text-sky-700 text-[9px] font-extrabold px-2.5 py-1 rounded-md uppercase">Tái khám</span>;
+                    } else {
+                      priorityBadge = <span className="bg-indigo-50 border border-indigo-100 text-indigo-700 text-[9px] font-extrabold px-2.5 py-1 rounded-md uppercase">Khám mới</span>;
+                    }
+
+                    return (
+                      <tr key={ticket.queueTicketId} className="border-b border-slate-50 hover:bg-slate-50/40 transition-colors group">
+                        <td className="py-4 pl-2 font-extrabold text-slate-800 text-xs">#{ticket.queueNumber || (startIndex + index + 1)}</td>
+                        <td className="py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-teal-50 border border-teal-100 overflow-hidden shrink-0 flex items-center justify-center text-teal-655 font-bold text-xs">
+                              <span>{initials}</span>
+                            </div>
+                            <div>
+                              <h4 className="font-extrabold text-slate-800 text-xs tracking-tight group-hover:text-teal-705 transition-colors">{ticket.patientName}</h4>
+                              <p className="text-[10px] text-slate-400 font-bold mt-0.5">
+                                SĐT: {ticket.patientPhone || "—"}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 text-xs font-extrabold text-slate-700">
+                          {ticket.startTime ? String(ticket.startTime).substring(0, 5) : "—"}
+                        </td>
+                        <td className="py-4">
+                          {priorityBadge}
+                        </td>
+                        <td className="py-4 text-xs font-semibold text-slate-500 max-w-xs truncate">
+                          {ticket.queueStatus === "WAITING" ? "Đang chờ" : ticket.queueStatus === "CALLED" ? "Đã được gọi" : ticket.queueStatus}
+                        </td>
+                        <td className="py-4 text-right pr-2">
+                          <button
+                            onClick={() => handleStartExamFromQueue(ticket.queueTicketId)}
+                            className="bg-[#1DB896] hover:bg-[#159a7c] text-white font-extrabold text-[10px] tracking-wide px-3.5 py-2 rounded-xl transition-all shadow-sm active:scale-95 flex items-center gap-1.5 ml-auto uppercase"
+                          >
+                            Bắt đầu khám <ChevronRight size={10} className="stroke-[2.5]" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center text-center py-10">
+                <Users size={48} className="text-slate-350 stroke-[1.2] mb-3" />
+                <p className="text-xs text-slate-450 font-bold">Không có bệnh nhân nào trong danh sách chờ của bộ lọc này.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Footer / Pagination */}
+          <div className="p-6 border-t border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/20 text-[10px] font-bold text-slate-400">
+            <span>
+              Hiển thị {totalItems > 0 ? startIndex + 1 : 0} đến {Math.min(startIndex + itemsPerPage, totalItems)} của {totalItems} bệnh nhân
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                disabled={queuePage === 1}
+                onClick={() => setQueuePage(p => Math.max(p - 1, 1))}
+                className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 hover:text-slate-600 transition-colors disabled:opacity-50 disabled:pointer-events-none"
+              >
+                &lt;
+              </button>
+              <span className="text-slate-800 font-extrabold px-1">Trang {queuePage} / {totalPages}</span>
+              <button
+                disabled={queuePage === totalPages}
+                onClick={() => setQueuePage(p => Math.min(p + 1, totalPages))}
+                className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 hover:text-slate-600 transition-colors disabled:opacity-50 disabled:pointer-events-none"
+              >
+                &gt;
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
-    return <div style={{ padding: 32, color: "#6b7280" }}>Đang tải phiên khám...</div>;
+    return (
+      <div className="w-full flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-3">
+          <RefreshCw className="animate-spin text-emerald-600" size={32} />
+          <span className="text-slate-500 font-bold text-sm">Đang tải phiên khám...</span>
+        </div>
+      </div>
+    );
   }
 
-  return (
-    <div className="w-full h-full flex flex-col items-center pb-24">
-      {/* Header */}
-      <PageHeader
-        title={`Khám bệnh — Phiên #${consultationId}`}
-        icon={Stethoscope}
-        iconColor="text-white"
-        subtitle={
-          consultation ? (
-            <div className="mt-4 p-[1.5px] rounded-2xl bg-gradient-to-r from-teal-400 via-cyan-400 to-emerald-400 shadow-[0_8px_32px_rgba(20,184,166,0.25)]">
-              <div className="bg-slate-900/60 backdrop-blur-xl px-6 py-2.5 rounded-[15px] flex flex-wrap justify-center items-center gap-5 text-sm font-semibold text-white">
-                  <span className="flex items-center gap-2">
-                  <User size={16} className="text-teal-300 drop-shadow-[0_0_8px_rgba(94,234,212,0.4)] stroke-[2.5]" />
-                  <span className="text-slate-300 font-medium">Bệnh nhân:</span>
-                  <strong className="text-white font-extrabold text-base">
-                    {patientInfo ? `${patientInfo.fullName} (${patientInfo.gender === 'MALE' ? 'Nam' : patientInfo.gender === 'FEMALE' ? 'Nữ' : 'Khác'})` : `ID: ${consultation.patientId}`}
-                  </strong>
-                </span>
-                <span className="text-slate-600 font-light">•</span>
-                <span className="flex items-center gap-2">
-                  <Stethoscope size={16} className="text-teal-300 drop-shadow-[0_0_8px_rgba(94,234,212,0.4)] stroke-[2.5]" />
-                  <span className="text-slate-300 font-medium">Bác sĩ:</span>
-                  <strong className="text-white font-extrabold text-base">
-                    {doctorInfo ? doctorInfo.fullName : `ID: ${consultation.doctorId}`}
-                  </strong>
-                </span>
-                <span className="text-slate-600 font-light">•</span>
-                <span className="flex items-center gap-2">
-                  <Clock size={16} className="text-teal-300 drop-shadow-[0_0_8px_rgba(94,234,212,0.4)] stroke-[2.5]" />
-                  <span className="text-slate-300 font-medium">Bắt đầu:</span>
-                  <strong className="text-white font-extrabold text-base">{consultation.startedAt ? new Date(consultation.startedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : "—"}</strong>
-                </span>
-                <span className="text-slate-600 font-light">•</span>
-                <span className={`px-3.5 py-1 rounded-full text-xs font-black shadow-md tracking-wider uppercase bg-gradient-to-r ${consultation.status === "IN_PROGRESS" ? "from-teal-400 to-emerald-400 text-slate-950 shadow-[0_0_12px_rgba(45,212,191,0.5)]" : "from-emerald-400 to-green-400 text-slate-950 shadow-[0_0_12px_rgba(52,211,153,0.5)]"}`}>
-                  {consultation.status === "IN_PROGRESS" ? "ĐANG KHÁM" : consultation.status}
+  if (!consultationId) {
+    return (
+      <div className="w-full max-w-[1000px] mx-auto p-4 md:p-6 lg:p-8 flex flex-col gap-8 animate-fadeIn">
+        {/* Top Header */}
+        <div className="flex items-center gap-2 border-b border-slate-200 pb-5">
+          <span className="w-8 h-8 rounded-xl bg-emerald-50 text-[#0A604E] flex items-center justify-center shrink-0 shadow-sm border border-emerald-100/50">
+            <Stethoscope size={18} className="stroke-[2.5]" />
+          </span>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Khám bệnh</h1>
+        </div>
+
+        {/* Empty State Panel - Modified to show queue directly */}
+        <div className="w-full bg-white/70 backdrop-blur-xl border border-slate-100 rounded-[2rem] p-8 shadow-[0_10px_35px_rgba(0,0,0,0.02)] flex flex-col items-center">
+          
+          <div className="flex flex-col items-center mb-8">
+            <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center shadow-sm text-[#0A604E] mb-4">
+              <Users size={28} className="stroke-[2]" />
+            </div>
+            <h2 className="text-xl font-extrabold text-slate-800 tracking-tight">
+              Chưa có bệnh nhân đang khám
+            </h2>
+            <p className="text-sm text-slate-400 font-bold max-w-sm mt-2 leading-relaxed text-center">
+              Dưới đây là danh sách hàng đợi của bạn. Nhấn "Bắt đầu khám" để gọi bệnh nhân vào phòng.
+            </p>
+          </div>
+
+          <div className="w-full bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                <h3 className="text-sm font-extrabold text-slate-800">Danh sách chờ khám</h3>
+                <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-[10px] font-black">
+                  {queueList.length} bệnh nhân
                 </span>
               </div>
+              <button 
+                onClick={fetchQueueTickets}
+                className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-[#0A604E] transition-colors"
+              >
+                <RefreshCw size={14} className={queueLoading ? "animate-spin" : ""} />
+                Làm mới
+              </button>
             </div>
-          ) : undefined
-        }
-        onBack={() => navigate("/dashboard/consultation")}
-      />
+
+            <div className="w-full overflow-x-auto min-h-[150px] flex flex-col relative">
+              {queueLoading && queueList.length === 0 ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm z-10">
+                  <RefreshCw className="animate-spin text-[#0A604E]" size={24} />
+                </div>
+              ) : queueList.length > 0 ? (
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                      <th className="py-3 px-4 w-16">STT</th>
+                      <th className="py-3 px-4 w-64">Bệnh nhân</th>
+                      <th className="py-3 px-4 w-40">Trạng thái</th>
+                      <th className="py-3 px-4 text-right">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {queueList.map((ticket, idx) => (
+                      <tr key={ticket.queueTicketId} className="hover:bg-slate-50/50 transition-colors group">
+                        <td className="py-4 px-4 font-extrabold text-slate-800 text-xs">#{ticket.queueNumber}</td>
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 font-bold text-xs flex items-center justify-center shrink-0 border border-emerald-100">
+                              {(ticket.patientName || "BN").split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase()}
+                            </div>
+                            <div>
+                              <h4 className="font-extrabold text-slate-800 text-xs group-hover:text-[#0A604E] transition-colors">{ticket.patientName}</h4>
+                              <p className="text-[10px] text-slate-400 font-bold mt-0.5">SĐT: {ticket.patientPhone || "—"}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          {ticket.priorityLevel === "EMERGENCY" ? (
+                            <span className="bg-rose-50 border border-rose-100 text-rose-700 text-[9px] font-extrabold px-2.5 py-1 rounded-md uppercase">▲ Cấp cứu</span>
+                          ) : ticket.priorityLevel === "PRIORITY" ? (
+                            <span className="bg-amber-50 border border-amber-100 text-amber-700 text-[9px] font-extrabold px-2.5 py-1 rounded-md uppercase">★ Ưu tiên</span>
+                          ) : ticket.priorityLevel === "REEXAMINATION" ? (
+                            <span className="bg-sky-50 border border-sky-100 text-sky-700 text-[9px] font-extrabold px-2.5 py-1 rounded-md uppercase">Tái khám</span>
+                          ) : (
+                            <span className="bg-slate-50 border border-slate-200 text-slate-600 text-[9px] font-extrabold px-2.5 py-1 rounded-md uppercase">Khám mới</span>
+                          )}
+                        </td>
+                        <td className="py-4 px-4 text-right">
+                          <button
+                            onClick={() => handleStartExamFromQueue(ticket.queueTicketId)}
+                            className="inline-flex items-center gap-1.5 bg-[#0A604E] hover:bg-[#07473a] text-white px-4 py-2 rounded-xl text-[10px] font-extrabold uppercase tracking-wide transition-all shadow-sm active:scale-95"
+                          >
+                            <PlayCircle size={14} /> Bắt đầu khám
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center py-10 text-center">
+                  <div className="w-12 h-12 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mb-3">
+                    <ClipboardList size={20} />
+                  </div>
+                  <p className="text-xs text-slate-500 font-bold">Không có bệnh nhân nào đang đợi khám.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+
+        {renderQueueModal()}
+      </div>
+    );
+  }
+
+  const avatarUrl = patientInfo?.avatarUrl ||
+    (patientInfo?.gender === 'FEMALE'
+      ? "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop"
+      : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop");
+
+  const allergyList = patientInfo?.allergies ? patientInfo.allergies.split('\n').filter(Boolean) : [];
+  const historyList = patientInfo?.medicalHistory ? patientInfo.medicalHistory.split('\n').filter(Boolean) : [];
+
+  const filteredLabTests = labTests.filter(t => 
+    !selectedLabTests.some(x => x.labTestId === t.labTestId) &&
+    (t.testName.toLowerCase().includes(labSearchTerm.toLowerCase()) || 
+     t.testCode.toLowerCase().includes(labSearchTerm.toLowerCase()))
+  );
+  
+  const selectedTestsData = selectedLabTests.map(item => {
+    const t = labTests.find(x => x.labTestId === item.labTestId);
+    return t ? { ...t, note: item.note } : null;
+  }).filter(Boolean);
+
+  return (
+    <div className="w-full max-w-[1280px] mx-auto p-4 md:p-6 lg:p-8 flex flex-col gap-6 relative pb-8">
+
+      {/* Top Breadcrumb/Header Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate("/dashboard/consultation")}
+            className="w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 flex items-center justify-center transition-all shadow-sm group active:scale-95"
+            title="Trở lại hàng đợi"
+          >
+            <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
+          </button>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                <Stethoscope size={14} className="stroke-[2.5]" />
+              </span>
+              <h1 className="text-xl font-black text-slate-800 tracking-tight">Khám bệnh</h1>
+            </div>
+            <p className="text-xs text-slate-400 font-bold mt-0.5">Phiên khám #{consultationId}</p>
+          </div>
+        </div>
+
+        {consultation && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-400">Trạng thái:</span>
+            <span className={`px-3 py-1.5 rounded-xl text-xs font-black tracking-wide uppercase shadow-sm ${consultation.status === "IN_PROGRESS" ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : "bg-slate-100 text-slate-655"}`}>
+              {consultation.status === "IN_PROGRESS" ? "Đang khám" : consultation.status}
+            </span>
+          </div>
+        )}
+      </div>
 
       {error && (
-        <div className="w-full bg-rose-500/20 border border-rose-500/30 text-rose-100 p-4 rounded-2xl mb-6 flex items-center gap-3 backdrop-blur-md">
-          <AlertCircle size={20} className="text-rose-400" />
-          {error}
+        <div className="w-full bg-rose-50 border border-rose-100 text-rose-700 p-4 rounded-2xl flex items-center gap-3 shadow-sm animate-fadeIn">
+          <AlertCircle size={20} className="text-rose-500 shrink-0" />
+          <span className="text-sm font-semibold">{error}</span>
         </div>
       )}
 
       {showHistoryModal && (
-        <PatientRecordModal 
-          patientId={consultation.patientId} 
-          onClose={() => setShowHistoryModal(false)} 
+        <PatientRecordModal
+          patientId={consultation.patientId}
+          onClose={() => setShowHistoryModal(false)}
         />
       )}
 
-      <div className="w-full flex flex-col gap-6 max-w-[960px] mt-6">
+      {/* Main Two-Column Workflow Workspace Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full">
 
-        {/* Nút Mở Hồ sơ TO BẢN */}
-        <button 
-          onClick={() => setShowHistoryModal(true)}
-          className="w-full bg-gradient-to-r from-teal-500 to-sky-500 text-white rounded-2xl p-6 shadow-lg hover:shadow-[0_10px_40px_rgba(20,184,166,0.3)] hover:-translate-y-1 transition-all flex items-center justify-between group cursor-pointer border border-teal-400/30"
-        >
-          <div className="flex items-center gap-5">
-            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md group-hover:scale-110 transition-transform shadow-inner">
-              <Activity size={28} className="text-white" strokeWidth={2.5} />
-            </div>
-            <div className="text-left">
-              <h3 className="text-2xl font-black mb-1 drop-shadow-sm">Hồ sơ Bệnh án Tổng quan</h3>
-              <p className="text-teal-50 font-medium text-sm">Tra cứu nhóm máu, dị ứng, bệnh nền và toàn bộ lịch sử khám trước đây</p>
-            </div>
-          </div>
-          <div className="bg-white/20 text-white px-6 py-3 rounded-xl font-bold backdrop-blur-md group-hover:bg-white group-hover:text-teal-600 transition-colors shadow-sm hidden md:block">
-            Mở xem ngay
-          </div>
-        </button>
+        {/* LEFT COLUMN: Patient Info, History, Vitals, Prev Records */}
+        <div className="lg:col-span-5 flex flex-col gap-6 w-full">
 
-      {/* Vital Signs Section */}
-      <div className="patient-glass-panel rounded-[2rem] p-8 shadow-xl border-0 w-full mb-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white shadow-lg">
-            <Activity size={20} />
-          </div>
-          <h3 className="text-xl font-extrabold text-teal-900">Chỉ số sinh tồn</h3>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
-          {[
-            { name: "heightCm", label: "Chiều cao (cm)", placeholder: "170" },
-            { name: "weightKg", label: "Cân nặng (kg)", placeholder: "65" },
-            { name: "temperatureC", label: "Nhiệt độ (°C)", placeholder: "37.0" },
-            { name: "heartRate", label: "Nhịp tim (lần/phút)", placeholder: "80" },
-            { name: "bloodPressureSystolic", label: "HA tâm thu (mmHg)", placeholder: "120" },
-            { name: "bloodPressureDiastolic", label: "HA tâm trương (mmHg)", placeholder: "80" },
-            { name: "respiratoryRate", label: "Nhịp thở (lần/phút)", placeholder: "18" },
-            { name: "spo2", label: "SpO2 (%)", placeholder: "98" },
-          ].map((field) => (
-            <div key={field.name} className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-teal-800 ml-1">{field.label}</label>
-              <input
-                type="number"
-                name={field.name}
-                value={vitals[field.name]}
-                onChange={handleVitalsChange}
-                placeholder={field.placeholder}
-                className="w-full bg-white/60 border border-teal-200/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 font-medium focus:bg-white focus:border-teal-400 focus:ring-2 focus:ring-teal-400/20 transition-all outline-none"
-              />
-            </div>
-          ))}
-        </div>
-
-        <div className="flex justify-end mb-4">
-          <button
-            type="button"
-            className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-5 py-2 rounded-xl font-bold text-sm shadow-md transition-all active:scale-95 disabled:opacity-70"
-            onClick={handleSaveVitals}
-            disabled={savingVitals}
-          >
-            <Save size={16} />
-            {savingVitals ? "Đang lưu..." : "Lưu chỉ số"}
-          </button>
-        </div>
-
-        {/* Lịch sử đo */}
-        {savedVitals.length > 0 && (
-          <div className="mt-4 pt-4 border-t border-teal-900/10">
-            <p className="text-xs font-bold text-teal-800 mb-3">
-              Lịch sử đo ({savedVitals.length} lần)
-            </p>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-emerald-50 text-teal-900">
-                    {["Thời gian", "Cao (cm)", "Nặng (kg)", "Nhiệt độ", "HA", "Nhịp tim", "SpO2"].map((h) => (
-                      <th key={h} className="px-3 py-2 font-bold rounded-t-lg">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="text-teal-800 font-medium">
-                  {savedVitals.map((v) => (
-                    <tr key={v.vitalSignId} className="border-b border-teal-100 last:border-0 hover:bg-emerald-50/50">
-                      <td className="px-3 py-2">
-                        {new Date(v.measuredAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
-                      </td>
-                      <td className="px-3 py-2">{v.heightCm ?? "—"}</td>
-                      <td className="px-3 py-2">{v.weightKg ?? "—"}</td>
-                      <td className="px-3 py-2">{v.temperatureC ?? "—"}</td>
-                      <td className="px-3 py-2">
-                        {v.bloodPressureSystolic && v.bloodPressureDiastolic
-                          ? `${v.bloodPressureSystolic}/${v.bloodPressureDiastolic}`
-                          : "—"}
-                      </td>
-                      <td className="px-3 py-2">{v.heartRate ?? "—"}</td>
-                      <td className="px-3 py-2">{v.spo2 != null ? `${v.spo2}%` : "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* AI Smart Notes Section */}
-      <div className="patient-glass-panel rounded-[2rem] p-8 shadow-xl border-0 w-full mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-fuchsia-400 to-purple-500 flex items-center justify-center text-white shadow-lg">
-            <Bot size={20} />
-          </div>
-          <h3 className="text-xl font-extrabold text-purple-900">Ghi chú nhanh AI</h3>
-        </div>
-        <p className="text-sm font-semibold text-purple-700/80 mb-4 ml-1">
-          Nhập ghi chú thô của bạn (tốc ký, không cần đúng cấu trúc). AI sẽ tự động phân tích và điền vào form Bệnh án.
-        </p>
-        <textarea
-          rows={3}
-          placeholder="Ví dụ: bn nam 45t sốt 39đ ho khan 3 ngày khám họng đỏ phổi bt chẩn đoán viêm họng cấp kê para 500mg"
-          value={rawNote}
-          onChange={(e) => setRawNote(e.target.value)}
-          disabled={aiProcessing}
-          style={{
-            width: "100%", padding: 12, borderRadius: 8, border: "1px solid #e879f9",
-            background: "#fff", fontSize: 14, outline: "none", marginBottom: 12
-          }}
-        />
-        <button
-          type="button"
-          className="btn"
-          disabled={aiProcessing}
-          onClick={handleStandardizeNote}
-          style={{
-            background: "#c026d3", color: "#fff", border: "none",
-            display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 600, padding: "8px 16px"
-          }}
-        >
-          {aiProcessing ? (
-            <>Đang xử lý...</>
-          ) : (
-            <><Bot size={16} /> AI Chuẩn hóa & Điền tự động</>
-          )}
-        </button>
-      </div>
-
-      {/* Lab Request Section */}
-      <div className="patient-glass-panel rounded-[2rem] p-8 shadow-xl border-0 w-full mb-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white shadow-lg">
-            <FlaskConical size={20} />
-          </div>
-          <h3 className="text-xl font-extrabold text-blue-900">Yêu cầu xét nghiệm</h3>
-        </div>
-
-        {/* Danh sách loại xét nghiệm */}
-        {labTests.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-5">
-            {labTests.map((t) => (
-              <label key={t.labTestId} className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-all shadow-sm ${selectedLabTests.includes(t.labTestId) ? 'bg-blue-50 border-blue-300' : 'bg-white/60 hover:bg-white/90 border-sky-200/50'}`}>
-                <input
-                  type="checkbox"
-                  checked={selectedLabTests.includes(t.labTestId)}
-                  onChange={() => toggleLabTest(t.labTestId)}
-                  className="mt-1 w-4 h-4 text-sky-600 rounded border-sky-300 focus:ring-sky-500"
-                />
-                <div className="flex flex-col">
-                  <span className="text-sm font-bold text-slate-800 leading-tight">{t.testName}</span>
-                  <span className="text-[11px] font-semibold text-slate-500">{t.testCode}</span>
+          {/* CARD 1: Patient Profile Card */}
+          <div className="bg-white border border-slate-100 rounded-[1.5rem] p-6 shadow-[0_4px_25px_rgba(0,0,0,0.015)] transition-all">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-2xl border border-slate-100 overflow-hidden shrink-0 shadow-sm">
+                <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-lg font-black text-slate-800 tracking-tight leading-none">
+                    {patientInfo?.fullName || "Bệnh nhân"}
+                  </h3>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black tracking-wide uppercase border border-emerald-100">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    Đang khám
+                  </span>
                 </div>
-              </label>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm font-semibold text-slate-500 mb-5">Không có loại xét nghiệm nào.</p>
-        )}
-
-        <div className="flex flex-col gap-1.5 mb-5">
-          <label className="text-xs font-bold text-sky-800 ml-1">Ghi chú</label>
-          <input
-            type="text"
-            value={labNote}
-            onChange={(e) => setLabNote(e.target.value)}
-            placeholder="Ghi chú cho phiếu xét nghiệm..."
-            className="w-full bg-white/60 border border-sky-200/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 font-medium focus:bg-white focus:border-sky-400 focus:ring-2 focus:ring-sky-400/20 transition-all outline-none"
-          />
-        </div>
-
-        <div className="flex justify-between items-center">
-          <span className="text-sm font-bold text-blue-600">
-            Đã chọn: {selectedLabTests.length} xét nghiệm
-          </span>
-          <button
-            type="button"
-            className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all active:scale-95 disabled:opacity-70"
-            onClick={handleCreateLabRequest}
-            disabled={savingLab || selectedLabTests.length === 0}
-          >
-            <FlaskConical size={16} />
-            {savingLab ? "Đang tạo..." : "Tạo phiếu xét nghiệm"}
-          </button>
-        </div>
-
-        {/* Phiếu đã tạo */}
-        {savedLabRequests.length > 0 && (
-          <div className="mt-6 pt-5 border-t border-sky-900/10">
-            <div className="flex justify-between items-center mb-3">
-              <p className="text-xs font-bold text-blue-800">
-                Phiếu đã tạo ({savedLabRequests.length})
-              </p>
-              <button 
-                type="button" 
-                onClick={handleRefreshLabRequests}
-                className="flex items-center gap-1.5 text-xs font-bold text-sky-600 hover:text-sky-800 transition-colors bg-sky-50 px-3 py-1.5 rounded-lg border border-sky-200"
-              >
-                <RefreshCw size={14} /> Cập nhật kết quả
-              </button>
+                <p className="text-xs text-slate-400 font-bold mt-1.5">
+                  Mã BN: {patientInfo?.patientCode || "#BN-88291"}
+                </p>
+              </div>
             </div>
-            <div className="flex flex-col gap-3">
-              {savedLabRequests.map((req) => (
-                <div key={req.labRequestId} className="bg-white/80 border border-blue-200 rounded-xl p-4 shadow-sm flex flex-col gap-3">
-                  <div className="flex justify-between items-center border-b border-sky-100 pb-2">
-                    <div className="flex items-center gap-2">
-                      <strong className="text-sm font-extrabold text-blue-900">{req.requestCode}</strong>
-                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${req.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-700' : req.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
-                        {req.status === 'COMPLETED' ? 'ĐÃ HOÀN THÀNH' : req.status === 'IN_PROGRESS' ? 'ĐANG XỬ LÝ' : 'CHỜ TIẾP NHẬN'}
-                      </span>
-                    </div>
-                    <span className="text-xs font-semibold text-slate-500">
-                      {new Date(req.requestedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                  </div>
-                  
-                  <div className="flex flex-col gap-2">
-                    {req.items?.map((item) => (
-                      <div key={item.labRequestItemId} className="bg-sky-50/50 rounded-lg p-3 border border-sky-100/50">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-xs font-bold text-slate-800">• {item.testName} <span className="text-slate-500 font-medium text-[10px]">({item.testCode})</span></span>
-                          {item.labResult ? (
-                            <span className="text-emerald-600 flex items-center gap-1 text-[10px] font-bold bg-emerald-100/50 px-2 py-0.5 rounded-full"><CheckCircle size={10}/> Đã có kết quả</span>
-                          ) : (
-                            <span className="text-amber-600 flex items-center gap-1 text-[10px] font-bold bg-amber-100/50 px-2 py-0.5 rounded-full">Đang chờ</span>
-                          )}
-                        </div>
-                        
-                        {item.labResult && (
-                          <div className="ml-2 mt-2 grid grid-cols-2 gap-2 bg-white rounded-md p-2 border border-sky-100">
-                            <div className="flex flex-col">
-                              <span className="text-[10px] text-slate-400 font-bold uppercase">Giá trị</span>
-                              <span className="text-xs font-extrabold text-slate-800">{item.labResult.resultValue} <span className="text-slate-500 font-medium">{item.labResult.resultUnit}</span></span>
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-[10px] text-slate-400 font-bold uppercase">CSBT</span>
-                              <span className="text-xs font-semibold text-slate-600">{item.labResult.normalRange || "—"}</span>
-                            </div>
-                            <div className="col-span-2 flex flex-col mt-1">
-                              <span className="text-[10px] text-slate-400 font-bold uppercase">Kết luận</span>
-                              <span className={`text-xs font-bold ${item.labResult.conclusion?.toLowerCase()?.includes('bất thường') ? 'text-rose-600' : 'text-emerald-700'}`}>{item.labResult.conclusion || "—"}</span>
-                            </div>
-                            {item.labResult.resultFileUrl && (
-                              <div className="col-span-2 mt-2">
-                                <a 
-                                  href={item.labResult.resultFileUrl} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer" 
-                                  className="group block overflow-hidden rounded-lg border border-slate-200 hover:border-teal-400 transition-all shadow-sm relative"
-                                >
-                                  <img 
-                                    src={item.labResult.resultFileUrl} 
-                                    alt="Ảnh kết quả xét nghiệm" 
-                                    className="w-full h-auto max-h-40 object-cover group-hover:scale-105 transition-transform duration-500" 
-                                    onError={(e) => { 
-                                      e.target.style.display = 'none'; 
-                                      if (e.target.nextSibling) {
-                                        e.target.nextSibling.style.display = 'flex'; 
-                                      }
-                                    }} 
-                                  />
-                                  <div className="hidden items-center justify-center gap-2 p-3 bg-slate-50 text-teal-600 text-xs font-bold group-hover:bg-teal-50 transition-colors">
-                                    <ExternalLink size={14} /> Mở file đính kèm
-                                  </div>
-                                </a>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
 
-      {/* Prescription Section */}
-      <div className="patient-glass-panel rounded-[2rem] p-8 shadow-xl border-0 w-full mb-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-fuchsia-400 to-pink-500 flex items-center justify-center text-white shadow-lg">
-              <Pill size={20} />
-            </div>
-            <h3 className="text-xl font-extrabold text-pink-900">Kê đơn thuốc</h3>
-          </div>
-          {savedPrescription && (
-            <button
-              onClick={() => navigate(`/dashboard/prescriptions/${savedPrescription.prescriptionId}`)}
-              className="flex items-center gap-2 bg-pink-50 hover:bg-pink-100 text-pink-700 px-4 py-2 rounded-xl font-bold text-xs shadow-sm border border-pink-200 transition-all active:scale-95"
-            >
-              <ExternalLink size={14} /> Xem chi tiết
-            </button>
-          )}
-        </div>
-
-        {/* Đơn thuốc đã tạo */}
-        {savedPrescription ? (
-          <div className="flex flex-col gap-4">
-            <div className="bg-white/80 border border-pink-200 rounded-2xl p-5 shadow-sm">
-              <div className="flex justify-between items-center mb-3">
-                <strong className="text-lg font-extrabold text-pink-700">{savedPrescription.prescriptionCode}</strong>
-                <span className={`px-3 py-1 rounded-full text-xs font-black shadow-sm ${savedPrescription.status === "DISPENSED" ? "bg-emerald-500/20 text-emerald-700 border border-emerald-500/30" : "bg-amber-500/20 text-amber-700 border border-amber-500/30"}`}>
-                  {savedPrescription.status === "CREATED" ? "MỚI TẠO"
-                    : savedPrescription.status === "CHECKED" ? "ĐÃ KIỂM TRA"
-                    : savedPrescription.status === "DISPENSED" ? "ĐÃ CẤP PHÁT"
-                    : savedPrescription.status}
+            <div className="grid grid-cols-2 gap-4 mt-6 border-t border-slate-50 pt-5">
+              <div className="bg-slate-50/70 border border-slate-100 rounded-2xl p-4 flex flex-col items-center justify-center">
+                <span className="text-[10px] font-black text-slate-400 tracking-wider uppercase">TUỔI</span>
+                <span className="text-base font-extrabold text-slate-800 mt-1">
+                  {getAge(patientInfo?.dateOfBirth)}
                 </span>
               </div>
-              <div className="text-sm font-semibold text-slate-500 flex items-center gap-2">
-                <span>{savedPrescription.items?.length || 0} loại thuốc</span>
-                <span className="opacity-50">•</span>
-                {savedPrescription.drugInteractionChecked
-                  ? <span className="text-emerald-600 flex items-center gap-1"><CheckCircle size={14}/> Đã kiểm tra tương tác</span>
-                  : <span className="text-slate-400">Chưa kiểm tra tương tác</span>}
+
+              <div className="bg-slate-50/70 border border-slate-100 rounded-2xl p-4 flex flex-col items-center justify-center">
+                <span className="text-[10px] font-black text-slate-400 tracking-wider uppercase">GIỚI TÍNH</span>
+                <span className="text-base font-extrabold text-slate-800 mt-1">
+                  {patientInfo?.gender === 'MALE' ? 'Nam' : patientInfo?.gender === 'FEMALE' ? 'Nữ' : 'Khác'}
+                </span>
               </div>
-              {savedPrescription.interactionWarning && (
-                <div className={`mt-4 p-3 rounded-xl text-sm font-medium border flex items-start gap-2 ${savedPrescription.interactionWarning.includes("No dangerous") ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-amber-50 border-amber-200 text-amber-800"}`}>
-                  {savedPrescription.interactionWarning.includes("No dangerous")
-                    ? "✓ Không phát hiện tương tác nguy hiểm"
-                    : "⚠ " + savedPrescription.interactionWarning}
+            </div>
+          </div>
+
+          {/* CARD 2: Medical History (Tiền sử bệnh) */}
+          <div className="bg-rose-50/30 border border-rose-100 rounded-[1.5rem] p-6 shadow-[0_4px_25px_rgba(0,0,0,0.01)] transition-all">
+            <div className="flex justify-between items-center pb-3 border-b border-rose-100/50">
+              <div className="flex items-center gap-2">
+                <span className="w-7 h-7 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                  <AlertTriangle size={14} className="stroke-[2.5]" />
+                </span>
+                <h4 className="text-sm font-extrabold text-rose-800">Tiền sử bệnh</h4>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 mt-4 text-rose-700 text-xs font-semibold leading-relaxed">
+              {allergyList.map((item, idx) => (
+                <div key={`alg-${idx}`} className="flex items-start gap-2 bg-white/50 border border-rose-100/50 rounded-xl p-2.5">
+                  <span className="mt-0.5 text-xs text-rose-500 font-extrabold">•</span>
+                  <span><strong>Dị ứng:</strong> {item}</span>
                 </div>
+              ))}
+              {historyList.map((item, idx) => (
+                <div key={`hist-${idx}`} className="flex items-start gap-2 bg-white/50 border border-rose-100/50 rounded-xl p-2.5">
+                  <span className="mt-0.5 text-xs text-rose-500 font-extrabold">•</span>
+                  <span><strong>Bệnh lý:</strong> {item}</span>
+                </div>
+              ))}
+              {allergyList.length === 0 && historyList.length === 0 && (
+                <span className="text-slate-400 font-medium italic">Không ghi nhận dị ứng hoặc bệnh nền.</span>
+              )}
+            </div>
+          </div>
+
+          {/* CARD 3: Vital Signs (Chỉ số sinh tồn) */}
+          <div className="bg-white border border-slate-100 rounded-[1.5rem] p-6 shadow-[0_4px_25px_rgba(0,0,0,0.015)] transition-all">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-50">
+              <div className="flex items-center gap-2">
+                <span className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                  <Activity size={14} className="stroke-[2.5]" />
+                </span>
+                <h4 className="text-sm font-extrabold text-slate-800">Chỉ số sinh tồn</h4>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowVitalsForm(!showVitalsForm)}
+                className="text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors uppercase tracking-wider flex items-center gap-1"
+              >
+                {showVitalsForm ? "Hủy" : "+ Đo chỉ số"}
+              </button>
+            </div>
+
+            {showVitalsForm && (
+              <div className="flex flex-col gap-4 mt-4 bg-slate-50/50 border border-slate-100 rounded-2xl p-4 animate-fadeIn">
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { name: "heightCm", label: "Chiều cao (cm)", placeholder: "170" },
+                    { name: "weightKg", label: "Cân nặng (kg)", placeholder: "65" },
+                    { name: "temperatureC", label: "Nhiệt độ (°C)", placeholder: "37" },
+                    { name: "heartRate", label: "Nhịp tim (l/p)", placeholder: "80" },
+                    { name: "bloodPressureSystolic", label: "HA tâm thu (mmHg)", placeholder: "120" },
+                    { name: "bloodPressureDiastolic", label: "HA tâm trương (mmHg)", placeholder: "80" },
+                    { name: "respiratoryRate", label: "Nhịp thở (l/p)", placeholder: "18" },
+                    { name: "spo2", label: "SpO2 (%)", placeholder: "98" },
+                  ].map((field) => (
+                    <div key={field.name} className="flex flex-col gap-1">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-0.5">{field.label}</label>
+                      <input
+                        type="number"
+                        name={field.name}
+                        value={vitals[field.name]}
+                        onChange={handleVitalsChange}
+                        placeholder={field.placeholder}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 font-bold focus:border-emerald-500 outline-none transition-all"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSaveVitals}
+                  disabled={savingVitals}
+                  className="w-full py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xs rounded-xl shadow-sm transition-all active:scale-98 flex items-center justify-center gap-1.5 disabled:opacity-75"
+                >
+                  <Save size={12} />
+                  {savingVitals ? "Đang lưu..." : "Lưu chỉ số sinh tồn"}
+                </button>
+              </div>
+            )}
+
+            {/* Latest Vitals Table */}
+            {savedVitals.length > 0 ? (
+              <div className="mt-4">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                        <th className="py-2 pr-2">Thời gian</th>
+                        <th className="py-2 px-2">H.áp</th>
+                        <th className="py-2 px-2">Mạch</th>
+                        <th className="py-2 px-2">Nhiệt độ</th>
+                        <th className="py-2 pl-2">SpO2</th>
+                      </tr>
+                    </thead>
+                    <tbody className="font-semibold text-slate-700">
+                      {savedVitals.slice(0, 3).map((v, idx) => (
+                        <tr key={v.vitalSignId} className={`hover:bg-slate-50/50 ${idx === 0 ? 'text-slate-900 font-extrabold' : 'text-slate-500'}`}>
+                          <td className="py-2 pr-2">
+                            {new Date(v.measuredAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+                          </td>
+                          <td className="py-2 px-2">
+                            {v.bloodPressureSystolic && v.bloodPressureDiastolic
+                              ? `${v.bloodPressureSystolic}/${v.bloodPressureDiastolic}`
+                              : "—"}
+                          </td>
+                          <td className="py-2 px-2">{v.heartRate ? `${v.heartRate} l/p` : "—"}</td>
+                          <td className="py-2 px-2">{v.temperatureC ? `${v.temperatureC}°C` : "—"}</td>
+                          <td className="py-2 pl-2">{v.spo2 != null ? `${v.spo2}%` : "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {savedVitals.length > 3 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowHistoryModal(true)}
+                    className="w-full mt-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-500 font-bold text-[10px] rounded-xl text-center transition-all border border-slate-100"
+                  >
+                    Xem lịch sử đo đầy đủ ({savedVitals.length} lần)
+                  </button>
+                )}
+              </div>
+            ) : (
+              <p className="text-slate-400 font-medium italic text-xs mt-4">Chưa có chỉ số sinh tồn đo hôm nay.</p>
+            )}
+          </div>
+
+          {/* CARD 4: Previous Examinations Timeline */}
+          <div className="bg-white border border-slate-100 rounded-[1.5rem] p-6 shadow-[0_4px_25px_rgba(0,0,0,0.015)] transition-all">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-50">
+              <div className="flex items-center gap-2">
+                <span className="w-7 h-7 rounded-lg bg-slate-50 text-slate-655 flex items-center justify-center shrink-0">
+                  <Clock size={14} className="stroke-[2.5]" />
+                </span>
+                <h4 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">CÁC LẦN KHÁM TRƯỚC</h4>
+              </div>
+              <button
+                onClick={() => setShowHistoryModal(true)}
+                className="text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                Xem tất cả
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-4 mt-6">
+              {historyRecords.length === 0 ? (
+                <p className="text-slate-400 font-medium italic text-xs">Chưa ghi nhận lịch sử khám bệnh án trước đây.</p>
+              ) : (
+                historyRecords.slice(0, 3).map((rec, i) => {
+                  const dateStr = rec.createdAt ? new Date(rec.createdAt).toLocaleDateString("vi-VN") : "—";
+                  return (
+                    <div key={rec.medicalRecordId} className="flex gap-4 relative">
+                      {i < Math.min(historyRecords.length, 3) - 1 && (
+                        <div className="absolute left-2.5 top-6 bottom-0 w-[2px] bg-slate-100"></div>
+                      )}
+                      <div className={`w-5 h-5 rounded-full border-4 border-white shadow-sm shrink-0 mt-1 z-10 ${i === 0 ? 'bg-emerald-500 ring-2 ring-emerald-500/20' : 'bg-slate-300'}`}></div>
+                      <div className="flex flex-col gap-0.5 pb-4 flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{dateStr}</span>
+                          <span className="text-[9px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">{rec.departmentName || "Khám bệnh"}</span>
+                        </div>
+                        <strong className="text-xs font-extrabold text-slate-800 leading-tight mt-1">{rec.diagnosis}</strong>
+                        {rec.doctorName && (
+                          <span className="text-[10px] font-bold text-slate-400 italic">Bác sĩ: {rec.doctorName}</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+        </div>
+
+        {/* RIGHT COLUMN: AI helper, Symptoms/Diagnosis, Prescriptions, Lab requests */}
+        <div className="lg:col-span-7 flex flex-col gap-6 w-full">
+
+          {/* CARD 0: AI Smart Notes Helper */}
+          <div className="bg-gradient-to-br from-fuchsia-50/50 via-purple-50/30 to-white border border-purple-100 rounded-[1.5rem] p-6 shadow-[0_4px_25px_rgba(232,121,249,0.02)] transition-all">
+            <div className="flex items-center justify-between pb-3 border-b border-purple-100/50">
+              <div className="flex items-center gap-2">
+                <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-fuchsia-400 to-purple-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+                  <Bot size={16} />
+                </span>
+                <div>
+                  <h4 className="text-sm font-extrabold text-purple-950">Trợ lý chuẩn hóa bệnh án AI</h4>
+                  <p className="text-[10px] text-purple-600 font-bold">Ghi nhận thông tin lâm sàng nhanh bằng trí tuệ nhân tạo</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 mt-4">
+              <textarea
+                rows={3}
+                placeholder="Ví dụ: bn nam 65t ho, sốt 39 độ, đau ngực trái kéo dài, tiền sử đái tháo đường. Chẩn đoán viêm phổi cấp."
+                value={rawNote}
+                onChange={(e) => setRawNote(e.target.value)}
+                disabled={aiProcessing}
+                className="w-full bg-white border border-purple-100 rounded-2xl px-4 py-3 text-sm text-slate-700 font-medium focus:border-purple-400 outline-none transition-all placeholder-purple-300"
+              />
+              <button
+                type="button"
+                onClick={handleStandardizeNote}
+                disabled={aiProcessing || !rawNote.trim()}
+                className="self-start flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl font-extrabold text-xs shadow-md shadow-purple-200 transition-all active:scale-95 disabled:opacity-50"
+              >
+                {aiProcessing ? (
+                  <>
+                    <RefreshCw className="animate-spin" size={14} />
+                    Đang xử lý chuẩn hóa...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={14} />
+                    AI Chuẩn hóa & Điền tự động
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* CARD 1: Symptoms & Diagnosis Form */}
+          <div className="bg-white border border-slate-100 rounded-[1.5rem] p-6 shadow-[0_4px_25px_rgba(0,0,0,0.015)] transition-all">
+            <div className="flex items-center gap-2 pb-3 border-b border-slate-50 mb-5">
+              <span className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                <FileText size={14} className="stroke-[2.5]" />
+              </span>
+              <h4 className="text-sm font-extrabold text-slate-800">Triệu chứng & Chẩn đoán</h4>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+
+              {/* Symptoms */}
+              <div className="sm:col-span-12 flex flex-col gap-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-0.5">Triệu chứng lâm sàng <span className="text-rose-500">*</span></label>
+                <textarea
+                  name="symptoms"
+                  value={form.symptoms}
+                  onChange={handleChange}
+                  rows={2}
+                  placeholder="Mô tả các triệu chứng lâm sàng ghi nhận từ bệnh nhân..."
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 font-medium focus:border-emerald-500 outline-none transition-all"
+                />
+              </div>
+
+              {/* Diagnosis Confirmation Box */}
+              <div className="sm:col-span-3 flex flex-col gap-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-0.5">Mã ICD-10</label>
+                <input
+                  type="text"
+                  value={icd10}
+                  onChange={(e) => setIcd10(e.target.value)}
+                  placeholder="VD: I10.x"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 font-bold focus:border-emerald-500 outline-none transition-all uppercase"
+                />
+              </div>
+
+              <div className="sm:col-span-9 flex flex-col gap-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-0.5">Chẩn đoán xác định <span className="text-rose-500">*</span></label>
+                <input
+                  type="text"
+                  name="diagnosis"
+                  value={form.diagnosis}
+                  onChange={handleChange}
+                  placeholder="Chẩn đoán bệnh lý cụ thể..."
+                  className={`w-full bg-white border ${!form.diagnosis.trim() ? 'border-rose-200 focus:border-rose-400' : 'border-slate-200 focus:border-emerald-500'} rounded-xl px-4 py-2.5 text-sm text-slate-700 font-bold outline-none transition-all`}
+                />
+              </div>
+
+              {/* Collapsible Action for Clinical Findings and Treatments */}
+              <div className="sm:col-span-12 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAdvancedDiagnosis(!showAdvancedDiagnosis)}
+                  className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors focus:outline-none"
+                >
+                  <span>Thông tin mở rộng (Khám thực thể, phác đồ, tái khám)</span>
+                  {showAdvancedDiagnosis ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                </button>
+              </div>
+
+              {showAdvancedDiagnosis && (
+                <div className="sm:col-span-12 grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2 animate-fadeIn">
+
+                  {/* Clinical Findings */}
+                  <div className="sm:col-span-2 flex flex-col gap-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-0.5">Khám lâm sàng / Thực thể</label>
+                    <textarea
+                      name="clinicalFindings"
+                      value={form.clinicalFindings}
+                      onChange={handleChange}
+                      rows={2}
+                      placeholder="Kết quả thăm khám thực thể..."
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 font-medium focus:border-emerald-500 outline-none transition-all"
+                    />
+                  </div>
+
+                  {/* Treatment Plan */}
+                  <div className="sm:col-span-2 flex flex-col gap-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-0.5">Kế hoạch & Phác đồ điều trị</label>
+                    <textarea
+                      name="treatmentPlan"
+                      value={form.treatmentPlan}
+                      onChange={handleChange}
+                      rows={2}
+                      placeholder="Chi tiết phác đồ điều trị..."
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 font-medium focus:border-emerald-500 outline-none transition-all"
+                    />
+                  </div>
+
+                  {/* Doctor note instructions */}
+                  <div className="sm:col-span-2 flex flex-col gap-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-0.5">Lời dặn của bác sĩ</label>
+                    <textarea
+                      name="doctorNote"
+                      value={form.doctorNote}
+                      onChange={handleChange}
+                      rows={2}
+                      placeholder="Hướng dẫn chăm sóc đặc biệt..."
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 font-medium focus:border-emerald-500 outline-none transition-all"
+                    />
+                  </div>
+
+                  {/* Follow-up date & note */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-0.5">Ngày tái khám</label>
+                    <input
+                      type="date"
+                      name="followUpDate"
+                      value={form.followUpDate}
+                      onChange={handleChange}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs text-slate-700 font-bold focus:border-emerald-500 outline-none transition-all"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-0.5">Ghi chú tái khám</label>
+                    <input
+                      type="text"
+                      name="followUpNote"
+                      value={form.followUpNote}
+                      onChange={handleChange}
+                      placeholder="VD: Mang theo kết quả máu cũ..."
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-700 font-medium focus:border-emerald-500 outline-none transition-all"
+                    />
+                  </div>
+
+                </div>
+              )}
+
+            </div>
+          </div>
+
+          {/* CARD 2: Prescription Table (Kê đơn thuốc) */}
+          <div className="bg-white border border-slate-100 rounded-[1.5rem] p-6 shadow-[0_4px_25px_rgba(0,0,0,0.015)] transition-all">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-50 mb-5">
+              <div className="flex items-center gap-2">
+                <span className="w-7 h-7 rounded-lg bg-pink-50 text-pink-650 flex items-center justify-center shrink-0">
+                  <Pill size={14} className="stroke-[2.5]" />
+                </span>
+                <h4 className="text-sm font-extrabold text-slate-800">Đơn thuốc</h4>
+              </div>
+
+              {!savedPrescription && (
+                <button
+                  type="button"
+                  onClick={addRxItem}
+                  className="flex items-center gap-1 text-xs font-bold text-pink-600 hover:text-pink-700 transition-colors uppercase tracking-wider"
+                >
+                  <Plus size={14} /> Thêm thuốc
+                </button>
+              )}
+
+              {savedPrescription && (
+                <button
+                  onClick={() => navigate(`/dashboard/prescriptions/${savedPrescription.prescriptionId}`)}
+                  className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-[#0A604E] transition-colors"
+                >
+                  <ExternalLink size={14} /> Xem chi tiết đơn
+                </button>
               )}
             </div>
 
-            {!savedPrescription.drugInteractionChecked && (
-              <div className="flex gap-2 mt-2">
+            {savedPrescription ? (
+              <div className="flex flex-col gap-4">
+                <div className="bg-slate-50 border border-slate-200/50 rounded-2xl p-5 shadow-sm">
+                  <div className="flex justify-between items-center mb-3">
+                    <strong className="text-sm font-extrabold text-[#0A604E]">{savedPrescription.prescriptionCode}</strong>
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black tracking-wider uppercase bg-emerald-50 text-[#0A604E] border border-emerald-200">
+                      {savedPrescription.status === "CREATED" ? "MỚI TẠO"
+                        : savedPrescription.status === "CHECKED" ? "ĐÃ KIỂM TRA"
+                          : savedPrescription.status === "DISPENSED" ? "ĐÃ CẤP PHÁT"
+                            : savedPrescription.status}
+                    </span>
+                  </div>
+
+                  <div className="overflow-x-auto mt-4">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                          <th className="py-2.5 pr-2">Tên thuốc</th>
+                          <th className="py-2.5 px-2">Liều dùng</th>
+                          <th className="py-2.5 px-2 w-16">S.Lượng</th>
+                          <th className="py-2.5 pl-2">Cách dùng</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
+                        {savedPrescription.items?.map((it, idx) => (
+                          <tr key={idx} className="hover:bg-slate-50/30">
+                            <td className="py-2.5 pr-2 font-extrabold text-slate-800">{it.medicineName} {it.strength ? `(${it.strength})` : ""}</td>
+                            <td className="py-2.5 px-2">{it.dosage || "—"}</td>
+                            <td className="py-2.5 px-2">{it.quantity}</td>
+                            <td className="py-2.5 pl-2 text-slate-500 font-medium">{it.instructions || "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {savedPrescription.interactionWarning && (
+                    <div className={`mt-4 p-3 rounded-xl text-xs font-semibold border flex items-start gap-2 ${savedPrescription.interactionWarning.includes("No dangerous") ? "bg-emerald-50 border-emerald-200 text-[#0A604E]" : "bg-amber-50 border-amber-200 text-amber-850"}`}>
+                      {savedPrescription.interactionWarning.includes("No dangerous")
+                        ? "✓ Không phát hiện tương tác nguy hiểm"
+                        : "⚠ " + savedPrescription.interactionWarning}
+                    </div>
+                  )}
+                </div>
+
+                {!savedPrescription.drugInteractionChecked && (
+                  <button
+                    type="button"
+                    className="self-start flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-[#0A604E] border border-emerald-200 px-4 py-2 rounded-xl font-bold text-xs shadow-sm transition-all active:scale-95 disabled:opacity-70"
+                    onClick={handleCheckInteractions}
+                    disabled={checkingInteractions}
+                  >
+                    <Pill size={14} />
+                    {checkingInteractions ? "Đang kiểm tra..." : "Kiểm tra tương tác thuốc"}
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {/* Search Bar */}
+                <div className="relative">
+                  <div className="flex items-center bg-white border border-slate-200 hover:border-emerald-400 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10 rounded-2xl px-4 py-2.5 transition-all shadow-sm">
+                    <Search size={18} className="text-slate-400 mr-2 shrink-0" />
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm & thêm thuốc (VD: Paracetamol, Augmentin...)"
+                      value={medSearchTerm}
+                      onChange={(e) => {
+                        setMedSearchTerm(e.target.value);
+                        setShowMedDropdown(true);
+                      }}
+                      onFocus={() => setShowMedDropdown(true)}
+                      className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-slate-700 placeholder:font-medium placeholder:text-slate-400"
+                    />
+                    {medSearchTerm && (
+                      <button onClick={() => setMedSearchTerm("")} className="text-slate-400 hover:text-slate-600 p-1">
+                        <X size={16} />
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Dropdown Results */}
+                  {showMedDropdown && (medSearchTerm || medicines.length > 0) && (
+                    <div className="absolute z-10 top-[calc(100%+8px)] left-0 right-0 bg-white rounded-2xl shadow-xl border border-slate-100 max-h-64 overflow-y-auto overflow-x-hidden animate-fadeIn">
+                      {medicines
+                        .filter(m => m.medicineName.toLowerCase().includes(medSearchTerm.toLowerCase()) || (m.activeIngredient && m.activeIngredient.toLowerCase().includes(medSearchTerm.toLowerCase())))
+                        .map(med => (
+                          <div 
+                            key={med.medicineId} 
+                            onClick={() => handleAddMedication(med)}
+                            className="px-4 py-3 hover:bg-emerald-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors flex justify-between items-center group"
+                          >
+                            <div>
+                              <div className="font-extrabold text-sm text-slate-800 group-hover:text-emerald-800 transition-colors">{med.medicineName} {med.strength && <span className="text-emerald-600 font-bold ml-1">({med.strength})</span>}</div>
+                              <div className="text-[11px] text-slate-500 font-medium mt-0.5">{med.activeIngredient || "Không rõ hoạt chất"} - Đ.Vị: {med.unit}</div>
+                            </div>
+                            <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Plus size={14} />
+                            </div>
+                          </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Selected Medicines List */}
+                {rxItems.filter(item => item.medicineId).length > 0 ? (
+                  <div className="flex flex-col gap-3 mt-1">
+                    {rxItems.map((item, index) => {
+                      if (!item.medicineId) return null;
+                      const med = medicines.find(m => m.medicineId.toString() === item.medicineId.toString());
+                      if (!med) return null;
+
+                      return (
+                        <div key={index} className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-[0_2px_8px_rgba(0,0,0,0.01)] flex flex-col gap-3 hover:border-slate-300 transition-colors">
+                          {/* Top Row: Name, Unit, Quantity */}
+                          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 shadow-inner">
+                                <Pill size={20} />
+                              </div>
+                              <div>
+                                <h4 className="font-black text-slate-800 text-sm">{med.medicineName} {med.strength && <span className="text-slate-500 font-bold ml-1">({med.strength})</span>}</h4>
+                                <div className="flex items-center gap-3 mt-0.5">
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Đơn vị xuất: <span className="text-emerald-600">{med.unit}</span></span>
+                                  {med.usageInstructions && (
+                                    <>
+                                      <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                                      <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Cách dùng: {med.usageInstructions}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-4">
+                              <div className="flex flex-col items-end">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Số lượng ({med.unit})</span>
+                                <div className="flex items-center bg-slate-50 rounded-lg border border-slate-200/80 h-9 overflow-hidden">
+                                  <button type="button" onClick={() => handleMedQuantityChange(index, -1)} className="w-8 h-full flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-slate-100 transition-colors"><ChevronDown size={14} /></button>
+                                  <input 
+                                    type="number" 
+                                    min="1" 
+                                    value={item.quantity} 
+                                    onChange={(e) => handleRxItemChange(index, "quantity", e.target.value)}
+                                    className="w-10 bg-transparent border-none text-center text-xs font-black text-slate-700 p-0 outline-none"
+                                  />
+                                  <button type="button" onClick={() => handleMedQuantityChange(index, 1)} className="w-8 h-full flex items-center justify-center text-slate-400 hover:text-emerald-500 hover:bg-slate-100 transition-colors"><ChevronUp size={14} /></button>
+                                </div>
+                              </div>
+                              <button type="button" onClick={() => removeRxItem(index)} className="w-9 h-9 rounded-xl bg-rose-50 border border-rose-100 text-rose-500 hover:bg-rose-100 flex items-center justify-center transition-colors shrink-0 mt-3.5 shadow-sm">
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Middle Row: Dosage and Frequency inputs with quick tags */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                            {/* Liều dùng (Dosage) */}
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Liều dùng (1 lần)</label>
+                              <div className="flex flex-wrap gap-1.5 mb-1.5">
+                                {Array.from(new Set([
+                                  `1 ${med.unit?.toLowerCase() || 'viên'}`, 
+                                  `2 ${med.unit?.toLowerCase() || 'viên'}`, 
+                                  `1/2 ${med.unit?.toLowerCase() || 'viên'}`, 
+                                  "5ml", "10ml", "1 giọt"
+                                ])).map(tag => (
+                                  <button type="button" key={tag} onClick={() => handleAppendDosage(index, tag)} className="px-2 py-1 bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 text-[10px] font-bold rounded-md transition-colors border border-transparent hover:border-emerald-200">
+                                    {tag}
+                                  </button>
+                                ))}
+                              </div>
+                              <input
+                                type="text"
+                                value={item.dosage || ""}
+                                onChange={(e) => handleRxItemChange(index, "dosage", e.target.value)}
+                                placeholder="VD: 1 viên, 5ml..."
+                                className="w-full bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-2 text-xs text-slate-700 font-bold focus:border-emerald-500 focus:bg-white outline-none transition-colors"
+                              />
+                            </div>
+
+                            {/* Tần suất (Frequency) */}
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Tần suất</label>
+                              <div className="flex flex-wrap gap-1.5 mb-1.5">
+                                {["Sáng", "Trưa", "Chiều", "Tối", "Sau ăn", "Trước ăn"].map(tag => (
+                                  <button type="button" key={tag} onClick={() => handleAppendFrequency(index, tag)} className="px-2 py-1 bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 text-[10px] font-bold rounded-md transition-colors border border-transparent hover:border-emerald-200">
+                                    {tag}
+                                  </button>
+                                ))}
+                              </div>
+                              <input
+                                type="text"
+                                value={item.frequency || ""}
+                                onChange={(e) => handleRxItemChange(index, "frequency", e.target.value)}
+                                placeholder="VD: Sáng 1, Tối 1..."
+                                className="w-full bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-2 text-xs text-slate-700 font-bold focus:border-emerald-500 focus:bg-white outline-none transition-colors"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Thành phần hoạt chất (luôn hiện nếu có) */}
+                          {(med.activeIngredient || med.description) && (
+                            <div className="mt-1 text-[10px] text-emerald-750 bg-emerald-50/50 border border-emerald-100/50 p-2.5 rounded-xl">
+                              <strong>Thành phần hoạt chất:</strong> {med.activeIngredient || "N/A"} — <strong>Tác dụng phụ/Lưu ý:</strong> {med.description || "N/A"}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-10 bg-slate-50 border border-dashed border-slate-200 rounded-2xl flex flex-col items-center">
+                    <Pill size={32} className="text-slate-300 mb-2" />
+                    <span className="text-sm font-bold text-slate-400">Chưa có thuốc nào trong đơn</span>
+                    <span className="text-[11px] font-medium text-slate-400 mt-1">Sử dụng thanh tìm kiếm bên trên để thêm thuốc vào đơn</span>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-1 mt-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-0.5">Lời dặn bổ sung đơn thuốc</label>
+                  <input
+                    type="text"
+                    value={rxNote}
+                    onChange={(e) => setRxNote(e.target.value)}
+                    placeholder="VD: Tránh uống chung với sữa, nước bưởi chùm..."
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 font-medium focus:border-emerald-500 outline-none transition-all"
+                  />
+                </div>
+
                 <button
                   type="button"
-                  className="flex items-center gap-2 bg-pink-100 hover:bg-pink-200 text-pink-800 px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm border border-pink-200 transition-all active:scale-95 disabled:opacity-70"
-                  onClick={handleCheckInteractions}
-                  disabled={checkingInteractions}
+                  onClick={handleCreatePrescription}
+                  disabled={savingRx}
+                  className="self-end py-2.5 px-6 bg-pink-500 hover:bg-pink-600 text-white font-extrabold text-xs rounded-xl shadow-sm transition-all active:scale-98 flex items-center gap-1.5 disabled:opacity-70"
                 >
-                  <Pill size={16} />
-                  {checkingInteractions ? "Đang kiểm tra..." : "Kiểm tra tương tác thuốc"}
+                  <Pill size={14} />
+                  {savingRx ? "Đang tạo..." : "Tạo đơn thuốc"}
                 </button>
               </div>
             )}
           </div>
-        ) : (
-          /* Form kê đơn mới */
-          <div className="flex flex-col gap-4">
-            {rxItems.map((item, index) => (
-              <div key={index} className="bg-white/60 border border-pink-200/60 rounded-2xl p-5 shadow-sm relative group">
-                <div className="grid grid-cols-12 gap-4 mb-4">
-                  <div className="col-span-12 md:col-span-4 flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-pink-800 ml-1">Thuốc <span className="text-rose-500">*</span></label>
-                    <select
-                      value={item.medicineId}
-                      onChange={(e) => handleRxItemChange(index, "medicineId", e.target.value)}
-                      className="w-full bg-white border border-pink-200/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 font-medium focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20 transition-all outline-none"
-                    >
-                      <option value="">-- Chọn thuốc --</option>
-                      {medicines.map((m) => (
-                        <option key={m.medicineId} value={m.medicineId}>
-                          {m.medicineName} {m.strength ? `(${m.strength})` : ""}
-                        </option>
-                      ))}
-                    </select>
-                    {item.medicineId && (() => {
-                      const selectedMed = medicines.find(m => m.medicineId.toString() === item.medicineId.toString());
-                      if (selectedMed && (selectedMed.activeIngredient || selectedMed.description)) {
-                        return (
-                          <div className="text-[11px] text-pink-600 bg-pink-50 p-2 rounded-lg mt-1 border border-pink-100">
-                            <strong>Thành phần/Chức năng:</strong> {selectedMed.activeIngredient ? selectedMed.activeIngredient + " - " : ""}{selectedMed.description || ""}
+
+          {/* CARD 3: Subclinical Tests Request (Yêu cầu cận lâm sàng) */}
+          <div className="bg-white border border-slate-100 rounded-[1.5rem] p-6 shadow-[0_4px_25px_rgba(0,0,0,0.015)] transition-all">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-50 mb-5">
+              <div className="flex items-center gap-2">
+                <span className="w-7 h-7 rounded-lg bg-cyan-50 text-cyan-650 flex items-center justify-center shrink-0">
+                  <FlaskConical size={14} className="stroke-[2.5]" />
+                </span>
+                <h4 className="text-sm font-extrabold text-slate-800">Cận lâm sàng</h4>
+              </div>
+
+              {savedLabRequests.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleRefreshLabRequests}
+                  className="flex items-center gap-1 text-xs font-bold text-cyan-600 hover:text-cyan-700 transition-colors uppercase tracking-wider"
+                >
+                  <RefreshCw size={12} /> Cập nhật kết quả
+                </button>
+              )}
+            </div>
+
+            {labTests.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-5">
+                {/* Cột trái: Tìm kiếm & Chọn */}
+                <div className="flex flex-col gap-3 relative">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-0.5">Tìm kiếm & Thêm xét nghiệm</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Search size={16} className="text-slate-400" />
+                    </div>
+                    <input
+                      type="text"
+                      value={labSearchTerm}
+                      onChange={(e) => setLabSearchTerm(e.target.value)}
+                      onFocus={() => setShowLabDropdown(true)}
+                      onBlur={() => setTimeout(() => setShowLabDropdown(false), 200)}
+                      placeholder="Gõ tên hoặc mã (VD: Máu...)"
+                      className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-700 font-medium focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition-all"
+                    />
+                  </div>
+
+                  {/* Dropdown List */}
+                  {showLabDropdown && filteredLabTests.length > 0 && (
+                    <div className="absolute top-[calc(100%+0.5rem)] left-0 right-0 max-h-[250px] overflow-y-auto custom-scrollbar border border-slate-100 rounded-xl bg-white shadow-xl z-20 flex flex-col divide-y divide-slate-50">
+                      {filteredLabTests.map(t => (
+                        <button
+                          key={t.labTestId}
+                          type="button"
+                          onClick={() => {
+                            toggleLabTest(t.labTestId);
+                            setLabSearchTerm("");
+                          }}
+                          className="flex items-center justify-between p-3 hover:bg-cyan-50/60 transition-colors text-left"
+                        >
+                          <div className="flex flex-col">
+                            <span className="text-xs font-extrabold text-slate-700">{t.testName}</span>
+                            <span className="text-[10px] text-slate-400 font-bold uppercase">{t.testCode}</span>
                           </div>
-                        );
-                      }
-                      return null;
-                    })()}
-                  </div>
-                  <div className="col-span-4 md:col-span-2 flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-pink-800 ml-1">Số lượng <span className="text-rose-500">*</span></label>
-                    <input type="number" min="1" value={item.quantity} onChange={(e) => handleRxItemChange(index, "quantity", e.target.value)}
-                      placeholder="10" className="w-full bg-white border border-pink-200/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 font-medium focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20 transition-all outline-none" />
-                  </div>
-                  <div className="col-span-4 md:col-span-3 flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-pink-800 ml-1">Liều dùng</label>
-                    <input type="text" value={item.dosage} onChange={(e) => handleRxItemChange(index, "dosage", e.target.value)}
-                      placeholder="1 viên/lần" className="w-full bg-white border border-pink-200/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 font-medium focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20 transition-all outline-none" />
-                  </div>
-                  <div className="col-span-4 md:col-span-3 flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-pink-800 ml-1">Tần suất</label>
-                    <input type="text" value={item.frequency} onChange={(e) => handleRxItemChange(index, "frequency", e.target.value)}
-                      placeholder="2 lần/ngày" className="w-full bg-white border border-pink-200/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 font-medium focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20 transition-all outline-none" />
+                          <Plus size={16} className="text-cyan-500" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {showLabDropdown && filteredLabTests.length === 0 && (
+                    <div className="absolute top-[calc(100%+0.5rem)] left-0 right-0 text-center p-4 text-slate-500 text-xs font-medium border border-slate-100 rounded-xl bg-white shadow-xl z-20">
+                      Không tìm thấy xét nghiệm phù hợp.
+                    </div>
+                  )}
+                </div>
+
+                {/* Cột phải: Danh sách đã chọn & Ghi chú */}
+                <div className="flex flex-col gap-3">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-0.5">
+                    Đã chọn ({selectedTestsData.length})
+                  </label>
+                  <div className="flex flex-col gap-2 min-h-[120px] max-h-[400px] overflow-y-auto custom-scrollbar pr-1">
+                    {selectedTestsData.length === 0 ? (
+                      <div className="h-full min-h-[120px] flex items-center justify-center border-2 border-dashed border-slate-100 rounded-xl text-slate-400 text-xs font-medium italic">
+                        Chưa chọn xét nghiệm nào
+                      </div>
+                    ) : (
+                      selectedTestsData.map(t => (
+                        <div key={t.labTestId} className="flex flex-col gap-2 p-3 bg-cyan-50/30 border border-cyan-100/50 rounded-xl transition-all hover:border-cyan-300 shadow-sm">
+                          <div className="flex justify-between items-start gap-2">
+                            <span className="text-xs font-extrabold text-cyan-900 leading-tight flex-1">{t.testName}</span>
+                            <button
+                              type="button"
+                              onClick={() => toggleLabTest(t.labTestId)}
+                              className="text-slate-400 hover:text-rose-500 transition-colors p-0.5 bg-white rounded-md border border-slate-100"
+                            >
+                              <X size={14} strokeWidth={3} />
+                            </button>
+                          </div>
+                          <input
+                            type="text"
+                            value={t.note || ""}
+                            onChange={(e) => handleLabTestNoteChange(t.labTestId, e.target.value)}
+                            placeholder="Ghi chú cho xét nghiệm này..."
+                            className="w-full bg-white border border-cyan-100 rounded-lg px-3 py-1.5 text-xs text-slate-700 focus:border-cyan-400 outline-none transition-all placeholder:text-slate-300"
+                          />
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
-                <div className="grid grid-cols-10 gap-3">
-                  <div className="col-span-5 md:col-span-2 flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-pink-800 ml-1">Thời gian dùng</label>
-                    <input type="text" value={item.duration} onChange={(e) => handleRxItemChange(index, "duration", e.target.value)}
-                      placeholder="7 ngày" className="w-full bg-white border border-pink-200/50 rounded-xl px-3 py-2 text-xs text-slate-700 font-medium focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20 transition-all outline-none" />
-                  </div>
-                  <div className="col-span-5 md:col-span-2 flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-pink-800 ml-1">Sáng</label>
-                    <input type="text" value={item.morningDose} onChange={(e) => handleRxItemChange(index, "morningDose", e.target.value)}
-                      placeholder="1" className="w-full bg-white border border-pink-200/50 rounded-xl px-3 py-2 text-xs text-slate-700 font-medium focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20 transition-all outline-none" />
-                  </div>
-                  <div className="col-span-5 md:col-span-2 flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-pink-800 ml-1">Trưa</label>
-                    <input type="text" value={item.noonDose} onChange={(e) => handleRxItemChange(index, "noonDose", e.target.value)}
-                      placeholder="0" className="w-full bg-white border border-pink-200/50 rounded-xl px-3 py-2 text-xs text-slate-700 font-medium focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20 transition-all outline-none" />
-                  </div>
-                  <div className="col-span-5 md:col-span-2 flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-pink-800 ml-1">Chiều</label>
-                    <input type="text" value={item.eveningDose} onChange={(e) => handleRxItemChange(index, "eveningDose", e.target.value)}
-                      placeholder="0" className="w-full bg-white border border-pink-200/50 rounded-xl px-3 py-2 text-xs text-slate-700 font-medium focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20 transition-all outline-none" />
-                  </div>
-                  <div className="col-span-5 md:col-span-2 flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-pink-800 ml-1">Tối</label>
-                    <input type="text" value={item.nightDose} onChange={(e) => handleRxItemChange(index, "nightDose", e.target.value)}
-                      placeholder="1" className="w-full bg-white border border-pink-200/50 rounded-xl px-3 py-2 text-xs text-slate-700 font-medium focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20 transition-all outline-none" />
-                  </div>
-                  <div className="col-span-10 flex flex-col gap-1.5 mt-2">
-                    <label className="text-xs font-bold text-pink-800 ml-1">Ghi chú riêng / Cách dùng</label>
-                    <input type="text" value={item.instructions} onChange={(e) => handleRxItemChange(index, "instructions", e.target.value)}
-                      placeholder="Uống sau ăn 30 phút..." className="w-full bg-white border border-pink-200/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 font-medium focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20 transition-all outline-none" />
-                  </div>
+              </div>
+            ) : (
+              <p className="text-slate-400 font-medium italic text-xs mb-4">Không có xét nghiệm khả dụng.</p>
+            )}
+
+            {!savingLab && (
+              <div className="flex flex-col gap-4 mt-2">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-0.5">Ghi chú chỉ định</label>
+                  <input
+                    type="text"
+                    value={labNote}
+                    onChange={(e) => setLabNote(e.target.value)}
+                    placeholder="VD: Siêu âm lúc đói, nhịn ăn sáng..."
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs text-slate-700 font-medium focus:border-cyan-500 outline-none transition-all"
+                  />
                 </div>
-                {rxItems.length > 1 && (
+
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                    Đã chọn: {selectedLabTests.length} xét nghiệm
+                  </span>
                   <button
                     type="button"
-                    onClick={() => removeRxItem(index)}
-                    className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-rose-100 text-rose-600 hover:bg-rose-200 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-sm"
+                    onClick={handleCreateLabRequest}
+                    disabled={savingLab || selectedLabTests.length === 0}
+                    className="py-2 px-5 bg-cyan-500 hover:bg-cyan-600 text-white font-extrabold text-xs rounded-xl shadow-sm transition-all active:scale-98 flex items-center gap-1.5 disabled:opacity-50"
                   >
-                    ✕
+                    <FlaskConical size={14} />
+                    {savingLab ? "Đang tạo..." : "Tạo phiếu xét nghiệm"}
                   </button>
-                )}
+                </div>
               </div>
-            ))}
+            )}
 
-            {/* Ghi chú đơn thuốc */}
-            <div className="flex flex-col gap-1.5 mt-2">
-              <label className="text-xs font-bold text-pink-800 ml-1">Lời dặn đơn thuốc</label>
-              <input type="text" value={rxNote} onChange={(e) => setRxNote(e.target.value)}
-                placeholder="Uống sau khi ăn, không dùng với rượu..."
-                className="w-full bg-white/60 border border-pink-200/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 font-medium focus:bg-white focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20 transition-all outline-none" />
-            </div>
+            {/* Requested Subclinical Items Details & Results */}
+            {savedLabRequests.length > 0 && (
+              <div className="mt-6 pt-5 border-t border-slate-50 flex flex-col gap-3">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Lịch sử chỉ định xét nghiệm</p>
 
-            <div className="flex justify-between items-center mt-4">
-              <button
-                type="button"
-                onClick={addRxItem}
-                className="text-sm font-bold text-pink-600 hover:text-pink-800 transition-all"
-              >
-                + Thêm thuốc
-              </button>
-              <button
-                type="button"
-                className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all active:scale-95 disabled:opacity-70"
-                onClick={handleCreatePrescription}
-                disabled={savingRx}
-              >
-                <Pill size={16} />
-                {savingRx ? "Đang tạo..." : "Tạo đơn thuốc"}
-              </button>
-            </div>
+                {savedLabRequests.map((req) => (
+                  <div key={req.labRequestId} className="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex flex-col gap-3">
+                    <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                      <div className="flex items-center gap-2">
+                        <strong className="text-xs font-extrabold text-cyan-800">{req.requestCode}</strong>
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-black ${req.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-700' : req.status === 'IN_PROGRESS' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}>
+                          {req.status === 'COMPLETED' ? 'ĐÃ HOÀN THÀNH' : req.status === 'IN_PROGRESS' ? 'ĐANG XỬ LÝ' : 'CHỜ XỬ LÝ'}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-400">
+                        {new Date(req.requestedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      {req.items?.map((item) => (
+                        <div key={item.labRequestItemId} className="bg-white rounded-xl p-3 border border-slate-100">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs font-extrabold text-slate-800">• {item.testName} <span className="text-[9px] font-bold text-slate-400">({item.testCode})</span></span>
+                            {item.labResult ? (
+                              <span className="text-emerald-600 text-[9px] font-black bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md flex items-center gap-1"><CheckCircle size={10} /> Có KQ</span>
+                            ) : (
+                              <span className="text-slate-400 text-[9px] font-extrabold bg-slate-100 px-2 py-0.5 rounded-md">Chờ KQ</span>
+                            )}
+                          </div>
+                          
+                          {item.note && (
+                            <div className="mt-1.5 px-3 py-1.5 bg-slate-50 border-l-2 border-slate-300 rounded-r-lg text-[11px] text-slate-600 font-medium italic">
+                              <span className="font-bold">Ghi chú:</span> {item.note}
+                            </div>
+                          )}
+
+                          {item.labResult && (
+                            <div className="mt-2.5 pt-2.5 border-t border-slate-50 grid grid-cols-2 gap-2">
+                              <div className="flex flex-col">
+                                <span className="text-[9px] text-slate-400 font-bold uppercase">Giá trị</span>
+                                <span className="text-xs font-black text-slate-800">{item.labResult.resultValue} <span className="text-slate-500 font-medium">{item.labResult.resultUnit}</span></span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[9px] text-slate-400 font-bold uppercase">Tham chiếu</span>
+                                <span className="text-xs font-semibold text-slate-600">{item.labResult.normalRange || "—"}</span>
+                              </div>
+                              <div className="col-span-2 flex flex-col">
+                                <span className="text-[9px] text-slate-400 font-bold uppercase">Kết luận</span>
+                                <span className={`text-xs font-extrabold ${item.labResult.conclusion?.toLowerCase()?.includes('bất thường') ? 'text-rose-600' : 'text-emerald-700'}`}>{item.labResult.conclusion || "—"}</span>
+                              </div>
+                              {item.labResult.resultFileUrl && (
+                                <div className="col-span-2 mt-1">
+                                  <a
+                                    href={item.labResult.resultFileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="group block overflow-hidden rounded-xl border border-slate-200 hover:border-cyan-500 transition-all shadow-sm max-w-xs"
+                                  >
+                                    <img
+                                      src={item.labResult.resultFileUrl}
+                                      alt="Kết quả"
+                                      className="w-full h-auto max-h-32 object-cover group-hover:scale-105 transition-transform duration-350"
+                                      onError={(e) => {
+                                        e.target.style.display = 'none';
+                                        if (e.target.nextSibling) {
+                                          e.target.nextSibling.style.display = 'flex';
+                                        }
+                                      }}
+                                    />
+                                    <div className="hidden items-center justify-center gap-1.5 p-2 bg-slate-50 text-cyan-600 text-xs font-bold group-hover:bg-cyan-50 transition-colors">
+                                      <ExternalLink size={12} /> Xem file
+                                    </div>
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      {/* Form bệnh án */}
-      <div className="patient-glass-panel rounded-[2rem] p-8 shadow-xl border-0 w-full mb-6 relative overflow-hidden">
-        {/* Lớp nền gradient để nhấn mạnh phần quan trọng nhất */}
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 to-blue-50/50 pointer-events-none"></div>
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-400 to-blue-600 flex items-center justify-center text-white shadow-lg">
-              <Save size={20} />
-            </div>
-            <h3 className="text-xl font-extrabold text-indigo-900">Chi tiết Bệnh án</h3>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="flex flex-col gap-1.5 md:col-span-2">
-              <label className="text-xs font-bold text-indigo-800 ml-1">Triệu chứng <span className="text-rose-500">*</span></label>
-              <textarea name="symptoms" value={form.symptoms} onChange={handleChange} rows={2}
-                placeholder="Mô tả triệu chứng bệnh nhân..."
-                className="w-full bg-white/70 border border-indigo-200/50 rounded-xl px-4 py-3 text-sm text-slate-700 font-medium focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 transition-all outline-none" />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-indigo-800 ml-1">Khám lâm sàng</label>
-              <textarea name="clinicalFindings" value={form.clinicalFindings} onChange={handleChange} rows={2}
-                placeholder="Kết quả thăm khám thực thể..."
-                className="w-full bg-white/70 border border-indigo-200/50 rounded-xl px-4 py-3 text-sm text-slate-700 font-medium focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 transition-all outline-none" />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-indigo-800 ml-1">Chẩn đoán sơ bộ <span className="text-rose-500">*</span></label>
-              <textarea name="diagnosis" value={form.diagnosis} onChange={handleChange} rows={2}
-                placeholder="Chẩn đoán bệnh..."
-                className={`w-full bg-white/70 border ${!form.diagnosis.trim() ? 'border-rose-300' : 'border-indigo-200/50'} rounded-xl px-4 py-3 text-sm text-slate-700 font-medium focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 transition-all outline-none`} />
-            </div>
-
-            <div className="flex flex-col gap-1.5 md:col-span-2">
-              <label className="text-xs font-bold text-indigo-800 ml-1">Kế hoạch điều trị</label>
-              <textarea name="treatmentPlan" value={form.treatmentPlan} onChange={handleChange} rows={2}
-                placeholder="Phác đồ điều trị, thuốc, thủ thuật..."
-                className="w-full bg-white/70 border border-indigo-200/50 rounded-xl px-4 py-3 text-sm text-slate-700 font-medium focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 transition-all outline-none" />
-            </div>
-
-            <div className="flex flex-col gap-1.5 md:col-span-2">
-              <label className="text-xs font-bold text-indigo-800 ml-1">Lời dặn của bác sĩ</label>
-              <textarea name="doctorNote" value={form.doctorNote} onChange={handleChange} rows={2}
-                placeholder="Hướng dẫn chăm sóc, lưu ý..."
-                className="w-full bg-white/70 border border-indigo-200/50 rounded-xl px-4 py-3 text-sm text-slate-700 font-medium focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 transition-all outline-none" />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-indigo-800 ml-1">Ngày tái khám</label>
-              <input type="date" name="followUpDate" value={form.followUpDate} onChange={handleChange}
-                className="w-full bg-white/70 border border-indigo-200/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 font-medium focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 transition-all outline-none" />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-indigo-800 ml-1">Ghi chú tái khám</label>
-              <input type="text" name="followUpNote" value={form.followUpNote} onChange={handleChange}
-                placeholder="Ghi chú về lần tái khám..."
-                className="w-full bg-white/70 border border-indigo-200/50 rounded-xl px-4 py-2.5 text-sm text-slate-700 font-medium focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 transition-all outline-none" />
-            </div>
-          </div>
         </div>
+
       </div>
 
-      {/* Footer Actions */}
-      <div className="w-full flex justify-between items-center bg-white/40 backdrop-blur-xl border border-white/40 p-5 rounded-2xl shadow-xl fixed bottom-4 max-w-[960px] mx-auto z-40">
+      {/* FOOTER ACTIONS BAR: Cancel, Save Draft, Save & Complete */}
+      <div className="w-full bg-white border border-slate-100 p-5 rounded-[1.5rem] shadow-[0_4px_25px_rgba(0,0,0,0.015)] mt-4 flex items-center justify-between">
+
         <button
           type="button"
-          onClick={() => navigate("/dashboard/consultation")}
-          className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-2.5 rounded-xl font-bold text-sm shadow-sm transition-all"
+          onClick={() => navigate("/dashboard/examination")}
+          className="flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-655 font-bold text-xs tracking-wider transition-all active:scale-95 shadow-sm"
         >
-          Trở về hàng đợi
+          Hủy bỏ
         </button>
+
         <div className="flex gap-3">
           <button
             type="button"
-            className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all active:scale-95 disabled:opacity-70"
             onClick={handleSave}
             disabled={saving || completing || consultation?.status === "COMPLETED"}
+            className="flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs tracking-wider transition-all active:scale-95 shadow-sm disabled:opacity-60"
           >
-            <Save size={18} />
-            {saving ? "Đang lưu..." : existingRecordId ? "Cập nhật bệnh án" : "Lưu Bệnh Án"}
+            <Save size={14} className="text-slate-500" />
+            {saving ? "Đang lưu..." : "Lưu nháp"}
           </button>
-          
+
           {consultation?.status === "COMPLETED" ? (
-            <div className="flex items-center gap-2 bg-emerald-100 text-emerald-800 px-8 py-2.5 rounded-xl font-black text-sm shadow-sm border border-emerald-200">
-              <CheckCircle size={18} /> PHIÊN KHÁM ĐÃ HOÀN THÀNH
+            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 border border-emerald-100 px-6 py-3 rounded-xl font-extrabold text-xs uppercase tracking-wider shadow-sm">
+              <CheckCircle size={14} /> Phiên khám hoàn thành
             </div>
           ) : (
             <button
               type="button"
-              className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-8 py-2.5 rounded-xl font-black text-sm shadow-lg transition-all active:scale-95 disabled:opacity-70 border border-emerald-400"
               onClick={handleComplete}
               disabled={completing || saving || !form.diagnosis.trim()}
+              className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xs tracking-wider px-6 py-3 rounded-xl shadow-md shadow-emerald-100 hover:shadow-emerald-200 transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
             >
-              <CheckCircle size={18} />
-              {completing ? "Đang hoàn tất..." : "HOÀN TẤT CA KHÁM"}
+              <CheckCircle size={14} />
+              {completing ? "Đang lưu..." : "Lưu & Hoàn thành ca khám"}
             </button>
           )}
         </div>
+
       </div>
-      </div>
+      {renderQueueModal()}
     </div>
   );
 }
 
-const labelStyle = {
-  display: "block", fontSize: 13, fontWeight: 600,
-  color: "#374151", marginBottom: 6,
-};
-
-const textareaStyle = {
-  width: "100%", padding: "8px 10px", borderRadius: 6,
-  border: "1px solid #d1d5db", fontSize: 14, resize: "vertical",
-  fontFamily: "inherit", boxSizing: "border-box",
-};
-
-const inputStyle = {
-  width: "100%", padding: "8px 10px", borderRadius: 6,
-  border: "1px solid #d1d5db", fontSize: 14,
-  fontFamily: "inherit", boxSizing: "border-box",
-};
+function PatientCard({ patient, onClick }) {
+  return (
+    <div
+      onClick={onClick}
+      className="flex items-center gap-4 bg-white border border-slate-100 hover:border-emerald-250 hover:bg-emerald-50/5 rounded-2xl p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 cursor-pointer transition-all duration-300 group"
+    >
+      <div className="w-12 h-12 rounded-xl bg-emerald-55 border border-emerald-100 overflow-hidden shrink-0 flex items-center justify-center text-[#0A604E] shadow-sm group-hover:scale-105 transition-transform">
+        {patient.avatarUrl ? (
+          <img src={patient.avatarUrl} alt={patient.fullName} className="w-full h-full object-cover" />
+        ) : (
+          <User size={20} className="stroke-[2]" />
+        )}
+      </div>
+      <div className="flex-1">
+        <h4 className="font-extrabold text-slate-800 text-xs tracking-tight group-hover:text-[#0A604E] transition-colors">
+          {patient.fullName}
+        </h4>
+        <p className="text-[10px] text-slate-400 font-bold mt-0.5">
+          {patient.patientCode ? `#${patient.patientCode}` : "Mã BN ẩn"}
+        </p>
+      </div>
+      <div className="w-6 h-6 rounded-lg bg-slate-50 text-slate-400 group-hover:bg-emerald-50 group-hover:text-[#0A604E] flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
+        <ChevronRight size={14} />
+      </div>
+    </div>
+  );
+}

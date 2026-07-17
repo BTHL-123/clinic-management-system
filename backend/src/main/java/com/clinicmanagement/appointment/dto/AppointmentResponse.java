@@ -30,5 +30,6 @@ public record AppointmentResponse(
         java.time.LocalDateTime checkedInAt,
         Integer queueNumber,
         String queueStatus,
-        Boolean hasReviewed
+        Boolean hasReviewed,
+        Long queueTicketId
 ) {}

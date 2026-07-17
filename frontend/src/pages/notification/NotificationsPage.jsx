@@ -7,14 +7,7 @@ import PageHeader from "../../components/PageHeader";
 
 export default function NotificationsPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const roles = user?.roles?.map((r) => r.roleName || r) || [];
-  const isDoctor = roles.includes("DOCTOR");
-  const isPharmacist = roles.includes("PHARMACIST");
-  const isLabTechnician = roles.includes("LAB_TECHNICIAN");
-  const isPatientOnly = roles.includes("PATIENT") && !isDoctor && !isPharmacist && !isLabTechnician;
-  const isAdminShell = roles.includes("ADMIN") && !isDoctor && !isPharmacist && !isPatientOnly && !isLabTechnician;
-  const usePatientVisualShell = isPatientOnly || isAdminShell || isPharmacist || isLabTechnician;
+  const usePatientVisualShell = false;
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -105,12 +98,8 @@ export default function NotificationsPage() {
       <PageHeader
         title="Thông báo của tôi"
         icon={Bell}
-        iconColor={usePatientVisualShell ? "text-teal-400" : "text-teal-300"}
-        subtitle={
-          <span className={usePatientVisualShell ? "text-white/80 font-bold" : "text-white/70 font-medium"}>
-            Nhận và xem các cập nhật về lịch khám hoặc thông báo từ hệ thống.
-          </span>
-        }
+        iconColor="text-teal-600"
+        subtitle="Nhận và xem các cập nhật về lịch khám hoặc thông báo từ hệ thống."
         onBack={() => navigate("/dashboard", { state: { activeClusterId: "settings" } })}
       />
 

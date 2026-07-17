@@ -11,11 +11,13 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class LabRequestItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "lab_request_item_id")
+    @EqualsAndHashCode.Include
     private Long labRequestItemId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -29,6 +31,9 @@ public class LabRequestItem {
     @Column(nullable = false, length = 20)
     @Builder.Default
     private String status = "REQUESTED";
+
+    @Column(length = 500)
+    private String note;
 
     @OneToOne(mappedBy = "labRequestItem", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private LabResult labResult;

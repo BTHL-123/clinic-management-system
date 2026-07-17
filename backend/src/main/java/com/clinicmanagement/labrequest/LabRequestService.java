@@ -76,14 +76,15 @@ public class LabRequestService {
                 .status("REQUESTED")
                 .build();
 
-        for (Long labTestId : request.labTestIds()) {
-            LabTest labTest = labTestRepository.findById(labTestId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy loại xét nghiệm #" + labTestId));
+        for (com.clinicmanagement.labrequest.dto.CreateLabRequestItemDto itemDto : request.items()) {
+            LabTest labTest = labTestRepository.findById(itemDto.labTestId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy loại xét nghiệm #" + itemDto.labTestId()));
 
             LabRequestItem item = LabRequestItem.builder()
                     .labRequest(labRequest)
                     .labTest(labTest)
                     .status("REQUESTED")
+                    .note(itemDto.note())
                     .build();
 
             labRequest.getItems().add(item);

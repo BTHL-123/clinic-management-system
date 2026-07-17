@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   UserPlus,
   CalendarDays,
@@ -37,15 +37,20 @@ const EMPTY_FORM = {
   initialSymptoms: "",
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helper Functions ──────────────────────────────────────────────────────────
 function formatTime(t) {
-  return String(t ?? "").slice(0, 5);
+  if (!t) return "";
+  if (Array.isArray(t)) {
+    const [h, m] = t;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  }
+  return String(t).slice(0, 5);
 }
 
 function FieldError({ msg }) {
   if (!msg) return null;
   return (
-    <p style={{ color: "#dc2626", fontSize: "11px", marginTop: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
+    <p className="text-rose-600 text-[11px] mt-1 flex items-center gap-1 font-medium">
       <AlertCircle size={11} /> {msg}
     </p>
   );
@@ -54,54 +59,29 @@ function FieldError({ msg }) {
 // ─── Success Card ──────────────────────────────────────────────────────────────
 function SuccessCard({ result, onReset }) {
   return (
-    <div
-      style={{
-        background: "#ffffff",
-        border: "1px solid #86efac",
-        borderRadius: "16px",
-        padding: "40px",
-        maxWidth: "520px",
-        margin: "0 auto",
-        textAlign: "center",
-        boxShadow: "0 4px 24px rgba(22,101,52,0.10)",
-        animation: "fadeIn 0.3s ease",
-      }}
-    >
-      <div
-        style={{
-          width: "64px", height: "64px", borderRadius: "50%",
-          background: "linear-gradient(135deg, #dcfce7, #bbf7d0)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          margin: "0 auto 20px",
-        }}
-      >
-        <CheckCircle size={36} color="#16a34a" />
+    <div className="bg-white border border-emerald-300 rounded-2xl p-10 max-w-lg mx-auto text-center shadow-lg animate-in fade-in zoom-in-95 duration-300">
+      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center mx-auto mb-5">
+        <CheckCircle size={36} className="text-emerald-600" />
       </div>
 
-      <h2 style={{ margin: "0 0 6px", fontSize: "1.4rem", fontWeight: 800, color: "#0f172a" }}>
+      <h2 className="text-2xl font-black text-slate-800 mb-1.5">
         Tạo lịch thành công!
       </h2>
-      <p style={{ margin: "0 0 24px", color: "#64748b", fontSize: "14px" }}>
+      <p className="text-sm font-medium text-slate-500 mb-6">
         Lịch khám trực tiếp đã được xác nhận.
       </p>
 
       {/* Queue Number Highlight */}
-      <div
-        style={{
-          background: "linear-gradient(135deg, #0f766e, #0d9488)",
-          borderRadius: "12px", padding: "16px 20px",
-          marginBottom: "20px", color: "#ffffff",
-        }}
-      >
-        <div style={{ fontSize: "11px", fontWeight: 600, opacity: 0.8, marginBottom: "4px", letterSpacing: "0.05em" }}>
+      <div className="bg-gradient-to-r from-teal-600 to-teal-500 rounded-2xl p-5 mb-5 text-white">
+        <div className="text-[11px] font-extrabold uppercase tracking-wider opacity-80 mb-1">
           SỐ THỨ TỰ KHÁM
         </div>
-        <div style={{ fontSize: "3rem", fontWeight: 900, lineHeight: 1 }}>
+        <div className="text-5xl font-black leading-none">
           #{result.queueNumber}
         </div>
       </div>
 
-      <div style={{ textAlign: "left", background: "#f8fafc", borderRadius: "10px", padding: "16px 18px", marginBottom: "24px" }}>
+      <div className="text-left bg-slate-50 rounded-xl p-4 mb-6">
         {[
           ["Mã lịch hẹn",  result.appointmentCode],
           ["Bệnh nhân",    result.patientName],
@@ -110,21 +90,16 @@ function SuccessCard({ result, onReset }) {
           ["Giờ khám",     `${formatTime(result.startTime)} – ${formatTime(result.endTime)}`],
           ["Trạng thái",   "Đã xác nhận"],
         ].map(([label, value]) => (
-          <div key={label} style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", fontSize: "13px" }}>
-            <span style={{ color: "#64748b" }}>{label}</span>
-            <strong style={{ color: "#0f172a" }}>{value}</strong>
+          <div key={label} className="flex justify-between mb-2 text-[13px]">
+            <span className="font-medium text-slate-500">{label}</span>
+            <strong className="font-bold text-slate-800">{value}</strong>
           </div>
         ))}
       </div>
 
       <button
         onClick={onReset}
-        style={{
-          display: "inline-flex", alignItems: "center", gap: "8px",
-          padding: "10px 24px", borderRadius: "8px",
-          background: "#0f766e", color: "#ffffff",
-          border: "none", fontWeight: 700, fontSize: "14px", cursor: "pointer",
-        }}
+        className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#1DB896] hover:bg-[#159a7c] text-white font-bold text-sm transition-all shadow-md shadow-teal-500/20"
       >
         <UserPlus size={16} />
         Tạo lịch khám mới
@@ -206,15 +181,19 @@ export default function WalkInAppointmentPage() {
   };
 
   // ── Load data ────────────────────────────────────────────────
-  const fetchData = useCallback(async () => {
-    setLoading(true);
+  const fetchData = useCallback(async (isPolling = false) => {
+    if (!isPolling) setLoading(true);
     try {
       const docRes = await getDoctors({ page: 0, size: 200, status: "ACTIVE" });
-      const docs = Array.isArray(docRes?.data?.content) ? docRes.data.content : [];
+      const docs = Array.isArray(docRes?.data?.content) 
+        ? docRes.data.content 
+        : (Array.isArray(docRes?.data) ? docRes.data : (Array.isArray(docRes?.content) ? docRes.content : (Array.isArray(docRes) ? docRes : [])));
       setDoctors(docs);
 
       const schedRes = await getSchedules({ fromDate: selectedDate, toDate: selectedDate, size: 500 });
-      const scheds = Array.isArray(schedRes?.data) ? schedRes.data : [];
+      const scheds = Array.isArray(schedRes?.data) 
+        ? schedRes.data 
+        : (Array.isArray(schedRes?.content) ? schedRes.content : (Array.isArray(schedRes) ? schedRes : []));
       
       // Filter out cancelled/on_leave schedules
       const activeScheds = scheds.filter(s => !["CANCELLED", "ON_LEAVE"].includes(s.status));
@@ -225,7 +204,10 @@ export default function WalkInAppointmentPage() {
       const slotPromises = activeScheds.map(async (schedule) => {
         try {
           const slotRes = await getSlotsByScheduleId(schedule.scheduleId);
-          slotsMap[schedule.scheduleId] = Array.isArray(slotRes?.data) ? slotRes.data : [];
+          const slots = Array.isArray(slotRes?.data) 
+            ? slotRes.data 
+            : (Array.isArray(slotRes?.content) ? slotRes.content : (Array.isArray(slotRes) ? slotRes : []));
+          slotsMap[schedule.scheduleId] = slots;
         } catch (e) {
           slotsMap[schedule.scheduleId] = [];
         }
@@ -234,9 +216,9 @@ export default function WalkInAppointmentPage() {
       setSlotsBySchedule(slotsMap);
 
     } catch (err) {
-      toast.error(err, "Không thể tải dữ liệu.");
+      if (!isPolling) toast.error(err, "Không thể tải dữ liệu.");
     } finally {
-      setLoading(false);
+      if (!isPolling) setLoading(false);
     }
   }, [selectedDate, toast]);
 
@@ -255,7 +237,7 @@ export default function WalkInAppointmentPage() {
       }
     }).catch(console.error);
 
-    const intv = setInterval(fetchData, 15000);
+    const intv = setInterval(() => fetchData(true), 15000);
     return () => clearInterval(intv);
   }, [selectedDate, fetchData]);
 
@@ -275,7 +257,6 @@ export default function WalkInAppointmentPage() {
     setPatientSearch("");
     setSelectedExistingPatient(null);
     setShowPatientDropdown(false);
-    setShowModal(true);
   };
 
   const handleSlotRightClick = async (slot) => {
@@ -329,7 +310,9 @@ export default function WalkInAppointmentPage() {
       };
       const res = await walkInService.createWalkIn(payload);
       setResult(res.data ?? res);
-      setShowModal(false);
+      setSelectedSlotObj(null);
+      setSelectedDoctorObj(null);
+      setForm(EMPTY_FORM);
       fetchData(); // Refresh grid behind
     } catch (err) {
       setApiError(err.message || "Tạo lịch thất bại. Vui lòng thử lại.");
@@ -342,317 +325,269 @@ export default function WalkInAppointmentPage() {
     setResult(null);
   };
 
+  const getInputClass = (hasError) => {
+    return `w-full px-3 py-2 rounded-xl border text-xs transition-all focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 ${hasError ? "border-rose-300 bg-rose-50" : "border-slate-200 bg-white"}`;
+  };
+
   // ─── Render ────────────────────────────────────────────────────────────────
   if (result) {
     return (
-      <div className="walk-in-page walk-in-success" style={{ padding: "32px 0" }}>
+      <div className="py-8 px-6 max-w-7xl mx-auto">
         <SuccessCard result={result} onReset={handleReset} />
       </div>
     );
   }
 
   return (
-    <div className="walk-in-page" style={{ padding: "0 20px 40px" }}>
-      <style>{`
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .wi-input:focus { border-color: #0f766e !important; outline: none; box-shadow: 0 0 0 3px rgba(15,118,110,0.12); }
-      `}</style>
-
+    <div className="p-6 md:p-8 max-w-[1600px] mx-auto space-y-6">
       {/* Page Header */}
       <PageHeader
         title="Tạo lịch khám trực tiếp"
         icon={UserPlus}
         iconColor="text-white"
-        subtitle="Lễ tân: Chọn ngày và bấm vào một ô trống (màu xanh lục) để đặt lịch nhanh."
+        subtitle="Lễ tân: Chọn ngày và bấm vào một ô trống (màu xanh lục) trên lịch khám để đặt lịch cho bệnh nhân."
       />
 
-      <div className="patient-glass-panel" style={{ padding: "24px", borderRadius: "20px", marginBottom: "24px", border: "1px solid rgba(255,255,255,0.4)" }}>
-        <div style={{ display: "flex", alignItems: "flex-end", gap: "24px" }}>
-          <div className="field" style={{ margin: 0, width: "280px" }}>
-            <label style={{ fontWeight: 700, color: "#1e293b", marginBottom: "8px", display: "block", fontSize: "14px" }}>Ngày khám</label>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", background: "#fff", border: "1px solid #cbd5e1", borderRadius: "10px", padding: "10px 14px", boxShadow: "inset 0 1px 3px rgba(0,0,0,0.05)" }}>
-              <CalendarDays size={20} color="#0f766e" />
-              <input 
-                type="date" 
-                value={selectedDate} 
-                onChange={(e) => setSelectedDate(e.target.value)} 
-                min={today}
-                style={{ border: "none", background: "transparent", outline: "none", fontSize: "15px", color: "#0f172a", width: "100%", fontWeight: 500 }}
-              />
-            </div>
-          </div>
-          <button 
-            onClick={fetchData} 
-            disabled={loading}
-            className="hover:bg-slate-50 transition-all"
-            style={{ 
-              padding: "11px 20px", borderRadius: "10px", border: "1px solid #cbd5e1", 
-              background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px",
-              fontWeight: 600, color: "#0f766e", boxShadow: "0 2px 4px rgba(0,0,0,0.05)"
-            }}
-          >
-            <RefreshCw size={18} className={loading ? "spin-animation" : ""} />
-            Tải lại lưới
-          </button>
-        </div>
-      </div>
-
-      {loading ? (
-        <div style={{ textAlign: "center", padding: "60px", color: "#64748b" }}>
-          <div style={spinnerStyle} className="mb-4"></div>
-          <div>Đang tải sơ đồ lịch khám...</div>
-        </div>
-      ) : (
-        <QueueGrid 
-          doctors={doctors.filter(d => schedules.some(s => s.doctorId === d.doctorId))}
-          schedules={schedules}
-          slotsBySchedule={slotsBySchedule}
-          onSlotClick={handleSlotClick}
-          onSlotRightClick={handleSlotRightClick}
-        />
-      )}
-
-      {/* Modal Form */}
-      {showModal && (
-        <div style={{
-          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: "rgba(0,0,0,0.6)", zIndex: 9999,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          backdropFilter: "blur(4px)"
-        }}>
-          <div style={{
-            background: "#fff", width: "90%", maxWidth: "600px",
-            borderRadius: "16px", boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
-            maxHeight: "90vh", overflowY: "auto", animation: "fadeIn 0.2s ease"
-          }}>
-            <div style={{
-              padding: "20px 24px", borderBottom: "1px solid #f1f5f9",
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-              background: "linear-gradient(to right, #f8fafc, #ffffff)",
-              borderTopLeftRadius: "16px", borderTopRightRadius: "16px"
-            }}>
-              <div>
-                <h2 style={{ margin: 0, fontSize: "1.25rem", color: "#0f766e", display: "flex", alignItems: "center", gap: "8px" }}>
-                  <UserPlus size={20} /> Tạo Walk-in Appointment
-                </h2>
-                <div style={{ marginTop: "4px", fontSize: "13px", color: "#64748b", display: "flex", alignItems: "center", gap: "10px" }}>
-                  <span>Bác sĩ: <strong>{selectedDoctorObj?.fullName}</strong></span>
-                  <span>•</span>
-                  <span>Ca khám: <strong>{formatTime(selectedSlotObj?.startTime)} - {formatTime(selectedSlotObj?.endTime)}</strong></span>
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_350px] gap-6 items-start">
+        {/* Left Column: Date Filter & Schedule Grid */}
+        <div className="space-y-6 min-w-0">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col md:flex-row md:items-end gap-6">
+            <div className="w-full md:w-72">
+              <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-2">Ngày khám</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-teal-600">
+                  <CalendarDays size={20} />
                 </div>
+                <input 
+                  type="date" 
+                  value={selectedDate} 
+                  onChange={(e) => {
+                    setSelectedDate(e.target.value);
+                    setSelectedSlotObj(null);
+                    setSelectedDoctorObj(null);
+                  }} 
+                  min={today}
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
+                />
               </div>
-              <button 
-                onClick={() => setShowModal(false)}
-                style={{ background: "transparent", border: "none", cursor: "pointer", color: "#94a3b8", padding: "4px" }}
-              >
-                <X size={24} />
-              </button>
             </div>
+            <button 
+              onClick={() => fetchData(false)} 
+              disabled={loading}
+              className="bg-white hover:bg-slate-50 text-teal-700 border border-slate-200 font-bold rounded-xl px-5 py-2.5 transition-all flex items-center gap-2 justify-center shadow-sm"
+            >
+              <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+              Tải lại lưới
+            </button>
+          </div>
 
-            <form onSubmit={handleSubmit} style={{ padding: "24px" }} noValidate>
-              {apiError && (
-                <div style={{
-                  display: "flex", alignItems: "center", gap: "10px",
-                  background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "10px", padding: "14px",
-                  color: "#dc2626", fontSize: "14px", marginBottom: "20px"
-                }}>
-                  <AlertCircle size={18} /> {apiError}
+          {loading ? (
+            <div className="text-center py-16 text-slate-400 flex flex-col items-center">
+              <div className="w-8 h-8 rounded-full border-4 border-slate-100 border-t-teal-500 animate-spin mb-4"></div>
+              <div className="text-sm font-medium">Đang tải sơ đồ lịch khám...</div>
+            </div>
+          ) : (
+            <QueueGrid 
+              doctors={(() => {
+                if (!doctors || doctors.length === 0) return [];
+                if (!schedules || schedules.length === 0) return doctors;
+                const scheduledIds = new Set(schedules.map(s => String(s.doctorId)));
+                const matched = doctors.filter(d => scheduledIds.has(String(d.doctorId)));
+                return matched.length > 0 ? matched : doctors;
+              })()}
+              schedules={schedules}
+              slotsBySchedule={slotsBySchedule}
+              onSlotClick={handleSlotClick}
+              onSlotRightClick={handleSlotRightClick}
+              selectedSlotId={selectedSlotObj?.slotId || selectedSlotObj?.id}
+            />
+          )}
+        </div>
+
+        {/* Right Column: Vertical Sidebar (350px fixed on desktop) */}
+        <aside className="w-full xl:w-[350px] sticky top-6 space-y-4">
+          {selectedSlotObj ? (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4 animate-in fade-in duration-200">
+              <div className="border-b border-slate-100 pb-3 flex justify-between items-start">
+                <div>
+                  <h3 className="m-0 text-base font-black text-teal-700 flex items-center gap-2">
+                    <UserPlus size={18} /> Tạo lịch khám
+                  </h3>
+                  <div className="mt-1 text-xs font-medium text-slate-500">
+                    Bác sĩ: <strong className="text-slate-800">{selectedDoctorObj?.fullName}</strong>
+                    <br />
+                    Ca khám: <strong className="text-slate-800">{formatTime(selectedSlotObj?.startTime)} - {formatTime(selectedSlotObj?.endTime)}</strong>
+                    <br />
+                    Ngày: <strong className="text-slate-800">{selectedDate}</strong>
+                  </div>
                 </div>
-              )}
+                <button 
+                  onClick={() => { setSelectedSlotObj(null); setSelectedDoctorObj(null); }}
+                  className="text-slate-400 hover:text-slate-600 transition-colors p-1"
+                  title="Bỏ chọn ca này"
+                >
+                  <X size={18} />
+                </button>
+              </div>
 
-              {/* Autocomplete Search Field */}
-              <div className="field" style={{ marginBottom: "20px", position: "relative" }}>
-                <label style={{ fontWeight: 600, color: "#334155", marginBottom: "6px", display: "block", fontSize: "13px" }}>Tìm kiếm bệnh nhân (SĐT hoặc Tên)</label>
-                <div style={{ display: "flex", alignItems: "center", position: "relative" }}>
-                  <input 
-                    type="text" 
-                    className="wi-input"
-                    placeholder="Nhập số điện thoại hoặc tên để tìm..." 
-                    value={patientSearch}
-                    onChange={(e) => {
-                      setPatientSearch(e.target.value);
-                      if (selectedExistingPatient) {
-                         setSelectedExistingPatient(null);
-                      }
-                    }}
-                    onFocus={() => { if(patientOptions.length > 0) setShowPatientDropdown(true); }}
-                    onBlur={() => setTimeout(() => setShowPatientDropdown(false), 200)}
-                    style={{ ...inputStyle(false), paddingRight: "30px", background: "#f8fafc" }}
-                  />
-                  {searchingPatient && <div style={{ position: "absolute", right: 10, ...spinnerStyle, width: 14, height: 14, borderWidth: 2 }} />}
-                </div>
-
-                {/* Dropdown */}
-                {showPatientDropdown && patientOptions.length > 0 && (
-                  <div style={{
-                    position: "absolute", top: "100%", left: 0, right: 0, 
-                    background: "#fff", border: "1px solid #cbd5e1", borderRadius: "8px", 
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)", zIndex: 10, marginTop: "4px",
-                    maxHeight: "200px", overflowY: "auto"
-                  }}>
-                    {patientOptions.map(p => (
-                      <div 
-                        key={p.patientId}
-                        onClick={() => handleSelectExistingPatient(p)}
-                        style={{
-                          padding: "10px 14px", borderBottom: "1px solid #f1f5f9",
-                          cursor: "pointer", transition: "background 0.2s"
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = "#f8fafc"}
-                        onMouseLeave={(e) => e.currentTarget.style.background = "#fff"}
-                      >
-                        <div style={{ fontWeight: 600, color: "#0f766e", fontSize: "14px" }}>{p.fullName}</div>
-                        <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
-                          SĐT: {p.phone} • {p.gender === "MALE" ? "Nam" : p.gender === "FEMALE" ? "Nữ" : "Khác"} 
-                          {p.dateOfBirth ? ` • Sinh: ${p.dateOfBirth}` : ""}
-                        </div>
-                      </div>
-                    ))}
+              <form onSubmit={handleSubmit} className="space-y-3.5" noValidate>
+                {apiError && (
+                  <div className="flex items-center gap-2 bg-rose-50 border border-rose-200 rounded-xl p-3 text-rose-600 text-xs font-medium">
+                    <AlertCircle size={16} /> {apiError}
                   </div>
                 )}
-              </div>
 
-              {/* Patient Info Form */}
-              <div style={{ padding: "16px", background: selectedExistingPatient ? "#f0fdf4" : "#f8fafc", borderRadius: "12px", border: `1px solid ${selectedExistingPatient ? "#bbf7d0" : "#e2e8f0"}`, marginBottom: "20px" }}>
-                <div style={{ marginBottom: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                   <span style={{ fontSize: "13px", fontWeight: 700, color: selectedExistingPatient ? "#166534" : "#475569" }}>
-                     {selectedExistingPatient ? "✅ Thông tin bệnh nhân đã lưu" : "📝 Thông tin bệnh nhân (Mới)"}
-                   </span>
-                   {selectedExistingPatient && (
-                     <button type="button" onClick={() => { setSelectedExistingPatient(null); setForm({...form, fullName: "", phone: "", dateOfBirth: "", gender: "OTHER"}); setPatientSearch(""); }} style={{ background: "transparent", border: "none", color: "#dc2626", fontSize: "12px", cursor: "pointer", fontWeight: 600, padding: 0 }}>✕ Hủy chọn</button>
-                   )}
-                </div>
-                
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-                  <div className="field" style={{ gridColumn: "1 / -1", margin: 0 }}>
-                    <label htmlFor="wi-fullName">Họ và tên <Required /></label>
-                    <input id="wi-fullName" name="fullName" type="text" className="wi-input" autoFocus={!selectedExistingPatient}
-                           value={form.fullName} onChange={handleChange} style={{...inputStyle(!!errors.fullName), opacity: selectedExistingPatient ? 0.7 : 1}} disabled={!!selectedExistingPatient} />
-                    <FieldError msg={errors.fullName} />
+                {/* Autocomplete Search Field */}
+                <div className="relative">
+                  <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">Tìm bệnh nhân cũ (SĐT/Tên)</label>
+                  <div className="relative flex items-center">
+                    <input 
+                      type="text" 
+                      placeholder="Nhập SĐT hoặc tên để tìm..." 
+                      value={patientSearch}
+                      onChange={(e) => {
+                        setPatientSearch(e.target.value);
+                        if (selectedExistingPatient) setSelectedExistingPatient(null);
+                      }}
+                      onFocus={() => { if(patientOptions.length > 0) setShowPatientDropdown(true); }}
+                      onBlur={() => setTimeout(() => setShowPatientDropdown(false), 200)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all pr-8"
+                    />
+                    {searchingPatient && <div className="absolute right-2.5 w-3.5 h-3.5 rounded-full border-2 border-slate-200 border-t-teal-500 animate-spin" />}
                   </div>
-                  <div className="field" style={{ margin: 0 }}>
-                    <label htmlFor="wi-phone">Số điện thoại <Required /></label>
-                    <input id="wi-phone" name="phone" type="tel" className="wi-input"
-                           value={form.phone} onChange={handleChange} style={{...inputStyle(!!errors.phone), opacity: selectedExistingPatient ? 0.7 : 1}} disabled={!!selectedExistingPatient} />
-                    <FieldError msg={errors.phone} />
-                  </div>
-                  <div className="field" style={{ margin: 0 }}>
-                    <label htmlFor="wi-dateOfBirth">Ngày sinh</label>
-                    <input id="wi-dateOfBirth" name="dateOfBirth" type="date" className="wi-input"
-                           value={form.dateOfBirth || ""} onChange={handleChange} style={{...inputStyle(false), opacity: selectedExistingPatient ? 0.7 : 1}} disabled={!!selectedExistingPatient} />
-                  </div>
-                  <div className="field" style={{ margin: 0 }}>
-                    <label htmlFor="wi-gender">Giới tính</label>
-                    <select id="wi-gender" name="gender" className="wi-input"
-                            value={form.gender} onChange={handleChange} style={{...inputStyle(false), opacity: selectedExistingPatient ? 0.7 : 1}} disabled={!!selectedExistingPatient}>
-                      {GENDER_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    </select>
-                  </div>
-                </div>
-              </div>
 
-              {/* Consultation Info */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "16px", marginBottom: "20px" }}>
-                <div className="field" style={{ margin: 0 }}>
-                  <label htmlFor="wi-reason">Lý do khám / Triệu chứng</label>
-                  <textarea id="wi-reason" name="reasonForVisit" className="wi-input" rows={2}
-                            value={form.reasonForVisit} onChange={handleChange} style={{...inputStyle(false), resize: "vertical"}} />
+                  {/* Dropdown */}
+                  {showPatientDropdown && patientOptions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-lg z-20 mt-1 max-h-48 overflow-y-auto">
+                      {patientOptions.map(p => (
+                        <div 
+                          key={p.patientId}
+                          onClick={() => handleSelectExistingPatient(p)}
+                          className="px-3 py-2 border-b border-slate-50 cursor-pointer hover:bg-slate-50 transition-colors"
+                        >
+                          <div className="font-bold text-teal-700 text-xs">{p.fullName}</div>
+                          <div className="text-[11px] font-medium text-slate-500">
+                            SĐT: {p.phone} • {p.gender === "MALE" ? "Nam" : p.gender === "FEMALE" ? "Nữ" : "Khác"}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
 
-              <div style={{ padding: "14px 16px", background: "#f0fdf4", borderRadius: "12px", border: "1px solid #bbf7d0", marginBottom: "20px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-                  <span style={{ fontSize: "14px", fontWeight: 700, color: "#166534" }}>Phí khám bệnh</span>
-                  <span style={{ fontSize: "16px", fontWeight: 700, color: "#166534" }}>{consultationFee.toLocaleString("vi-VN")} VNĐ</span>
+                {/* Patient Form Fields */}
+                <div className={`p-3.5 rounded-xl border space-y-2.5 ${selectedExistingPatient ? "bg-emerald-50/50 border-emerald-200" : "bg-slate-50 border-slate-200"}`}>
+                  <div className="flex justify-between items-center">
+                    <span className={`text-[11px] font-extrabold uppercase tracking-wider ${selectedExistingPatient ? "text-emerald-700" : "text-slate-500"}`}>
+                      {selectedExistingPatient ? "✅ Bệnh nhân đã lưu" : "📝 Thông tin bệnh nhân"}
+                    </span>
+                    {selectedExistingPatient && (
+                      <button type="button" onClick={() => { setSelectedExistingPatient(null); setForm(prev=>({...prev, fullName: "", phone: "", dateOfBirth: "", gender: "OTHER"})); setPatientSearch(""); }} className="text-rose-600 text-[10px] font-extrabold uppercase hover:text-rose-700">✕ Hủy chọn</button>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div>
+                      <label htmlFor="wi-fullName" className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">Họ và tên <Required /></label>
+                      <input id="wi-fullName" name="fullName" type="text"
+                             value={form.fullName} onChange={handleChange} className={`${getInputClass(!!errors.fullName)} ${selectedExistingPatient ? "opacity-70" : ""}`} disabled={!!selectedExistingPatient} />
+                      <FieldError msg={errors.fullName} />
+                    </div>
+                    <div>
+                      <label htmlFor="wi-phone" className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">Số điện thoại <Required /></label>
+                      <input id="wi-phone" name="phone" type="tel"
+                             value={form.phone} onChange={handleChange} className={`${getInputClass(!!errors.phone)} ${selectedExistingPatient ? "opacity-70" : ""}`} disabled={!!selectedExistingPatient} />
+                      <FieldError msg={errors.phone} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label htmlFor="wi-dateOfBirth" className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">Ngày sinh</label>
+                        <input id="wi-dateOfBirth" name="dateOfBirth" type="date"
+                               value={form.dateOfBirth || ""} onChange={handleChange} className={`${getInputClass(false)} ${selectedExistingPatient ? "opacity-70" : ""}`} disabled={!!selectedExistingPatient} />
+                      </div>
+                      <div>
+                        <label htmlFor="wi-gender" className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">Giới tính</label>
+                        <select id="wi-gender" name="gender"
+                                value={form.gender} onChange={handleChange} className={`${getInputClass(false)} ${selectedExistingPatient ? "opacity-70" : ""}`} disabled={!!selectedExistingPatient}>
+                          {GENDER_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div style={{ fontSize: "12px", color: "#15803d", display: "flex", gap: "4px" }}>
-                  <AlertCircle size={14} /> Báo bệnh nhân thanh toán phí tại quầy để lấy số thứ tự.
-                </div>
-                <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "8px" }}>
-                  <button type="button" onClick={() => setShowPriceModal(true)} style={{ background: "transparent", border: "none", fontSize: "12px", fontWeight: 700, color: "#0f766e", cursor: "pointer", textDecoration: "underline", padding: 0 }}>
-                    Xem bảng giá dịch vụ chuyên khoa
-                  </button>
-                </div>
-              </div>
 
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", borderTop: "1px solid #f1f5f9", paddingTop: "20px" }}>
-                <button type="button" onClick={() => setShowModal(false)}
-                        style={{ padding: "10px 20px", borderRadius: "8px", border: "1px solid #cbd5e1", background: "#fff", fontWeight: 600, color: "#475569", cursor: "pointer" }}>
-                  Hủy bỏ
-                </button>
+                {/* Reason */}
+                <div>
+                  <label htmlFor="wi-reason" className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">Lý do khám / Triệu chứng</label>
+                  <textarea id="wi-reason" name="reasonForVisit" rows={2}
+                            value={form.reasonForVisit} onChange={handleChange} className={`${getInputClass(false)} resize-y min-h-[45px]`} />
+                </div>
+
+                {/* Fee */}
+                <div className="p-3 bg-emerald-50/50 rounded-xl border border-emerald-100 flex flex-col gap-1">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-bold text-emerald-700">Phí khám bệnh</span>
+                    <span className="font-black text-emerald-700">{consultationFee.toLocaleString("vi-VN")} VNĐ</span>
+                  </div>
+                  <div className="text-[11px] font-medium text-emerald-600 flex gap-1 items-center">
+                    <AlertCircle size={12} /> Thu phí tại quầy để cấp STT.
+                  </div>
+                </div>
+
                 <button type="submit" disabled={submitting}
-                        style={{ padding: "10px 24px", background: "#0f766e", color: "#fff", border: "none", borderRadius: "8px", fontWeight: 600, cursor: submitting ? "not-allowed" : "pointer" }}>
-                  {submitting ? "Đang xử lý..." : "Xác nhận đặt lịch"}
+                        className={`w-full py-2.5 rounded-xl font-bold transition-all text-white text-sm ${submitting ? "bg-teal-400 cursor-not-allowed" : "bg-[#1DB896] hover:bg-[#159a7c] shadow-md shadow-teal-500/20"}`}>
+                  {submitting ? "Đang xử lý..." : "Tạo lịch khám"}
                 </button>
+              </form>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 text-center text-slate-400 space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center mx-auto">
+                <UserPlus size={24} />
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+              <h4 className="m-0 text-sm font-bold text-slate-700">Ô lịch đang chọn</h4>
+              <p className="m-0 text-xs text-slate-500 leading-relaxed">
+                Chưa chọn ca khám. Vui lòng bấm vào một <strong>ô trống (màu xanh lục)</strong> trên lưới lịch khám để đặt lịch cho bệnh nhân.
+              </p>
+            </div>
+          )}
+        </aside>
+      </div>
 
       {/* Price List Modal */}
       {showPriceModal && (
-        <div style={{
-          position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center",
-          background: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(4px)"
-        }}>
-          <div style={{
-            background: "#fff", borderRadius: "16px", width: "100%", maxWidth: "500px",
-            maxHeight: "80vh", display: "flex", flexDirection: "col", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)"
-          }}>
-            <div style={{ width: "100%", display: "flex", flexDirection: "column", height: "100%" }}>
-              <div style={{ padding: "16px 24px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc", borderRadius: "16px 16px 0 0" }}>
-                <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "#1e293b" }}>Bảng giá tham khảo dịch vụ</h3>
-                <button onClick={() => setShowPriceModal(false)} style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer" }}><X size={20} /></button>
-              </div>
-              <div style={{ padding: "24px", overflowY: "auto", flex: 1 }}>
-                {specialtyServices.length === 0 ? (
-                  <div style={{ textAlign: "center", color: "#64748b", fontSize: "14px", padding: "16px 0" }}>Đang cập nhật bảng giá...</div>
-                ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                    {specialtyServices.map(s => (
-                      <div key={s.serviceId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", border: "1px solid #f1f5f9", borderRadius: "12px" }}>
-                        <div style={{ display: "flex", flexDirection: "column" }}>
-                          <span style={{ fontSize: "14px", fontWeight: 700, color: "#334155" }}>{s.serviceName}</span>
-                          {s.description && <span style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>{s.description}</span>}
-                        </div>
-                        <span style={{ fontSize: "14px", fontWeight: 900, color: "#0f766e", marginLeft: "16px" }}>{s.price.toLocaleString("vi-VN")} đ</span>
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[80vh] flex flex-col shadow-2xl animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
+            <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h3 className="m-0 text-base font-black text-slate-800">Bảng giá tham khảo dịch vụ</h3>
+              <button onClick={() => setShowPriceModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors p-1"><X size={20} /></button>
+            </div>
+            <div className="p-6 overflow-y-auto flex-1">
+              {specialtyServices.length === 0 ? (
+                <div className="text-center text-slate-500 text-sm font-medium py-8">Đang cập nhật bảng giá...</div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {specialtyServices.map(s => (
+                    <div key={s.serviceId} className="flex justify-between items-center p-3.5 border border-slate-100 rounded-xl bg-slate-50/50">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-800">{s.serviceName}</span>
+                        {s.description && <span className="text-xs font-medium text-slate-500 mt-0.5">{s.description}</span>}
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                      <span className="text-sm font-black text-teal-600 whitespace-nowrap ml-4">{s.price.toLocaleString("vi-VN")} đ</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }
 
 // ─── Micro-components & styles ────────────────────────────────────────────────
 function Required() {
-  return <span style={{ color: "#dc2626", marginLeft: "2px" }}>*</span>;
+  return <span className="text-rose-600 ml-0.5">*</span>;
 }
 
-const spinnerStyle = {
-  width: "20px", height: "20px",
-  border: "3px solid rgba(15,118,110,0.2)",
-  borderTopColor: "#0f766e",
-  borderRadius: "50%",
-  animation: "spin 0.8s linear infinite",
-};
-
-function inputStyle(hasError) {
-  return {
-    width: "100%",
-    padding: "10px 14px",
-    borderRadius: "8px",
-    border: `1.5px solid ${hasError ? "#fca5a5" : "#cbd5e1"}`,
-    fontSize: "14px",
-    background: hasError ? "#fff5f5" : "#ffffff",
-    transition: "all 0.15s ease",
-    boxSizing: "border-box",
-  };
-}

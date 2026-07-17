@@ -86,7 +86,7 @@ public class PaymentController {
     }
 
     @PostMapping("/online/create-url")
-    @PreAuthorize("hasAnyRole('PATIENT', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('PATIENT', 'ADMIN', 'RECEPTIONIST')")
     public ResponseEntity<ApiResponse<OnlinePaymentUrlResponse>> createOnlineUrl(
             @Valid @RequestBody CreateOnlinePaymentUrlRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
@@ -101,5 +101,15 @@ public class PaymentController {
     ) {
         PaymentResponse response = paymentService.processCallback(request);
         return ResponseEntity.ok(ApiResponse.success("Xử lý callback thành công", response));
+    }
+
+    @PostMapping("/{id}/verify-sepay")
+    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'ADMIN', 'PATIENT')")
+    public ResponseEntity<ApiResponse<PaymentResponse>> verifySePayTransaction(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        PaymentResponse response = paymentService.verifySePayTransaction(id, userDetails.getUser());
+        return ResponseEntity.ok(ApiResponse.success("Xác nhận thanh toán thành công", response));
     }
 }
