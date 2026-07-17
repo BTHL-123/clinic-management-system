@@ -118,6 +118,8 @@ export default function ExaminationPage() {
   const [savedPrescription, setSavedPrescription] = useState(null);
   const [savingRx, setSavingRx] = useState(false);
   const [checkingInteractions, setCheckingInteractions] = useState(false);
+  const [medSearchTerm, setMedSearchTerm] = useState("");
+  const [showMedDropdown, setShowMedDropdown] = useState(false);
 
   const [completing, setCompleting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -468,6 +470,58 @@ export default function ExaminationPage() {
   };
 
   const addRxItem = () => setRxItems((prev) => [...prev, { ...EMPTY_RX_ITEM }]);
+
+  const handleAddMedication = (med) => {
+    setRxItems((prev) => {
+      const isEmpty = prev.length === 1 && !prev[0].medicineId;
+      const newItem = { ...EMPTY_RX_ITEM, medicineId: med.medicineId, instructions: med.usageInstructions || "", quantity: 1 };
+      if (isEmpty) return [newItem];
+      if (prev.some(item => item.medicineId?.toString() === med.medicineId?.toString())) {
+        showToast(`Thuốc ${med.medicineName} đã có trong đơn.`, "error");
+        return prev;
+      }
+      return [...prev, newItem];
+    });
+    setMedSearchTerm("");
+    setShowMedDropdown(false);
+  };
+
+  const handleMedQuantityChange = (index, delta) => {
+    setRxItems((prev) => {
+      const updated = [...prev];
+      const currentQty = parseInt(updated[index].quantity) || 0;
+      const newQty = Math.max(1, currentQty + delta);
+      updated[index] = { ...updated[index], quantity: newQty };
+      return updated;
+    });
+  };
+
+  const handleAppendDosage = (index, text) => {
+    setRxItems((prev) => {
+      const updated = [...prev];
+      const current = updated[index].dosage || "";
+      updated[index] = { ...updated[index], dosage: current ? `${current}, ${text}` : text };
+      return updated;
+    });
+  };
+
+  const handleAppendInstruction = (index, text) => {
+    setRxItems((prev) => {
+      const updated = [...prev];
+      const current = updated[index].instructions || "";
+      updated[index] = { ...updated[index], instructions: current ? `${current}, ${text}` : text };
+      return updated;
+    });
+  };
+
+  const handleAppendFrequency = (index, text) => {
+    setRxItems((prev) => {
+      const updated = [...prev];
+      const current = updated[index].frequency || "";
+      updated[index] = { ...updated[index], frequency: current ? `${current}, ${text}` : text };
+      return updated;
+    });
+  };
 
   const removeRxItem = (index) =>
     setRxItems((prev) => prev.filter((_, i) => i !== index));
@@ -1575,180 +1629,164 @@ export default function ExaminationPage() {
               </div>
             ) : (
               <div className="flex flex-col gap-4">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                        <th className="py-3 pr-2">Tên thuốc</th>
-                        <th className="py-3 px-2 w-16">Đ.Vị</th>
-                        <th className="py-3 px-2 w-28">Liều dùng</th>
-                        <th className="py-3 px-2 w-20">S.Lượng</th>
-                        <th className="py-3 px-2">Cách dùng</th>
-                        <th className="py-3 px-2 w-16 text-center">Chi tiết</th>
-                        <th className="py-3 w-8"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50">
-                      {rxItems.map((item, index) => (
-                        <tr key={index} className="hover:bg-slate-50/10">
-                          <td className="py-2.5 pr-2">
-                            <select
-                              value={item.medicineId}
-                              onChange={(e) => handleRxItemChange(index, "medicineId", e.target.value)}
-                              className="w-full bg-white border border-slate-200 rounded-xl px-2 py-1.5 text-xs text-slate-700 font-bold focus:border-emerald-500 outline-none"
-                            >
-                              <option value="">-- Chọn thuốc --</option>
-                              {medicines.map((m) => (
-                                <option key={m.medicineId} value={m.medicineId}>
-                                  {m.medicineName} {m.strength ? `(${m.strength})` : ""}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-                          
-                          <td className="py-2.5 px-2 text-xs font-bold text-emerald-600">
-                            {(() => {
-                              const m = medicines.find(x => x.medicineId.toString() === item.medicineId?.toString());
-                              return m?.unit || "—";
-                            })()}
-                          </td>
-
-                          <td className="py-2.5 px-2">
-                            <input
-                              type="text"
-                              value={item.dosage}
-                              onChange={(e) => handleRxItemChange(index, "dosage", e.target.value)}
-                              placeholder="VD: 1 viên, 5ml, 1 gói..."
-                              className="w-full bg-white border border-slate-200 rounded-xl px-2 py-1.5 text-xs text-slate-700 font-bold focus:border-emerald-500 outline-none"
-                            />
-                          </td>
-
-                          <td className="py-2.5 px-2">
-                            <input
-                              type="number"
-                              min="1"
-                              value={item.quantity}
-                              onChange={(e) => handleRxItemChange(index, "quantity", e.target.value)}
-                              placeholder="30"
-                              className="w-full bg-white border border-slate-200 rounded-xl px-2 py-1.5 text-xs text-slate-700 font-bold focus:border-emerald-500 outline-none"
-                            />
-                          </td>
-
-                          <td className="py-2.5 px-2">
-                            <input
-                              type="text"
-                              value={item.instructions}
-                              onChange={(e) => handleRxItemChange(index, "instructions", e.target.value)}
-                              placeholder="VD: Uống, bôi, tiêm..."
-                              className="w-full bg-white border border-slate-200 rounded-xl px-2 py-1.5 text-xs text-slate-700 font-medium focus:border-emerald-500 outline-none"
-                            />
-                          </td>
-
-                          <td className="py-2.5 px-2 text-center">
-                            <button
-                              type="button"
-                              onClick={() => setExpandedRxRow(expandedRxRow === index ? null : index)}
-                              className="inline-flex items-center gap-0.5 text-[9px] font-black text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-wider"
-                            >
-                              <span>{expandedRxRow === index ? "Đóng" : "Xem"}</span>
-                              {expandedRxRow === index ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
-                            </button>
-                          </td>
-
-                          <td className="py-2.5 text-right">
-                            {rxItems.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => removeRxItem(index)}
-                                className="p-1 rounded-lg text-slate-350 hover:text-rose-500 hover:bg-rose-50 transition-all"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            )}
-                          </td>
-                        </tr>
+                {/* Search Bar */}
+                <div className="relative">
+                  <div className="flex items-center bg-white border border-slate-200 hover:border-emerald-400 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10 rounded-2xl px-4 py-2.5 transition-all shadow-sm">
+                    <Search size={18} className="text-slate-400 mr-2 shrink-0" />
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm & thêm thuốc (VD: Paracetamol, Augmentin...)"
+                      value={medSearchTerm}
+                      onChange={(e) => {
+                        setMedSearchTerm(e.target.value);
+                        setShowMedDropdown(true);
+                      }}
+                      onFocus={() => setShowMedDropdown(true)}
+                      className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-slate-700 placeholder:font-medium placeholder:text-slate-400"
+                    />
+                    {medSearchTerm && (
+                      <button onClick={() => setMedSearchTerm("")} className="text-slate-400 hover:text-slate-600 p-1">
+                        <X size={16} />
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Dropdown Results */}
+                  {showMedDropdown && (medSearchTerm || medicines.length > 0) && (
+                    <div className="absolute z-10 top-[calc(100%+8px)] left-0 right-0 bg-white rounded-2xl shadow-xl border border-slate-100 max-h-64 overflow-y-auto overflow-x-hidden animate-fadeIn">
+                      {medicines
+                        .filter(m => m.medicineName.toLowerCase().includes(medSearchTerm.toLowerCase()) || (m.activeIngredient && m.activeIngredient.toLowerCase().includes(medSearchTerm.toLowerCase())))
+                        .map(med => (
+                          <div 
+                            key={med.medicineId} 
+                            onClick={() => handleAddMedication(med)}
+                            className="px-4 py-3 hover:bg-emerald-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors flex justify-between items-center group"
+                          >
+                            <div>
+                              <div className="font-extrabold text-sm text-slate-800 group-hover:text-emerald-800 transition-colors">{med.medicineName} {med.strength && <span className="text-emerald-600 font-bold ml-1">({med.strength})</span>}</div>
+                              <div className="text-[11px] text-slate-500 font-medium mt-0.5">{med.activeIngredient || "Không rõ hoạt chất"} - Đ.Vị: {med.unit}</div>
+                            </div>
+                            <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Plus size={14} />
+                            </div>
+                          </div>
                       ))}
-                    </tbody>
-                  </table>
+                    </div>
+                  )}
                 </div>
 
-                {/* Sub-row panel for drug details and morning/noon/evening/night doses */}
-                {expandedRxRow !== null && rxItems[expandedRxRow] && (
-                  <div className="bg-slate-50/70 border border-slate-100 rounded-2xl p-4 flex flex-col gap-3 animate-fadeIn">
-                    <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Tần suất</label>
-                        <input
-                          type="text"
-                          value={rxItems[expandedRxRow].frequency}
-                          onChange={(e) => handleRxItemChange(expandedRxRow, "frequency", e.target.value)}
-                          placeholder="VD: 2 lần/ngày"
-                          className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 font-bold focus:border-emerald-500 outline-none"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Số ngày</label>
-                        <input
-                          type="text"
-                          value={rxItems[expandedRxRow].duration}
-                          onChange={(e) => handleRxItemChange(expandedRxRow, "duration", e.target.value)}
-                          placeholder="VD: 7 ngày"
-                          className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 font-bold focus:border-emerald-500 outline-none"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Sáng</label>
-                        <input
-                          type="text"
-                          value={rxItems[expandedRxRow].morningDose}
-                          onChange={(e) => handleRxItemChange(expandedRxRow, "morningDose", e.target.value)}
-                          placeholder="VD: 1 viên, 5ml..."
-                          className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 font-bold focus:border-emerald-500 outline-none"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Trưa</label>
-                        <input
-                          type="text"
-                          value={rxItems[expandedRxRow].noonDose}
-                          onChange={(e) => handleRxItemChange(expandedRxRow, "noonDose", e.target.value)}
-                          placeholder="VD: 1 viên, 5ml..."
-                          className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 font-bold focus:border-emerald-500 outline-none"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Chiều</label>
-                        <input
-                          type="text"
-                          value={rxItems[expandedRxRow].eveningDose}
-                          onChange={(e) => handleRxItemChange(expandedRxRow, "eveningDose", e.target.value)}
-                          placeholder="VD: 1 viên, 5ml..."
-                          className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 font-bold focus:border-emerald-500 outline-none"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Tối</label>
-                        <input
-                          type="text"
-                          value={rxItems[expandedRxRow].nightDose}
-                          onChange={(e) => handleRxItemChange(expandedRxRow, "nightDose", e.target.value)}
-                          placeholder="VD: 1 viên, 5ml..."
-                          className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 font-bold focus:border-emerald-500 outline-none"
-                        />
-                      </div>
-                    </div>
+                {/* Selected Medicines List */}
+                {rxItems.filter(item => item.medicineId).length > 0 ? (
+                  <div className="flex flex-col gap-3 mt-1">
+                    {rxItems.map((item, index) => {
+                      if (!item.medicineId) return null;
+                      const med = medicines.find(m => m.medicineId.toString() === item.medicineId.toString());
+                      if (!med) return null;
 
-                    {rxItems[expandedRxRow].medicineId && (() => {
-                      const selectedMed = medicines.find(m => m.medicineId.toString() === rxItems[expandedRxRow].medicineId.toString());
-                      if (selectedMed && (selectedMed.activeIngredient || selectedMed.description)) {
-                        return (
-                          <div className="text-[10px] text-emerald-750 bg-emerald-50 border border-emerald-100/50 p-2.5 rounded-xl">
-                            <strong>Thành phần hoạt chất:</strong> {selectedMed.activeIngredient || "N/A"} — <strong>Tác dụng phụ/Lưu ý:</strong> {selectedMed.description || "N/A"}
+                      return (
+                        <div key={index} className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-[0_2px_8px_rgba(0,0,0,0.01)] flex flex-col gap-3 hover:border-slate-300 transition-colors">
+                          {/* Top Row: Name, Unit, Quantity */}
+                          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 shadow-inner">
+                                <Pill size={20} />
+                              </div>
+                              <div>
+                                <h4 className="font-black text-slate-800 text-sm">{med.medicineName} {med.strength && <span className="text-slate-500 font-bold ml-1">({med.strength})</span>}</h4>
+                                <div className="flex items-center gap-3 mt-0.5">
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Đơn vị xuất: <span className="text-emerald-600">{med.unit}</span></span>
+                                  {med.usageInstructions && (
+                                    <>
+                                      <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                                      <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Cách dùng: {med.usageInstructions}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-4">
+                              <div className="flex flex-col items-end">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Số lượng ({med.unit})</span>
+                                <div className="flex items-center bg-slate-50 rounded-lg border border-slate-200/80 h-9 overflow-hidden">
+                                  <button type="button" onClick={() => handleMedQuantityChange(index, -1)} className="w-8 h-full flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-slate-100 transition-colors"><ChevronDown size={14} /></button>
+                                  <input 
+                                    type="number" 
+                                    min="1" 
+                                    value={item.quantity} 
+                                    onChange={(e) => handleRxItemChange(index, "quantity", e.target.value)}
+                                    className="w-10 bg-transparent border-none text-center text-xs font-black text-slate-700 p-0 outline-none"
+                                  />
+                                  <button type="button" onClick={() => handleMedQuantityChange(index, 1)} className="w-8 h-full flex items-center justify-center text-slate-400 hover:text-emerald-500 hover:bg-slate-100 transition-colors"><ChevronUp size={14} /></button>
+                                </div>
+                              </div>
+                              <button type="button" onClick={() => removeRxItem(index)} className="w-9 h-9 rounded-xl bg-rose-50 border border-rose-100 text-rose-500 hover:bg-rose-100 flex items-center justify-center transition-colors shrink-0 mt-3.5 shadow-sm">
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
                           </div>
-                        );
-                      }
-                      return null;
-                    })()}
+
+                          {/* Middle Row: Dosage and Frequency inputs with quick tags */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                            {/* Liều dùng (Dosage) */}
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Liều dùng (1 lần)</label>
+                              <div className="flex flex-wrap gap-1.5 mb-1.5">
+                                {Array.from(new Set([
+                                  `1 ${med.unit?.toLowerCase() || 'viên'}`, 
+                                  `2 ${med.unit?.toLowerCase() || 'viên'}`, 
+                                  `1/2 ${med.unit?.toLowerCase() || 'viên'}`, 
+                                  "5ml", "10ml", "1 giọt"
+                                ])).map(tag => (
+                                  <button type="button" key={tag} onClick={() => handleAppendDosage(index, tag)} className="px-2 py-1 bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 text-[10px] font-bold rounded-md transition-colors border border-transparent hover:border-emerald-200">
+                                    {tag}
+                                  </button>
+                                ))}
+                              </div>
+                              <input
+                                type="text"
+                                value={item.dosage || ""}
+                                onChange={(e) => handleRxItemChange(index, "dosage", e.target.value)}
+                                placeholder="VD: 1 viên, 5ml..."
+                                className="w-full bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-2 text-xs text-slate-700 font-bold focus:border-emerald-500 focus:bg-white outline-none transition-colors"
+                              />
+                            </div>
+
+                            {/* Tần suất (Frequency) */}
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Tần suất</label>
+                              <div className="flex flex-wrap gap-1.5 mb-1.5">
+                                {["Sáng", "Trưa", "Chiều", "Tối", "Sau ăn", "Trước ăn"].map(tag => (
+                                  <button type="button" key={tag} onClick={() => handleAppendFrequency(index, tag)} className="px-2 py-1 bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 text-[10px] font-bold rounded-md transition-colors border border-transparent hover:border-emerald-200">
+                                    {tag}
+                                  </button>
+                                ))}
+                              </div>
+                              <input
+                                type="text"
+                                value={item.frequency || ""}
+                                onChange={(e) => handleRxItemChange(index, "frequency", e.target.value)}
+                                placeholder="VD: Sáng 1, Tối 1..."
+                                className="w-full bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-2 text-xs text-slate-700 font-bold focus:border-emerald-500 focus:bg-white outline-none transition-colors"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Thành phần hoạt chất (luôn hiện nếu có) */}
+                          {(med.activeIngredient || med.description) && (
+                            <div className="mt-1 text-[10px] text-emerald-750 bg-emerald-50/50 border border-emerald-100/50 p-2.5 rounded-xl">
+                              <strong>Thành phần hoạt chất:</strong> {med.activeIngredient || "N/A"} — <strong>Tác dụng phụ/Lưu ý:</strong> {med.description || "N/A"}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-10 bg-slate-50 border border-dashed border-slate-200 rounded-2xl flex flex-col items-center">
+                    <Pill size={32} className="text-slate-300 mb-2" />
+                    <span className="text-sm font-bold text-slate-400">Chưa có thuốc nào trong đơn</span>
+                    <span className="text-[11px] font-medium text-slate-400 mt-1">Sử dụng thanh tìm kiếm bên trên để thêm thuốc vào đơn</span>
                   </div>
                 )}
 

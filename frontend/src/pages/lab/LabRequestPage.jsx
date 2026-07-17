@@ -128,7 +128,13 @@ export default function LabRequestPage() {
       });
       toast.success(`Đã nhập kết quả cho "${resultModal.item.testName}".`);
       setResultModal(null);
-      await fetchRequests();
+      
+      // Auto-switch to IN_PROGRESS tab if we were on REQUESTED tab to prevent the ticket from disappearing
+      if (filterStatus === "REQUESTED") {
+        setFilterStatus("IN_PROGRESS");
+      } else {
+        await fetchRequests();
+      }
     } catch (err) {
       toast.error(err, "Không thể lưu kết quả");
     } finally {
