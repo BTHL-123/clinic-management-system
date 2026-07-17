@@ -1,0 +1,30 @@
+package com.clinicmanagement.doctor;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import java.util.List;
+
+public interface DoctorRepository extends JpaRepository<Doctor, Long> {
+    
+    @Query("SELECT d FROM Doctor d JOIN d.user u WHERE " +
+            "(:departmentId IS NULL OR d.department.departmentId = :departmentId) AND " +
+            "(LOWER(u.fullName) LIKE CONCAT('%', LOWER(CAST(:keyword AS string)), '%') " +
+            "OR LOWER(d.doctorCode) LIKE CONCAT('%', LOWER(CAST(:keyword AS string)), '%')) AND " +
+            "(:status IS NULL OR d.status = :status)")
+    Page<Doctor> searchDoctors(@Param("departmentId") Long departmentId,
+                               @Param("keyword") String keyword,
+                               @Param("status") String status,
+                               Pageable pageable);
+
+    boolean existsByDoctorCode(String doctorCode);
+
+    @Query("SELECT d.doctorCode FROM Doctor d WHERE d.doctorCode LIKE 'DOC%'")
+    List<String> findDoctorCodes();
+    
+    java.util.Optional<Doctor> findByUser_UserId(Long userId);
+    
+    boolean existsByUser_UserId(Long userId);
+}

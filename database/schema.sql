@@ -62,6 +62,16 @@ CREATE TABLE user_roles (
         ON DELETE CASCADE
 );
 
+CREATE TABLE email_otps (
+    otp_id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    purpose VARCHAR(30) NOT NULL,
+    otp_hash VARCHAR(255) NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    consumed BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE role_permissions (
     role_id BIGINT NOT NULL,
     permission_id BIGINT NOT NULL,
@@ -208,7 +218,7 @@ CREATE TABLE appointment_slots (
     end_time TIME NOT NULL,
 
     status VARCHAR(20) NOT NULL DEFAULT 'AVAILABLE'
-        CHECK (status IN ('AVAILABLE', 'LOCKED', 'BOOKED', 'CANCELLED')),
+        CHECK (status IN ('AVAILABLE', 'LOCKED', 'BOOKED', 'BLOCKED', 'CANCELLED')),
 
     locked_until TIMESTAMP,
     locked_by_patient_id BIGINT,
@@ -767,7 +777,7 @@ CREATE TABLE medicine_batches (
     current_quantity INT NOT NULL CHECK (current_quantity >= 0),
 
     status VARCHAR(20) NOT NULL DEFAULT 'AVAILABLE'
-        CHECK (status IN ('AVAILABLE', 'LOW_STOCK', 'EXPIRED', 'OUT_OF_STOCK')),
+        CHECK (status IN ('AVAILABLE', 'LOW_STOCK', 'EXPIRED', 'OUT_OF_STOCK', 'CANCELLED')),
 
     imported_by BIGINT,
     imported_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -957,6 +967,7 @@ CREATE TABLE refunds (
 
     refund_amount NUMERIC(12,2) NOT NULL CHECK (refund_amount >= 0),
     reason TEXT,
+    reject_reason TEXT,
 
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
         CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED', 'COMPLETED', 'FAILED')),
@@ -1185,14 +1196,28 @@ CREATE TABLE system_settings (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_system_settings_updated_by
-        FOREIGN KEY (updated_by) REFERENCES users(user_id)
-        ON DELETE SET NULL
+);
+
+CREATE TABLE notifications (
+    notification_id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    type VARCHAR(50) NOT NULL DEFAULT 'SYSTEM',
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_notifications_user
+        FOREIGN KEY (user_id) REFERENCES users(user_id)
+        ON DELETE CASCADE
 );
 
 -- =========================================================
 -- 14. Indexes
 -- =========================================================
+CREATE INDEX idx_notifications_user_unread ON notifications(user_id, is_read);
 CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_email_otps_lookup ON email_otps(email, purpose, consumed, created_at DESC);
 
 CREATE INDEX idx_patients_phone ON patients(phone);
 CREATE INDEX idx_patients_code ON patients(patient_code);

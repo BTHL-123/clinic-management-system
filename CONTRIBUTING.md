@@ -1,18 +1,51 @@
-# Quy định Đóng góp (Contributing Guidelines)
+# ⚖️ Quy tắc đóng góp Code (Contributing Guidelines)
 
-Tất cả thành viên trong nhóm bắt buộc tuân thủ quy trình dưới đây để đảm bảo chất lượng mã nguồn (code quality):
+Để đảm bảo mã nguồn toàn dự án đồng nhất, sạch sẽ và hạn chế tối đa xung đột (conflict) mã nguồn, yêu cầu tất cả thành viên tuân thủ nghiêm ngặt các quy tắc dưới đây.
 
-## 1. Quy trình làm việc (Workflow)
-1. Cập nhật mã nguồn mới nhất: `git checkout dev` -> `git pull origin dev`.
-2. Tạo nhánh tính năng mới: `git checkout -b feature/ten-cua-ban`.
-3. Sau khi hoàn thành, đẩy nhánh lên máy chủ (push): `git push origin feature/ten-cua-ban`.
-4. Tạo yêu cầu gộp mã (Pull Request - PR) trên GitHub để trưởng nhóm duyệt mã (Review).
+---
 
-## 2. Tiêu chuẩn mã nguồn (Coding Standards)
-- **Biến môi trường (Environment Variables):** Tuyệt đối không đẩy tệp `.env` chứa mã khóa (API Key) lên Git. Hãy sử dụng tệp mẫu `.env.example`.
-- **Xử lý bất đồng bộ (Async/Await):** Các hàm gọi trí tuệ nhân tạo (AI API) phải có trạng thái chờ (Loading State) ở giao diện (Frontend).
-- **Quản lý câu lệnh (Prompt Management):** Lưu trữ các câu lệnh (prompts) trong thư mục riêng để dễ dàng tinh chỉnh.
+## 🌿 1. Chiến lược phân nhánh (Branching Strategy)
 
-## 3. Kiểm duyệt mã (Code Review)
-- Ít nhất một thành viên khác phải kiểm duyệt (review) đoạn mã trước khi được phép gộp (merge) vào nhánh `dev`.
-- Ưu tiên sử dụng công cụ AI Studio để kiểm tra lỗi logic và bảo mật trước khi tạo PR.
+Dự án áp dụng mô hình **Feature Branching** để phân tách luồng làm việc:
+
+* `main`: Nhánh chứa mã nguồn ổn định nhất dùng để demo hoặc triển khai (deploy). **TUYỆT ĐỐI KHÔNG** lập trình hoặc tương tác trực tiếp trên nhánh này.
+* `dev`: Nhánh tích hợp (integration) các tính năng mới đã hoàn thành từ các thành viên.
+* `feature/ten-tinh-nang`: Nhánh con độc lập để mỗi thành viên tự phát triển task được giao (Ví dụ: `feature/department-management`).
+* `hotfix/ten-loi`: Nhánh xử lý gấp các lỗi phát sinh.
+
+### 🔄 Quy trình đẩy code lên Git chuẩn:
+1. Cập nhật code mới nhất từ nhánh chung:
+   `git checkout dev`
+   `git pull origin dev`
+2. Tạo nhánh tính năng mới từ `dev`:
+   `git checkout -b feature/ten-module-cua-ban`
+3. Sau khi hoàn thành code, thực hiện commit và push lên repository:
+   `git add .`
+   `git commit -m "feat: mô tả tính năng ngắn gọn"`
+   `git push origin feature/ten-module-cua-ban`
+4. Lên giao diện GitHub tạo **Pull Request (PR)** từ nhánh của bạn vào nhánh `dev`.
+
+---
+
+## 🚫 2. Quy định nghiêm ngặt (Strict Rules)
+
+1. ❌ **KHÔNG tự ý chỉnh sửa API Contract** trong file `docs/api-design.md`.
+2. ❌ **KHÔNG tự ý sửa đổi file `database/schema.sql`** khi chưa thông báo cho toàn đội.
+3. ❌ **KHÔNG can thiệp/sửa đổi chéo code** thuộc module của người khác.
+
+---
+
+## 💻 3. Quy ước Lập trình Backend (Spring Boot)
+
+* **Kiến trúc (Package by Feature):** Tất cả các thành phần thuộc một thực thể (Controller, Service, Repository, DTO) phải nằm tập trung trong cùng một package (Ví dụ: `com.clinicmanagement.department`).
+* **Sử dụng DTO:** Tuyệt đối KHÔNG trả trực tiếp lớp Entity ra Controller. Phải sử dụng DTO (như `DepartmentRequest`, `DepartmentResponse`).
+* **Định dạng phản hồi (ApiResponse):** Tất cả dữ liệu trả ra cho Frontend bắt buộc phải bọc qua Record `ApiResponse<T>` (Ví dụ: `return ResponseEntity.ok(ApiResponse.success(data));`).
+* **Quản lý Ngoại lệ:** Sử dụng `GlobalExceptionHandler` và các Exception có sẵn trong package `common.exception`.
+
+---
+
+## 🎨 4. Quy ước Lập trình Frontend (React + Vite)
+
+* **Kết nối mạng:** Luôn sử dụng `axiosClient` trong `src/services/` để gọi API. Không sử dụng `fetch` hoặc `axios` thuần.
+* Các component tái sử dụng đặt tại: `src/components/`
+* Các giao diện trang hoàn chỉnh đặt tại: `src/pages/`
