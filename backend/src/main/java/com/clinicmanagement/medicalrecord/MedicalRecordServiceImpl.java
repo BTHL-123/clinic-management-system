@@ -61,9 +61,8 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_DOCTOR"));
         if (isDoctor) {
             Long userId = currentUser.getUser().getUserId();
-            LocalDate today = LocalDate.now();
-            boolean hasAppointment = appointmentRepository.existsUpcomingAppointmentForDoctorAndPatient(
-                    userId, patientId, today
+            boolean hasAppointment = appointmentRepository.existsAppointmentForDoctorAndPatient(
+                    userId, patientId
             );
             if (!hasAppointment) {
                 throw new BusinessException("Bạn không có quyền xem bệnh án của bệnh nhân này.");
@@ -202,6 +201,38 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
                 && prescriptionRepository.existsByConsultationId(record.getConsultationId());
         boolean hasLabResult = record.getConsultationId() != null
                 && !labRequestRepository.findByConsultationId(record.getConsultationId()).isEmpty();
+
+        CustomUserDetails currentUser = getCurrentUserDetails();
+        boolean isReceptionistOnly = false;
+        if (currentUser != null) {
+            boolean hasReceptionist = currentUser.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_RECEPTIONIST"));
+            boolean hasAdmin = currentUser.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+            isReceptionistOnly = hasReceptionist && !hasAdmin;
+        }
+
+        if (isReceptionistOnly) {
+            return new MedicalRecordResponse(
+                    record.getMedicalRecordId(),
+                    record.getConsultationId(),
+                    record.getPatientId(),
+                    record.getDoctorId(),
+                    doctorName,
+                    departmentName,
+                    null, // symptoms
+                    null, // clinicalFindings
+                    null, // diagnosis
+                    null, // treatmentPlan
+                    null, // doctorNote
+                    record.getFollowUpDate(),
+                    null, // followUpNote
+                    null, // voiceInputTranscript
+                    null, // aiSummary
+                    record.getCreatedAt(),
+                    record.getUpdatedAt(),
+                    hasPrescription,
+                    hasLabResult
+            );
+        }
 
         return MedicalRecordResponse.from(record, doctorName, departmentName, hasPrescription, hasLabResult);
     }

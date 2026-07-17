@@ -4,6 +4,7 @@ import { ArrowLeft, User, History, Phone, Mail, MapPin, Heart, Shield, AlertTria
 import { getPatientById } from "../../services/patientService";
 import MedicalHistory from "../../components/MedicalHistory";
 import PageHeader from "../../components/PageHeader";
+import { useAuth } from "../../context/useAuth";
 
 const TABS = [
   { id: "info", label: "Thông tin hành chính", icon: User },
@@ -11,6 +12,11 @@ const TABS = [
 ];
 
 export default function PatientDetailPage() {
+  const { user } = useAuth();
+  const roles = (user?.roles || []).map(r => typeof r === "string" ? r : r.roleName);
+  const isReceptionistOnly = roles.some(r => r.includes("RECEPTIONIST")) && !roles.some(r => r.includes("ADMIN"));
+  const visibleTabs = isReceptionistOnly ? TABS.filter(t => t.id !== "history") : TABS;
+
   const { patientId } = useParams();
   const navigate = useNavigate();
   const [patient, setPatient] = useState(null);
@@ -164,8 +170,8 @@ export default function PatientDetailPage() {
         icon={User}
         iconColor="text-white"
         subtitle={
-          <span className="flex items-center gap-2 justify-center">
-            <span className="bg-teal-500/20 text-teal-100 px-2 py-0.5 rounded-md font-bold border border-teal-500/30">
+          <span className="flex items-center gap-2 justify-center sm:justify-start">
+            <span className="bg-teal-100 text-teal-700 px-2 py-0.5 rounded-md font-bold border border-teal-200">
               {patient.patientCode}
             </span>
             • {genderLabel(patient.gender)}
@@ -178,18 +184,17 @@ export default function PatientDetailPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-slate-200/50 pb-px">
-        {TABS.map((tab) => {
+        {visibleTabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-6 py-3 rounded-t-2xl font-bold text-sm transition-all border-b-2 ${
-                isActive 
-                  ? "border-teal-500 text-teal-700 bg-white/40" 
+              className={`flex items-center gap-2 px-6 py-3 rounded-t-2xl font-bold text-sm transition-all border-b-2 ${isActive
+                  ? "border-teal-500 text-teal-700 bg-white/40"
                   : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-white/20"
-              }`}
+                }`}
             >
               <Icon size={18} />
               {tab.label}
@@ -215,9 +220,8 @@ function InfoRow({ label, value, bold, highlight, icon }) {
         {label}
       </span>
       <span
-        className={`text-sm ${
-          bold ? "font-bold text-slate-800" : "font-medium text-slate-700"
-        } ${highlight ? "text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md" : ""}`}
+        className={`text-sm ${bold ? "font-bold text-slate-800" : "font-medium text-slate-700"
+          } ${highlight ? "text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md" : ""}`}
       >
         {value || "—"}
       </span>

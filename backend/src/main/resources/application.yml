@@ -56,3 +56,9 @@ app:
   seed:
     admin-email: ${APP_ADMIN_EMAIL:admin@example.com}
     admin-password: ${APP_ADMIN_PASSWORD:123456}
+  sepay:
+    api-key: ${SEPAY_API_KEY:VEBX1HTQSEZUQCNG9XPODLC40IMUWAYNIVS1LYVITWFCO9RMT3I8UZGDOLJ5XAOV}
+    bank-account: ${SEPAY_BANK_ACCOUNT:0565387021}
+    bank-code: ${SEPAY_BANK_CODE:MBBank}
+    transactions-url: ${SEPAY_TRANSACTIONS_URL:https://my.sepay.vn/userapi/transactions/list}
+    webhook-requires-verification: ${SEPAY_WEBHOOK_REQUIRES_VERIFICATION:true}

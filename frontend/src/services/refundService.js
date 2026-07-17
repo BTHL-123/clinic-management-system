@@ -14,3 +14,6 @@ export const approveRefund = (id) =>
 
 export const rejectRefund = (id, payload) =>
   axiosClient.put(`/refunds/${id}/reject`, payload);
+
+export const completeRefund = (id, payload) =>
+  axiosClient.put(`/refunds/${id}/complete`, payload);

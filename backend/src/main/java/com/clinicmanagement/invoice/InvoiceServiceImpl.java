@@ -1,6 +1,10 @@
 package com.clinicmanagement.invoice;
 
 import com.clinicmanagement.common.dto.PageResponse;
+import com.clinicmanagement.common.constants.BillingConstants.AppointmentStatus;
+import com.clinicmanagement.common.constants.BillingConstants.InvoiceStatus;
+import com.clinicmanagement.common.constants.BillingConstants.PaymentStatus;
+import com.clinicmanagement.common.constants.BillingConstants.PaymentType;
 import com.clinicmanagement.common.exception.BusinessException;
 import com.clinicmanagement.common.exception.ResourceNotFoundException;
 import com.clinicmanagement.invoice.dto.CreateInvoiceRequest;
@@ -33,6 +37,8 @@ import com.clinicmanagement.appointment.AppointmentRepository;
 import com.clinicmanagement.user.UserRepository;
 import com.clinicmanagement.inventory.InventoryService;
 import com.clinicmanagement.inventory.MedicineBatchRepository;
+import com.clinicmanagement.payment.Payment;
+import com.clinicmanagement.payment.PaymentRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -49,6 +55,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final AppointmentRepository appointmentRepository;
     private final UserRepository userRepository;
     private final MedicineBatchRepository medicineBatchRepository;
+    private final PaymentRepository paymentRepository;
 
     @Transactional(readOnly = true)
     @Override
@@ -68,7 +75,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         };
 
         Page<InvoiceResponse> page = invoiceRepository.findAll(spec, pageable)
-                .map(InvoiceResponse::from);
+                .map(invoice -> InvoiceResponse.from(invoice, paidAmountFor(invoice)));
         return PageResponse.from(page);
     }
 
@@ -76,7 +83,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Override
     public InvoiceDetailResponse getById(Long id) {
         Invoice invoice = findOrThrow(id);
-        return InvoiceDetailResponse.from(invoice);
+        return InvoiceDetailResponse.from(invoice, paidAmountFor(invoice));
     }
 
     @Transactional
@@ -90,7 +97,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         invoice.setPatient(patient);
         invoice.setAppointmentId(request.appointmentId());
         invoice.setCreatedBy(currentUser);
-        invoice.setStatus("UNPAID");
+        invoice.setStatus(InvoiceStatus.UNPAID);
 
         BigDecimal totalAmount = BigDecimal.ZERO;
         List<InvoiceItem> items = new ArrayList<>();
@@ -129,14 +136,14 @@ public class InvoiceServiceImpl implements InvoiceService {
         invoice.setItems(items);
 
         Invoice saved = invoiceRepository.save(invoice);
-        return InvoiceResponse.from(saved);
+        return InvoiceResponse.from(saved, paidAmountFor(saved));
     }
 
     @Transactional
     @Override
     public InvoiceResponse update(Long id, UpdateInvoiceRequest request) {
         Invoice invoice = findOrThrow(id);
-        if (!"UNPAID".equals(invoice.getStatus())) {
+        if (!InvoiceStatus.UNPAID.equals(invoice.getStatus())) {
             throw new BusinessException("Chỉ có thể cập nhật hóa đơn ở trạng thái UNPAID");
         }
 
@@ -180,22 +187,22 @@ public class InvoiceServiceImpl implements InvoiceService {
         invoice.setItems(items);
 
         Invoice updated = invoiceRepository.save(invoice);
-        return InvoiceResponse.from(updated);
+        return InvoiceResponse.from(updated, paidAmountFor(updated));
     }
 
     @Transactional
     @Override
     public InvoiceResponse cancel(Long id) {
         Invoice invoice = findOrThrow(id);
-        if ("PAID".equals(invoice.getStatus())) {
+        if (InvoiceStatus.PAID.equals(invoice.getStatus())) {
             throw new BusinessException("Không thể hủy hóa đơn đã thanh toán");
         }
-        if ("CANCELLED".equals(invoice.getStatus())) {
+        if (InvoiceStatus.CANCELLED.equals(invoice.getStatus())) {
             throw new BusinessException("Hóa đơn đã được hủy trước đó");
         }
-        invoice.setStatus("CANCELLED");
+        invoice.setStatus(InvoiceStatus.CANCELLED);
         Invoice saved = invoiceRepository.save(invoice);
-        return InvoiceResponse.from(saved);
+        return InvoiceResponse.from(saved, paidAmountFor(saved));
     }
 
     @Transactional(readOnly = true)
@@ -204,8 +211,15 @@ public class InvoiceServiceImpl implements InvoiceService {
         Patient patient = patientRepository.findByUserUserId(currentUser.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thông tin bệnh nhân của tài khoản hiện tại"));
         Page<InvoiceResponse> page = invoiceRepository.findAllByPatientPatientId(patient.getPatientId(), pageable)
-                .map(InvoiceResponse::from);
+                .map(invoice -> InvoiceResponse.from(invoice, paidAmountFor(invoice)));
         return PageResponse.from(page);
+    }
+
+    private BigDecimal paidAmountFor(Invoice invoice) {
+        if (invoice == null || invoice.getInvoiceId() == null) {
+            return BigDecimal.ZERO;
+        }
+        return paymentRepository.sumPaidAmountByInvoiceId(invoice.getInvoiceId());
     }
 
     private Invoice findOrThrow(Long id) {
@@ -222,15 +236,26 @@ public class InvoiceServiceImpl implements InvoiceService {
     public InvoiceResponse generateFromConsultation(Long consultationId) {
         ConsultationSession session = consultationSessionRepository.findById(consultationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phiên khám"));
+        java.util.Optional<Invoice> existingInvoice = invoiceRepository.findByAppointmentId(session.getAppointmentId());
+        if (existingInvoice.isPresent()) {
+            Invoice invoice = existingInvoice.get();
+            return InvoiceResponse.from(invoice, paidAmountFor(invoice));
+        }
+
         Patient patient = patientRepository.findById(session.getPatientId())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bệnh nhân"));
+
+        Appointment appointment = appointmentRepository.findById(session.getAppointmentId()).orElse(null);
 
         MedicalService consultationService = medicalServiceRepository.findAll().stream()
                 .filter(s -> "CONSULTATION".equals(s.getServiceType()) && "ACTIVE".equals(s.getStatus()))
                 .findFirst()
                 .orElse(null);
 
-        BigDecimal consultationFee = consultationService != null ? consultationService.getPrice() : new BigDecimal("50000");
+        BigDecimal consultationFee = appointment != null && appointment.getDepositAmount() != null
+                && appointment.getDepositAmount().compareTo(BigDecimal.ZERO) > 0
+                ? appointment.getDepositAmount()
+                : (consultationService != null ? consultationService.getPrice() : new BigDecimal("50000"));
         String consultationName = consultationService != null ? consultationService.getServiceName() : "Phí khám bệnh";
 
         Invoice invoice = new Invoice();
@@ -239,7 +264,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         invoice.setAppointmentId(session.getAppointmentId());
         User creator = userRepository.findById(session.getDoctorId()).orElse(null);
         invoice.setCreatedBy(creator);
-        invoice.setStatus("UNPAID");
+        invoice.setStatus(InvoiceStatus.UNPAID);
 
         BigDecimal totalAmount = BigDecimal.ZERO;
         List<InvoiceItem> items = new ArrayList<>();
@@ -303,31 +328,64 @@ public class InvoiceServiceImpl implements InvoiceService {
                 }
             }
         }
-
-        // 4. Khấu trừ phí giữ chỗ
-        BigDecimal reservationFee = new BigDecimal("50000");
-        InvoiceItem deductionItem = new InvoiceItem();
-        deductionItem.setInvoice(invoice);
-        deductionItem.setItemType("DEDUCTION");
-        deductionItem.setReferenceId(null);
-        deductionItem.setItemName("Khấu trừ phí giữ chỗ đặt lịch");
-        deductionItem.setQuantity(1);
-        deductionItem.setUnitPrice(reservationFee.negate());
-        deductionItem.setTotalPrice(reservationFee.negate());
-        items.add(deductionItem);
-        totalAmount = totalAmount.add(reservationFee.negate());
-
-        if (totalAmount.compareTo(BigDecimal.ZERO) < 0) {
-            totalAmount = BigDecimal.ZERO;
-        }
-
         invoice.setTotalAmount(totalAmount);
         invoice.setDiscountAmount(BigDecimal.ZERO);
         invoice.setFinalAmount(totalAmount);
         invoice.setItems(items);
 
         Invoice saved = invoiceRepository.save(invoice);
-        return InvoiceResponse.from(saved);
+        linkPaidDepositToInvoice(saved);
+        refreshInvoiceAndAppointmentStatus(saved);
+        Invoice refreshed = invoiceRepository.findById(saved.getInvoiceId()).orElse(saved);
+        return InvoiceResponse.from(refreshed, paidAmountFor(refreshed));
+    }
+
+    private void linkPaidDepositToInvoice(Invoice invoice) {
+        if (invoice.getAppointmentId() == null) {
+            return;
+        }
+        paymentRepository.findFirstByAppointmentIdAndPaymentTypeOrderByPaymentIdDesc(
+                        invoice.getAppointmentId(),
+                        PaymentType.DEPOSIT
+                )
+                .filter(payment -> PaymentStatus.PAID.equals(payment.getStatus()))
+                .ifPresent(payment -> {
+                    payment.setInvoice(invoice);
+                    paymentRepository.save(payment);
+                });
+    }
+
+    private void refreshInvoiceAndAppointmentStatus(Invoice invoice) {
+        BigDecimal paidAmount = paidAmountFor(invoice);
+        if (paidAmount.compareTo(invoice.getFinalAmount()) >= 0) {
+            invoice.setStatus(InvoiceStatus.PAID);
+            if (invoice.getPaidAt() == null) {
+                invoice.setPaidAt(LocalDateTime.now());
+            }
+            invoiceRepository.save(invoice);
+            updateAppointmentStatus(invoice.getAppointmentId(), AppointmentStatus.COMPLETED);
+        } else if (paidAmount.compareTo(BigDecimal.ZERO) > 0) {
+            invoice.setStatus(InvoiceStatus.PARTIALLY_PAID);
+            invoiceRepository.save(invoice);
+            updateAppointmentStatus(invoice.getAppointmentId(), AppointmentStatus.PAYMENT_DUE);
+        } else {
+            invoice.setStatus(InvoiceStatus.UNPAID);
+            invoiceRepository.save(invoice);
+            updateAppointmentStatus(invoice.getAppointmentId(), AppointmentStatus.PAYMENT_DUE);
+        }
+    }
+
+    private void updateAppointmentStatus(Long appointmentId, String status) {
+        if (appointmentId == null) {
+            return;
+        }
+        appointmentRepository.findById(appointmentId).ifPresent(appointment -> {
+            if (!AppointmentStatus.CANCELLED.equals(appointment.getStatus())
+                    && !AppointmentStatus.NO_SHOW.equals(appointment.getStatus())) {
+                appointment.setStatus(status);
+                appointmentRepository.save(appointment);
+            }
+        });
     }
 }
 

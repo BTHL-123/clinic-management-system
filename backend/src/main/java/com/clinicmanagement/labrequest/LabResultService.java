@@ -40,17 +40,19 @@ public class LabResultService {
                 .enteredBy(enteredByUserId)
                 .build();
 
-        LabResult saved = labResultRepository.save(result);
+        LabResult saved = labResultRepository.saveAndFlush(result);
 
         // Cập nhật item status → COMPLETED
         item.setStatus("COMPLETED");
-        labRequestItemRepository.save(item);
+        labRequestItemRepository.saveAndFlush(item);
 
         // Nếu tất cả items đều COMPLETED → cập nhật LabRequest → COMPLETED
         LabRequest labRequest = item.getLabRequest();
-        boolean allDone = labRequest.getItems().stream()
-                .allMatch(i -> "COMPLETED".equals(i.getStatus()));
-        if (allDone) {
+        
+        // Robust check via DB query to avoid JPA proxy/collection initialization issues
+        boolean hasUnfinished = labRequestItemRepository.existsByLabRequest_LabRequestIdAndStatusNot(labRequest.getLabRequestId(), "COMPLETED");
+
+        if (!hasUnfinished) {
             labRequest.setStatus("COMPLETED");
             labRequest.setCompletedAt(LocalDateTime.now());
             labRequestRepository.save(labRequest);

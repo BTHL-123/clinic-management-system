@@ -279,7 +279,7 @@ export default function PaymentManagement() {
                       >
                         <Eye size={15} />
                       </button>
-                      {pay.status === "PENDING" && pay.paymentMethod === "CASH" && (
+                      {pay.status === "PENDING" && (
                         <button
                           className="icon-button"
                           title="Xác nhận thanh toán"
@@ -420,18 +420,18 @@ export default function PaymentManagement() {
         </div>
       )}
 
-      {/* ── Confirm Cash Modal ───────────────────────────── */}
+      {/* ── Confirm Payment Modal ───────────────────────────── */}
       {confirmTarget && (
         <div className="modal-overlay" onClick={() => setConfirmTarget(null)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Xác nhận thanh toán tiền mặt</h2>
+              <h2>Xác nhận giao dịch thanh toán</h2>
               <button className="icon-button" onClick={() => setConfirmTarget(null)}>
                 <X size={18} />
               </button>
             </div>
             <p>
-              Xác nhận đã nhận tiền mặt cho giao dịch{" "}
+              Xác nhận bạn đã nhận được tiền cho giao dịch{" "}
               <strong>{confirmTarget.paymentCode}</strong> — số tiền{" "}
               <strong>{formatPrice(confirmTarget.amount)}</strong>?
             </p>

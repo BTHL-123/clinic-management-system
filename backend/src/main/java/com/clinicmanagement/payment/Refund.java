@@ -43,6 +43,21 @@ public class Refund {
     @Column(name = "reject_reason", columnDefinition = "TEXT")
     private String rejectReason;
 
+    @Column(name = "refund_method", length = 30)
+    private String refundMethod;
+
+    @Column(name = "bank_name", length = 100)
+    private String bankName;
+
+    @Column(name = "bank_account_number", length = 50)
+    private String bankAccountNumber;
+
+    @Column(name = "account_holder_name", length = 150)
+    private String accountHolderName;
+
+    @Column(name = "refund_transaction_ref", length = 255)
+    private String refundTransactionRef;
+
     @Column(nullable = false, length = 20)
     private String status = "PENDING";
 
@@ -54,6 +69,10 @@ public class Refund {
     @JoinColumn(name = "approved_by")
     private User approvedBy;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "processed_by")
+    private User processedBy;
+
     @CreationTimestamp
     @Column(name = "requested_at", nullable = false, updatable = false)
     private LocalDateTime requestedAt;
@@ -63,4 +82,7 @@ public class Refund {
 
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
+
+    @Column(name = "processed_at")
+    private LocalDateTime processedAt;
 }

@@ -21,9 +21,9 @@ export default function RefundRequestModal({ isOpen, onClose, onSuccess, payment
     const diffHours = diffMs / (1000 * 60 * 60);
 
     let percentage = 0;
-    if (diffHours > 24) {
+    if (diffHours >= 24) {
       percentage = 1;
-    } else if (diffHours > 2) {
+    } else if (diffHours >= 2) {
       percentage = 0.5;
     } else {
       percentage = 0;
@@ -48,16 +48,15 @@ export default function RefundRequestModal({ isOpen, onClose, onSuccess, payment
     setBusy(true);
     setError(null);
 
-    const fullReason = `Lý do: ${reason.trim()}
-Ngân hàng: ${bankName.trim()}
-STK: ${accountNumber.trim()}
-Tên Chủ TK: ${accountName.trim()}`;
-
     try {
       await createRefundRequest({
         paymentId: payment.paymentId,
         refundAmount: computedAmount,
-        reason: fullReason
+        reason: reason.trim(),
+        refundMethod: "BANK_TRANSFER",
+        bankName: bankName.trim(),
+        bankAccountNumber: accountNumber.trim(),
+        accountHolderName: accountName.trim().toUpperCase()
       });
       onSuccess();
     } catch (err) {
