@@ -55,6 +55,7 @@ import ArticleManagement from "./pages/article/ArticleManagement.jsx";
 import PatientQueueStatusPage from "./pages/appointment/PatientQueueStatusPage.jsx";
 import AuditLogPage from "./pages/audit/AuditLogPage.jsx";
 import SystemSettingsPage from "./pages/settings/SystemSettingsPage.jsx";
+import RevenueReportPage from "./pages/report/RevenueReportPage.jsx";
 
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import { useAuth } from "./context/useAuth.js";
@@ -140,6 +141,7 @@ export default function App() {
         <Route path="payments" element={<PaymentManagement />} />
         <Route path="payment/callback" element={<PaymentCallback />} />
         <Route path="refunds" element={<RefundManagement />} />
+        <Route path="reports/revenue" element={<AdminOnly><RevenueReportPage /></AdminOnly>} />
         <Route path="medicines" element={<MedicineManagement />} />
         <Route path="suppliers" element={<SupplierManagement />} />
         <Route path="inventory/batches" element={<InventoryBatches />} />

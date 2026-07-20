@@ -8,9 +8,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -21,10 +26,10 @@ public class ReportServiceImpl implements ReportService {
     @Override
     @Transactional(readOnly = true)
     public List<RevenueReportResponse> getRevenueReport(LocalDate from, LocalDate to) {
-        String sql = "SELECT DATE(paid_at) as date, SUM(final_amount) as revenue " +
+        String sql = "SELECT CAST(paid_at AS DATE) as date, SUM(final_amount) as revenue " +
                      "FROM invoices " +
                      "WHERE status = 'PAID' AND paid_at >= :from AND paid_at < :toPlusOne " +
-                     "GROUP BY DATE(paid_at) " +
+                     "GROUP BY CAST(paid_at AS DATE) " +
                      "ORDER BY date";
         
         Query query = entityManager.createNativeQuery(sql);
@@ -63,6 +68,256 @@ public class ReportServiceImpl implements ReportService {
                 : BigDecimal.ZERO;
 
         return new RevenueSummaryResponse(totalRevenue, totalInvoices, averagePerInvoice);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public RevenueDashboardResponse getRevenueDashboard(LocalDate from, LocalDate to) {
+        validateRevenueRange(from, to);
+
+        LocalDateTime fromDateTime = from.atStartOfDay();
+        LocalDateTime toDateTime = to.plusDays(1).atStartOfDay();
+        long periodDays = ChronoUnit.DAYS.between(from, to) + 1;
+        LocalDate previousTo = from.minusDays(1);
+        LocalDate previousFrom = previousTo.minusDays(periodDays - 1);
+
+        Object[] paymentSummary = getPaymentSummary(fromDateTime, toDateTime);
+        BigDecimal grossRevenue = decimalValue(paymentSummary[0]);
+        long successfulPayments = longValue(paymentSummary[1]);
+        long paidInvoices = longValue(paymentSummary[2]);
+        BigDecimal refundedAmount = getCompletedRefundAmount(fromDateTime, toDateTime);
+        BigDecimal netRevenue = grossRevenue.subtract(refundedAmount);
+
+        Object[] previousPaymentSummary = getPaymentSummary(
+                previousFrom.atStartOfDay(), previousTo.plusDays(1).atStartOfDay());
+        BigDecimal previousGrossRevenue = decimalValue(previousPaymentSummary[0]);
+        BigDecimal previousRefundedAmount = getCompletedRefundAmount(
+                previousFrom.atStartOfDay(), previousTo.plusDays(1).atStartOfDay());
+        BigDecimal previousNetRevenue = previousGrossRevenue.subtract(previousRefundedAmount);
+        BigDecimal growthRate = previousNetRevenue.compareTo(BigDecimal.ZERO) == 0
+                ? null
+                : netRevenue.subtract(previousNetRevenue)
+                        .multiply(BigDecimal.valueOf(100))
+                        .divide(previousNetRevenue.abs(), 2, RoundingMode.HALF_UP);
+
+        BigDecimal averagePayment = successfulPayments == 0
+                ? BigDecimal.ZERO
+                : grossRevenue.divide(BigDecimal.valueOf(successfulPayments), 2, RoundingMode.HALF_UP);
+
+        Object[] outstandingSummary = getOutstandingSummary(fromDateTime, toDateTime);
+        Object[] pendingRefundSummary = getPendingRefundSummary(fromDateTime, toDateTime);
+
+        return new RevenueDashboardResponse(
+                from,
+                to,
+                grossRevenue,
+                refundedAmount,
+                netRevenue,
+                previousNetRevenue,
+                growthRate,
+                successfulPayments,
+                paidInvoices,
+                averagePayment,
+                decimalValue(outstandingSummary[0]),
+                longValue(outstandingSummary[1]),
+                decimalValue(pendingRefundSummary[0]),
+                longValue(pendingRefundSummary[1]),
+                getRevenueTrend(from, to),
+                getRevenueBreakdown("payment_method", fromDateTime, toDateTime),
+                getRevenueBreakdown("payment_type", fromDateTime, toDateTime),
+                getInvoiceStatusBreakdown(fromDateTime, toDateTime),
+                getRecentPayments(fromDateTime, toDateTime)
+        );
+    }
+
+    private void validateRevenueRange(LocalDate from, LocalDate to) {
+        if (from == null || to == null || to.isBefore(from)) {
+            throw new IllegalArgumentException("Khoảng thời gian báo cáo không hợp lệ");
+        }
+        if (ChronoUnit.DAYS.between(from, to) > 731) {
+            throw new IllegalArgumentException("Khoảng thời gian báo cáo không được vượt quá 2 năm");
+        }
+    }
+
+    private Object[] getPaymentSummary(LocalDateTime from, LocalDateTime toExclusive) {
+        Query query = entityManager.createNativeQuery(
+                "SELECT COALESCE(SUM(amount), 0), COUNT(*), COUNT(DISTINCT invoice_id) " +
+                "FROM payments " +
+                "WHERE status IN ('PAID', 'REFUNDED') AND paid_at >= :from AND paid_at < :to");
+        query.setParameter("from", from);
+        query.setParameter("to", toExclusive);
+        return (Object[]) query.getSingleResult();
+    }
+
+    private BigDecimal getCompletedRefundAmount(LocalDateTime from, LocalDateTime toExclusive) {
+        Query query = entityManager.createNativeQuery(
+                "SELECT COALESCE(SUM(refund_amount), 0) FROM refunds " +
+                "WHERE status = 'COMPLETED' AND completed_at >= :from AND completed_at < :to");
+        query.setParameter("from", from);
+        query.setParameter("to", toExclusive);
+        return decimalValue(query.getSingleResult());
+    }
+
+    private Object[] getOutstandingSummary(LocalDateTime from, LocalDateTime toExclusive) {
+        Query query = entityManager.createNativeQuery(
+                "SELECT COALESCE(SUM(final_amount), 0), COUNT(*) FROM invoices " +
+                "WHERE status IN ('UNPAID', 'PARTIALLY_PAID') " +
+                "AND created_at >= :from AND created_at < :to");
+        query.setParameter("from", from);
+        query.setParameter("to", toExclusive);
+        return (Object[]) query.getSingleResult();
+    }
+
+    private Object[] getPendingRefundSummary(LocalDateTime from, LocalDateTime toExclusive) {
+        Query query = entityManager.createNativeQuery(
+                "SELECT COALESCE(SUM(refund_amount), 0), COUNT(*) FROM refunds " +
+                "WHERE status IN ('PENDING', 'APPROVED') " +
+                "AND requested_at >= :from AND requested_at < :to");
+        query.setParameter("from", from);
+        query.setParameter("to", toExclusive);
+        return (Object[]) query.getSingleResult();
+    }
+
+    private List<RevenueDashboardResponse.RevenueTrendPoint> getRevenueTrend(LocalDate from, LocalDate to) {
+        Map<LocalDate, RevenueTrendAccumulator> points = new LinkedHashMap<>();
+        for (LocalDate date = from; !date.isAfter(to); date = date.plusDays(1)) {
+            points.put(date, new RevenueTrendAccumulator());
+        }
+
+        Query paymentsQuery = entityManager.createNativeQuery(
+                "SELECT CAST(paid_at AS DATE), COALESCE(SUM(amount), 0), COUNT(*) FROM payments " +
+                "WHERE status IN ('PAID', 'REFUNDED') AND paid_at >= :from AND paid_at < :to " +
+                "GROUP BY CAST(paid_at AS DATE) ORDER BY CAST(paid_at AS DATE)");
+        paymentsQuery.setParameter("from", from.atStartOfDay());
+        paymentsQuery.setParameter("to", to.plusDays(1).atStartOfDay());
+        for (Object[] row : (List<Object[]>) paymentsQuery.getResultList()) {
+            RevenueTrendAccumulator point = points.get(dateValue(row[0]));
+            if (point != null) {
+                point.grossRevenue = decimalValue(row[1]);
+                point.transactionCount = longValue(row[2]);
+            }
+        }
+
+        Query refundsQuery = entityManager.createNativeQuery(
+                "SELECT CAST(completed_at AS DATE), COALESCE(SUM(refund_amount), 0) FROM refunds " +
+                "WHERE status = 'COMPLETED' AND completed_at >= :from AND completed_at < :to " +
+                "GROUP BY CAST(completed_at AS DATE) ORDER BY CAST(completed_at AS DATE)");
+        refundsQuery.setParameter("from", from.atStartOfDay());
+        refundsQuery.setParameter("to", to.plusDays(1).atStartOfDay());
+        for (Object[] row : (List<Object[]>) refundsQuery.getResultList()) {
+            RevenueTrendAccumulator point = points.get(dateValue(row[0]));
+            if (point != null) {
+                point.refundedAmount = decimalValue(row[1]);
+            }
+        }
+
+        return points.entrySet().stream()
+                .map(entry -> new RevenueDashboardResponse.RevenueTrendPoint(
+                        entry.getKey(),
+                        entry.getValue().grossRevenue,
+                        entry.getValue().refundedAmount,
+                        entry.getValue().grossRevenue.subtract(entry.getValue().refundedAmount),
+                        entry.getValue().transactionCount))
+                .toList();
+    }
+
+    private List<RevenueDashboardResponse.RevenueBreakdownItem> getRevenueBreakdown(
+            String column, LocalDateTime from, LocalDateTime toExclusive) {
+        if (!"payment_method".equals(column) && !"payment_type".equals(column)) {
+            throw new IllegalArgumentException("Loại phân tích doanh thu không hợp lệ");
+        }
+        Query query = entityManager.createNativeQuery(
+                "SELECT " + column + ", COALESCE(SUM(amount), 0), COUNT(*) FROM payments " +
+                "WHERE status IN ('PAID', 'REFUNDED') AND paid_at >= :from AND paid_at < :to " +
+                "GROUP BY " + column + " ORDER BY SUM(amount) DESC");
+        query.setParameter("from", from);
+        query.setParameter("to", toExclusive);
+
+        List<RevenueDashboardResponse.RevenueBreakdownItem> items = new ArrayList<>();
+        for (Object[] row : (List<Object[]>) query.getResultList()) {
+            items.add(new RevenueDashboardResponse.RevenueBreakdownItem(
+                    String.valueOf(row[0]), decimalValue(row[1]), longValue(row[2])));
+        }
+        return items;
+    }
+
+    private List<RevenueDashboardResponse.InvoiceStatusItem> getInvoiceStatusBreakdown(
+            LocalDateTime from, LocalDateTime toExclusive) {
+        Query query = entityManager.createNativeQuery(
+                "SELECT status, COUNT(*), COALESCE(SUM(final_amount), 0) FROM invoices " +
+                "WHERE created_at >= :from AND created_at < :to " +
+                "GROUP BY status ORDER BY COUNT(*) DESC");
+        query.setParameter("from", from);
+        query.setParameter("to", toExclusive);
+
+        List<RevenueDashboardResponse.InvoiceStatusItem> items = new ArrayList<>();
+        for (Object[] row : (List<Object[]>) query.getResultList()) {
+            items.add(new RevenueDashboardResponse.InvoiceStatusItem(
+                    String.valueOf(row[0]), longValue(row[1]), decimalValue(row[2])));
+        }
+        return items;
+    }
+
+    private List<RevenueDashboardResponse.RecentPaymentItem> getRecentPayments(
+            LocalDateTime from, LocalDateTime toExclusive) {
+        Query query = entityManager.createNativeQuery(
+                "SELECT p.payment_id, p.payment_code, i.invoice_code, p.payment_type, " +
+                "p.payment_method, p.amount, p.status, p.paid_at, u.full_name " +
+                "FROM payments p " +
+                "LEFT JOIN invoices i ON i.invoice_id = p.invoice_id " +
+                "LEFT JOIN users u ON u.user_id = p.paid_by " +
+                "WHERE p.status IN ('PAID', 'REFUNDED') AND p.paid_at >= :from AND p.paid_at < :to " +
+                "ORDER BY p.paid_at DESC LIMIT 10");
+        query.setParameter("from", from);
+        query.setParameter("to", toExclusive);
+
+        List<RevenueDashboardResponse.RecentPaymentItem> items = new ArrayList<>();
+        for (Object[] row : (List<Object[]>) query.getResultList()) {
+            items.add(new RevenueDashboardResponse.RecentPaymentItem(
+                    longValue(row[0]),
+                    stringValue(row[1]),
+                    stringValue(row[2]),
+                    stringValue(row[3]),
+                    stringValue(row[4]),
+                    decimalValue(row[5]),
+                    stringValue(row[6]),
+                    dateTimeValue(row[7]),
+                    stringValue(row[8])));
+        }
+        return items;
+    }
+
+    private BigDecimal decimalValue(Object value) {
+        if (value == null) return BigDecimal.ZERO;
+        if (value instanceof BigDecimal decimal) return decimal;
+        return new BigDecimal(value.toString());
+    }
+
+    private long longValue(Object value) {
+        return value == null ? 0L : ((Number) value).longValue();
+    }
+
+    private String stringValue(Object value) {
+        return value == null ? null : String.valueOf(value);
+    }
+
+    private LocalDate dateValue(Object value) {
+        if (value instanceof java.sql.Date date) return date.toLocalDate();
+        if (value instanceof LocalDate date) return date;
+        return LocalDate.parse(String.valueOf(value));
+    }
+
+    private LocalDateTime dateTimeValue(Object value) {
+        if (value == null) return null;
+        if (value instanceof java.sql.Timestamp timestamp) return timestamp.toLocalDateTime();
+        if (value instanceof LocalDateTime dateTime) return dateTime;
+        return LocalDateTime.parse(String.valueOf(value).replace(' ', 'T'));
+    }
+
+    private static final class RevenueTrendAccumulator {
+        private BigDecimal grossRevenue = BigDecimal.ZERO;
+        private BigDecimal refundedAmount = BigDecimal.ZERO;
+        private long transactionCount;
     }
 
     @Override
