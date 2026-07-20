@@ -2,6 +2,7 @@
 node_modules/
 npm-debug.log
 yarn-error.log
+*.log
 
 # Python
 __pycache__/
@@ -22,6 +23,7 @@ Thumbs.db
 
 # IDE / local tool state
 .idea/
+.vscode/
 
 # Vite cache
 .vite/
@@ -34,3 +36,4 @@ frontend/.vite/
 # Temporary files & Mockups
 .taste-skill-tmp/
 mockups.docx
+backend/package-lock.json

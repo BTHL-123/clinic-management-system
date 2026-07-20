@@ -11,6 +11,8 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
 app:
+  seed:
+    enabled: false
   sepay:
     api-key: test-api-key
     bank-account: 0123456789
