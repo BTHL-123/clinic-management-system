@@ -76,6 +76,7 @@ export default function AvailableSlots() {
   const paramWorkDate = searchParams.get("workDate") || "";
   const initialDoctorId = searchParams.get("doctorId") || String((location.state as any)?.prefillDoctorId || "");
   const prefillDepartmentName = (location.state as any)?.prefillDepartmentName;
+  const initialSearchQuery = String((location.state as any)?.initialSearchQuery || "");
 
   const getLocalISODate = (d: Date = new Date()) => {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -88,7 +89,7 @@ export default function AvailableSlots() {
   });
   
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>("");
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>(initialSearchQuery);
   
   // Base Data States
   const [departments, setDepartments] = useState<any[]>([]);
