@@ -10,11 +10,13 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: ${JPA_DDL_AUTO:update}
     open-in-view: false
     properties:
       hibernate:
         format_sql: true
+  flyway:
+    enabled: ${FLYWAY_ENABLED:false}
   mail:
     host: ${MAIL_HOST:localhost}
     port: ${MAIL_PORT:1025}
