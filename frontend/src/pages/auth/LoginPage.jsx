@@ -1,16 +1,33 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/useAuth.js";
 import { MedicalCross } from "../../components/Logo.jsx";
 
 export default function LoginPage() {
   const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const googleButtonRef = useRef(null);
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+  const navigateAfterLogin = useCallback(() => {
+    const from = location.state?.from;
+    if (!from) {
+      navigate("/dashboard", { replace: true });
+      return;
+    }
+
+    if (typeof from === "string") {
+      navigate(from, { replace: true });
+      return;
+    }
+
+    const destination = `${from.pathname || "/dashboard"}${from.search || ""}${from.hash || ""}`;
+    navigate(destination, { replace: true, state: from.state });
+  }, [location.state, navigate]);
 
   const handleGoogleCredential = useCallback(
     async (response) => {
@@ -23,14 +40,14 @@ export default function LoginPage() {
       setSubmitting(true);
       try {
         await loginWithGoogle(response.credential);
-        navigate("/dashboard", { replace: true });
+        navigateAfterLogin();
       } catch (err) {
         setError(err.message);
       } finally {
         setSubmitting(false);
       }
     },
-    [loginWithGoogle, navigate],
+    [loginWithGoogle, navigateAfterLogin],
   );
 
   useEffect(() => {
@@ -91,7 +108,7 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await login(form);
-      navigate("/dashboard", { replace: true });
+      navigateAfterLogin();
     } catch (err) {
       setError(err.message);
     } finally {

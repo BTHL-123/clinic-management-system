@@ -1,16 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth.js';
 import {
   Search, MapPin, Calendar, PhoneCall, FileText,
   Clock, ShieldCheck, Stethoscope, UserCircle2,
-  CheckCircle2, Building2, ChevronRight, Activity, HeartPulse, Brain, Eye, Droplet,
-  Bone, Wind, TestTube, Smile, Sparkles
+  CheckCircle2, ChevronRight, Activity, HeartPulse, Brain, Eye, Droplet,
+  Bone, Wind, TestTube, Smile, Sparkles, Star
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { getActiveDepartments } from '../services/departmentService';
 import { getDoctors } from '../services/doctorService';
 import { getMedicalServices } from '../services/medicalServiceService';
@@ -63,6 +62,30 @@ const LandingPage = () => {
     };
     fetchData();
   }, []);
+
+  const navigateToProtected = (pathname, state) => {
+    if (user) {
+      navigate(pathname, { state });
+      return;
+    }
+
+    navigate('/login', {
+      state: {
+        from: { pathname, state: state || null }
+      }
+    });
+  };
+
+  const scrollToSection = (sectionId) => {
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const handleSearch = (event) => {
+    event.preventDefault();
+    navigateToProtected('/dashboard/available-slots', {
+      initialSearchQuery: searchQuery.trim()
+    });
+  };
 
   // Handle scroll for header glass effect
   useEffect(() => {
@@ -133,17 +156,24 @@ const LandingPage = () => {
           </div>
 
           <nav className={`hidden lg:flex flex-1 items-center justify-evenly transition-all duration-700 font-bold ${scrolled ? 'px-4 text-[15px]' : 'px-12 text-lg'}`}>
-            {['Cơ sở y tế', 'Dịch vụ y tế', 'Khám doanh nghiệp', 'Tin tức', 'Hướng dẫn'].map((item) => (
-              <a 
-                key={item} 
-                href="#" 
+            {[
+              { label: 'Đội ngũ bác sĩ', sectionId: 'doctors' },
+              { label: 'Dịch vụ y tế', sectionId: 'services' },
+              { label: 'Gói khám', sectionId: 'packages' },
+              { label: 'Tin tức', sectionId: 'articles' },
+              { label: 'Hướng dẫn', sectionId: 'guide' }
+            ].map((item) => (
+              <button
+                key={item.sectionId}
+                type="button"
+                onClick={() => scrollToSection(item.sectionId)}
                 className={`transition-colors relative group py-2 whitespace-nowrap ${scrolled ? 'text-teal-700 hover:text-teal-500' : ''}`}
               >
                 <span className={scrolled ? "" : "text-transparent bg-clip-text bg-gradient-to-r from-teal-300 via-teal-100 to-emerald-200 drop-shadow-[0_0_8px_rgba(94,234,212,0.4)] transition-all group-hover:from-white group-hover:via-white group-hover:to-white"}>
-                  {item}
+                  {item.label}
                 </span>
                 <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[3px] transition-all group-hover:w-full rounded-full ${scrolled ? 'bg-teal-500' : 'bg-gradient-to-r from-teal-300 to-emerald-200'}`}></span>
-              </a>
+              </button>
             ))}
           </nav>
 
@@ -220,23 +250,23 @@ const LandingPage = () => {
             </p>
 
             {/* Glassmorphic Search Bar */}
-            <div className="relative flex items-center max-w-3xl mx-auto group mt-8">
+            <form onSubmit={handleSearch} className="relative flex items-center max-w-3xl mx-auto group mt-8">
               <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none text-teal-600">
                 <Search size={24} />
               </div>
               <Input
                 className="w-full h-16 pl-16 pr-40 rounded-full text-lg border-4 border-white/20 bg-white/90 backdrop-blur-xl focus-visible:ring-4 focus-visible:ring-teal-400/50 placeholder:text-slate-500 font-medium text-slate-900 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] transition-all"
-                placeholder="Tìm bệnh viện, bác sĩ, gói khám..."
+                placeholder="Tìm bác sĩ hoặc chuyên khoa..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               <Button 
-                onClick={() => navigate('/login')}
+                type="submit"
                 className="absolute right-2 top-1/2 -translate-y-1/2 h-12 rounded-full bg-teal-800 hover:bg-teal-950 text-white font-bold px-8 transition-colors"
               >
                 Tìm kiếm
               </Button>
-            </div>
+            </form>
 
             {/* Trust Indicators */}
             <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-x-10 gap-y-4 text-sm text-teal-100 font-semibold pt-6 opacity-90">
@@ -252,14 +282,14 @@ const LandingPage = () => {
       <div className="relative z-20 container mx-auto px-4 max-w-[1400px] -mt-32 md:-mt-40 mb-20">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
           {[
-            { icon: Calendar, label: "Khám\nTại Cơ Sở", color: "text-teal-600", glow: "from-teal-400 to-teal-600" },
-            { icon: Stethoscope, label: "Khám\nChuyên Khoa", color: "text-teal-600", glow: "from-teal-400 to-teal-600" },
-            { icon: PhoneCall, label: "Gọi Video\nBác Sĩ", color: "text-teal-600", glow: "from-teal-400 to-teal-600" },
-            { icon: FileText, label: "Đặt Lịch\nXét Nghiệm", color: "text-teal-600", glow: "from-teal-400 to-teal-600" },
-            { icon: Clock, label: "Khám\nNgoại Giờ", color: "text-teal-600", glow: "from-teal-400 to-teal-600" },
-            { icon: ShieldCheck, label: "Khám Doanh\nNghiệp", color: "text-teal-600", glow: "from-teal-400 to-teal-600" }
+            { icon: Calendar, label: "Đặt Lịch\nKhám", path: "/dashboard/available-slots", color: "text-teal-600", glow: "from-teal-400 to-teal-600" },
+            { icon: Stethoscope, label: "Khám\nChuyên Khoa", path: "/dashboard/our-doctors", color: "text-teal-600", glow: "from-teal-400 to-teal-600" },
+            { icon: Sparkles, label: "Trợ Lý\nSức Khỏe AI", path: "/dashboard/ai-chat", color: "text-teal-600", glow: "from-teal-400 to-teal-600" },
+            { icon: TestTube, label: "Kết Quả\nXét Nghiệm", path: "/dashboard/my-medical-history?tab=history", color: "text-teal-600", glow: "from-teal-400 to-teal-600" },
+            { icon: Clock, label: "Lịch Hẹn\nCủa Tôi", path: "/dashboard/my-appointments", color: "text-teal-600", glow: "from-teal-400 to-teal-600" },
+            { icon: FileText, label: "Bảng Giá\nDịch Vụ", path: "/dashboard/service-prices", color: "text-teal-600", glow: "from-teal-400 to-teal-600" }
           ].map((service, i) => (
-            <div key={i} className="group relative rounded-[2.5rem] transition-all duration-500 hover:-translate-y-4 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.3)] hover:z-30 cursor-pointer shadow-[0_15px_40px_-10px_rgba(0,0,0,0.15)]">
+            <button type="button" key={i} onClick={() => navigateToProtected(service.path)} className="group relative rounded-[2.5rem] transition-all duration-500 hover:-translate-y-4 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.3)] hover:z-30 cursor-pointer shadow-[0_15px_40px_-10px_rgba(0,0,0,0.15)]">
 
               {/* Softer Permanent Glowing Border */}
               <div className={`absolute inset-[-3px] rounded-[2.6rem] bg-gradient-to-br ${service.glow} opacity-20 group-hover:opacity-60 transition-opacity duration-500 blur-lg`}></div>
@@ -290,13 +320,13 @@ const LandingPage = () => {
                 {/* Always-on bottom indicator line */}
                 <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-1/3 h-1.5 bg-gradient-to-r ${service.glow} group-hover:w-full transition-all duration-500 rounded-t-full opacity-80 group-hover:opacity-100`}></div>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </div>
 
       {/* Specialties */}
-      <section className="py-24 bg-transparent relative overflow-hidden">
+      <section id="specialties" className="py-24 bg-transparent relative overflow-hidden scroll-mt-24">
         {/* SAFE Z-INDEX BACKGROUND */}
         <div className="absolute inset-0 z-0 pointer-events-none">
           <div className="absolute top-[20%] left-[-10%] right-[30%] h-[2px] bg-gradient-to-r from-transparent via-teal-400 to-transparent opacity-40 shadow-[0_0_15px_rgba(45,212,191,0.8)] -rotate-3"></div>
@@ -312,7 +342,7 @@ const LandingPage = () => {
               Tìm kiếm bác sĩ theo từng chuyên khoa cụ thể
             </p>
             <Button 
-              onClick={() => navigate('/login')}
+              onClick={() => navigateToProtected('/dashboard/our-doctors')}
               variant="ghost" 
               className="text-teal-700 font-bold hover:text-teal-800 hover:bg-white/50 group backdrop-blur-md rounded-full px-6 border border-teal-200/50 shadow-sm"
             >
@@ -346,7 +376,7 @@ const LandingPage = () => {
                 })().map((spec, i) => {
                   const Icon = getDepartmentIcon(spec.departmentName);
                   return (
-                  <div key={spec.departmentId || i} className="group bg-white/95 backdrop-blur-xl rounded-[1.5rem] p-8 flex flex-col items-center justify-center gap-5 shadow-[0_8px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_40px_rgba(20,184,166,0.1)] transition-all duration-300 hover:-translate-y-2 cursor-pointer border border-white">
+                  <button type="button" key={spec.departmentId || i} onClick={() => navigateToProtected('/dashboard/available-slots', { prefillDepartmentName: spec.departmentName })} className="group bg-white/95 backdrop-blur-xl rounded-[1.5rem] p-8 flex flex-col items-center justify-center gap-5 shadow-[0_8px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_40px_rgba(20,184,166,0.1)] transition-all duration-300 hover:-translate-y-2 cursor-pointer border border-white">
 
                     <div className="relative">
                       {/* Ambient hover glow behind icon */}
@@ -358,7 +388,7 @@ const LandingPage = () => {
                       {spec.departmentName}
                     </span>
 
-                  </div>
+                  </button>
                 )})}
               </div>
             </div>
@@ -367,18 +397,18 @@ const LandingPage = () => {
       </section>
 
       {/* Doctors */}
-      <section className="py-32 relative overflow-hidden bg-transparent">
+      <section id="doctors" className="py-32 relative overflow-hidden bg-transparent scroll-mt-24">
         {/* SAFE Z-INDEX BACKGROUND */}
         <div className="absolute inset-0 z-0 pointer-events-none">
           <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[60%] bg-teal-200/30 rounded-full blur-[120px]"></div>
-          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[60%] bg-blue-200/30 rounded-full blur-[120px]"></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[60%] bg-cyan-200/25 rounded-full blur-[120px]"></div>
           {/* Abstract curve */}
           <svg className="absolute top-0 right-0 w-full h-full opacity-20" xmlns="http://www.w3.org/2000/svg">
             <path d="M 0 0 C 400 300 800 0 1200 400 L 1200 0 Z" fill="url(#grad1)" />
             <defs>
               <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor="#14b8a6" stopOpacity="0.2" />
-                <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.2" />
+                <stop offset="100%" stopColor="#2dd4bf" stopOpacity="0.2" />
               </linearGradient>
             </defs>
           </svg>
@@ -390,7 +420,7 @@ const LandingPage = () => {
 
         <div className="container mx-auto px-4 max-w-[1400px] relative z-10">
           <div className="text-center mb-24">
-            <h2 className="text-5xl font-extrabold text-slate-900 tracking-tight uppercase">Đội ngũ Bác sĩ <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-blue-500">Đầu Ngành</span></h2>
+            <h2 className="text-5xl font-extrabold text-slate-900 tracking-tight uppercase">Đội ngũ Bác sĩ <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-cyan-500">Đầu Ngành</span></h2>
             <p className="text-slate-500 mt-6 font-medium text-xl max-w-2xl mx-auto">Các chuyên gia giàu kinh nghiệm luôn sẵn sàng tư vấn và điều trị cho bạn.</p>
           </div>
 
@@ -402,42 +432,48 @@ const LandingPage = () => {
               { fullName: "BS. Hương", specialization: "Khoa Nhi", yearsOfExperience: 12, departmentName: "Khám nhi", avatarUrl: "/doctor_4_1780660424305.png" },
               { fullName: "BS. Huy", specialization: "Xương khớp", yearsOfExperience: 8, departmentName: "Phục hồi", avatarUrl: "/doctor_5_1780660436162.png" }
             ]).map((doc, i) => {
-              const bgColors = ["bg-teal-50", "bg-blue-50", "bg-emerald-50", "bg-purple-50", "bg-rose-50"];
-              const glowColors = ["from-teal-400 to-teal-600", "from-blue-400 to-blue-600", "from-emerald-400 to-emerald-600", "from-purple-400 to-purple-600", "from-rose-400 to-rose-600"];
-              const bgColor = bgColors[i % bgColors.length];
-              const glowColor = glowColors[i % glowColors.length];
               const displayAvatar = doc.avatarUrl || "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=400&h=400&fit=crop";
 
               return (
-              <Card key={i} onClick={() => setSelectedDoctor(doc)} className="group overflow-hidden border-2 border-white shadow-[0_15px_30px_-10px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-10px_rgba(20,184,166,0.15)] transition-all duration-500 bg-white/80 backdrop-blur-xl rounded-[2rem] flex flex-col hover:-translate-y-3 relative w-full cursor-pointer">
-                <div className={`aspect-square ${bgColor} relative overflow-hidden flex items-end justify-center pt-6 rounded-t-[2rem] border-b border-white`}>
-                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-2 py-1 rounded-full text-xs font-extrabold text-amber-500 shadow-sm flex items-center gap-1 z-20">
-                    ★ 5.0
-                  </div>
-                  {/* Decorative glowing blob behind doctor */}
-                  <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 rounded-full blur-[30px] opacity-40 bg-gradient-to-r ${glowColor} group-hover:scale-125 transition-transform duration-700`}></div>
+              <Card key={i} onClick={() => setSelectedDoctor(doc)} className="group bg-white/90 backdrop-blur-xl border-2 border-white shadow-[0_15px_40px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_25px_50px_-15px_rgba(20,184,166,0.15)] transition-all duration-500 rounded-[2rem] flex flex-col hover:-translate-y-2 relative cursor-pointer mt-12 w-full overflow-hidden">
 
-                  {/* Avatar wrapper */}
-                  <div className="relative z-10 flex items-end justify-center w-full h-full">
-                    <div className="w-44 h-44 bg-white/50 backdrop-blur-xl border border-white/80 rounded-t-full flex items-center justify-center shadow-lg group-hover:h-48 transition-all duration-500 overflow-hidden relative">
-                      <div className={`absolute inset-0 opacity-20 bg-gradient-to-t ${glowColor}`}></div>
-                      <img src={displayAvatar} alt={doc.fullName} className="w-full h-full object-cover relative z-10 group-hover:scale-110 transition-transform duration-500" />
+                {/* Top Banner Gradient */}
+                <div className="absolute top-0 left-0 w-full h-[110px] bg-gradient-to-br from-teal-500 to-emerald-400 opacity-90 group-hover:opacity-100 transition-opacity"></div>
+
+                {/* Rating Badge */}
+                <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full text-xs font-black text-amber-500 shadow-sm flex items-center gap-1 z-20">
+                  <Star className="fill-amber-500 text-amber-500" size={14} /> 5.0
+                </div>
+
+                {/* Avatar overlapping banner */}
+                <div className="relative pt-8 px-6 flex flex-col items-center z-10">
+                  <div className="relative w-32 h-32 rounded-full p-1.5 bg-white shadow-[0_10px_25px_rgba(0,0,0,0.1)] group-hover:scale-105 transition-transform duration-500">
+                    <div className="w-full h-full rounded-full overflow-hidden bg-slate-100">
+                      <img src={displayAvatar} alt={doc.fullName} className="w-full h-full object-cover" />
                     </div>
                   </div>
                 </div>
-                <CardContent className="p-6 text-center space-y-3 flex-1 relative z-10 bg-gradient-to-b from-white/40 to-transparent">
+
+                <CardContent className="p-6 text-center space-y-4 flex-1 relative z-10 bg-transparent">
                   <div>
-                    <h3 className="font-extrabold text-xl text-slate-900 group-hover:text-teal-700 transition-colors whitespace-nowrap overflow-hidden text-ellipsis">{doc.fullName}</h3>
-                    <p className="text-sm text-teal-600 font-extrabold mt-1">{doc.departmentName || doc.specialization}</p>
+                    <h3 className="font-extrabold text-xl text-slate-900 group-hover:text-teal-700 transition-colors line-clamp-1">{doc.fullName}</h3>
+                    <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-teal-50/80 text-teal-700 rounded-xl text-sm font-bold mt-3 border border-teal-100/50">
+                       <Stethoscope size={14}/> {doc.departmentName || doc.specialization}
+                    </div>
                   </div>
-                  <p className="text-sm text-slate-500 font-medium">{doc.yearsOfExperience} năm KN</p>
+
+                  <div className="flex items-center justify-center gap-2 text-slate-500 text-sm font-medium">
+                    <Clock size={14} />
+                    <span>{doc.yearsOfExperience} năm kinh nghiệm</span>
+                  </div>
                 </CardContent>
+
                 <div className="p-6 pt-0 relative z-10">
                   <Button 
-                    onClick={(e) => { e.stopPropagation(); navigate('/login'); }}
-                    className="w-full rounded-full bg-slate-900 hover:bg-teal-700 text-white font-extrabold h-12 text-sm shadow-lg shadow-slate-900/10 group-hover:shadow-teal-700/20 transition-all hover:-translate-y-1"
+                    onClick={(e) => { e.stopPropagation(); navigateToProtected('/dashboard/available-slots', { prefillDoctorId: doc.doctorId }); }}
+                    className="w-full rounded-full bg-slate-900 hover:bg-teal-700 text-white font-extrabold h-14 text-[15px] shadow-lg group-hover:shadow-teal-700/30 transition-all"
                   >
-                    Đặt lịch
+                    Đặt lịch hẹn ngay
                   </Button>
                 </div>
               </Card>
@@ -447,7 +483,7 @@ const LandingPage = () => {
       </section>
 
       {/* Services */}
-      <section className="py-24 relative overflow-hidden bg-transparent">
+      <section id="services" className="py-24 relative overflow-hidden bg-transparent scroll-mt-24">
         <div className="absolute inset-0 z-0 pointer-events-none">
           <div className="absolute top-[20%] left-[10%] w-[30%] h-[40%] bg-blue-300/10 rounded-full blur-[100px]"></div>
           <div className="absolute bottom-[10%] right-[10%] w-[40%] h-[50%] bg-teal-300/10 rounded-full blur-[120px]"></div>
@@ -471,7 +507,7 @@ const LandingPage = () => {
               const icons = [Stethoscope, Activity, TestTube, Smile, Bone, HeartPulse];
               const Icon = icons[i % icons.length];
               return (
-                <div key={i} onClick={() => navigate('/login')} className="group bg-white/80 backdrop-blur-xl rounded-3xl p-6 border-2 border-white shadow-[0_10px_30px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-15px_rgba(20,184,166,0.15)] transition-all duration-300 hover:-translate-y-2 cursor-pointer flex gap-5 items-start">
+                <button type="button" key={i} onClick={() => navigateToProtected('/dashboard/service-prices')} className="group text-left bg-white/80 backdrop-blur-xl rounded-3xl p-6 border-2 border-white shadow-[0_10px_30px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-15px_rgba(20,184,166,0.15)] transition-all duration-300 hover:-translate-y-2 cursor-pointer flex gap-5 items-start">
                   <div className="w-14 h-14 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 group-hover:bg-teal-500 group-hover:text-white transition-colors duration-300 shadow-sm border border-teal-100/50">
                     <Icon size={28} strokeWidth={1.5} />
                   </div>
@@ -479,13 +515,13 @@ const LandingPage = () => {
                     <h3 className="font-extrabold text-lg text-slate-800 mb-1 group-hover:text-teal-700 transition-colors">{srv.serviceName}</h3>
                     <p className="text-slate-500 font-medium text-xs leading-relaxed mb-1 line-clamp-2">{srv.description}</p>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
           
           <div className="mt-12 text-center">
-            <Button onClick={() => navigate('/login')} variant="outline" className="rounded-full px-8 h-12 font-bold border-teal-200 text-teal-700 hover:bg-teal-50 hover:text-teal-800 transition-colors shadow-sm bg-white/50 backdrop-blur-md">
+            <Button onClick={() => navigateToProtected('/dashboard/service-prices')} variant="outline" className="rounded-full px-8 h-12 font-bold border-teal-200 text-teal-700 hover:bg-teal-50 hover:text-teal-800 transition-colors shadow-sm bg-white/50 backdrop-blur-md">
               Xem tất cả dịch vụ
             </Button>
           </div>
@@ -493,7 +529,7 @@ const LandingPage = () => {
       </section>
 
       {/* Packages */}
-      <section className="py-32 relative overflow-hidden bg-transparent">
+      <section id="packages" className="py-32 relative overflow-hidden bg-transparent scroll-mt-24">
         {/* Creative mesh background */}
         <div className="absolute inset-0 z-0 pointer-events-none">
           <div className="absolute top-[-20%] left-[20%] w-[60%] h-[60%] bg-gradient-to-r from-emerald-100/40 to-teal-100/40 rounded-full blur-[120px]"></div>
@@ -555,7 +591,7 @@ const LandingPage = () => {
                 </CardContent>
                 <div className="p-10 pt-0 relative z-20">
                   <Button 
-                    onClick={(e) => { e.stopPropagation(); navigate('/login'); }}
+                    onClick={(e) => { e.stopPropagation(); navigateToProtected('/dashboard/service-prices'); }}
                     className={`w-full rounded-full h-16 text-lg font-extrabold transition-all hover:scale-105 shadow-xl ${isPopular ? 'bg-gradient-to-r from-teal-400 to-emerald-400 text-teal-950 hover:from-teal-300 hover:to-emerald-300 hover:shadow-teal-400/50' : 'bg-slate-900 hover:bg-slate-800 text-white'}`}>
                     Chọn gói này
                   </Button>
@@ -567,7 +603,7 @@ const LandingPage = () => {
       </section>
 
       {/* Articles */}
-      <section className="py-32 relative overflow-hidden bg-transparent">
+      <section id="articles" className="py-32 relative overflow-hidden bg-transparent scroll-mt-24">
         {/* Abstract background elements */}
         <div className="absolute inset-0 z-0 pointer-events-none">
           <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[60%] bg-teal-200/30 rounded-full blur-[120px]"></div>
@@ -594,7 +630,7 @@ const LandingPage = () => {
                     </div>
                     <div className="p-8 flex flex-col flex-1">
                       <div className="flex items-center gap-3 text-sm text-slate-500 font-medium mb-4">
-                        <span>{new Date(article.createdAt || Date.now()).toLocaleDateString("vi-VN")}</span>
+                        <span>{article.createdAt ? new Date(article.createdAt).toLocaleDateString("vi-VN") : "Mới cập nhật"}</span>
                         <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
                         <span>{article.authorName || "Đội ngũ y bác sĩ"}</span>
                       </div>
@@ -621,7 +657,7 @@ const LandingPage = () => {
       </section>
 
       {/* 3 Step Process */}
-      <section className="py-32 relative overflow-hidden bg-transparent">
+      <section id="guide" className="py-32 relative overflow-hidden bg-transparent scroll-mt-24">
         <div className="absolute inset-0 z-0 pointer-events-none">
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03]"></div>
           {/* Laser Lines */}
@@ -657,30 +693,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 relative z-20">
-        <div className="container mx-auto px-4 max-w-[1400px]">
-          <div className="bg-gradient-to-r from-teal-800 to-teal-950 rounded-[3rem] p-10 md:p-16 flex flex-col md:flex-row items-center justify-between gap-10 shadow-2xl border border-teal-700/50">
-            <div className="text-center md:text-left max-w-xl">
-              <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4">Nhận tư vấn Sức khỏe Miễn phí</h2>
-              <p className="text-teal-100/80 font-medium text-lg">Đăng ký email để nhận các bài viết y khoa hữu ích và mã giảm giá gói khám.</p>
-            </div>
-            <div className="flex flex-col sm:flex-row w-full md:w-auto gap-4">
-              <Input
-                placeholder="Nhập email của bạn..."
-                className="bg-white/10 border-white/20 text-white placeholder:text-teal-200/50 min-w-[300px] rounded-full h-14 px-6 font-medium focus-visible:ring-teal-400 backdrop-blur-sm"
-              />
-              <Button 
-                onClick={() => navigate('/login')}
-                className="bg-teal-400 hover:bg-teal-300 text-teal-950 rounded-full px-10 h-14 font-extrabold shadow-lg hover:shadow-teal-400/25 transition-all hover:-translate-y-0.5"
-              >
-                Đăng ký
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Footer */}
       <footer className="bg-slate-900 text-slate-300 pt-10 pb-8 relative overflow-hidden">
         {/* SAFE Z-INDEX BACKGROUND */}
@@ -700,34 +712,26 @@ const LandingPage = () => {
                   <span className="font-semibold text-[1.2rem] tracking-widest text-teal-400">Clinic</span>
                 </div>
               </div>
-              <p className="text-base text-slate-400 font-medium max-w-sm mb-8 leading-relaxed">
+              <p className="text-base text-slate-400 font-medium max-w-sm leading-relaxed">
                 Nền tảng y tế số hàng đầu, mang đến trải nghiệm chăm sóc sức khỏe tiện lợi, minh bạch và an toàn tuyệt đối.
               </p>
-              <div className="flex gap-4">
-                {/* Social placeholders */}
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-teal-500 hover:text-white transition-colors cursor-pointer border border-white/10"></div>
-                ))}
-              </div>
             </div>
 
             <div className="space-y-6">
-              <h4 className="font-bold text-white uppercase tracking-wider text-sm">Về chúng tôi</h4>
+              <h4 className="font-bold text-white uppercase tracking-wider text-sm">Khám phá</h4>
               <ul className="space-y-4 text-base font-semibold">
-                <li><a href="#" className="hover:text-teal-400 transition-colors">Giới thiệu</a></li>
-                <li><a href="#" className="hover:text-teal-400 transition-colors">Tuyển dụng</a></li>
-                <li><a href="#" className="hover:text-teal-400 transition-colors">Điều khoản</a></li>
-                <li><a href="#" className="hover:text-teal-400 transition-colors">Bảo mật</a></li>
+                <li><button type="button" onClick={() => scrollToSection('doctors')} className="hover:text-teal-400 transition-colors">Đội ngũ bác sĩ</button></li>
+                <li><button type="button" onClick={() => scrollToSection('articles')} className="hover:text-teal-400 transition-colors">Bài viết y tế</button></li>
+                <li><button type="button" onClick={() => scrollToSection('guide')} className="hover:text-teal-400 transition-colors">Hướng dẫn đặt lịch</button></li>
               </ul>
             </div>
 
             <div className="space-y-6">
               <h4 className="font-bold text-white uppercase tracking-wider text-sm">Dịch vụ</h4>
               <ul className="space-y-4 text-base font-semibold">
-                <li><a href="#" className="hover:text-teal-400 transition-colors">Khám lâm sàng</a></li>
-                <li><a href="#" className="hover:text-teal-400 transition-colors">Tầm soát K</a></li>
-                <li><a href="#" className="hover:text-teal-400 transition-colors">Xét nghiệm</a></li>
-                <li><a href="#" className="hover:text-teal-400 transition-colors">Tiêm chủng</a></li>
+                <li><button type="button" onClick={() => navigateToProtected('/dashboard/available-slots')} className="hover:text-teal-400 transition-colors">Đặt lịch khám</button></li>
+                <li><button type="button" onClick={() => navigateToProtected('/dashboard/service-prices')} className="hover:text-teal-400 transition-colors">Bảng giá dịch vụ</button></li>
+                <li><button type="button" onClick={() => navigateToProtected('/dashboard/ai-chat')} className="hover:text-teal-400 transition-colors">Trợ lý sức khỏe AI</button></li>
               </ul>
             </div>
 
@@ -771,7 +775,7 @@ const LandingPage = () => {
           onClose={() => setSelectedDoctor(null)}
           onBookClick={() => {
             setSelectedDoctor(null);
-            navigate('/login');
+            navigateToProtected('/dashboard/available-slots', { prefillDoctorId: selectedDoctor.doctorId });
           }}
         />
       )}

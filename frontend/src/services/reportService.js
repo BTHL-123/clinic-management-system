@@ -6,6 +6,9 @@ export const getRevenueReport = (params) =>
 export const getRevenueSummary = (params) =>
   axiosClient.get("/reports/revenue/summary", { params });
 
+export const getRevenueDashboard = (params) =>
+  axiosClient.get("/reports/revenue/dashboard", { params });
+
 export const getAppointmentReport = (params) =>
   axiosClient.get("/reports/appointments", { params });
 
