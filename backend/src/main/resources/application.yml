@@ -56,8 +56,10 @@ app:
     primary-model: ${GROQ_PRIMARY_MODEL:llama-3.3-70b-versatile}
     fallback-model: ${GROQ_FALLBACK_MODEL:llama-3.1-8b-instant}
   seed:
-    admin-email: ${APP_ADMIN_EMAIL:admin@example.com}
-    admin-password: ${APP_ADMIN_PASSWORD:123456}
+    enabled: ${APP_SEED_ENABLED:true}
+    admin-email: ${APP_ADMIN_EMAIL:}
+    admin-password: ${APP_ADMIN_PASSWORD:}
+    admin-full-name: ${APP_ADMIN_FULL_NAME:System Administrator}
   sepay:
     api-key: ${SEPAY_API_KEY:}
     bank-account: ${SEPAY_BANK_ACCOUNT:}
