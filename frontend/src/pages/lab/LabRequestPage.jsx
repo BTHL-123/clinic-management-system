@@ -128,7 +128,13 @@ export default function LabRequestPage() {
       });
       toast.success(`Đã nhập kết quả cho "${resultModal.item.testName}".`);
       setResultModal(null);
-      await fetchRequests();
+      
+      // Auto-switch to IN_PROGRESS tab if we were on REQUESTED tab to prevent the ticket from disappearing
+      if (filterStatus === "REQUESTED") {
+        setFilterStatus("IN_PROGRESS");
+      } else {
+        await fetchRequests();
+      }
     } catch (err) {
       toast.error(err, "Không thể lưu kết quả");
     } finally {
@@ -254,8 +260,8 @@ export default function LabRequestPage() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
-            {/* Left Column: Vouchers List (5/12 width) */}
-            <div className="lg:col-span-5 flex flex-col gap-4 max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar pr-1">
+            {/* Left Column: Vouchers List (7/12 width) */}
+            <div className="lg:col-span-7 flex flex-col gap-4 max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar pr-1">
               {filteredRequests.map((req) => {
                 const isSelected = req.labRequestId === selectedRequestId;
                 const patient = patientsMap[req.patientId];
@@ -275,7 +281,7 @@ export default function LabRequestPage() {
                     )}
                     
                     {/* Top Row: Date & Status */}
-                    <div className="flex justify-between items-center w-full">
+                    <div className="flex justify-between items-center gap-2 flex-wrap w-full">
                       <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500">
                         <Clock size={13} className="text-slate-400" />
                         <span>
@@ -319,8 +325,8 @@ export default function LabRequestPage() {
               })}
             </div>
 
-            {/* Right Column: Sticky Detail Panel (7/12 width) */}
-            <div className="lg:col-span-7 sticky top-6">
+            {/* Right Column: Sticky Detail Panel (5/12 width) */}
+            <div className="lg:col-span-5 sticky top-6">
               {selectedRequest ? (
                 <div className="bg-white rounded-[2rem] border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.03)] p-6 flex flex-col gap-6 animate-[fadeIn_0.25s_ease]">
                   

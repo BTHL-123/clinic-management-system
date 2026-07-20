@@ -62,6 +62,7 @@ const groups = [
     label: "Tài chính",
     icon: TrendingUp,
     items: [
+      { path: "/dashboard/reports/revenue", label: "Báo cáo doanh thu" },
       { path: "/dashboard/payments", label: "Thanh toán" },
       { path: "/dashboard/invoices", label: "Hóa đơn" },
       { path: "/dashboard/refunds", label: "Hoàn tiền" },
@@ -90,7 +91,7 @@ const quickItems = [
   { path: "/dashboard/users", label: "Tài khoản", icon: UsersRound },
   { path: "/dashboard/medicines", label: "Thuốc", icon: Pill },
   { path: "/dashboard/inventory/batches", label: "Kho thuốc", icon: PackageOpen },
-  { path: "/dashboard/payments", label: "Tài chính", icon: CreditCard },
+  { path: "/dashboard/reports/revenue", label: "Tài chính", icon: CreditCard },
   { path: "/dashboard/audit-logs", label: "Nhật ký", icon: FileClock },
   { path: "/dashboard/system-settings", label: "Cấu hình", icon: Settings },
 ];
@@ -110,7 +111,9 @@ export default function AdminSidebar() {
       if (stored) {
         return JSON.parse(stored);
       }
-    } catch (e) {}
+    } catch {
+      // Ignore invalid persisted menu state and use the defaults below.
+    }
     return {
       overview: true,
       ...(activeGroup ? { [activeGroup]: true } : {})
@@ -127,6 +130,8 @@ export default function AdminSidebar() {
 
   useEffect(() => {
     if (activeGroup) {
+      // Keep the current route visible when navigating between admin sections.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setOpenGroups((prev) => ({ ...prev, [activeGroup]: true }));
     }
   }, [activeGroup]);

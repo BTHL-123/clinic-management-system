@@ -18,5 +18,5 @@ export const createOnlinePaymentUrl = (payload) =>
 export const processPaymentCallback = (payload) =>
   axiosClient.post("/payments/online/callback", payload);
 
-export const verifySePayTransaction = (id) =>
-  axiosClient.post(`/payments/${id}/verify-sepay`);
+export const verifySePayTransaction = (id, config) =>
+  axiosClient.post(`/payments/${id}/verify-sepay`, null, config);

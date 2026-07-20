@@ -11,11 +11,13 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class LabRequestItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "lab_request_item_id")
+    @EqualsAndHashCode.Include
     private Long labRequestItemId;
 
     @ManyToOne(fetch = FetchType.LAZY)

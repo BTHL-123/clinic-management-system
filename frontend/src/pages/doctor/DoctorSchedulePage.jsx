@@ -585,15 +585,25 @@ export default function DoctorSchedulePage() {
                           </button>
 
                           {!isPastSchedule && (
-                            <button
-                              onClick={() => handleStartExam(appt)}
-                              className={`flex-1 py-2 font-extrabold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 ${isUrgent
-                                  ? "bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/10"
-                                  : "bg-[#0A604E] hover:bg-[#1DB896] text-white shadow-teal-500/10"
-                                }`}
-                            >
-                              {isUrgent ? "XỬ LÝ NGAY" : "Bắt đầu"}
-                            </button>
+                            appt.status === "COMPLETED" ? (
+                              <button
+                                disabled
+                                className="flex-1 py-2 font-extrabold text-xs rounded-xl bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed flex items-center justify-center gap-1.5"
+                              >
+                                <CheckCircle size={14} />
+                                Đã khám
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleStartExam(appt)}
+                                className={`flex-1 py-2 font-extrabold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 ${isUrgent
+                                    ? "bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/10"
+                                    : "bg-[#0A604E] hover:bg-[#1DB896] text-white shadow-teal-500/10"
+                                  }`}
+                              >
+                                {isUrgent ? "XỬ LÝ NGAY" : "Bắt đầu"}
+                              </button>
+                            )
                           )}
                         </div>
                       </div>

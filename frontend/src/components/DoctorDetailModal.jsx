@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, ShieldCheck, GraduationCap, Activity, Star, FileText, ThumbsUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-export default function DoctorDetailModal({ selectedDoctor, onClose }) {
+export default function DoctorDetailModal({ selectedDoctor, onClose, onBookClick }) {
   const navigate = useNavigate();
 
   return (
@@ -39,15 +39,11 @@ export default function DoctorDetailModal({ selectedDoctor, onClose }) {
               <div className="flex flex-col md:flex-row gap-6 items-center md:items-end mb-8">
                 <div className="w-40 h-40 rounded-3xl bg-white p-2 shadow-xl shrink-0 overflow-hidden border border-slate-100">
                   <div className="w-full h-full rounded-2xl overflow-hidden bg-teal-50 flex items-center justify-center">
-                    {selectedDoctor.avatarUrl && selectedDoctor.avatarUrl !== "null" && selectedDoctor.avatarUrl.trim() !== "" ? (
-                      <img src={selectedDoctor.avatarUrl} alt={selectedDoctor.fullName} className="w-full h-full object-cover" />
-                    ) : (
-                      <img
-                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(selectedDoctor.fullName || selectedDoctor.name || "Bác sĩ")}&background=e2e8f0&color=0f172a`}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    )}
+                    <img
+                      src={selectedDoctor.avatarUrl && selectedDoctor.avatarUrl !== "null" && selectedDoctor.avatarUrl.trim() !== "" ? selectedDoctor.avatarUrl : `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedDoctor.fullName || selectedDoctor.name || "Bác sĩ")}&background=e2e8f0&color=0f172a`}
+                      alt={selectedDoctor.fullName || selectedDoctor.name || "Bác sĩ"}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                 </div>
                 <div className="text-center md:text-left flex-1">
@@ -59,7 +55,10 @@ export default function DoctorDetailModal({ selectedDoctor, onClose }) {
                 </div>
                 <div className="shrink-0 w-full md:w-auto mt-4 md:mt-0">
                   <button
-                    onClick={() => navigate('/dashboard/available-slots', { state: { prefillDoctorId: selectedDoctor.doctorId || selectedDoctor.id } })}
+                    onClick={() => {
+                      if (onBookClick) onBookClick(selectedDoctor);
+                      else navigate('/dashboard/available-slots', { state: { prefillDoctorId: selectedDoctor.doctorId || selectedDoctor.id } });
+                    }}
                     className="w-full md:w-auto bg-[#0A604E] hover:bg-[#084f40] text-white font-black py-3 px-8 rounded-xl transition-all shadow-lg cursor-pointer text-xs"
                   >
                     Đặt lịch khám ngay

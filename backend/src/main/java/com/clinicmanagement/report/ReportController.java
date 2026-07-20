@@ -36,6 +36,14 @@ public class ReportController {
         return ResponseEntity.ok(ApiResponse.success(reportService.getRevenueSummary(from, to)));
     }
 
+    @GetMapping("/revenue/dashboard")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<RevenueDashboardResponse>> getRevenueDashboard(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return ResponseEntity.ok(ApiResponse.success(reportService.getRevenueDashboard(from, to)));
+    }
+
     @GetMapping("/appointments")
     public ResponseEntity<ApiResponse<List<AppointmentReportResponse>>> getAppointmentReport(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,

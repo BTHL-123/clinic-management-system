@@ -13,11 +13,13 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class LabResult {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "lab_result_id")
+    @EqualsAndHashCode.Include
     private Long labResultId;
 
     @OneToOne(fetch = FetchType.LAZY)

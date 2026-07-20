@@ -1,15 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth.js';
 import {
   Search, MapPin, Calendar, PhoneCall, FileText,
   Clock, ShieldCheck, Stethoscope, UserCircle2,
-  CheckCircle2, Building2, ChevronRight, Activity, HeartPulse, Brain, Eye, Droplet
+  CheckCircle2, ChevronRight, Activity, HeartPulse, Brain, Eye, Droplet,
+  Bone, Wind, TestTube, Smile, Sparkles, Star
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { getActiveDepartments } from '../services/departmentService';
+import { getDoctors } from '../services/doctorService';
+import { getMedicalServices } from '../services/medicalServiceService';
+import { getArticles } from '../services/articleService';
+import DoctorDetailModal from '../components/DoctorDetailModal';
+import ArticleDetailModal from '../components/ArticleDetailModal';
 
 const LogoSVG = ({ className, scrolled }) => (
   <svg viewBox="0 0 100 100" className={className} xmlns="http://www.w3.org/2000/svg" style={{ filter: scrolled ? 'none' : 'drop-shadow(0 0 8px rgba(255,255,255,0.8))' }}>
@@ -30,6 +36,57 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  const [departments, setDepartments] = useState([]);
+  const [doctors, setDoctors] = useState([]);
+  const [packages, setPackages] = useState([]);
+  const [articles, setArticles] = useState([]);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [selectedArticle, setSelectedArticle] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [depRes, docRes, pkgRes, artRes] = await Promise.all([
+          getActiveDepartments(),
+          getDoctors({ size: 10, status: 'ACTIVE' }),
+          getMedicalServices({ page: 0, size: 10, type: 'PACKAGE' }),
+          getArticles({ status: 'PUBLISHED', page: 0, size: 3, sortBy: 'createdAt', direction: 'desc' })
+        ]);
+        setDepartments(depRes.data || []);
+        setDoctors(docRes.data?.content || []);
+        setPackages(pkgRes.data?.content || []);
+        setArticles(artRes.data?.content || []);
+      } catch (error) {
+        console.error("Error fetching landing page data:", error);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const navigateToProtected = (pathname, state) => {
+    if (user) {
+      navigate(pathname, { state });
+      return;
+    }
+
+    navigate('/login', {
+      state: {
+        from: { pathname, state: state || null }
+      }
+    });
+  };
+
+  const scrollToSection = (sectionId) => {
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const handleSearch = (event) => {
+    event.preventDefault();
+    navigateToProtected('/dashboard/available-slots', {
+      initialSearchQuery: searchQuery.trim()
+    });
+  };
+
   // Handle scroll for header glass effect
   useEffect(() => {
     const handleScroll = () => {
@@ -38,6 +95,23 @@ const LandingPage = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const getDepartmentIcon = (name) => {
+    if (!name) return Stethoscope;
+    const n = name.toLowerCase();
+    if (n.includes('tim')) return HeartPulse;
+    if (n.includes('tiêu hóa')) return Activity;
+    if (n.includes('thần kinh')) return Brain;
+    if (n.includes('mắt')) return Eye;
+    if (n.includes('nội tiết')) return Droplet;
+    if (n.includes('nhi')) return UserCircle2;
+    if (n.includes('chấn thương') || n.includes('xương')) return Bone;
+    if (n.includes('hô hấp')) return Wind;
+    if (n.includes('huyết học') || n.includes('máu')) return TestTube;
+    if (n.includes('răng')) return Smile;
+    if (n.includes('da liễu')) return Sparkles;
+    return Stethoscope;
+  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans selection:bg-teal-200 selection:text-teal-900 overflow-x-hidden relative">
@@ -82,17 +156,24 @@ const LandingPage = () => {
           </div>
 
           <nav className={`hidden lg:flex flex-1 items-center justify-evenly transition-all duration-700 font-bold ${scrolled ? 'px-4 text-[15px]' : 'px-12 text-lg'}`}>
-            {['Cơ sở y tế', 'Dịch vụ y tế', 'Khám doanh nghiệp', 'Tin tức', 'Hướng dẫn'].map((item) => (
-              <a 
-                key={item} 
-                href="#" 
+            {[
+              { label: 'Đội ngũ bác sĩ', sectionId: 'doctors' },
+              { label: 'Dịch vụ y tế', sectionId: 'services' },
+              { label: 'Gói khám', sectionId: 'packages' },
+              { label: 'Tin tức', sectionId: 'articles' },
+              { label: 'Hướng dẫn', sectionId: 'guide' }
+            ].map((item) => (
+              <button
+                key={item.sectionId}
+                type="button"
+                onClick={() => scrollToSection(item.sectionId)}
                 className={`transition-colors relative group py-2 whitespace-nowrap ${scrolled ? 'text-teal-700 hover:text-teal-500' : ''}`}
               >
                 <span className={scrolled ? "" : "text-transparent bg-clip-text bg-gradient-to-r from-teal-300 via-teal-100 to-emerald-200 drop-shadow-[0_0_8px_rgba(94,234,212,0.4)] transition-all group-hover:from-white group-hover:via-white group-hover:to-white"}>
-                  {item}
+                  {item.label}
                 </span>
                 <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[3px] transition-all group-hover:w-full rounded-full ${scrolled ? 'bg-teal-500' : 'bg-gradient-to-r from-teal-300 to-emerald-200'}`}></span>
-              </a>
+              </button>
             ))}
           </nav>
 
@@ -169,20 +250,23 @@ const LandingPage = () => {
             </p>
 
             {/* Glassmorphic Search Bar */}
-            <div className="relative flex items-center max-w-3xl mx-auto group mt-8">
+            <form onSubmit={handleSearch} className="relative flex items-center max-w-3xl mx-auto group mt-8">
               <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none text-teal-600">
                 <Search size={24} />
               </div>
               <Input
                 className="w-full h-16 pl-16 pr-40 rounded-full text-lg border-4 border-white/20 bg-white/90 backdrop-blur-xl focus-visible:ring-4 focus-visible:ring-teal-400/50 placeholder:text-slate-500 font-medium text-slate-900 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] transition-all"
-                placeholder="Tìm bệnh viện, bác sĩ, gói khám..."
+                placeholder="Tìm bác sĩ hoặc chuyên khoa..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <Button className="absolute right-2 top-1/2 -translate-y-1/2 h-12 rounded-full bg-teal-800 hover:bg-teal-950 text-white font-bold px-8 transition-colors">
+              <Button 
+                type="submit"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-12 rounded-full bg-teal-800 hover:bg-teal-950 text-white font-bold px-8 transition-colors"
+              >
                 Tìm kiếm
               </Button>
-            </div>
+            </form>
 
             {/* Trust Indicators */}
             <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-x-10 gap-y-4 text-sm text-teal-100 font-semibold pt-6 opacity-90">
@@ -198,14 +282,14 @@ const LandingPage = () => {
       <div className="relative z-20 container mx-auto px-4 max-w-[1400px] -mt-32 md:-mt-40 mb-20">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
           {[
-            { icon: Calendar, label: "Khám\nTại Cơ Sở", color: "text-teal-600", glow: "from-teal-400 to-teal-600" },
-            { icon: Stethoscope, label: "Khám\nChuyên Khoa", color: "text-teal-600", glow: "from-teal-400 to-teal-600" },
-            { icon: PhoneCall, label: "Gọi Video\nBác Sĩ", color: "text-teal-600", glow: "from-teal-400 to-teal-600" },
-            { icon: FileText, label: "Đặt Lịch\nXét Nghiệm", color: "text-teal-600", glow: "from-teal-400 to-teal-600" },
-            { icon: Clock, label: "Khám\nNgoại Giờ", color: "text-teal-600", glow: "from-teal-400 to-teal-600" },
-            { icon: ShieldCheck, label: "Khám Doanh\nNghiệp", color: "text-teal-600", glow: "from-teal-400 to-teal-600" }
+            { icon: Calendar, label: "Đặt Lịch\nKhám", path: "/dashboard/available-slots", color: "text-teal-600", glow: "from-teal-400 to-teal-600" },
+            { icon: Stethoscope, label: "Khám\nChuyên Khoa", path: "/dashboard/our-doctors", color: "text-teal-600", glow: "from-teal-400 to-teal-600" },
+            { icon: Sparkles, label: "Trợ Lý\nSức Khỏe AI", path: "/dashboard/ai-chat", color: "text-teal-600", glow: "from-teal-400 to-teal-600" },
+            { icon: TestTube, label: "Kết Quả\nXét Nghiệm", path: "/dashboard/my-medical-history?tab=history", color: "text-teal-600", glow: "from-teal-400 to-teal-600" },
+            { icon: Clock, label: "Lịch Hẹn\nCủa Tôi", path: "/dashboard/my-appointments", color: "text-teal-600", glow: "from-teal-400 to-teal-600" },
+            { icon: FileText, label: "Bảng Giá\nDịch Vụ", path: "/dashboard/service-prices", color: "text-teal-600", glow: "from-teal-400 to-teal-600" }
           ].map((service, i) => (
-            <div key={i} className="group relative rounded-[2.5rem] transition-all duration-500 hover:-translate-y-4 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.3)] hover:z-30 cursor-pointer shadow-[0_15px_40px_-10px_rgba(0,0,0,0.15)]">
+            <button type="button" key={i} onClick={() => navigateToProtected(service.path)} className="group relative rounded-[2.5rem] transition-all duration-500 hover:-translate-y-4 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.3)] hover:z-30 cursor-pointer shadow-[0_15px_40px_-10px_rgba(0,0,0,0.15)]">
 
               {/* Softer Permanent Glowing Border */}
               <div className={`absolute inset-[-3px] rounded-[2.6rem] bg-gradient-to-br ${service.glow} opacity-20 group-hover:opacity-60 transition-opacity duration-500 blur-lg`}></div>
@@ -236,13 +320,13 @@ const LandingPage = () => {
                 {/* Always-on bottom indicator line */}
                 <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-1/3 h-1.5 bg-gradient-to-r ${service.glow} group-hover:w-full transition-all duration-500 rounded-t-full opacity-80 group-hover:opacity-100`}></div>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </div>
 
       {/* Specialties */}
-      <section className="py-24 bg-transparent relative overflow-hidden">
+      <section id="specialties" className="py-24 bg-transparent relative overflow-hidden scroll-mt-24">
         {/* SAFE Z-INDEX BACKGROUND */}
         <div className="absolute inset-0 z-0 pointer-events-none">
           <div className="absolute top-[20%] left-[-10%] right-[30%] h-[2px] bg-gradient-to-r from-transparent via-teal-400 to-transparent opacity-40 shadow-[0_0_15px_rgba(45,212,191,0.8)] -rotate-3"></div>
@@ -257,7 +341,11 @@ const LandingPage = () => {
             <p className="text-slate-600 font-medium text-lg max-w-2xl mx-auto mb-6">
               Tìm kiếm bác sĩ theo từng chuyên khoa cụ thể
             </p>
-            <Button variant="ghost" className="text-teal-700 font-bold hover:text-teal-800 hover:bg-white/50 group backdrop-blur-md rounded-full px-6 border border-teal-200/50 shadow-sm">
+            <Button 
+              onClick={() => navigateToProtected('/dashboard/our-doctors')}
+              variant="ghost" 
+              className="text-teal-700 font-bold hover:text-teal-800 hover:bg-white/50 group backdrop-blur-md rounded-full px-6 border border-teal-200/50 shadow-sm"
+            >
               Xem tất cả <ChevronRight className="ml-1 group-hover:translate-x-1 transition-transform" size={18} />
             </Button>
           </div>
@@ -268,28 +356,40 @@ const LandingPage = () => {
 
             <div className="relative z-10 w-full max-w-4xl mx-auto px-4 md:px-0">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
-                {[
-                  { name: "Tim mạch", icon: HeartPulse },
-                  { name: "Tiêu hóa", icon: Activity },
-                  { name: "Thần kinh", icon: Brain },
-                  { name: "Mắt", icon: Eye },
-                  { name: "Nội tiết", icon: Droplet },
-                  { name: "Đa khoa", icon: Stethoscope }
-                ].map((spec, i) => (
-                  <div key={i} className="group bg-white/95 backdrop-blur-xl rounded-[1.5rem] p-8 flex flex-col items-center justify-center gap-5 shadow-[0_8px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_40px_rgba(20,184,166,0.1)] transition-all duration-300 hover:-translate-y-2 cursor-pointer border border-white">
+                {(() => {
+                  if (departments.length === 0) return [
+                    { departmentName: "Tim mạch" }, { departmentName: "Tiêu hóa" }, { departmentName: "Thần kinh" },
+                    { departmentName: "Mắt" }, { departmentName: "Nội tiết" }, { departmentName: "Đa khoa" }
+                  ];
+                  
+                  const uniqueDepts = [];
+                  const seen = new Set();
+                  for (const d of departments) {
+                    if (!d.departmentName) continue;
+                    const cleanName = d.departmentName.replace(/:$/, '').trim();
+                    if (!seen.has(cleanName.toLowerCase())) {
+                      seen.add(cleanName.toLowerCase());
+                      uniqueDepts.push({ ...d, departmentName: cleanName });
+                    }
+                  }
+                  return uniqueDepts.slice(0, 6);
+                })().map((spec, i) => {
+                  const Icon = getDepartmentIcon(spec.departmentName);
+                  return (
+                  <button type="button" key={spec.departmentId || i} onClick={() => navigateToProtected('/dashboard/available-slots', { prefillDepartmentName: spec.departmentName })} className="group bg-white/95 backdrop-blur-xl rounded-[1.5rem] p-8 flex flex-col items-center justify-center gap-5 shadow-[0_8px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_40px_rgba(20,184,166,0.1)] transition-all duration-300 hover:-translate-y-2 cursor-pointer border border-white">
 
                     <div className="relative">
                       {/* Ambient hover glow behind icon */}
                       <div className="absolute inset-0 bg-teal-400 opacity-0 group-hover:opacity-20 blur-xl transition-all duration-300 rounded-full scale-150"></div>
-                      <spec.icon size={56} strokeWidth={1.5} className="text-teal-700 relative z-10 transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
+                      <Icon size={56} strokeWidth={1.5} className="text-teal-700 relative z-10 transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
                     </div>
 
                     <span className="font-extrabold text-slate-800 text-[16px] text-center leading-tight transition-colors duration-300 group-hover:text-teal-800">
-                      {spec.name}
+                      {spec.departmentName}
                     </span>
 
-                  </div>
-                ))}
+                  </button>
+                )})}
               </div>
             </div>
           </div>
@@ -297,18 +397,18 @@ const LandingPage = () => {
       </section>
 
       {/* Doctors */}
-      <section className="py-32 relative overflow-hidden bg-transparent">
+      <section id="doctors" className="py-32 relative overflow-hidden bg-transparent scroll-mt-24">
         {/* SAFE Z-INDEX BACKGROUND */}
         <div className="absolute inset-0 z-0 pointer-events-none">
           <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[60%] bg-teal-200/30 rounded-full blur-[120px]"></div>
-          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[60%] bg-blue-200/30 rounded-full blur-[120px]"></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[60%] bg-cyan-200/25 rounded-full blur-[120px]"></div>
           {/* Abstract curve */}
           <svg className="absolute top-0 right-0 w-full h-full opacity-20" xmlns="http://www.w3.org/2000/svg">
             <path d="M 0 0 C 400 300 800 0 1200 400 L 1200 0 Z" fill="url(#grad1)" />
             <defs>
               <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor="#14b8a6" stopOpacity="0.2" />
-                <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.2" />
+                <stop offset="100%" stopColor="#2dd4bf" stopOpacity="0.2" />
               </linearGradient>
             </defs>
           </svg>
@@ -320,54 +420,116 @@ const LandingPage = () => {
 
         <div className="container mx-auto px-4 max-w-[1400px] relative z-10">
           <div className="text-center mb-24">
-            <h2 className="text-5xl font-extrabold text-slate-900 tracking-tight uppercase">Đội ngũ Bác sĩ <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-blue-500">Đầu Ngành</span></h2>
+            <h2 className="text-5xl font-extrabold text-slate-900 tracking-tight uppercase">Đội ngũ Bác sĩ <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-cyan-500">Đầu Ngành</span></h2>
             <p className="text-slate-500 mt-6 font-medium text-xl max-w-2xl mx-auto">Các chuyên gia giàu kinh nghiệm luôn sẵn sàng tư vấn và điều trị cho bạn.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-6 max-w-[1400px] mx-auto w-full">
-            {[
-              { name: "BS. Tâm", spec: "Tim mạch", exp: "15 năm KN", tags: ["Tim mạch"], color: "from-teal-400 to-teal-600", bg: "bg-teal-50", image: "/doctor_1_1780660389804.png" },
-              { name: "BS. Mai", spec: "Nội tiết", exp: "10 năm KN", tags: ["Tiểu đường"], color: "from-teal-400 to-teal-600", bg: "bg-teal-50", image: "/doctor_2_1780660400471.png" },
-              { name: "BS. Sơn", spec: "Ngoại TK", exp: "20 năm KN", tags: ["Cột sống"], color: "from-teal-400 to-teal-600", bg: "bg-teal-50", image: "/doctor_3_1780660412435.png" },
-              { name: "BS. Hương", spec: "Khoa Nhi", exp: "12 năm KN", tags: ["Khám nhi"], color: "from-teal-400 to-teal-600", bg: "bg-teal-50", image: "/doctor_4_1780660424305.png" },
-              { name: "BS. Huy", spec: "Xương khớp", exp: "8 năm KN", tags: ["Phục hồi"], color: "from-teal-400 to-teal-600", bg: "bg-teal-50", image: "/doctor_5_1780660436162.png" }
-            ].map((doc, i) => (
-              <Card key={i} className="group overflow-hidden border-2 border-white shadow-[0_15px_30px_-10px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-10px_rgba(20,184,166,0.15)] transition-all duration-500 bg-white/80 backdrop-blur-xl rounded-[2rem] flex flex-col hover:-translate-y-3 relative w-full">
-                <div className={`aspect-square ${doc.bg} relative overflow-hidden flex items-end justify-center pt-6 rounded-t-[2rem] border-b border-white`}>
-                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-2 py-1 rounded-full text-xs font-extrabold text-amber-500 shadow-sm flex items-center gap-1 z-20">
-                    ★ 5.0
-                  </div>
-                  {/* Decorative glowing blob behind doctor */}
-                  <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 rounded-full blur-[30px] opacity-40 bg-gradient-to-r ${doc.color} group-hover:scale-125 transition-transform duration-700`}></div>
+            {(doctors.length > 0 ? doctors.slice(0, 5) : [
+              { fullName: "BS. Tâm", specialization: "Tim mạch", yearsOfExperience: 15, departmentName: "Tim mạch", avatarUrl: "/doctor_1_1780660389804.png" },
+              { fullName: "BS. Mai", specialization: "Nội tiết", yearsOfExperience: 10, departmentName: "Tiểu đường", avatarUrl: "/doctor_2_1780660400471.png" },
+              { fullName: "BS. Sơn", specialization: "Ngoại TK", yearsOfExperience: 20, departmentName: "Cột sống", avatarUrl: "/doctor_3_1780660412435.png" },
+              { fullName: "BS. Hương", specialization: "Khoa Nhi", yearsOfExperience: 12, departmentName: "Khám nhi", avatarUrl: "/doctor_4_1780660424305.png" },
+              { fullName: "BS. Huy", specialization: "Xương khớp", yearsOfExperience: 8, departmentName: "Phục hồi", avatarUrl: "/doctor_5_1780660436162.png" }
+            ]).map((doc, i) => {
+              const displayAvatar = doc.avatarUrl || "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=400&h=400&fit=crop";
 
-                  {/* Avatar wrapper */}
-                  <div className="relative z-10 flex items-end justify-center w-full h-full">
-                    <div className="w-32 h-32 bg-white/50 backdrop-blur-xl border border-white/80 rounded-t-full flex items-center justify-center shadow-lg group-hover:h-36 transition-all duration-500 overflow-hidden relative">
-                      <div className={`absolute inset-0 opacity-20 bg-gradient-to-t ${doc.color}`}></div>
-                      <img src={doc.image} alt={doc.name} className="w-full h-full object-cover relative z-10 group-hover:scale-110 transition-transform duration-500" />
+              return (
+              <Card key={i} onClick={() => setSelectedDoctor(doc)} className="group bg-white/90 backdrop-blur-xl border-2 border-white shadow-[0_15px_40px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_25px_50px_-15px_rgba(20,184,166,0.15)] transition-all duration-500 rounded-[2rem] flex flex-col hover:-translate-y-2 relative cursor-pointer mt-12 w-full overflow-hidden">
+
+                {/* Top Banner Gradient */}
+                <div className="absolute top-0 left-0 w-full h-[110px] bg-gradient-to-br from-teal-500 to-emerald-400 opacity-90 group-hover:opacity-100 transition-opacity"></div>
+
+                {/* Rating Badge */}
+                <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full text-xs font-black text-amber-500 shadow-sm flex items-center gap-1 z-20">
+                  <Star className="fill-amber-500 text-amber-500" size={14} /> 5.0
+                </div>
+
+                {/* Avatar overlapping banner */}
+                <div className="relative pt-8 px-6 flex flex-col items-center z-10">
+                  <div className="relative w-32 h-32 rounded-full p-1.5 bg-white shadow-[0_10px_25px_rgba(0,0,0,0.1)] group-hover:scale-105 transition-transform duration-500">
+                    <div className="w-full h-full rounded-full overflow-hidden bg-slate-100">
+                      <img src={displayAvatar} alt={doc.fullName} className="w-full h-full object-cover" />
                     </div>
                   </div>
                 </div>
-                <CardContent className="p-6 text-center space-y-3 flex-1 relative z-10 bg-gradient-to-b from-white/40 to-transparent">
+
+                <CardContent className="p-6 text-center space-y-4 flex-1 relative z-10 bg-transparent">
                   <div>
-                    <h3 className="font-extrabold text-xl text-slate-900 group-hover:text-teal-700 transition-colors whitespace-nowrap overflow-hidden text-ellipsis">{doc.name}</h3>
-                    <p className="text-sm text-teal-600 font-extrabold mt-1">{doc.spec}</p>
+                    <h3 className="font-extrabold text-xl text-slate-900 group-hover:text-teal-700 transition-colors line-clamp-1">{doc.fullName}</h3>
+                    <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-teal-50/80 text-teal-700 rounded-xl text-sm font-bold mt-3 border border-teal-100/50">
+                       <Stethoscope size={14}/> {doc.departmentName || doc.specialization}
+                    </div>
                   </div>
-                  <p className="text-sm text-slate-500 font-medium">{doc.exp}</p>
+
+                  <div className="flex items-center justify-center gap-2 text-slate-500 text-sm font-medium">
+                    <Clock size={14} />
+                    <span>{doc.yearsOfExperience} năm kinh nghiệm</span>
+                  </div>
                 </CardContent>
+
                 <div className="p-6 pt-0 relative z-10">
-                  <Button className="w-full rounded-full bg-slate-900 hover:bg-teal-700 text-white font-extrabold h-12 text-sm shadow-lg shadow-slate-900/10 group-hover:shadow-teal-700/20 transition-all hover:-translate-y-1">
-                    Đặt lịch
+                  <Button 
+                    onClick={(e) => { e.stopPropagation(); navigateToProtected('/dashboard/available-slots', { prefillDoctorId: doc.doctorId }); }}
+                    className="w-full rounded-full bg-slate-900 hover:bg-teal-700 text-white font-extrabold h-14 text-[15px] shadow-lg group-hover:shadow-teal-700/30 transition-all"
+                  >
+                    Đặt lịch hẹn ngay
                   </Button>
                 </div>
               </Card>
-            ))}
+            )})}
+          </div>
+        </div>
+      </section>
+
+      {/* Services */}
+      <section id="services" className="py-24 relative overflow-hidden bg-transparent scroll-mt-24">
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <div className="absolute top-[20%] left-[10%] w-[30%] h-[40%] bg-blue-300/10 rounded-full blur-[100px]"></div>
+          <div className="absolute bottom-[10%] right-[10%] w-[40%] h-[50%] bg-teal-300/10 rounded-full blur-[120px]"></div>
+        </div>
+
+        <div className="container mx-auto px-4 max-w-[1400px] relative z-10">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight uppercase">Dịch vụ <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-blue-500">Y Tế</span></h2>
+            <p className="text-slate-500 mt-4 font-medium text-lg max-w-2xl mx-auto">Đa dạng các dịch vụ khám, xét nghiệm và tầm soát với công nghệ hiện đại nhất.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            {[
+              { serviceName: "Khám Tổng quát", description: "Đánh giá toàn diện chức năng các cơ quan", price: 500000 },
+              { serviceName: "Nội soi Tiêu hóa", description: "Công nghệ NBI phóng đại không đau", price: 1200000 },
+              { serviceName: "Xét nghiệm Máu", description: "Bộ 20 chỉ số cơ bản và nâng cao", price: 350000 },
+              { serviceName: "Siêu âm 4D", description: "Tầm soát dị tật thai nhi chính xác cao", price: 400000 },
+              { serviceName: "Chụp X-Quang", description: "Hệ thống X-Quang kỹ thuật số liều thấp", price: 200000 },
+              { serviceName: "Điện tim (ECG)", description: "Phát hiện sớm các bất thường về tim mạch", price: 150000 }
+            ].map((srv, i) => {
+              const icons = [Stethoscope, Activity, TestTube, Smile, Bone, HeartPulse];
+              const Icon = icons[i % icons.length];
+              return (
+                <button type="button" key={i} onClick={() => navigateToProtected('/dashboard/service-prices')} className="group text-left bg-white/80 backdrop-blur-xl rounded-3xl p-6 border-2 border-white shadow-[0_10px_30px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-15px_rgba(20,184,166,0.15)] transition-all duration-300 hover:-translate-y-2 cursor-pointer flex gap-5 items-start">
+                  <div className="w-14 h-14 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 group-hover:bg-teal-500 group-hover:text-white transition-colors duration-300 shadow-sm border border-teal-100/50">
+                    <Icon size={28} strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-lg text-slate-800 mb-1 group-hover:text-teal-700 transition-colors">{srv.serviceName}</h3>
+                    <p className="text-slate-500 font-medium text-xs leading-relaxed mb-1 line-clamp-2">{srv.description}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          
+          <div className="mt-12 text-center">
+            <Button onClick={() => navigateToProtected('/dashboard/service-prices')} variant="outline" className="rounded-full px-8 h-12 font-bold border-teal-200 text-teal-700 hover:bg-teal-50 hover:text-teal-800 transition-colors shadow-sm bg-white/50 backdrop-blur-md">
+              Xem tất cả dịch vụ
+            </Button>
           </div>
         </div>
       </section>
 
       {/* Packages */}
-      <section className="py-32 relative overflow-hidden bg-transparent">
+      <section id="packages" className="py-32 relative overflow-hidden bg-transparent scroll-mt-24">
         {/* Creative mesh background */}
         <div className="absolute inset-0 z-0 pointer-events-none">
           <div className="absolute top-[-20%] left-[20%] w-[60%] h-[60%] bg-gradient-to-r from-emerald-100/40 to-teal-100/40 rounded-full blur-[120px]"></div>
@@ -385,54 +547,117 @@ const LandingPage = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-6xl mx-auto items-center">
-            {[
-              { name: "Cơ Bản", price: "2.500k", desc: "Phù hợp kiểm tra sức khỏe định kỳ hàng năm.", popular: false, color: "from-teal-400 to-teal-600", lightBg: "bg-teal-50", icon: ShieldCheck },
-              { name: "Tiêu Chuẩn", price: "5.800k", desc: "Khám chuyên sâu các chức năng cơ thể, tầm soát bệnh lý phổ biến.", popular: true, color: "from-teal-400 to-teal-600", lightBg: "bg-teal-50", icon: CheckCircle2 },
-              { name: "Nâng Cao", price: "8.500k", desc: "Khám toàn diện kết hợp công nghệ cao MRI/CT.", popular: false, color: "from-teal-400 to-teal-600", lightBg: "bg-teal-50", icon: UserCircle2 }
-            ].map((pkg, i) => (
-              <Card key={i} className={`relative border-0 rounded-[3rem] flex flex-col transition-all duration-500 overflow-hidden ${pkg.popular ? 'bg-gradient-to-b from-slate-900 to-teal-950 text-white shadow-[0_30px_60px_-15px_rgba(20,184,166,0.4)] md:scale-110 z-20 ring-4 ring-teal-500/30 hover:shadow-[0_40px_80px_-15px_rgba(20,184,166,0.5)] hover:-translate-y-2' : 'bg-white/60 backdrop-blur-2xl border-2 border-white shadow-[0_20px_50px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] hover:-translate-y-2 z-10'}`}>
+            {(packages.length > 0 ? packages.slice(0, 3) : [
+              { serviceName: "Cơ Bản", price: 2500000, description: "Phù hợp kiểm tra sức khỏe định kỳ hàng năm.", popular: false },
+              { serviceName: "Tiêu Chuẩn", price: 5800000, description: "Khám chuyên sâu các chức năng cơ thể, tầm soát bệnh lý phổ biến.", popular: true },
+              { serviceName: "Nâng Cao", price: 8500000, description: "Khám toàn diện kết hợp công nghệ cao MRI/CT.", popular: false }
+            ]).map((pkg, i) => {
+              const icons = [ShieldCheck, CheckCircle2, UserCircle2];
+              const Icon = icons[i % icons.length];
+              const isPopular = pkg.popular !== undefined ? pkg.popular : (i === 1);
+              
+              return (
+              <Card key={i} className={`relative border-0 rounded-[3rem] flex flex-col transition-all duration-500 overflow-hidden ${isPopular ? 'bg-gradient-to-b from-slate-900 to-teal-950 text-white shadow-[0_30px_60px_-15px_rgba(20,184,166,0.4)] md:scale-110 z-20 ring-4 ring-teal-500/30 hover:shadow-[0_40px_80px_-15px_rgba(20,184,166,0.5)] hover:-translate-y-2' : 'bg-white/60 backdrop-blur-2xl border-2 border-white shadow-[0_20px_50px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] hover:-translate-y-2 z-10'}`}>
                 {/* Glow effect inside card */}
-                {pkg.popular && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-teal-500/20 blur-[60px] pointer-events-none"></div>}
-                {!pkg.popular && <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 ${pkg.lightBg} blur-[60px] pointer-events-none`}></div>}
+                {isPopular && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-teal-500/20 blur-[60px] pointer-events-none"></div>}
+                {!isPopular && <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-teal-50 blur-[60px] pointer-events-none`}></div>}
 
-                {pkg.popular && (
+                {isPopular && (
                   <div className="absolute top-6 right-6 bg-gradient-to-r from-amber-400 to-orange-500 text-white px-5 py-2 rounded-full text-sm font-extrabold shadow-xl z-30 animate-pulse">
                     Phổ Biến Nhất
                   </div>
                 )}
 
-                <div className={`p-10 md:p-12 text-center relative z-20 ${pkg.popular ? 'border-b border-white/10' : 'border-b border-slate-200/50'}`}>
-                  <div className={`w-20 h-20 mx-auto rounded-[1.5rem] flex items-center justify-center mb-8 shadow-lg bg-gradient-to-br ${pkg.color} text-white`}>
-                    <pkg.icon size={40} />
+                <div className={`p-10 md:p-12 text-center relative z-20 ${isPopular ? 'border-b border-white/10' : 'border-b border-slate-200/50'}`}>
+                  <div className={`w-20 h-20 mx-auto rounded-[1.5rem] flex items-center justify-center mb-8 shadow-lg bg-gradient-to-br from-teal-400 to-teal-600 text-white`}>
+                    <Icon size={40} />
                   </div>
-                  <h3 className={`font-extrabold text-2xl mb-4 ${pkg.popular ? 'text-teal-50' : 'text-slate-800'}`}>{pkg.name}</h3>
+                  <h3 className={`font-extrabold text-2xl mb-4 ${isPopular ? 'text-teal-50' : 'text-slate-800'}`}>{pkg.serviceName}</h3>
                   <div className="flex items-start justify-center gap-1">
-                    <span className="text-6xl font-extrabold tracking-tighter drop-shadow-sm">{pkg.price}</span>
+                    <span className="text-4xl lg:text-5xl font-extrabold tracking-tighter drop-shadow-sm">
+                      {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(pkg.price)}
+                    </span>
                   </div>
-                  <p className={`mt-6 text-base font-medium leading-relaxed ${pkg.popular ? 'text-teal-200' : 'text-slate-500'}`}>{pkg.desc}</p>
+                  <p className={`mt-6 text-base font-medium leading-relaxed ${isPopular ? 'text-teal-200' : 'text-slate-500'}`}>{pkg.description}</p>
                 </div>
 
                 <CardContent className="p-10 md:p-12 flex-1 relative z-20">
-                  <ul className={`space-y-6 text-lg font-bold ${pkg.popular ? 'text-slate-200' : 'text-slate-700'}`}>
-                    <li className="flex items-center gap-4"><CheckCircle2 size={24} className={pkg.popular ? 'text-teal-400' : 'text-blue-500'} /> Khám lâm sàng tổng quát</li>
-                    <li className="flex items-center gap-4"><CheckCircle2 size={24} className={pkg.popular ? 'text-teal-400' : 'text-blue-500'} /> Xét nghiệm máu cơ bản</li>
-                    <li className="flex items-center gap-4"><CheckCircle2 size={24} className={pkg.popular ? 'text-teal-400' : 'text-blue-500'} /> Siêu âm ổ bụng</li>
-                    <li className="flex items-center gap-4"><CheckCircle2 size={24} className={pkg.popular ? 'text-teal-400' : 'text-blue-500'} /> Chụp X-Quang tim phổi</li>
+                  <ul className={`space-y-6 text-lg font-bold ${isPopular ? 'text-slate-200' : 'text-slate-700'}`}>
+                    <li className="flex items-center gap-4"><CheckCircle2 size={24} className={isPopular ? 'text-teal-400' : 'text-blue-500'} /> Khám lâm sàng tổng quát</li>
+                    <li className="flex items-center gap-4"><CheckCircle2 size={24} className={isPopular ? 'text-teal-400' : 'text-blue-500'} /> Xét nghiệm máu cơ bản</li>
+                    <li className="flex items-center gap-4"><CheckCircle2 size={24} className={isPopular ? 'text-teal-400' : 'text-blue-500'} /> Siêu âm ổ bụng</li>
+                    <li className="flex items-center gap-4"><CheckCircle2 size={24} className={isPopular ? 'text-teal-400' : 'text-blue-500'} /> Chụp X-Quang tim phổi</li>
                   </ul>
                 </CardContent>
                 <div className="p-10 pt-0 relative z-20">
-                  <Button className={`w-full rounded-full h-16 text-lg font-extrabold transition-all hover:scale-105 shadow-xl ${pkg.popular ? 'bg-gradient-to-r from-teal-400 to-emerald-400 text-teal-950 hover:from-teal-300 hover:to-emerald-300 hover:shadow-teal-400/50' : 'bg-slate-900 hover:bg-slate-800 text-white'}`}>
+                  <Button 
+                    onClick={(e) => { e.stopPropagation(); navigateToProtected('/dashboard/service-prices'); }}
+                    className={`w-full rounded-full h-16 text-lg font-extrabold transition-all hover:scale-105 shadow-xl ${isPopular ? 'bg-gradient-to-r from-teal-400 to-emerald-400 text-teal-950 hover:from-teal-300 hover:to-emerald-300 hover:shadow-teal-400/50' : 'bg-slate-900 hover:bg-slate-800 text-white'}`}>
                     Chọn gói này
                   </Button>
                 </div>
               </Card>
-            ))}
+            )})}
           </div>
         </div>
       </section>
 
+      {/* Articles */}
+      <section id="articles" className="py-32 relative overflow-hidden bg-transparent scroll-mt-24">
+        {/* Abstract background elements */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[60%] bg-teal-200/30 rounded-full blur-[120px]"></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[60%] bg-emerald-200/20 rounded-full blur-[120px]"></div>
+        </div>
+
+        <div className="container mx-auto px-4 max-w-[1400px] relative z-10">
+          <div className="text-center mb-24">
+            <h2 className="text-5xl font-extrabold text-slate-900 tracking-tight uppercase">Bài Viết <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-blue-500">Y Tế</span></h2>
+            <p className="text-slate-500 mt-6 font-medium text-xl max-w-2xl mx-auto">Cập nhật những kiến thức y khoa, thông tin sức khỏe mới nhất từ các chuyên gia.</p>
+          </div>
+
+          {articles && articles.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-6xl mx-auto">
+              {articles.map((article, i) => {
+                const displayAvatar = article.thumbnailUrl || "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=80";
+                return (
+                  <div key={article.articleId || i} onClick={() => setSelectedArticle(article)} className="group flex flex-col bg-white rounded-[2rem] border-2 border-white shadow-[0_15px_30px_-10px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-10px_rgba(20,184,166,0.15)] transition-all duration-500 hover:-translate-y-3 overflow-hidden cursor-pointer">
+                    <div className="w-full h-56 relative overflow-hidden">
+                      <img src={displayAvatar} alt={article.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                      <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-extrabold text-teal-600 shadow-sm flex items-center gap-1 z-20">
+                        Kiến thức
+                      </div>
+                    </div>
+                    <div className="p-8 flex flex-col flex-1">
+                      <div className="flex items-center gap-3 text-sm text-slate-500 font-medium mb-4">
+                        <span>{article.createdAt ? new Date(article.createdAt).toLocaleDateString("vi-VN") : "Mới cập nhật"}</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                        <span>{article.authorName || "Đội ngũ y bác sĩ"}</span>
+                      </div>
+                      <h3 className="font-extrabold text-2xl text-slate-900 leading-snug group-hover:text-teal-700 transition-colors line-clamp-3 mb-6 flex-1">
+                        {article.title}
+                      </h3>
+                      <Button 
+                        onClick={(e) => { e.stopPropagation(); setSelectedArticle(article); }}
+                        variant="ghost" 
+                        className="w-full justify-between px-0 hover:bg-transparent text-teal-700 font-bold group/btn mt-auto"
+                      >
+                        <span>Đọc tiếp</span>
+                        <ChevronRight size={20} className="group-hover/btn:translate-x-1 transition-transform" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center text-slate-500 font-medium">Đang cập nhật bài viết mới...</div>
+          )}
+        </div>
+      </section>
+
       {/* 3 Step Process */}
-      <section className="py-32 relative overflow-hidden bg-transparent">
+      <section id="guide" className="py-32 relative overflow-hidden bg-transparent scroll-mt-24">
         <div className="absolute inset-0 z-0 pointer-events-none">
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03]"></div>
           {/* Laser Lines */}
@@ -468,27 +693,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 relative z-20">
-        <div className="container mx-auto px-4 max-w-[1400px]">
-          <div className="bg-gradient-to-r from-teal-800 to-teal-950 rounded-[3rem] p-10 md:p-16 flex flex-col md:flex-row items-center justify-between gap-10 shadow-2xl border border-teal-700/50">
-            <div className="text-center md:text-left max-w-xl">
-              <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4">Nhận tư vấn Sức khỏe Miễn phí</h2>
-              <p className="text-teal-100/80 font-medium text-lg">Đăng ký email để nhận các bài viết y khoa hữu ích và mã giảm giá gói khám.</p>
-            </div>
-            <div className="flex flex-col sm:flex-row w-full md:w-auto gap-4">
-              <Input
-                placeholder="Nhập email của bạn..."
-                className="bg-white/10 border-white/20 text-white placeholder:text-teal-200/50 min-w-[300px] rounded-full h-14 px-6 font-medium focus-visible:ring-teal-400 backdrop-blur-sm"
-              />
-              <Button className="bg-teal-400 hover:bg-teal-300 text-teal-950 rounded-full px-10 h-14 font-extrabold shadow-lg hover:shadow-teal-400/25 transition-all hover:-translate-y-0.5">
-                Đăng ký
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Footer */}
       <footer className="bg-slate-900 text-slate-300 pt-10 pb-8 relative overflow-hidden">
         {/* SAFE Z-INDEX BACKGROUND */}
@@ -508,34 +712,26 @@ const LandingPage = () => {
                   <span className="font-semibold text-[1.2rem] tracking-widest text-teal-400">Clinic</span>
                 </div>
               </div>
-              <p className="text-base text-slate-400 font-medium max-w-sm mb-8 leading-relaxed">
+              <p className="text-base text-slate-400 font-medium max-w-sm leading-relaxed">
                 Nền tảng y tế số hàng đầu, mang đến trải nghiệm chăm sóc sức khỏe tiện lợi, minh bạch và an toàn tuyệt đối.
               </p>
-              <div className="flex gap-4">
-                {/* Social placeholders */}
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-teal-500 hover:text-white transition-colors cursor-pointer border border-white/10"></div>
-                ))}
-              </div>
             </div>
 
             <div className="space-y-6">
-              <h4 className="font-bold text-white uppercase tracking-wider text-sm">Về chúng tôi</h4>
+              <h4 className="font-bold text-white uppercase tracking-wider text-sm">Khám phá</h4>
               <ul className="space-y-4 text-base font-semibold">
-                <li><a href="#" className="hover:text-teal-400 transition-colors">Giới thiệu</a></li>
-                <li><a href="#" className="hover:text-teal-400 transition-colors">Tuyển dụng</a></li>
-                <li><a href="#" className="hover:text-teal-400 transition-colors">Điều khoản</a></li>
-                <li><a href="#" className="hover:text-teal-400 transition-colors">Bảo mật</a></li>
+                <li><button type="button" onClick={() => scrollToSection('doctors')} className="hover:text-teal-400 transition-colors">Đội ngũ bác sĩ</button></li>
+                <li><button type="button" onClick={() => scrollToSection('articles')} className="hover:text-teal-400 transition-colors">Bài viết y tế</button></li>
+                <li><button type="button" onClick={() => scrollToSection('guide')} className="hover:text-teal-400 transition-colors">Hướng dẫn đặt lịch</button></li>
               </ul>
             </div>
 
             <div className="space-y-6">
               <h4 className="font-bold text-white uppercase tracking-wider text-sm">Dịch vụ</h4>
               <ul className="space-y-4 text-base font-semibold">
-                <li><a href="#" className="hover:text-teal-400 transition-colors">Khám lâm sàng</a></li>
-                <li><a href="#" className="hover:text-teal-400 transition-colors">Tầm soát K</a></li>
-                <li><a href="#" className="hover:text-teal-400 transition-colors">Xét nghiệm</a></li>
-                <li><a href="#" className="hover:text-teal-400 transition-colors">Tiêm chủng</a></li>
+                <li><button type="button" onClick={() => navigateToProtected('/dashboard/available-slots')} className="hover:text-teal-400 transition-colors">Đặt lịch khám</button></li>
+                <li><button type="button" onClick={() => navigateToProtected('/dashboard/service-prices')} className="hover:text-teal-400 transition-colors">Bảng giá dịch vụ</button></li>
+                <li><button type="button" onClick={() => navigateToProtected('/dashboard/ai-chat')} className="hover:text-teal-400 transition-colors">Trợ lý sức khỏe AI</button></li>
               </ul>
             </div>
 
@@ -571,6 +767,25 @@ const LandingPage = () => {
           </div>
         </div>
       </footer>
+
+      {/* Modals */}
+      {selectedDoctor && (
+        <DoctorDetailModal 
+          selectedDoctor={selectedDoctor} 
+          onClose={() => setSelectedDoctor(null)}
+          onBookClick={() => {
+            setSelectedDoctor(null);
+            navigateToProtected('/dashboard/available-slots', { prefillDoctorId: selectedDoctor.doctorId });
+          }}
+        />
+      )}
+
+      {selectedArticle && (
+        <ArticleDetailModal
+          article={selectedArticle}
+          onClose={() => setSelectedArticle(null)}
+        />
+      )}
     </div>
   );
 };

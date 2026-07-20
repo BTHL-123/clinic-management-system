@@ -299,14 +299,14 @@ export default function InvoiceManagement() {
         const res = await createOnlinePaymentUrl({
           invoiceId: payTarget.invoiceId,
           appointmentId: null,
-          amount: payTarget.finalAmount,
+          amount: payTarget.remainingAmount || payTarget.finalAmount,
         });
         if (res.data && res.data.paymentUrl) {
           setQrPaymentData({
             paymentId: res.data.paymentId,
             paymentUrl: res.data.paymentUrl,
             invoiceCode: payTarget.invoiceCode,
-            finalAmount: payTarget.finalAmount,
+            finalAmount: payTarget.remainingAmount || payTarget.finalAmount,
             patientName: payTarget.patientName
           });
           setPayTarget(null); // Đóng modal chọn phương thức
@@ -319,7 +319,7 @@ export default function InvoiceManagement() {
         appointmentId: null,
         paymentType: "FINAL_PAYMENT",
         paymentMethod: payMethod,
-        amount: payTarget.finalAmount,
+        amount: payTarget.remainingAmount || payTarget.finalAmount,
       });
       if (payMethod === "CASH") {
         await confirmCashPayment(res.data.paymentId);
@@ -348,6 +348,23 @@ export default function InvoiceManagement() {
     }
   };
 
+  // Auto-polling for QR payment
+  useEffect(() => {
+    if (!qrPaymentData) return;
+    const interval = setInterval(async () => {
+      try {
+        await verifySePayTransaction(qrPaymentData.paymentId, { skipErrorToast: true });
+        clearInterval(interval);
+        setQrPaymentData(null);
+        alert("Thanh toán thành công!");
+        fetchInvoices();
+      } catch (err) {
+        // Continue polling
+      }
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [qrPaymentData]);
+
   /* ── Helpers ───────────────────────────────────────────── */
   const formatPrice = (price) =>
     new Intl.NumberFormat("vi-VN", {
@@ -358,6 +375,7 @@ export default function InvoiceManagement() {
   const statusBadge = (status) => {
     const map = {
       UNPAID: { cls: "badge-warning", label: "Chưa thanh toán" },
+      PARTIALLY_PAID: { cls: "badge-info", label: "Đã thanh toán một phần" },
       PAID: { cls: "badge-active", label: "Đã thanh toán" },
       CANCELLED: { cls: "badge-inactive", label: "Đã hủy" },
     };
@@ -429,7 +447,7 @@ export default function InvoiceManagement() {
               <th>Thành tiền</th>
               <th>Trạng thái</th>
               <th>Ngày tạo</th>
-              <th style={{ textAlign: "center" }}>Hành động</th>
+              <th style={{ textAlign: "center", minWidth: 180 }}>Hành động</th>
             </tr>
           </thead>
           <tbody>
@@ -471,7 +489,7 @@ export default function InvoiceManagement() {
                       >
                         <Eye size={15} />
                       </button>
-                      {inv.status === "UNPAID" && (
+                      {(inv.status === "UNPAID" || inv.status === "PARTIALLY_PAID") && (
                         <>
                           <button
                             className="icon-button"
@@ -679,7 +697,7 @@ export default function InvoiceManagement() {
         <div className="modal-overlay" onClick={() => setDetailInvoice(null)}>
           <div
             className="modal-card"
-            style={{ maxWidth: 600 }}
+            style={{ width: "90vw", maxWidth: 1000 }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
@@ -725,9 +743,29 @@ export default function InvoiceManagement() {
             <div style={{ display: "grid", gap: 4, textAlign: "right", fontSize: "0.95rem" }}>
               <div>Tổng tiền: {formatPrice(detailInvoice.totalAmount)}</div>
               <div>Giảm giá: -{formatPrice(detailInvoice.discountAmount)}</div>
-              <div style={{ fontWeight: 700, fontSize: "1.1rem", color: "#0f766e" }}>
-                Thành tiền: {formatPrice(detailInvoice.finalAmount)}
+              <div>Đã thanh toán (cọc): <span style={{ color: "#16a34a", fontWeight: 600 }}>{formatPrice(detailInvoice.paidAmount || 0)}</span></div>
+              <div style={{ fontWeight: 700, fontSize: "1.2rem", color: "#0f766e", marginTop: 8, borderTop: "1px dashed #d7dee8", paddingTop: 8 }}>
+                Thành tiền (Cần thu): {formatPrice(detailInvoice.remainingAmount || detailInvoice.finalAmount)}
               </div>
+            </div>
+
+            <div className="form-actions" style={{ marginTop: 20, borderTop: "1px solid #e2e8f0", paddingTop: 16 }}>
+              <button className="secondary-button" onClick={() => setDetailInvoice(null)}>
+                Đóng
+              </button>
+              {(detailInvoice.status === "UNPAID" || detailInvoice.status === "PARTIALLY_PAID") && (
+                <button
+                  className="primary-button"
+                  style={{ background: "#16a34a", borderColor: "#16a34a" }}
+                  onClick={() => {
+                    openPayment(detailInvoice);
+                    setDetailInvoice(null);
+                  }}
+                >
+                  <Banknote size={16} />
+                  Thanh toán ngay
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -774,9 +812,9 @@ export default function InvoiceManagement() {
 
             <div style={{ display: "grid", gap: 10, marginBottom: 16, fontSize: "0.95rem" }}>
               <div><strong>Bệnh nhân:</strong> {payTarget.patientName}</div>
-              <div><strong>Thành tiền:</strong>{" "}
+              <div><strong>Số tiền cần thu:</strong>{" "}
                 <span style={{ fontWeight: 700, color: "#0f766e", fontSize: "1.1rem" }}>
-                  {formatPrice(payTarget.finalAmount)}
+                  {formatPrice(payTarget.remainingAmount || payTarget.finalAmount)}
                 </span>
               </div>
             </div>
@@ -842,11 +880,11 @@ export default function InvoiceManagement() {
             <div className="form-actions" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <button
                 className="primary-button"
-                style={{ width: "100%", justifyContent: "center" }}
-                onClick={handleVerifyPayment}
-                disabled={verifyingPayment}
+                style={{ width: "100%", justifyContent: "center", background: "#f1f5f9", color: "#64748b", border: "1px solid #cbd5e1", cursor: "wait" }}
+                disabled
               >
-                {verifyingPayment ? "Đang đối soát..." : "Tôi đã chuyển khoản"}
+                <div style={{ display: "inline-block", width: 16, height: 16, border: "2px solid #cbd5e1", borderTopColor: "#64748b", borderRadius: "50%", animation: "spin 1s linear infinite", marginRight: 8 }}></div>
+                Đang chờ nhận tiền...
               </button>
               <button 
                 className="secondary-button" 
