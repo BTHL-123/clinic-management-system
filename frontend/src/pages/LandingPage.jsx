@@ -425,13 +425,7 @@ const LandingPage = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-6 max-w-[1400px] mx-auto w-full">
-            {(doctors.length > 0 ? doctors.slice(0, 5) : [
-              { fullName: "BS. Tâm", specialization: "Tim mạch", yearsOfExperience: 15, departmentName: "Tim mạch", avatarUrl: "/doctor_1_1780660389804.png" },
-              { fullName: "BS. Mai", specialization: "Nội tiết", yearsOfExperience: 10, departmentName: "Tiểu đường", avatarUrl: "/doctor_2_1780660400471.png" },
-              { fullName: "BS. Sơn", specialization: "Ngoại TK", yearsOfExperience: 20, departmentName: "Cột sống", avatarUrl: "/doctor_3_1780660412435.png" },
-              { fullName: "BS. Hương", specialization: "Khoa Nhi", yearsOfExperience: 12, departmentName: "Khám nhi", avatarUrl: "/doctor_4_1780660424305.png" },
-              { fullName: "BS. Huy", specialization: "Xương khớp", yearsOfExperience: 8, departmentName: "Phục hồi", avatarUrl: "/doctor_5_1780660436162.png" }
-            ]).map((doc, i) => {
+            {doctors.length > 0 ? doctors.slice(0, 5).map((doc, i) => {
               const displayAvatar = doc.avatarUrl || "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=400&h=400&fit=crop";
 
               return (
@@ -477,7 +471,11 @@ const LandingPage = () => {
                   </Button>
                 </div>
               </Card>
-            )})}
+            )}) : (
+              <p className="col-span-full py-8 text-center text-lg font-medium text-slate-500">
+                Đội ngũ bác sĩ sẽ được cập nhật sớm.
+              </p>
+            )}
           </div>
         </div>
       </section>

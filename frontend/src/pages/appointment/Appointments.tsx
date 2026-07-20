@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useToast } from "../../context/useToast";
 import PageHeader from "../../components/PageHeader";
+import { API_BASE_URL } from "../../services/axiosClient";
 
 interface DoctorSchedule {
   scheduleId: number;
@@ -266,7 +267,7 @@ function CreatePanel({ doctors, selectedDate, selectedTime, selectedDoctorId, on
     }
     setBusy(true);
     try {
-      const response = await fetch("http://localhost:8080/api/doctor-schedules", {
+      const response = await fetch(`${API_BASE_URL}/doctor-schedules`, {
         method: "POST",
         headers: getHeaders(),
         body: JSON.stringify(toPayload(form)),
@@ -350,7 +351,7 @@ function BulkCreatePanel({ doctors, onDone }: BulkCreatePanelProps) {
         daysOfWeek: selectedDays,
         slotDurationMinutes: Number(form.slotDurationMinutes) || 30
       };
-      const response = await fetch("http://localhost:8080/api/doctor-schedules/bulk", {
+      const response = await fetch(`${API_BASE_URL}/doctor-schedules/bulk`, {
         method: "POST",
         headers: getHeaders(),
         body: JSON.stringify(payload),
@@ -480,7 +481,7 @@ function UpdatePanel({ doctors, onDone, selectedData }: UpdatePanelProps) {
     }
     setBusy(true);
     try {
-      const response = await fetch(`http://localhost:8080/api/doctor-schedules/${sid}`, {
+      const response = await fetch(`${API_BASE_URL}/doctor-schedules/${sid}`, {
         method: "PUT",
         headers: getHeaders(),
         body: JSON.stringify(toPayload(form)),
@@ -542,7 +543,7 @@ function CancelPanel({ onDone, selectedData }: CancelPanelProps) {
     }
     setBusy(true);
     try {
-      const response = await fetch(`http://localhost:8080/api/doctor-schedules/${sid}`, {
+      const response = await fetch(`${API_BASE_URL}/doctor-schedules/${sid}`, {
         method: "DELETE",
         headers: getHeaders(),
       });
@@ -849,7 +850,7 @@ export default function AppointmentManagement() {
         fromDate: formatDate(weekStart),
         toDate: formatDate(addDays(weekStart, 6)),
       });
-      const response = await fetch(`http://localhost:8080/api/doctor-schedules?${params.toString()}`, {
+      const response = await fetch(`${API_BASE_URL}/doctor-schedules?${params.toString()}`, {
         headers: getHeaders(),
       });
       if (!response.ok) {
@@ -866,7 +867,7 @@ export default function AppointmentManagement() {
 
   const loadDoctors = useCallback(async () => {
     try {
-      const response = await fetch("http://localhost:8080/api/doctors?size=200", {
+      const response = await fetch(`${API_BASE_URL}/doctors?size=200`, {
         headers: getHeaders(),
       });
       if (!response.ok) {
@@ -890,7 +891,7 @@ export default function AppointmentManagement() {
       const entries = await Promise.all(
         items.map(async (schedule) => {
           try {
-            const response = await fetch(`http://localhost:8080/api/doctor-schedules/${schedule.scheduleId}/slots`, {
+            const response = await fetch(`${API_BASE_URL}/doctor-schedules/${schedule.scheduleId}/slots`, {
               headers: getHeaders(),
             });
             if (!response.ok) return [schedule.scheduleId, []] as const;
@@ -941,7 +942,7 @@ export default function AppointmentManagement() {
 
   const quickCreateSchedule = async (doctorId: number, workDate: string, startTime: string, endTime: string) => {
     try {
-      const response = await fetch("http://localhost:8080/api/doctor-schedules", {
+      const response = await fetch(`${API_BASE_URL}/doctor-schedules`, {
         method: "POST",
         headers: getHeaders(),
         body: JSON.stringify({
@@ -968,7 +969,7 @@ export default function AppointmentManagement() {
 
   const deleteSchedule = async (scheduleId: number) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/doctor-schedules/${scheduleId}`, {
+      const response = await fetch(`${API_BASE_URL}/doctor-schedules/${scheduleId}`, {
         method: "DELETE",
         headers: getHeaders(),
       });
@@ -987,7 +988,7 @@ export default function AppointmentManagement() {
     const shouldUnblock = slot.status === "BLOCKED";
     try {
       const response = await fetch(
-        `http://localhost:8080/api/doctor-schedules/slots/${slot.slotId}/${shouldUnblock ? "unblock" : "block"}`,
+        `${API_BASE_URL}/doctor-schedules/slots/${slot.slotId}/${shouldUnblock ? "unblock" : "block"}`,
         {
           method: "PUT",
           headers: getHeaders(),

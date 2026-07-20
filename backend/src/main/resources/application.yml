@@ -1,6 +1,8 @@
 spring:
   application:
     name: clinic-management-backend
+  config:
+    import: "optional:file:./.env[.properties],optional:file:./backend/.env[.properties]"
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/clinic_management}
     username: ${DB_USERNAME:postgres}
@@ -8,11 +10,13 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: ${JPA_DDL_AUTO:update}
     open-in-view: false
     properties:
       hibernate:
         format_sql: true
+  flyway:
+    enabled: ${FLYWAY_ENABLED:false}
   mail:
     host: ${MAIL_HOST:localhost}
     port: ${MAIL_PORT:1025}
@@ -54,11 +58,13 @@ app:
     primary-model: ${GROQ_PRIMARY_MODEL:llama-3.3-70b-versatile}
     fallback-model: ${GROQ_FALLBACK_MODEL:llama-3.1-8b-instant}
   seed:
-    admin-email: ${APP_ADMIN_EMAIL:admin@example.com}
-    admin-password: ${APP_ADMIN_PASSWORD:123456}
+    enabled: ${APP_SEED_ENABLED:true}
+    admin-email: ${APP_ADMIN_EMAIL:}
+    admin-password: ${APP_ADMIN_PASSWORD:}
+    admin-full-name: ${APP_ADMIN_FULL_NAME:System Administrator}
   sepay:
-    api-key: ${SEPAY_API_KEY:VEBX1HTQSEZUQCNG9XPODLC40IMUWAYNIVS1LYVITWFCO9RMT3I8UZGDOLJ5XAOV}
-    bank-account: ${SEPAY_BANK_ACCOUNT:0565387021}
-    bank-code: ${SEPAY_BANK_CODE:MBBank}
+    api-key: ${SEPAY_API_KEY:}
+    bank-account: ${SEPAY_BANK_ACCOUNT:}
+    bank-code: ${SEPAY_BANK_CODE:}
     transactions-url: ${SEPAY_TRANSACTIONS_URL:https://my.sepay.vn/userapi/transactions/list}
     webhook-requires-verification: ${SEPAY_WEBHOOK_REQUIRES_VERIFICATION:true}
