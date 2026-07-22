@@ -58,6 +58,12 @@ function formatTime(t: string): string {
   return String(t ?? "").slice(0, 5);
 }
 
+function isPastSlot(workDate: string, startTime: string): boolean {
+  const normalizedTime = startTime.length === 5 ? `${startTime}:00` : startTime;
+  const slotStartsAt = new Date(`${workDate}T${normalizedTime}`);
+  return !Number.isNaN(slotStartsAt.getTime()) && slotStartsAt.getTime() <= Date.now();
+}
+
 function secondsUntil(expiresAt?: string): number {
   if (!expiresAt) return 0;
   const expiryTime = new Date(expiresAt).getTime();
@@ -286,7 +292,10 @@ export default function AvailableSlots() {
         try {
           const slotsRes: any = await getAvailableSlotsForPatient(doc.doctorId, date);
           const slotsData: TimeSlot[] = Array.isArray(slotsRes.data) ? slotsRes.data : [];
-          return { doctorId: doc.doctorId, slots: slotsData.sort((a, b) => a.startTime.localeCompare(b.startTime)) };
+          const visibleSlots = slotsData.filter((slot) =>
+            slot.status !== "EXPIRED" && !isPastSlot(date, slot.startTime)
+          );
+          return { doctorId: doc.doctorId, slots: visibleSlots.sort((a, b) => a.startTime.localeCompare(b.startTime)) };
         } catch (e) {
           return { doctorId: doc.doctorId, slots: [] };
         }
