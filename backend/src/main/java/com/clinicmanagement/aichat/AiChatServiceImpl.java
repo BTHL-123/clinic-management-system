@@ -34,11 +34,10 @@ public class AiChatServiceImpl implements AiChatService {
     private final GeminiService geminiService;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
-    @Transactional(readOnly = true)
+    @Transactional
     @Override
     public List<AiChatSessionResponse> getAllSessions(User currentUser) {
-        Patient patient = patientRepository.findByUser_UserId(currentUser.getUserId())
-                .orElseThrow(() -> new BusinessException("Chỉ bệnh nhân mới có thể xem phiên tư vấn AI."));
+        Patient patient = resolveSelfPatient(currentUser);
 
         return sessionRepository.findByPatientPatientIdOrderByCreatedAtDesc(patient.getPatientId())
                 .stream()
@@ -49,8 +48,7 @@ public class AiChatServiceImpl implements AiChatService {
     @Transactional
     @Override
     public AiChatSessionResponse createSession(CreateAiChatSessionRequest request, User currentUser) {
-        Patient patient = patientRepository.findByUser_UserId(currentUser.getUserId())
-                .orElseThrow(() -> new BusinessException("Chỉ bệnh nhân mới có thể tạo phiên tư vấn AI."));
+        Patient patient = resolveSelfPatient(currentUser);
 
         AiChatSession session = new AiChatSession();
         session.setPatient(patient);
@@ -271,6 +269,31 @@ public class AiChatServiceImpl implements AiChatService {
                 || !session.getPatient().getUser().getUserId().equals(currentUser.getUserId())) {
             throw new AccessDeniedException("Bạn không có quyền truy cập phiên tư vấn AI này.");
         }
+    }
+
+    private Patient resolveSelfPatient(User currentUser) {
+        return patientRepository.findListByUserUserId(currentUser.getUserId()).stream()
+                .filter(patient -> "SELF".equalsIgnoreCase(patient.getRelationshipToUser()))
+                .findFirst()
+                .orElseGet(() -> {
+                    Patient patient = new Patient();
+                    patient.setUser(currentUser);
+                    patient.setRelationshipToUser("SELF");
+                    patient.setPatientCode(nextPatientCode(currentUser.getUserId()));
+                    patient.setFullName(currentUser.getFullName());
+                    patient.setEmail(currentUser.getEmail());
+                    patient.setPhone(currentUser.getPhone());
+                    patient.setGender("OTHER");
+                    return patientRepository.save(patient);
+                });
+    }
+
+    private String nextPatientCode(Long userId) {
+        String code = "PAT-U" + userId;
+        if (!patientRepository.existsByPatientCode(code)) {
+            return code;
+        }
+        return "PAT" + System.currentTimeMillis();
     }
 
     private Department findMatchingDepartment(List<Department> departments, String departmentName) {
