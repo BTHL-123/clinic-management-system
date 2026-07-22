@@ -17,6 +17,7 @@ public class ArticleResponse {
     private String content;
     private String thumbnailUrl;
     private String status;
+    private Long authorUserId;
     private String authorName;
     private LocalDateTime publishedAt;
     private LocalDateTime createdAt;
@@ -30,6 +31,7 @@ public class ArticleResponse {
                 .content(article.getContent())
                 .thumbnailUrl(article.getThumbnailUrl())
                 .status(article.getStatus())
+                .authorUserId(article.getCreatedBy() != null ? article.getCreatedBy().getUserId() : null)
                 .authorName(article.getCreatedBy() != null ? article.getCreatedBy().getFullName() : null)
                 .publishedAt(article.getPublishedAt())
                 .createdAt(article.getCreatedAt())
