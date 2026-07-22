@@ -7,7 +7,7 @@ import org.springframework.data.domain.Pageable;
 
 public interface ArticleService {
     ArticleResponse createArticle(Long userId, ArticleRequest request);
-    ArticleResponse updateArticle(Long articleId, ArticleRequest request);
+    ArticleResponse updateArticle(Long articleId, Long userId, boolean isAdmin, ArticleRequest request);
     ArticleResponse getArticleById(Long articleId);
     ArticleResponse getArticleBySlug(String slug);
     PageResponse<ArticleResponse> getAllArticles(String status, Pageable pageable);
