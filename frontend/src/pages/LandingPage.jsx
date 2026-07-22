@@ -426,8 +426,6 @@ const LandingPage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-6 max-w-[1400px] mx-auto w-full">
             {doctors.length > 0 ? doctors.slice(0, 5).map((doc, i) => {
-              const displayAvatar = doc.avatarUrl || "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=400&h=400&fit=crop";
-
               return (
               <Card key={i} onClick={() => setSelectedDoctor(doc)} className="group bg-white/90 backdrop-blur-xl border-2 border-white shadow-[0_15px_40px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_25px_50px_-15px_rgba(20,184,166,0.15)] transition-all duration-500 rounded-[2rem] flex flex-col hover:-translate-y-2 relative cursor-pointer mt-12 w-full overflow-hidden">
 
@@ -443,7 +441,13 @@ const LandingPage = () => {
                 <div className="relative pt-8 px-6 flex flex-col items-center z-10">
                   <div className="relative w-32 h-32 rounded-full p-1.5 bg-white shadow-[0_10px_25px_rgba(0,0,0,0.1)] group-hover:scale-105 transition-transform duration-500">
                     <div className="w-full h-full rounded-full overflow-hidden bg-slate-100">
-                      <img src={displayAvatar} alt={doc.fullName} className="w-full h-full object-cover" />
+                      {typeof doc.avatarUrl === "string" && doc.avatarUrl.trim() && doc.avatarUrl !== "null" ? (
+                        <img src={doc.avatarUrl} alt={doc.fullName} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-teal-600">
+                          <Stethoscope size={44} aria-label="Chưa có ảnh bác sĩ" />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

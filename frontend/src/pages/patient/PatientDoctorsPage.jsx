@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
-  Search, Filter, UserCircle, Star, ShieldCheck, GraduationCap, Activity, FileText, ThumbsUp, X, Users
+  Search, Filter, UserCircle, Star, ShieldCheck, GraduationCap, Activity, FileText, ThumbsUp, X, Users, Stethoscope
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getDoctors } from "../../services/doctorService";
@@ -122,11 +122,7 @@ export default function PatientDoctorsPage() {
                   {doc.avatarUrl && doc.avatarUrl !== "null" && doc.avatarUrl.trim() !== "" ? (
                     <img src={doc.avatarUrl} alt={doc.fullName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   ) : (
-                    <img
-                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(doc.fullName)}&background=e2e8f0&color=0f172a`}
-                      alt=""
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+                    <Stethoscope size={46} className="text-[#0A604E]" aria-label="Chưa có ảnh bác sĩ" />
                   )}
                 </div>
 

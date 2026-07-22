@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { 
   Clock, Search, CalendarDays, ArrowLeft, ShieldAlert, CheckCircle, 
   UserRound, Star, X, Building, CalendarHeart, MapPin, 
-  ChevronLeft, ChevronRight, Coins, Plus, CalendarPlus, UserCheck, ShieldCheck
+  ChevronLeft, ChevronRight, Coins, Plus, CalendarPlus, UserCheck, ShieldCheck, Stethoscope
 } from "lucide-react";
 import { getAvailableSlotsForPatient, getSchedules, lockSlot, releaseLock } from "../../services/scheduleService";
 import { getDoctors } from "../../services/doctorService";
@@ -59,9 +59,9 @@ function formatTime(t: string): string {
 }
 
 function secondsUntil(expiresAt?: string): number {
-  if (!expiresAt) return 600;
+  if (!expiresAt) return 0;
   const expiryTime = new Date(expiresAt).getTime();
-  if (Number.isNaN(expiryTime)) return 600;
+  if (Number.isNaN(expiryTime)) return 0;
   return Math.max(0, Math.ceil((expiryTime - Date.now()) / 1000));
 }
 
@@ -488,11 +488,19 @@ export default function AvailableSlots() {
   const handleSelectSlot = async (slot: TimeSlot, doc: DoctorOption) => {
     if (slot.status !== "AVAILABLE") return;
     try {
-      await lockSlot(slot.slotId);
+      const lockRes: any = await lockSlot(slot.slotId);
+      const lockData = lockRes?.data;
+      const lockExpiresAt = lockData?.lockedUntil ?? lockData?.expiresAt;
+
+      if (!lockExpiresAt) {
+        await releaseLock(slot.slotId).catch(() => undefined);
+        throw new Error("Khong nhan duoc thoi diem het han giu lich.");
+      }
+
       setSelectedSlot(slot);
       setSelectedDoctor(doc);
       setBookingStep(true);
-      setTimer(600); // 10 minutes lock holding time
+      setTimer(secondsUntil(lockExpiresAt));
       setIsExpired(false);
       setBookingSuccess(false);
     } catch (err: any) {
@@ -906,11 +914,11 @@ export default function AvailableSlots() {
                           className="w-24 h-24 rounded-2xl bg-teal-50 border-2 border-[#1DB896]/10 flex items-center justify-center overflow-hidden shrink-0 shadow-inner cursor-pointer hover:border-[#1DB896]/50 transition-colors"
                           onClick={() => setViewDoctorDetail(doc)}
                         >
-                          <img 
-                            src={doc.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(doc.fullName)}&background=e2e8f0&color=0f172a`}
-                            alt={doc.fullName} 
-                            className="w-full h-full object-cover"
-                          />
+                          {typeof doc.avatarUrl === "string" && doc.avatarUrl.trim() && doc.avatarUrl !== "null" ? (
+                            <img src={doc.avatarUrl} alt={doc.fullName} className="w-full h-full object-cover" />
+                          ) : (
+                            <Stethoscope size={34} className="text-[#0A604E]" aria-label="Chưa có ảnh bác sĩ" />
+                          )}
                         </div>
                         <div className="flex items-center gap-1 bg-[#F0F9F7] text-teal-700 font-black text-[11px] px-2 py-1 rounded-lg border border-[#1DB896]/10">
                           <Star size={12} className="fill-amber-400 text-amber-400 shrink-0" />
@@ -1052,11 +1060,11 @@ export default function AvailableSlots() {
                                 className="w-16 h-16 rounded-xl bg-slate-200 shrink-0 overflow-hidden border border-white cursor-pointer hover:border-[#1DB896]"
                                 onClick={() => setViewDoctorDetail(doc)}
                               >
-                                <img 
-                                  src={doc.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(doc.fullName)}&background=e2e8f0&color=0f172a`} 
-                                  alt="" 
-                                  className="w-full h-full object-cover"
-                                />
+                                {typeof doc.avatarUrl === "string" && doc.avatarUrl.trim() && doc.avatarUrl !== "null" ? (
+                                  <img src={doc.avatarUrl} alt={doc.fullName} className="w-full h-full object-cover" />
+                                ) : (
+                                  <Stethoscope size={28} className="text-[#0A604E]" aria-label="Chưa có ảnh bác sĩ" />
+                                )}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <h5 
@@ -1173,11 +1181,11 @@ export default function AvailableSlots() {
                   {/* Doctor & Date Summary */}
                   <div className="bg-[#F0F9F7] border border-[#1DB896]/15 rounded-2xl p-4 flex gap-4 items-center">
                     <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden">
-                      <img 
-                        src={selectedDoctor?.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedDoctor?.fullName || "BS")}&background=e2e8f0&color=0f172a`} 
-                        alt="" 
-                        className="w-full h-full object-cover"
-                      />
+                      {typeof selectedDoctor?.avatarUrl === "string" && selectedDoctor.avatarUrl.trim() && selectedDoctor.avatarUrl !== "null" ? (
+                        <img src={selectedDoctor.avatarUrl} alt={selectedDoctor.fullName} className="w-full h-full object-cover" />
+                      ) : (
+                        <Stethoscope size={24} className="text-[#0A604E]" aria-label="Chưa có ảnh bác sĩ" />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-black text-slate-800 text-sm">{selectedDoctor?.fullName}</h4>

@@ -18,7 +18,12 @@ public record PrescriptionItemResponse(
         String morningDose,
         String noonDose,
         String eveningDose,
-        String nightDose
+        String nightDose,
+        String administrationRoute,
+        String administrationTiming,
+        String administrationSite,
+        String packageInfo,
+        boolean asNeeded
 ) {
     public static PrescriptionItemResponse from(PrescriptionItem item) {
         var med = item.getMedicine();
@@ -38,7 +43,12 @@ public record PrescriptionItemResponse(
                 item.getMorningDose(),
                 item.getNoonDose(),
                 item.getEveningDose(),
-                item.getNightDose()
+                item.getNightDose(),
+                item.getAdministrationRoute(),
+                item.getAdministrationTiming(),
+                item.getAdministrationSite(),
+                item.getPackageInfo(),
+                item.isAsNeeded()
         );
     }
 }
