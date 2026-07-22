@@ -383,7 +383,7 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
                     }
 
                     // Map past slots to EXPIRED for clear UI indication
-                    if (isPast || (isToday && ts.getEndTime().isBefore(currentTime))) {
+                    if (isPast || (isToday && !ts.getStartTime().isAfter(currentTime))) {
                         status = "EXPIRED";
                     }
 

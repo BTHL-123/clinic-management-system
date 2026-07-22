@@ -37,14 +37,6 @@ import leafRightDecoration from "../../assets/decorations/leaf-right.png";
 import stethoscopeDecoration from "../../assets/decorations/stethoscope-removebg-preview.png";
 import stickyNoteDecoration from "../../assets/decorations/sticky-note-removebg-preview.png";
 
-const doctorPhotos = [
-  "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&w=420&q=85",
-  "https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&w=420&q=85",
-  "https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&w=420&q=85",
-  "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=420&q=85",
-  "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=420&q=85",
-];
-
 const doctors = [
   { name: "BS. Hoàng Minh", specialty: "Da liễu", detail: "Chăm sóc da và điều trị chuyên sâu", experience: "12+ năm kinh nghiệm" },
   { name: "BS. Lan Anh", specialty: "Nội khoa", detail: "Tận tâm trong từng lần thăm khám", experience: "8+ năm kinh nghiệm" },
@@ -102,10 +94,14 @@ const QUEUE_STATUS_CONFIG = {
 function DoctorAvatar({ index, className = "", src, doctorName }) {
   const isValidSrc = src && typeof src === "string" && src.trim() !== "" && src !== "null";
   const defaultName = doctorName || "Bác sĩ";
-  const photo = isValidSrc 
-    ? src 
-    : `https://ui-avatars.com/api/?name=${encodeURIComponent(defaultName)}&background=e2e8f0&color=0f172a`;
-  return <img className={`object-cover ${className}`} src={photo} alt={defaultName} />;
+  if (isValidSrc) {
+    return <img className={`object-cover ${className}`} src={src} alt={defaultName} />;
+  }
+  return (
+    <span className={`inline-flex items-center justify-center bg-emerald-50 text-[#0A604E] ${className}`} title="Chưa có ảnh bác sĩ">
+      <Stethoscope size={20} aria-label="Chưa có ảnh bác sĩ" />
+    </span>
+  );
 }
 
 export default function PatientHome() {

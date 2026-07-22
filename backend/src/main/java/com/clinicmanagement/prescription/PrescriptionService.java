@@ -127,6 +127,11 @@ public class PrescriptionService {
                     .noonDose(itemReq.noonDose())
                     .eveningDose(itemReq.eveningDose())
                     .nightDose(itemReq.nightDose())
+                    .administrationRoute(itemReq.administrationRoute())
+                    .administrationTiming(itemReq.administrationTiming())
+                    .administrationSite(itemReq.administrationSite())
+                    .packageInfo(itemReq.packageInfo())
+                    .asNeeded(Boolean.TRUE.equals(itemReq.asNeeded()))
                     .build();
 
             prescription.getItems().add(item);
