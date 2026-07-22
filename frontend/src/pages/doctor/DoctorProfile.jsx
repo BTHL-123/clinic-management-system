@@ -7,7 +7,7 @@ import { useToast } from "../../context/useToast.js";
 import {
   User, Award, ShieldAlert, Key, ClipboardList, Phone, Mail,
   MapPin, Camera, ShieldCheck, Bell, Settings, Lock, RotateCcw,
-  HelpCircle, Plus, X
+  HelpCircle, Plus, X, Stethoscope
 } from "lucide-react";
 
 export default function DoctorProfile() {
@@ -244,14 +244,6 @@ export default function DoctorProfile() {
     );
   }
 
-  const initials = (fullName || user?.email || "DR")
-    .split(" ")
-    .filter(Boolean)
-    .slice(-2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase();
-
   return (
     <div className="w-full max-w-[1280px] mx-auto p-4 md:p-6 lg:p-8 flex flex-col gap-6 relative pb-8">
 
@@ -302,7 +294,7 @@ export default function DoctorProfile() {
                 {avatarUrl ? (
                   <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  <span>{initials}</span>
+                  <Stethoscope size={42} aria-label="Chưa có ảnh bác sĩ" />
                 )}
                 {uploadingAvatar && (
                   <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center text-white text-[10px] font-bold">

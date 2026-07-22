@@ -174,11 +174,10 @@ public class RefundServiceImpl implements RefundService {
             return;
         }
         
-        // Theo Phương án 1: Không tự sinh yêu cầu hoàn tiền nếu thiếu số tài khoản
+        // Patients without bank details submit the refund request themselves later.
+        // Clinic cancellations still create a full approved refund for staff processing.
         boolean hasBankInfo = bankAccountNumber != null && !bankAccountNumber.isBlank();
-        if (clinicCancellation && !hasBankInfo) {
-            // Lễ tân huỷ nhưng không có số tài khoản -> Không tự động sinh phiếu hoàn tiền.
-            // Bệnh nhân sẽ tự vào trang cá nhân để yêu cầu và nhập số tài khoản.
+        if (!clinicCancellation && !hasBankInfo) {
             return;
         }
 
@@ -195,7 +194,11 @@ public class RefundServiceImpl implements RefundService {
         refund.setBankAccountNumber(bankAccountNumber);
         refund.setAccountHolderName(accountHolderName);
         
-        refund.setStatus(RefundStatus.PENDING);
+        refund.setStatus(clinicCancellation ? RefundStatus.APPROVED : RefundStatus.PENDING);
+        if (clinicCancellation) {
+            refund.setApprovedBy(currentUser);
+            refund.setApprovedAt(LocalDateTime.now());
+        }
         refundRepository.save(refund);
     }
 
