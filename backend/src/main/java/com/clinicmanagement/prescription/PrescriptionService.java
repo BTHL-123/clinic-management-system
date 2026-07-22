@@ -143,7 +143,7 @@ public class PrescriptionService {
     // ── DISPENSE (Task 79) ────────────────────────────────────────────────────
     @Transactional
     public PrescriptionResponse dispense(Long prescriptionId, User pharmacist) {
-        Prescription prescription = prescriptionRepository.findById(prescriptionId)
+        Prescription prescription = prescriptionRepository.findByIdForUpdate(prescriptionId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Không tìm thấy đơn thuốc #" + prescriptionId));
 
