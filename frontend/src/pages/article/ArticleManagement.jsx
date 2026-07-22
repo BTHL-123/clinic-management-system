@@ -12,6 +12,7 @@ import {
   publishArticle
 } from "../../services/articleService.js";
 import { useToast } from "../../context/useToast.js";
+import { useAuth } from "../../context/useAuth.js";
 
 const CATEGORIES = ["CARDIOLOGY", "NEUROLOGY", "MENTAL HEALTH", "GENERAL MEDICINE"];
 
@@ -164,6 +165,8 @@ function ArticleModal({ isOpen, onClose, onSave, article, busy }) {
 
 export default function ArticleManagement() {
   const toast = useToast();
+  const { user } = useAuth();
+  const isAdmin = user?.roles?.some((role) => role.replace(/^ROLE_/, "") === "ADMIN");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -364,7 +367,7 @@ export default function ArticleManagement() {
                       )}
                       {article.status === "DRAFT" && (
                         <span className="flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wide border border-slate-100 text-rose-700 shadow-sm">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Draft
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Chờ duyệt
                         </span>
                       )}
                       {article.status !== "PUBLISHED" && article.status !== "DRAFT" && (
@@ -412,7 +415,7 @@ export default function ArticleManagement() {
 
                     {/* Action buttons at bottom */}
                     <div className="flex gap-2 justify-end mt-4 pt-3 border-t border-slate-50/50">
-                      {article.status === "DRAFT" ? (
+                      {article.status === "DRAFT" && isAdmin ? (
                         <button
                           onClick={() => handlePublish(article.articleId)}
                           title="Đăng bài viết"
@@ -420,15 +423,16 @@ export default function ArticleManagement() {
                         >
                           <Eye size={15} />
                         </button>
-                      ) : (
+                      ) : article.status === "PUBLISHED" ? (
                         <button
                           title="Chia sẻ"
                           className="p-2 rounded-xl text-slate-400 hover:text-teal-600 hover:bg-teal-50 transition-all active:scale-95"
                         >
                           <Share2 size={15} />
                         </button>
-                      )}
+                      ) : null}
 
+                      {(isAdmin || article.authorUserId === user?.userId) && (
                       <button
                         onClick={() => handleOpenEdit(article)}
                         title="Sửa bài viết"
@@ -436,7 +440,9 @@ export default function ArticleManagement() {
                       >
                         <Edit size={15} />
                       </button>
+                      )}
 
+                      {isAdmin && (
                       <button
                         onClick={() => handleDelete(article.articleId)}
                         title="Xóa bài viết"
@@ -444,6 +450,7 @@ export default function ArticleManagement() {
                       >
                         <Trash2 size={15} />
                       </button>
+                      )}
                     </div>
                   </div>
                 </div>
