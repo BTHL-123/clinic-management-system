@@ -120,7 +120,15 @@ export default function PatientDoctorsPage() {
 
                 <div className="w-28 h-28 rounded-2xl bg-white shadow-md border-4 border-white z-10 flex items-center justify-center overflow-hidden mb-4 relative">
                   {doc.avatarUrl && doc.avatarUrl !== "null" && doc.avatarUrl.trim() !== "" ? (
-                    <img src={doc.avatarUrl} alt={doc.fullName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img 
+                      src={doc.avatarUrl} 
+                      alt={doc.fullName} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(doc.fullName || "Bác sĩ")}&background=e2e8f0&color=0f172a`;
+                      }}
+                    />
                   ) : (
                     <Stethoscope size={46} className="text-[#0A604E]" aria-label="Chưa có ảnh bác sĩ" />
                   )}
