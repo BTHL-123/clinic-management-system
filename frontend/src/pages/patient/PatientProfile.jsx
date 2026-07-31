@@ -193,7 +193,15 @@ export default function PatientProfile() {
       <div className="bg-white rounded-2xl border border-slate-200/80 p-6 md:p-8">
         {formData.avatarUrl && (
           <div className="flex justify-center mb-8">
-            <img src={formData.avatarUrl} alt="Avatar" className="w-28 h-28 rounded-2xl object-cover border-2 border-slate-200 shadow-md" />
+            <img 
+              src={formData.avatarUrl} 
+              alt="Avatar" 
+              className="w-28 h-28 rounded-2xl object-cover border-2 border-slate-200 shadow-md" 
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = `https://ui-avatars.com/api/?name=User&background=e2e8f0&color=0f172a`;
+              }}
+            />
           </div>
         )}
         <form onSubmit={handleSubmit}>

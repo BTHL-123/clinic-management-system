@@ -798,12 +798,24 @@ export default function MyAppointmentsPage() {
                           {/* Doctor Avatar */}
                           <div className="w-16 h-16 rounded-xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
                             {selectedDocDetails?.avatarUrl ? (
-                              <img src={selectedDocDetails.avatarUrl} alt="" className="w-full h-full object-cover" />
+                              <img 
+                                src={selectedDocDetails.avatarUrl} 
+                                alt="" 
+                                className="w-full h-full object-cover" 
+                                onError={(e) => {
+                                  e.currentTarget.onerror = null;
+                                  e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedDocDetails.fullName || "Bác sĩ")}&background=e2e8f0&color=0f172a`;
+                                }}
+                              />
                             ) : (
                               <img 
                                 src={selectedAppt.doctorAvatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedAppt.doctorName)}&background=e2e8f0&color=0f172a`} 
                                 alt="" 
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.onerror = null;
+                                  e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedAppt.doctorName || "Bác sĩ")}&background=e2e8f0&color=0f172a`;
+                                }}
                               />
                             )}
                           </div>

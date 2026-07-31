@@ -442,8 +442,16 @@ const LandingPage = () => {
                 {/* Avatar overlapping banner */}
                 <div className="relative pt-8 px-6 flex flex-col items-center z-10">
                   <div className="relative w-32 h-32 rounded-full p-1.5 bg-white shadow-[0_10px_25px_rgba(0,0,0,0.1)] group-hover:scale-105 transition-transform duration-500">
-                    <div className="w-full h-full rounded-full overflow-hidden bg-slate-100">
-                      <img src={displayAvatar} alt={doc.fullName} className="w-full h-full object-cover" />
+                    <div className="w-full h-full rounded-full overflow-hidden bg-slate-100 flex items-center justify-center">
+                      <img 
+                        src={doc.avatarUrl && doc.avatarUrl !== "null" && doc.avatarUrl.trim() !== "" ? doc.avatarUrl : "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=400&h=400&fit=crop"} 
+                        alt={doc.fullName} 
+                        className="w-full h-full object-cover" 
+                        onError={(e) => {
+                          e.currentTarget.onerror = null; // Prevent infinite loop
+                          e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(doc.fullName || "Doctor")}&background=e2e8f0&color=0f172a&size=200`;
+                        }}
+                      />
                     </div>
                   </div>
                 </div>

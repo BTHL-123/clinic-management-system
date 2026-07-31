@@ -43,6 +43,10 @@ export default function DoctorDetailModal({ selectedDoctor, onClose, onBookClick
                       src={selectedDoctor.avatarUrl && selectedDoctor.avatarUrl !== "null" && selectedDoctor.avatarUrl.trim() !== "" ? selectedDoctor.avatarUrl : `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedDoctor.fullName || selectedDoctor.name || "Bác sĩ")}&background=e2e8f0&color=0f172a`}
                       alt={selectedDoctor.fullName || selectedDoctor.name || "Bác sĩ"}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedDoctor.fullName || selectedDoctor.name || "Bác sĩ")}&background=e2e8f0&color=0f172a`;
+                      }}
                     />
                   </div>
                 </div>
