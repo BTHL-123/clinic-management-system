@@ -39,15 +39,15 @@ export default function DoctorDetailModal({ selectedDoctor, onClose, onBookClick
               <div className="flex flex-col md:flex-row gap-6 items-center md:items-end mb-8">
                 <div className="w-40 h-40 rounded-3xl bg-white p-2 shadow-xl shrink-0 overflow-hidden border border-slate-100">
                   <div className="w-full h-full rounded-2xl overflow-hidden bg-teal-50 flex items-center justify-center">
-                    {typeof selectedDoctor.avatarUrl === "string" && selectedDoctor.avatarUrl.trim() && selectedDoctor.avatarUrl !== "null" ? (
-                      <img
-                        src={selectedDoctor.avatarUrl}
-                        alt={selectedDoctor.fullName || selectedDoctor.name || "Bác sĩ"}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <Stethoscope size={54} className="text-teal-600" aria-label="Chưa có ảnh bác sĩ" />
-                    )}
+                    <img
+                      src={selectedDoctor.avatarUrl && selectedDoctor.avatarUrl !== "null" && selectedDoctor.avatarUrl.trim() !== "" ? selectedDoctor.avatarUrl : `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedDoctor.fullName || selectedDoctor.name || "Bác sĩ")}&background=e2e8f0&color=0f172a`}
+                      alt={selectedDoctor.fullName || selectedDoctor.name || "Bác sĩ"}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedDoctor.fullName || selectedDoctor.name || "Bác sĩ")}&background=e2e8f0&color=0f172a`;
+                      }}
+                    />
                   </div>
                 </div>
                 <div className="text-center md:text-left flex-1">
