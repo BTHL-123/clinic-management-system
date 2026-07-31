@@ -18,5 +18,10 @@ public record PrescriptionItemRequest(
         String morningDose,
         String noonDose,
         String eveningDose,
-        String nightDose
+        String nightDose,
+        String administrationRoute,
+        String administrationTiming,
+        String administrationSite,
+        String packageInfo,
+        Boolean asNeeded
 ) {}

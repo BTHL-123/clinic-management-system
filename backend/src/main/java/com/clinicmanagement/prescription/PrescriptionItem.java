@@ -52,4 +52,20 @@ public class PrescriptionItem {
 
     @Column(name = "night_dose", length = 50)
     private String nightDose;
+
+    @Column(name = "administration_route", length = 50)
+    private String administrationRoute;
+
+    @Column(name = "administration_timing", length = 50)
+    private String administrationTiming;
+
+    @Column(name = "administration_site", length = 255)
+    private String administrationSite;
+
+    @Column(name = "package_info", length = 255)
+    private String packageInfo;
+
+    @Column(name = "as_needed", nullable = false)
+    @Builder.Default
+    private boolean asNeeded = false;
 }

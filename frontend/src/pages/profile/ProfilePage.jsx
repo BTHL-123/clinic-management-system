@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Camera, Save, UserSquare, ArrowLeft } from "lucide-react";
+import { Camera, Save, UserRound, UserSquare, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
 import PatientProfile from "../patient/PatientProfile";
@@ -17,14 +17,6 @@ function AccountProfileCard({ isPatientMode }) {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-
-  const initials = (form.fullName || user?.email || "AI")
-    .split(" ")
-    .filter(Boolean)
-    .slice(-2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -65,7 +57,7 @@ function AccountProfileCard({ isPatientMode }) {
     <section className={`${isPatientMode ? "bg-white rounded-3xl border border-slate-200 shadow-sm" : "patient-glass-card"} p-6 md:p-8 w-full`}>
       <div className="flex flex-col md:flex-row items-center gap-6 mb-8">
         <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/20 shrink-0 bg-black/5 flex items-center justify-center text-3xl font-extrabold text-slate-900 shadow-lg">
-          {avatarUrl ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" /> : <span>{initials}</span>}
+          {avatarUrl ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" /> : <UserRound size={34} aria-label="Chưa có ảnh đại diện" />}
         </div>
         <div className="flex-1 text-center md:text-left">
           <h2 className="text-2xl font-bold patient-section-title mb-1">Thông tin tài khoản</h2>

@@ -5,6 +5,7 @@ import com.clinicmanagement.common.exception.BusinessException;
 import com.clinicmanagement.common.exception.ResourceNotFoundException;
 import com.clinicmanagement.patient.Patient;
 import com.clinicmanagement.patient.PatientRepository;
+import com.clinicmanagement.payment.PaymentPolicyService;
 import com.clinicmanagement.user.User;
 import com.clinicmanagement.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,18 +22,23 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SlotLockServiceImpl implements SlotLockService {
 
-    private static final int LOCK_DURATION_MINUTES = 10;
-
     private final TimeSlotRepository timeSlotRepository;
     private final PatientRepository patientRepository;
     private final UserRepository userRepository;
     private final AppointmentRepository appointmentRepository;
+    private final PaymentPolicyService paymentPolicyService;
 
     @Override
     @Transactional
     public SlotLockResponse lockSlot(Long slotId, Long patientUserId) {
         TimeSlot slot = timeSlotRepository.findByIdWithPessimisticLock(slotId)
                 .orElseThrow(() -> new ResourceNotFoundException("Ca khám không tồn tại với id: " + slotId));
+
+        LocalDateTime slotStartsAt = LocalDateTime.of(
+                slot.getDoctorSchedule().getWorkDate(), slot.getStartTime());
+        if (!slotStartsAt.isAfter(LocalDateTime.now())) {
+            throw new BusinessException("Ca khám này đã qua thời gian, vui lòng chọn ca khác.");
+        }
 
         Patient patient = patientRepository.findByUserUserId(patientUserId)
                 .orElseGet(() -> {
@@ -62,7 +68,9 @@ public class SlotLockServiceImpl implements SlotLockService {
             throw new BusinessException("Ca khám không còn trống. Vui lòng chọn ca khác.");
         }
 
-        LocalDateTime expiry = LocalDateTime.now().plusMinutes(LOCK_DURATION_MINUTES);
+        int lockDuration = paymentPolicyService.depositExpiryMinutes();
+
+        LocalDateTime expiry = LocalDateTime.now().plusMinutes(lockDuration);
         slot.setStatus("LOCKED");
         slot.setLockedUntil(expiry);
         slot.setLockedByPatientId(patient.getPatientId());

@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { 
   CalendarDays, Clock, CheckCircle, XCircle, RefreshCw, AlertCircle, 
   ChevronLeft, ChevronRight, Star, MessageSquarePlus, ArrowLeft, Search, 
-  Filter, Calendar, MapPin, Coins, User, ShieldAlert, X, ShieldCheck, GraduationCap, Activity, ThumbsUp
+  Filter, Calendar, MapPin, Coins, User, ShieldAlert, X, ShieldCheck, GraduationCap, Activity, ThumbsUp, Stethoscope
 } from "lucide-react";
 import appointmentService from "../../services/appointmentService.js";
 import { createReview } from "../../services/reviewService.js";
@@ -507,6 +507,11 @@ export default function MyAppointmentsPage() {
     if (!selectedAppt || !doctors.length) return null;
     return doctors.find(d => d.doctorId === selectedAppt.doctorId || d.fullName === selectedAppt.doctorName) || null;
   }, [selectedAppt, doctors]);
+
+  const selectedDoctorAvatar = selectedDocDetails?.avatarUrl || selectedAppt?.doctorAvatarUrl || "";
+  const hasSelectedDoctorAvatar = typeof selectedDoctorAvatar === "string"
+    && selectedDoctorAvatar.trim() !== ""
+    && selectedDoctorAvatar !== "null";
 
   const tabs = [
     { key: "upcoming", label: "Lịch hẹn sắp tới", icon: <CalendarDays size={16} /> },

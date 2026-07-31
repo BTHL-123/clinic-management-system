@@ -487,7 +487,13 @@ export default function DoctorHome() {
               </div>
 
               <div className="flex flex-col items-center text-center mb-4">
-                <img src={user?.avatarUrl || "https://i.pravatar.cc/150?u=doc"} className="w-12 h-12 rounded-full border-2 border-teal-600/50 mb-2 shadow-sm" alt="Doctor" />
+                {typeof user?.avatarUrl === "string" && user.avatarUrl.trim() && user.avatarUrl !== "null" ? (
+                  <img src={user.avatarUrl} className="w-12 h-12 rounded-full border-2 border-teal-600/50 mb-2 shadow-sm object-cover" alt="Ảnh bác sĩ" />
+                ) : (
+                  <div className="w-12 h-12 rounded-full border-2 border-teal-600/50 mb-2 shadow-sm bg-teal-50 text-teal-700 flex items-center justify-center">
+                    <Stethoscope size={22} aria-label="Chưa có ảnh bác sĩ" />
+                  </div>
+                )}
                 <h3 className="font-black text-xs leading-tight patient-data line-clamp-1">{profile?.fullName || user?.fullName || "BS. Hùng Lê"}</h3>
                 <p className="text-[9px] text-teal-600 font-extrabold mt-1 uppercase truncate">{profile?.departmentName || profile?.specialization || user?.specialty || "Nội khoa"}</p>
               </div>

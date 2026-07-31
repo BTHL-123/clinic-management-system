@@ -127,6 +127,11 @@ public class PrescriptionService {
                     .noonDose(itemReq.noonDose())
                     .eveningDose(itemReq.eveningDose())
                     .nightDose(itemReq.nightDose())
+                    .administrationRoute(itemReq.administrationRoute())
+                    .administrationTiming(itemReq.administrationTiming())
+                    .administrationSite(itemReq.administrationSite())
+                    .packageInfo(itemReq.packageInfo())
+                    .asNeeded(Boolean.TRUE.equals(itemReq.asNeeded()))
                     .build();
 
             prescription.getItems().add(item);
@@ -138,7 +143,7 @@ public class PrescriptionService {
     // ── DISPENSE (Task 79) ────────────────────────────────────────────────────
     @Transactional
     public PrescriptionResponse dispense(Long prescriptionId, User pharmacist) {
-        Prescription prescription = prescriptionRepository.findById(prescriptionId)
+        Prescription prescription = prescriptionRepository.findByIdForUpdate(prescriptionId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Không tìm thấy đơn thuốc #" + prescriptionId));
 

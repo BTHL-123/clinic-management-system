@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, Home, KeyRound, LogOut, UserSquare } from "lucide-react";
+import { ChevronDown, Home, KeyRound, LogOut, UserRound, UserSquare } from "lucide-react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import NotificationBell from "../components/NotificationBell.jsx";
@@ -41,14 +41,6 @@ export default function DashboardLayout() {
     await logout();
     navigate("/login", { replace: true });
   };
-
-  const initials = (user?.fullName || "AI")
-    .split(" ")
-    .filter(Boolean)
-    .slice(-2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase();
 
   const roles = (user?.roles || []).map(normalizeRole).filter(Boolean);
   const rolesText = roles.join(", ") || "User";
@@ -137,7 +129,7 @@ export default function DashboardLayout() {
               aria-expanded={accountMenuOpen}
               onClick={() => setAccountMenuOpen((open) => !open)}
             >
-              {user?.avatarUrl ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" /> : <span>{initials}</span>}
+              {user?.avatarUrl ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" /> : <UserRound size={18} aria-label="Chưa có ảnh đại diện" />}
             </button>
             {accountMenuOpen && (
               <div className="absolute right-0 top-[calc(100%+12px)] z-[60] w-52 overflow-hidden rounded-2xl border border-[#DDEDEA] bg-white p-1.5 shadow-[0_16px_36px_rgba(15,23,42,.14)]">
@@ -185,7 +177,7 @@ export default function DashboardLayout() {
                 onClick={() => setAccountMenuOpen((open) => !open)}
               >
                 <span className="admin-account-avatar">
-                  {user?.avatarUrl ? <img src={user.avatarUrl} alt="" /> : initials}
+                  {user?.avatarUrl ? <img src={user.avatarUrl} alt="" /> : <UserRound size={15} aria-label="Chưa có ảnh đại diện" />}
                 </span>
                 <ChevronDown size={15} className={accountMenuOpen ? "open" : ""} />
               </button>
@@ -208,7 +200,7 @@ export default function DashboardLayout() {
             </div>
           ) : (
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 text-white flex items-center justify-center font-extrabold shadow-md border-2 border-white overflow-hidden relative">
-              {user?.avatarUrl ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" /> : <span>{initials}</span>}
+              {user?.avatarUrl ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" /> : <UserRound size={18} aria-label="Chưa có ảnh đại diện" />}
             </div>
           )}
         </div>
@@ -251,7 +243,7 @@ export default function DashboardLayout() {
               onClick={() => setAccountMenuOpen((open) => !open)}
             >
               <span className="admin-account-avatar">
-                {user?.avatarUrl ? <img src={user.avatarUrl} alt="" /> : initials}
+                {user?.avatarUrl ? <img src={user.avatarUrl} alt="" /> : <UserRound size={15} aria-label="Chưa có ảnh đại diện" />}
               </span>
               <span className="hidden sm:grid text-left leading-tight">
                 <strong>{user?.fullName || "Clinic Admin"}</strong>

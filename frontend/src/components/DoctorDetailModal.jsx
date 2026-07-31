@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ShieldCheck, GraduationCap, Activity, Star, FileText, ThumbsUp } from "lucide-react";
+import { X, ShieldCheck, GraduationCap, Activity, Star, FileText, ThumbsUp, Stethoscope } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function DoctorDetailModal({ selectedDoctor, onClose, onBookClick }) {

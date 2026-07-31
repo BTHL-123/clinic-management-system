@@ -304,13 +304,8 @@ export default function PatientManagement() {
 
           {/* Avatar Group */}
           <div className="flex items-center gap-2 shrink-0">
-            <div className="flex -space-x-2">
-              <img className="w-7 h-7 rounded-full border-2 border-white object-cover" src="https://i.pravatar.cc/100?img=33" alt="" />
-              <img className="w-7 h-7 rounded-full border-2 border-white object-cover" src="https://i.pravatar.cc/100?img=12" alt="" />
-              <img className="w-7 h-7 rounded-full border-2 border-white object-cover" src="https://i.pravatar.cc/100?img=47" alt="" />
-              <div className="w-7 h-7 rounded-full bg-[#1DB896]/10 text-[#1DB896] text-[10px] font-black flex items-center justify-center border-2 border-white">
-                +12
-              </div>
+            <div className="w-9 h-9 rounded-full bg-[#1DB896]/10 text-[#1DB896] flex items-center justify-center border-2 border-white" title="Quản lý bệnh nhân">
+              <Users size={17} aria-label="Quản lý bệnh nhân" />
             </div>
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">BN mới trong tuần</span>
           </div>
