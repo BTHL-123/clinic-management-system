@@ -349,6 +349,7 @@ public class GeminiService {
                 "3. 'diagnosis': Chẩn đoán XÁC ĐỊNH bệnh. Bạn PHẢI tra cứu mã ICD-10 tương ứng và trả về theo định dạng: [MÃ_ICD10] Tên Bệnh (VD: [J02.9] Viêm họng cấp). NẾU input có các từ: 'nghi', 'theo dõi', 'rule out', 'chưa loại trừ', 'khả năng' => KHÔNG ĐƯỢC để vào diagnosis mà phải chuyển xuống doctorNote. Nếu không có chẩn đoán xác định, để rỗng \"\".\n" +
                 "4. 'treatmentPlan': Thuốc, KẾ HOẠCH ĐIỀU TRỊ hoặc CẬN LÂM SÀNG (VD: chỉ định, xét nghiệm, siêu âm, CT, MRI, X-quang, công thức máu, nội soi...). Ưu tiên đưa vào đây.\n" +
                 "5. 'doctorNote': Lời dặn dò của bác sĩ đối với bệnh nhân (kiêng cữ, sinh hoạt), hoặc các chẩn đoán chưa xác định (VD: nghi viêm ruột thừa). KHÔNG ghi lại thông tin hành chính (bệnh nhân nam, tuổi...) trừ khi cần thiết.\n" +
+                "QUAN TRỌNG: Nếu ghi chú chỉ có kế hoạch điều trị, chỉ định, thuốc hoặc lịch tái khám thì vẫn PHẢI điền treatmentPlan/doctorNote tương ứng; không được trả cả 5 trường rỗng khi ghi chú có nội dung y khoa.\n" +
                 "Trả về ĐÚNG MỘT JSON OBJECT với 5 trường trên. Nếu thông tin nào không có, hãy để trống chuỗi (\"\"). Chỉ trả về JSON thuần hợp lệ, không bọc bằng ```json hay markdown, không chứa text nào khác."));
         messages.add(Map.of("role", "user", "content", "Ghi chú thô:\n" + rawNote + "\nPhân tích và trả về JSON."));
 
@@ -356,6 +357,7 @@ public class GeminiService {
         requestBody.put("messages", messages);
         requestBody.put("temperature", 0.1);
         requestBody.put("max_tokens", 500);
+        requestBody.put("response_format", Map.of("type", "json_object"));
 
         String[] result = executeGroqWithRetryAndFallback(requestBody);
         if (result != null) {
@@ -503,6 +505,7 @@ public class GeminiService {
                 "3. 'diagnosis': Chẩn đoán XÁC ĐỊNH bệnh. Bạn PHẢI tra cứu mã ICD-10 tương ứng và trả về theo định dạng: [MÃ_ICD10] Tên Bệnh (VD: [J02.9] Viêm họng cấp). NẾU input có các từ: 'nghi', 'theo dõi', 'rule out', 'chưa loại trừ', 'khả năng' => KHÔNG ĐƯỢC để vào diagnosis mà phải chuyển xuống doctorNote. Nếu không có chẩn đoán xác định, để rỗng \"\".\n" +
                 "4. 'treatmentPlan': Thuốc, KẾ HOẠCH ĐIỀU TRỊ hoặc CẬN LÂM SÀNG (VD: chỉ định, xét nghiệm, siêu âm, CT, MRI, X-quang, công thức máu, nội soi...). Ưu tiên đưa vào đây.\n" +
                 "5. 'doctorNote': Lời dặn dò của bác sĩ đối với bệnh nhân (kiêng cữ, sinh hoạt), hoặc các chẩn đoán chưa xác định (VD: nghi viêm ruột thừa). KHÔNG ghi lại thông tin hành chính (bệnh nhân nam, tuổi...) trừ khi cần thiết.\n" +
+                "QUAN TRỌNG: Nếu ghi chú chỉ có kế hoạch điều trị, chỉ định, thuốc hoặc lịch tái khám thì vẫn PHẢI điền treatmentPlan/doctorNote tương ứng; không được trả cả 5 trường rỗng khi ghi chú có nội dung y khoa.\n" +
                 "Trả về ĐÚNG MỘT JSON OBJECT với 5 trường trên. Nếu thông tin nào không có, hãy để trống chuỗi (\"\"). Chỉ trả về JSON thuần hợp lệ, không bọc bằng ```json hay markdown, không chứa text nào khác.");
         systemInstruction.put("parts", List.of(systemParts));
         requestBody.put("system_instruction", systemInstruction);
@@ -518,6 +521,7 @@ public class GeminiService {
 
         Map<String, Object> generationConfig = new HashMap<>();
         generationConfig.put("temperature", 0.1);
+        generationConfig.put("responseMimeType", "application/json");
         requestBody.put("generationConfig", generationConfig);
 
         String[] result = executeWithRetryAndFallback(requestBody);
