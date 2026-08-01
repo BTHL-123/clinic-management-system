@@ -5,23 +5,31 @@ import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
 public class SePayUrlBuilder {
 
-    @Value("${app.sepay.bank-account:}")
-    private String sepayBankAccount;
-
-    @Value("${app.sepay.bank-code:}")
-    private String sepayBankCode;
+    private final Environment environment;
 
     public String build(Payment payment) {
-        if (sepayBankAccount == null || sepayBankAccount.isBlank()
-                || sepayBankCode == null || sepayBankCode.isBlank()) {
-            throw new BusinessException("SePay bank account configuration is missing");
+        String sepayBankAccount = firstConfiguredValue(
+                "app.sepay.bank-account",
+                "SEPAY_BANK_ACCOUNT",
+                "sepay.account-number",
+                "SEPAY_ACCOUNT_NUMBER"
+        );
+        String sepayBankCode = firstConfiguredValue(
+                "app.sepay.bank-code",
+                "SEPAY_BANK_CODE",
+                "sepay.bank-code"
+        );
+        if (sepayBankAccount == null || sepayBankCode == null) {
+            throw new BusinessException(
+                    "Chưa cấu hình tài khoản SePay. Vui lòng thiết lập SEPAY_BANK_ACCOUNT và SEPAY_BANK_CODE."
+            );
         }
         BigDecimal amount = payment.getAmount() != null ? payment.getAmount() : BigDecimal.ZERO;
         return String.format(
@@ -35,5 +43,15 @@ public class SePayUrlBuilder {
 
     private String urlEncode(String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
+    }
+
+    private String firstConfiguredValue(String... propertyNames) {
+        for (String propertyName : propertyNames) {
+            String value = environment.getProperty(propertyName);
+            if (value != null && !value.isBlank()) {
+                return value.trim();
+            }
+        }
+        return null;
     }
 }
