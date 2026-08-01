@@ -82,4 +82,20 @@ class ClinicalNoteResponseParserTest {
         assertEquals("Nội soi dạ dày; Test vi khuẩn HP", response.getTreatmentPlan());
         assertEquals("Tái khám sau 2 tuần", response.getDoctorNote());
     }
+
+    @Test
+    void combinesSeparateTopLevelIcdCodeAndConfirmedDiagnosis() throws Exception {
+        StandardizeNoteResponse response = ClinicalNoteResponseParser.parse(objectMapper, """
+                {
+                  "symptoms": "Ợ chua, đau thượng vị",
+                  "icd10": "K21.9",
+                  "diagnosis": "Trào ngược dạ dày thực quản",
+                  "treatmentPlan": "Điều trị giảm tiết acid",
+                  "doctorNote": "Theo dõi đáp ứng điều trị và tái khám sau 2 tuần"
+                }
+                """);
+
+        assertEquals("[K21.9] Trào ngược dạ dày thực quản", response.getDiagnosis());
+        assertEquals("Theo dõi đáp ứng điều trị và tái khám sau 2 tuần", response.getDoctorNote());
+    }
 }
