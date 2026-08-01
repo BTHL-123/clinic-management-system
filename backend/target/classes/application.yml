@@ -1,6 +1,8 @@
 spring:
   application:
     name: clinic-management-backend
+  config:
+    import: "optional:file:./.env[.properties],optional:file:./backend/.env[.properties]"
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/clinic_management}
     username: ${DB_USERNAME:postgres}
@@ -8,13 +10,26 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: ${JPA_DDL_AUTO:update}
     open-in-view: false
     properties:
       hibernate:
         format_sql: true
-        jdbc:
-          time_zone: UTC
+  flyway:
+    enabled: ${FLYWAY_ENABLED:true}
+    baseline-on-migrate: true
+    baseline-version: 1
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:false}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS:false}
 
 server:
   port: ${SERVER_PORT:8080}
@@ -23,11 +38,35 @@ server:
 
 app:
   cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000}
   jwt:
     secret: ${JWT_SECRET:change-this-development-secret-key-at-least-32-characters}
     access-token-expiration-ms: ${JWT_ACCESS_EXPIRATION_MS:3600000}
     refresh-token-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:671408550070-p77dnfqdf4m1eqnqgl03261bvshaoblu.apps.googleusercontent.com}
+  mail:
+    enabled: ${APP_MAIL_ENABLED:false}
+  upload:
+    avatar-dir: ${AVATAR_UPLOAD_DIR:uploads/avatars}
+  gemini:
+    api-key: ${GEMINI_API_KEY:}
+    primary-model: ${GEMINI_PRIMARY_MODEL:gemini-2.0-flash}
+    fallback-model: ${GEMINI_FALLBACK_MODEL:gemini-2.0-flash-lite}
+  ai:
+    provider: ${AI_PROVIDER:groq}
+  groq:
+    api-key: ${GROQ_API_KEY:}
+    primary-model: ${GROQ_PRIMARY_MODEL:llama-3.3-70b-versatile}
+    fallback-model: ${GROQ_FALLBACK_MODEL:llama-3.1-8b-instant}
   seed:
-    admin-email: ${APP_ADMIN_EMAIL:admin@example.com}
-    admin-password: ${APP_ADMIN_PASSWORD:123456}
+    enabled: ${APP_SEED_ENABLED:true}
+    admin-email: ${APP_ADMIN_EMAIL:}
+    admin-password: ${APP_ADMIN_PASSWORD:}
+    admin-full-name: ${APP_ADMIN_FULL_NAME:System Administrator}
+  sepay:
+    api-key: ${SEPAY_API_KEY:}
+    bank-account: ${SEPAY_BANK_ACCOUNT:}
+    bank-code: ${SEPAY_BANK_CODE:}
+    transactions-url: ${SEPAY_TRANSACTIONS_URL:https://my.sepay.vn/userapi/transactions/list}
+    webhook-requires-verification: ${SEPAY_WEBHOOK_REQUIRES_VERIFICATION:true}
