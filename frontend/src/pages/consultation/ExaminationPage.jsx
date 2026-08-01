@@ -43,6 +43,7 @@ import { createLabRequest, getLabRequestsByConsultationId } from "../../services
 import { getLabTests } from "../../services/labTestService";
 import { standardizeClinicalNote } from "../../services/aiChatService";
 import PatientRecordModal from "../../components/PatientRecordModal";
+import MedicationSafetyModal from "../../components/MedicationSafetyModal";
 import {
   createPrescription,
   getPrescriptionByConsultationId,
@@ -157,6 +158,7 @@ export default function ExaminationPage() {
   const medicineSearchRef = useRef(null);
   const [editingRxIndex, setEditingRxIndex] = useState(null);
   const [allergyWarning, setAllergyWarning] = useState(null);
+  const [interactionWarning, setInteractionWarning] = useState(null);
 
   const [completing, setCompleting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -609,6 +611,48 @@ export default function ExaminationPage() {
     return parts.join(", ");
   };
 
+  const persistPrescription = async (validItems) => {
+    const res = await createPrescription({
+      consultationId: Number(consultationId),
+      patientId: consultation.patientId,
+      doctorId: consultation.doctorId,
+      doctorNote: rxNote || null,
+      items: validItems.map((i) => ({
+        medicineId: Number(i.medicineId),
+        quantity: Number(i.quantity),
+        dosage: formatDose(i) || null,
+        frequency: formatSchedule(i),
+        duration: formatDuration(i.duration),
+        instructions: i.instructions || null,
+        morningDose: i.morningDose || null,
+        noonDose: i.noonDose || null,
+        eveningDose: i.eveningDose || null,
+        nightDose: i.nightDose || null,
+        administrationRoute: i.administrationRoute || null,
+        administrationTiming: i.administrationTiming || null,
+        administrationSite: i.administrationSite || null,
+        packageInfo: i.packageInfo || null,
+        asNeeded: Boolean(i.asNeeded),
+      })),
+    });
+    setSavedPrescription(res.data);
+    setRxItems([]);
+    setRxNote("");
+    showToast("Đã tạo đơn thuốc thành công.");
+  };
+
+  const showPrescriptionError = (err) => {
+    const message = err.response?.data?.message || err.message || "Không thể tạo đơn thuốc.";
+    if (/dị ứng/i.test(message)) {
+      setAllergyWarning({
+        patientAllergies: patientInfo?.allergies,
+        message,
+      });
+    } else {
+      showToast(message, "error");
+    }
+  };
+
   const handleCreatePrescription = async () => {
     const validItems = rxItems.filter((i) => i.medicineId && i.quantity);
     if (validItems.length === 0) {
@@ -622,51 +666,33 @@ export default function ExaminationPage() {
         const interactionRes = await checkInteractionsDraft(draftIds);
         const { warningLevel, warningMessage } = interactionRes.data;
         if (warningLevel !== "NONE") {
-          const confirmMsg = `Phát hiện tương tác thuốc nguy hiểm (Mức độ: ${warningLevel}):\n\n${warningMessage}\n\nBạn có chắc chắn muốn tiếp tục kê đơn này không?`;
-          if (!window.confirm(confirmMsg)) {
-            setSavingRx(false);
-            return;
-          }
+          setInteractionWarning({
+            warningLevel,
+            warningMessage,
+            items: validItems,
+          });
+          return;
         }
       }
 
-      const res = await createPrescription({
-        consultationId: Number(consultationId),
-        patientId: consultation.patientId,
-        doctorId: consultation.doctorId,
-        doctorNote: rxNote || null,
-        items: validItems.map((i) => ({
-          medicineId: Number(i.medicineId),
-          quantity: Number(i.quantity),
-          dosage: formatDose(i) || null,
-          frequency: formatSchedule(i),
-          duration: formatDuration(i.duration),
-          instructions: i.instructions || null,
-          morningDose: i.morningDose || null,
-          noonDose: i.noonDose || null,
-          eveningDose: i.eveningDose || null,
-          nightDose: i.nightDose || null,
-          administrationRoute: i.administrationRoute || null,
-          administrationTiming: i.administrationTiming || null,
-          administrationSite: i.administrationSite || null,
-          packageInfo: i.packageInfo || null,
-          asNeeded: Boolean(i.asNeeded),
-        })),
-      });
-      setSavedPrescription(res.data);
-      setRxItems([]);
-      setRxNote("");
-      showToast("Đã tạo đơn thuốc thành công.");
+      await persistPrescription(validItems);
     } catch (err) {
-      const message = err.response?.data?.message || err.message || "Không thể tạo đơn thuốc.";
-      if (/dị ứng/i.test(message)) {
-        setAllergyWarning({
-          patientAllergies: patientInfo?.allergies,
-          message,
-        });
-      } else {
-        showToast(message, "error");
-      }
+      showPrescriptionError(err);
+    } finally {
+      setSavingRx(false);
+    }
+  };
+
+  const handleConfirmInteractionWarning = async () => {
+    const pendingItems = interactionWarning?.items || [];
+    setInteractionWarning(null);
+    if (pendingItems.length === 0) return;
+
+    setSavingRx(true);
+    try {
+      await persistPrescription(pendingItems);
+    } catch (err) {
+      showPrescriptionError(err);
     } finally {
       setSavingRx(false);
     }
@@ -1867,73 +1893,29 @@ export default function ExaminationPage() {
             )}
           </div>
 
-          {allergyWarning && (
-            <div
-              className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="allergy-warning-title"
-            >
-              <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-rose-100 bg-white shadow-2xl">
-                <div className="flex items-start justify-between border-b border-rose-100 bg-rose-50 px-6 py-5">
-                  <div className="flex items-start gap-3">
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-rose-600">
-                      <AlertTriangle size={22} strokeWidth={2.5} />
-                    </span>
-                    <div>
-                      <h3 id="allergy-warning-title" className="text-base font-extrabold text-rose-900">
-                        Cảnh báo dị ứng thuốc
-                      </h3>
-                      <p className="mt-1 text-xs font-semibold text-rose-700">
-                        Không thể thêm thuốc này vào đơn của bệnh nhân.
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setAllergyWarning(null)}
-                    className="rounded-lg p-2 text-rose-400 transition-colors hover:bg-rose-100 hover:text-rose-700"
-                    aria-label="Đóng cảnh báo dị ứng"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
+          <MedicationSafetyModal
+            open={Boolean(allergyWarning)}
+            variant="allergy"
+            title="Cảnh báo dị ứng thuốc"
+            subtitle="Không thể thêm thuốc này vào đơn của bệnh nhân."
+            medicineName={allergyWarning?.medicineName}
+            activeIngredient={allergyWarning?.activeIngredient}
+            patientAllergies={allergyWarning?.patientAllergies || "Có ghi nhận nguy cơ dị ứng thuốc."}
+            message={allergyWarning?.message}
+            onClose={() => setAllergyWarning(null)}
+          />
 
-                <div className="space-y-4 px-6 py-5">
-                  {allergyWarning.medicineName && (
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Thuốc được chọn</p>
-                      <p className="mt-1 text-sm font-extrabold text-slate-800">{allergyWarning.medicineName}</p>
-                      {allergyWarning.activeIngredient && (
-                        <p className="mt-1 text-xs font-medium text-slate-500">
-                          Hoạt chất: <strong className="text-slate-700">{allergyWarning.activeIngredient}</strong>
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-wider text-rose-500">Tiền sử dị ứng của bệnh nhân</p>
-                    <p className="mt-1.5 whitespace-pre-wrap rounded-xl border border-rose-100 bg-rose-50/60 px-4 py-3 text-sm font-bold text-rose-800">
-                      {allergyWarning.patientAllergies || "Có ghi nhận nguy cơ dị ứng thuốc."}
-                    </p>
-                  </div>
-
-                  <p className="text-sm font-medium leading-6 text-slate-600">{allergyWarning.message}</p>
-                </div>
-
-                <div className="flex justify-end border-t border-slate-100 bg-slate-50 px-6 py-4">
-                  <button
-                    type="button"
-                    onClick={() => setAllergyWarning(null)}
-                    className="rounded-xl bg-rose-600 px-5 py-2.5 text-xs font-extrabold text-white shadow-sm transition-colors hover:bg-rose-700"
-                  >
-                    Đã hiểu, chọn thuốc khác
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          <MedicationSafetyModal
+            open={Boolean(interactionWarning)}
+            variant="interaction"
+            title="Cảnh báo tương tác thuốc"
+            subtitle="Các thuốc trong đơn có thể gây tương tác nguy hiểm."
+            warningLevel={interactionWarning?.warningLevel}
+            message={interactionWarning?.warningMessage}
+            busy={savingRx}
+            onClose={() => setInteractionWarning(null)}
+            onConfirm={handleConfirmInteractionWarning}
+          />
 
           {editingRxItem && editingMedicine && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="medicine-editor-title">

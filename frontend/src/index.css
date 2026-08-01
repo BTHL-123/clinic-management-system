@@ -49,6 +49,249 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+/* Medication safety dialogs render through a body portal so production layout
+   stacking contexts cannot strip or override their presentation. */
+.medication-safety-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.62);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.medication-safety-modal {
+  width: min(100%, 560px);
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  border: 1px solid #fecdd3;
+  border-radius: 22px;
+  background: #fff;
+  color: #1e293b;
+  box-shadow: 0 28px 70px rgba(15, 23, 42, 0.3);
+  animation: medication-safety-enter 180ms ease-out;
+}
+
+.medication-safety-modal--interaction {
+  border-color: #fde68a;
+}
+
+.medication-safety-header {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 38px;
+  gap: 14px;
+  align-items: start;
+  padding: 22px 24px;
+  border-bottom: 1px solid #ffe4e6;
+  background: #fff1f2;
+}
+
+.medication-safety-modal--interaction .medication-safety-header {
+  border-color: #fef3c7;
+  background: #fffbeb;
+}
+
+.medication-safety-icon {
+  display: flex;
+  width: 48px;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: #ffe4e6;
+  color: #e11d48;
+}
+
+.medication-safety-modal--interaction .medication-safety-icon {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.medication-safety-heading h2 {
+  margin: 1px 0 4px;
+  color: #881337;
+  font-size: 18px;
+  font-weight: 850;
+  line-height: 1.3;
+}
+
+.medication-safety-modal--interaction .medication-safety-heading h2 {
+  color: #78350f;
+}
+
+.medication-safety-heading p {
+  margin: 0;
+  color: #be123c;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.medication-safety-modal--interaction .medication-safety-heading p {
+  color: #a16207;
+}
+
+.medication-safety-close {
+  display: flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #9f1239;
+  cursor: pointer;
+}
+
+.medication-safety-close:hover {
+  background: rgba(225, 29, 72, 0.1);
+}
+
+.medication-safety-body {
+  display: grid;
+  gap: 16px;
+  padding: 22px 24px;
+}
+
+.medication-safety-level {
+  width: fit-content;
+  border: 1px solid #fcd34d;
+  border-radius: 999px;
+  background: #fffbeb;
+  padding: 7px 12px;
+  color: #92400e;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.medication-safety-info-card,
+.medication-safety-allergies p {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+  padding: 14px 16px;
+}
+
+.medication-safety-info-card span,
+.medication-safety-allergies > span {
+  display: block;
+  margin-bottom: 5px;
+  color: #e11d48;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.medication-safety-info-card strong {
+  display: block;
+  color: #1e293b;
+  font-size: 15px;
+}
+
+.medication-safety-info-card p {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.medication-safety-allergies p {
+  margin: 0;
+  border-color: #fecdd3;
+  background: #fff1f2;
+  color: #9f1239;
+  font-size: 14px;
+  font-weight: 750;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.medication-safety-message {
+  margin: 0;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 550;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.medication-safety-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.medication-safety-button {
+  border: 0;
+  border-radius: 12px;
+  padding: 11px 17px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 150ms ease, background 150ms ease;
+}
+
+.medication-safety-button:active {
+  transform: translateY(1px);
+}
+
+.medication-safety-button:disabled,
+.medication-safety-close:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.medication-safety-button--secondary {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #475569;
+}
+
+.medication-safety-button--secondary:hover {
+  background: #f1f5f9;
+}
+
+.medication-safety-button--primary {
+  background: #e11d48;
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(225, 29, 72, 0.22);
+}
+
+.medication-safety-modal--interaction .medication-safety-button--primary {
+  background: #d97706;
+  box-shadow: 0 8px 18px rgba(217, 119, 6, 0.22);
+}
+
+.medication-safety-button--primary:hover {
+  background: #be123c;
+}
+
+.medication-safety-modal--interaction .medication-safety-button--primary:hover {
+  background: #b45309;
+}
+
+@keyframes medication-safety-enter {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (max-width: 560px) {
+  .medication-safety-overlay { padding: 12px; }
+  .medication-safety-header { padding: 18px; grid-template-columns: 42px minmax(0, 1fr) 34px; gap: 11px; }
+  .medication-safety-icon { width: 42px; height: 42px; }
+  .medication-safety-body { padding: 18px; }
+  .medication-safety-actions { padding: 14px 18px; flex-direction: column-reverse; }
+  .medication-safety-button { width: 100%; }
+}
+
 .appointment-week-page {
   display: grid;
   gap: 18px;
