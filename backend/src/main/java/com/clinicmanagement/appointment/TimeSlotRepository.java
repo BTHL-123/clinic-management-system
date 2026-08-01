@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,5 +36,13 @@ public interface TimeSlotRepository extends JpaRepository<TimeSlot, Long> {
 
     @Query("SELECT ts FROM TimeSlot ts WHERE ts.status = 'LOCKED' AND ts.lockedUntil < :now")
     List<TimeSlot> findExpiredLocks(@Param("now") LocalDateTime now);
-}
 
+    @Query("SELECT ts FROM TimeSlot ts JOIN ts.doctorSchedule ds " +
+           "WHERE ts.status IN ('AVAILABLE', 'LOCKED') " +
+           "AND (ds.workDate < :today OR (ds.workDate = :today AND ts.startTime <= :currentTime)) " +
+           "AND NOT EXISTS (SELECT a.appointmentId FROM Appointment a WHERE a.timeSlot = ts)")
+    List<TimeSlot> findPastUnusedSlots(
+            @Param("today") LocalDate today,
+            @Param("currentTime") LocalTime currentTime
+    );
+}

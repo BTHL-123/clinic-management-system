@@ -90,7 +90,8 @@ public class SlotLockServiceImpl implements SlotLockService {
     @Scheduled(fixedDelay = 60_000)
     @Transactional
     public void releaseExpiredLocks() {
-        List<TimeSlot> expired = timeSlotRepository.findExpiredLocks(LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+        List<TimeSlot> expired = timeSlotRepository.findExpiredLocks(now);
         if (expired.isEmpty()) {
             return;
         }
@@ -98,12 +99,32 @@ public class SlotLockServiceImpl implements SlotLockService {
             if (appointmentRepository.findActiveByTimeSlotId(slot.getId()).isPresent()) {
                 continue;
             }
-            slot.setStatus("AVAILABLE");
+            slot.setStatus(hasStarted(slot, now) ? "CANCELLED" : "AVAILABLE");
             slot.setLockedUntil(null);
             slot.setLockedByPatientId(null);
         }
         timeSlotRepository.saveAll(expired);
         log.info("Released {} expired slot lock(s)", expired.size());
+    }
+
+    @Scheduled(fixedDelay = 60_000, initialDelay = 5_000)
+    @Transactional
+    public void expirePastUnusedSlots() {
+        LocalDateTime now = LocalDateTime.now();
+        List<TimeSlot> pastSlots = timeSlotRepository.findPastUnusedSlots(
+                now.toLocalDate(),
+                now.toLocalTime()
+        );
+        if (pastSlots.isEmpty()) {
+            return;
+        }
+        for (TimeSlot slot : pastSlots) {
+            slot.setStatus("CANCELLED");
+            slot.setLockedUntil(null);
+            slot.setLockedByPatientId(null);
+        }
+        timeSlotRepository.saveAll(pastSlots);
+        log.info("Expired {} unused past slot(s)", pastSlots.size());
     }
 
     @Override
@@ -130,5 +151,13 @@ public class SlotLockServiceImpl implements SlotLockService {
             slot.setLockedByPatientId(null);
             timeSlotRepository.save(slot);
         }
+    }
+
+    private boolean hasStarted(TimeSlot slot, LocalDateTime now) {
+        LocalDateTime startsAt = LocalDateTime.of(
+                slot.getDoctorSchedule().getWorkDate(),
+                slot.getStartTime()
+        );
+        return !startsAt.isAfter(now);
     }
 }

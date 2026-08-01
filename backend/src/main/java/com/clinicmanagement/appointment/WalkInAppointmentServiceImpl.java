@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 @Slf4j
 @Service
@@ -51,9 +50,11 @@ public class WalkInAppointmentServiceImpl implements WalkInAppointmentService {
                         "Không tìm thấy ca khám với ID: " + request.slotId()));
 
         // ── 3.5. Expired slot protection ──────────────────────────────────────
-        LocalDate workDate = slot.getDoctorSchedule().getWorkDate();
-        LocalDate today = LocalDate.now();
-        if (workDate.isBefore(today) || (workDate.equals(today) && slot.getEndTime().isBefore(LocalTime.now()))) {
+        LocalDateTime slotStartsAt = LocalDateTime.of(
+                slot.getDoctorSchedule().getWorkDate(),
+                slot.getStartTime()
+        );
+        if (!slotStartsAt.isAfter(LocalDateTime.now())) {
             throw new BusinessException("Ca khám này đã qua thời gian, không thể đặt.");
         }
 
