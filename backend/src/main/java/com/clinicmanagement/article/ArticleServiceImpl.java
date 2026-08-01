@@ -39,21 +39,24 @@ public class ArticleServiceImpl implements ArticleService {
         article.setSlug(slug);
         article.setContent(request.getContent());
         article.setThumbnailUrl(request.getThumbnailUrl());
-        article.setStatus(request.getStatus() != null ? request.getStatus() : "DRAFT");
+        // Publication is an admin approval step. New submissions are always drafts.
+        article.setStatus("DRAFT");
         article.setCreatedBy(author);
-        
-        if ("PUBLISHED".equals(article.getStatus())) {
-            article.setPublishedAt(LocalDateTime.now());
-        }
 
         return ArticleResponse.from(articleRepository.save(article));
     }
 
     @Override
     @Transactional
-    public ArticleResponse updateArticle(Long articleId, ArticleRequest request) {
+    public ArticleResponse updateArticle(Long articleId, Long userId, boolean isAdmin, ArticleRequest request) {
         Article article = articleRepository.findById(articleId)
                 .orElseThrow(() -> new BusinessException("Không tìm thấy bài viết"));
+
+        boolean isAuthor = article.getCreatedBy() != null
+                && article.getCreatedBy().getUserId().equals(userId);
+        if (!isAdmin && !isAuthor) {
+            throw new BusinessException("You can only edit your own articles");
+        }
 
         String newSlug = generateSlug(request.getTitle());
         if (articleRepository.existsBySlugAndArticleIdNot(newSlug, articleId)) {
@@ -64,14 +67,6 @@ public class ArticleServiceImpl implements ArticleService {
         article.setSlug(newSlug);
         article.setContent(request.getContent());
         article.setThumbnailUrl(request.getThumbnailUrl());
-        
-        if (request.getStatus() != null && !request.getStatus().equals(article.getStatus())) {
-            article.setStatus(request.getStatus());
-            if ("PUBLISHED".equals(request.getStatus()) && article.getPublishedAt() == null) {
-                article.setPublishedAt(LocalDateTime.now());
-            }
-        }
-
         return ArticleResponse.from(articleRepository.save(article));
     }
 

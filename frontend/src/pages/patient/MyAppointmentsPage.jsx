@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { 
   CalendarDays, Clock, CheckCircle, XCircle, RefreshCw, AlertCircle, 
   ChevronLeft, ChevronRight, Star, MessageSquarePlus, ArrowLeft, Search, 
-  Filter, Calendar, MapPin, Coins, User, ShieldAlert, X, ShieldCheck, GraduationCap, Activity, ThumbsUp
+  Filter, Calendar, MapPin, Coins, User, ShieldAlert, X, ShieldCheck, GraduationCap, Activity, ThumbsUp, Stethoscope
 } from "lucide-react";
 import appointmentService from "../../services/appointmentService.js";
 import { createReview } from "../../services/reviewService.js";
@@ -508,6 +508,11 @@ export default function MyAppointmentsPage() {
     return doctors.find(d => d.doctorId === selectedAppt.doctorId || d.fullName === selectedAppt.doctorName) || null;
   }, [selectedAppt, doctors]);
 
+  const selectedDoctorAvatar = selectedDocDetails?.avatarUrl || selectedAppt?.doctorAvatarUrl || "";
+  const hasSelectedDoctorAvatar = typeof selectedDoctorAvatar === "string"
+    && selectedDoctorAvatar.trim() !== ""
+    && selectedDoctorAvatar !== "null";
+
   const tabs = [
     { key: "upcoming", label: "Lịch hẹn sắp tới", icon: <CalendarDays size={16} /> },
     { key: "history",  label: "Lịch sử khám bệnh", icon: <Clock size={16} /> },
@@ -798,12 +803,24 @@ export default function MyAppointmentsPage() {
                           {/* Doctor Avatar */}
                           <div className="w-16 h-16 rounded-xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
                             {selectedDocDetails?.avatarUrl ? (
-                              <img src={selectedDocDetails.avatarUrl} alt="" className="w-full h-full object-cover" />
+                              <img 
+                                src={selectedDocDetails.avatarUrl} 
+                                alt="" 
+                                className="w-full h-full object-cover" 
+                                onError={(e) => {
+                                  e.currentTarget.onerror = null;
+                                  e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedDocDetails.fullName || "Bác sĩ")}&background=e2e8f0&color=0f172a`;
+                                }}
+                              />
                             ) : (
                               <img 
                                 src={selectedAppt.doctorAvatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedAppt.doctorName)}&background=e2e8f0&color=0f172a`} 
                                 alt="" 
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.onerror = null;
+                                  e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedAppt.doctorName || "Bác sĩ")}&background=e2e8f0&color=0f172a`;
+                                }}
                               />
                             )}
                           </div>

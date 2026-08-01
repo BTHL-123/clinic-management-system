@@ -208,8 +208,8 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         // Issue #4: Expired slot protection
         LocalDate workDate = slot.getDoctorSchedule().getWorkDate();
-        LocalDate today = LocalDate.now();
-        if (workDate.isBefore(today) || (workDate.equals(today) && slot.getEndTime().isBefore(LocalTime.now()))) {
+        LocalDateTime slotStartsAt = LocalDateTime.of(workDate, slot.getStartTime());
+        if (!slotStartsAt.isAfter(LocalDateTime.now())) {
             throw new BusinessException("Ca khám này đã qua thời gian, không thể đặt.");
         }
 

@@ -34,11 +34,10 @@ public class AiChatServiceImpl implements AiChatService {
     private final GeminiService geminiService;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
-    @Transactional(readOnly = true)
+    @Transactional
     @Override
     public List<AiChatSessionResponse> getAllSessions(User currentUser) {
-        Patient patient = patientRepository.findByUser_UserId(currentUser.getUserId())
-                .orElseThrow(() -> new BusinessException("Chỉ bệnh nhân mới có thể xem phiên tư vấn AI."));
+        Patient patient = resolveSelfPatient(currentUser);
 
         return sessionRepository.findByPatientPatientIdOrderByCreatedAtDesc(patient.getPatientId())
                 .stream()
@@ -49,8 +48,7 @@ public class AiChatServiceImpl implements AiChatService {
     @Transactional
     @Override
     public AiChatSessionResponse createSession(CreateAiChatSessionRequest request, User currentUser) {
-        Patient patient = patientRepository.findByUser_UserId(currentUser.getUserId())
-                .orElseThrow(() -> new BusinessException("Chỉ bệnh nhân mới có thể tạo phiên tư vấn AI."));
+        Patient patient = resolveSelfPatient(currentUser);
 
         AiChatSession session = new AiChatSession();
         session.setPatient(patient);
@@ -242,24 +240,9 @@ public class AiChatServiceImpl implements AiChatService {
         String jsonResult = geminiService.standardizeClinicalNote(request.rawNote());
 
         try {
-            if (jsonResult.startsWith("```json")) {
-                jsonResult = jsonResult.substring(7);
-            }
-            if (jsonResult.startsWith("```")) {
-                jsonResult = jsonResult.substring(3);
-            }
-            if (jsonResult.endsWith("```")) {
-                jsonResult = jsonResult.substring(0, jsonResult.length() - 3);
-            }
-
-            com.fasterxml.jackson.databind.JsonNode root = objectMapper.readTree(jsonResult.trim());
-            StandardizeNoteResponse response = new StandardizeNoteResponse();
-            response.setSymptoms(root.has("symptoms") ? root.get("symptoms").asText() : "");
-            response.setClinicalFindings(root.has("clinicalFindings") ? root.get("clinicalFindings").asText() : "");
-            response.setDiagnosis(root.has("diagnosis") ? root.get("diagnosis").asText() : "");
-            response.setTreatmentPlan(root.has("treatmentPlan") ? root.get("treatmentPlan").asText() : "");
-            response.setDoctorNote(root.has("doctorNote") ? root.get("doctorNote").asText() : "");
-            return response;
+            return ClinicalNoteResponseParser.parse(objectMapper, jsonResult);
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
             throw new BusinessException("AI trả về định dạng không hợp lệ. Vui lòng thử lại.");
         }
@@ -271,6 +254,31 @@ public class AiChatServiceImpl implements AiChatService {
                 || !session.getPatient().getUser().getUserId().equals(currentUser.getUserId())) {
             throw new AccessDeniedException("Bạn không có quyền truy cập phiên tư vấn AI này.");
         }
+    }
+
+    private Patient resolveSelfPatient(User currentUser) {
+        return patientRepository.findListByUserUserId(currentUser.getUserId()).stream()
+                .filter(patient -> "SELF".equalsIgnoreCase(patient.getRelationshipToUser()))
+                .findFirst()
+                .orElseGet(() -> {
+                    Patient patient = new Patient();
+                    patient.setUser(currentUser);
+                    patient.setRelationshipToUser("SELF");
+                    patient.setPatientCode(nextPatientCode(currentUser.getUserId()));
+                    patient.setFullName(currentUser.getFullName());
+                    patient.setEmail(currentUser.getEmail());
+                    patient.setPhone(currentUser.getPhone());
+                    patient.setGender("OTHER");
+                    return patientRepository.save(patient);
+                });
+    }
+
+    private String nextPatientCode(Long userId) {
+        String code = "PAT-U" + userId;
+        if (!patientRepository.existsByPatientCode(code)) {
+            return code;
+        }
+        return "PAT" + System.currentTimeMillis();
     }
 
     private Department findMatchingDepartment(List<Department> departments, String departmentName) {
@@ -299,4 +307,3 @@ public class AiChatServiceImpl implements AiChatService {
     }
 
 }
-

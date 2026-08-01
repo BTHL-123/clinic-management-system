@@ -39,7 +39,8 @@ public class ArticleController {
     public ResponseEntity<ApiResponse<ArticleResponse>> updateArticle(
             @PathVariable Long id, 
             @Valid @RequestBody ArticleRequest request) {
-        ArticleResponse updated = articleService.updateArticle(id, request);
+        Long userId = getAuthenticatedUserId();
+        ArticleResponse updated = articleService.updateArticle(id, userId, isAdmin(), request);
         return ResponseEntity.ok(ApiResponse.success("Cập nhật bài viết thành công", updated));
     }
 
@@ -86,5 +87,11 @@ public class ArticleController {
         }
         CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
         return userDetails.getUser().getUserId();
+    }
+
+    private boolean isAdmin() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null && auth.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
     }
 }
