@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.clinicmanagement.appointment.Appointment;
+import com.clinicmanagement.appointment.AppointmentCancellationActor;
 import com.clinicmanagement.appointment.AppointmentRepository;
 import com.clinicmanagement.appointment.AppointmentService;
 import com.clinicmanagement.appointment.DoctorSchedule;
@@ -88,6 +89,7 @@ class PaymentFlowTest {
     private TimeSlotRepository timeSlotRepository;
 
     private User patientUser;
+    private User doctorUser;
     private Patient patient;
     private Doctor doctor;
     private TimeSlot slot;
@@ -119,7 +121,7 @@ class PaymentFlowTest {
         department.setStatus("ACTIVE");
         department = departmentRepository.save(department);
 
-        User doctorUser = new User();
+        doctorUser = new User();
         doctorUser.setEmail("pay_doctor_" + suffix + "@example.com");
         doctorUser.setPasswordHash("password");
         doctorUser.setFullName("Payment Doctor");
@@ -230,7 +232,7 @@ class PaymentFlowTest {
                 response.appointment().appointmentId(),
                 new CancelAppointmentRequest("Patient cancellation", null, null, null),
                 patientUser.getUserId(),
-                false
+                AppointmentCancellationActor.PATIENT
         );
 
         Appointment appointment = appointmentRepository.findById(response.appointment().appointmentId()).orElseThrow();
@@ -266,7 +268,7 @@ class PaymentFlowTest {
     }
 
     @Test
-    void clinicCancellationCreatesApprovedFullRefundForPaidDeposit() {
+    void doctorCancellationCreatesApprovedFullRefundForPaidDeposit() {
         BookAppointmentResponse response = book();
         paymentService.processCallback(new PaymentCallbackRequest(
                 "TX-CLINIC-REF",
@@ -278,14 +280,69 @@ class PaymentFlowTest {
         appointmentService.cancelAppointment(
                 response.appointment().appointmentId(),
                 new CancelAppointmentRequest("Clinic cancellation", null, null, null),
-                patientUser.getUserId(),
-                true
+                doctorUser.getUserId(),
+                AppointmentCancellationActor.DOCTOR
         );
 
         List<Refund> refunds = refundRepository.findAll();
         assertEquals(1, refunds.size());
         assertEquals(response.amount(), refunds.get(0).getRefundAmount());
         assertEquals(RefundStatus.APPROVED, refunds.get(0).getStatus());
+        assertEquals(doctorUser.getUserId(), refunds.get(0).getApprovedBy().getUserId());
+    }
+
+    @Test
+    void clinicStaffCancellationCreatesApprovedFullRefundForPaidDeposit() {
+        BookAppointmentResponse response = book();
+        paymentService.processCallback(new PaymentCallbackRequest(
+                "TX-STAFF-REF",
+                response.depositPayment().paymentCode(),
+                PaymentStatus.PAID,
+                response.amount()
+        ));
+
+        User receptionistUser = new User();
+        receptionistUser.setEmail("receptionist_" + System.nanoTime() + "@example.com");
+        receptionistUser.setPasswordHash("password");
+        receptionistUser.setFullName("Clinic Receptionist");
+        receptionistUser.setStatus("ACTIVE");
+        receptionistUser = userRepository.save(receptionistUser);
+
+        appointmentService.cancelAppointment(
+                response.appointment().appointmentId(),
+                new CancelAppointmentRequest("Receptionist cancellation", null, null, null),
+                receptionistUser.getUserId(),
+                AppointmentCancellationActor.STAFF
+        );
+
+        List<Refund> refunds = refundRepository.findAll();
+        assertEquals(1, refunds.size());
+        assertEquals(response.amount(), refunds.get(0).getRefundAmount());
+        assertEquals(RefundStatus.APPROVED, refunds.get(0).getStatus());
+        assertEquals(receptionistUser.getUserId(), refunds.get(0).getApprovedBy().getUserId());
+    }
+
+    @Test
+    void doctorCannotCancelAnotherDoctorsAppointment() {
+        BookAppointmentResponse response = book();
+
+        User anotherDoctorUser = new User();
+        anotherDoctorUser.setEmail("other_doctor_" + System.nanoTime() + "@example.com");
+        anotherDoctorUser.setPasswordHash("password");
+        anotherDoctorUser.setFullName("Another Doctor");
+        anotherDoctorUser.setStatus("ACTIVE");
+        anotherDoctorUser = userRepository.save(anotherDoctorUser);
+
+        User finalAnotherDoctorUser = anotherDoctorUser;
+        BusinessException exception = assertThrows(BusinessException.class, () -> appointmentService.cancelAppointment(
+                response.appointment().appointmentId(),
+                new CancelAppointmentRequest("Not my appointment", null, null, null),
+                finalAnotherDoctorUser.getUserId(),
+                AppointmentCancellationActor.DOCTOR
+        ));
+
+        assertEquals("Bác sĩ chỉ có thể hủy lịch hẹn của chính mình.", exception.getMessage());
+        assertTrue(refundRepository.findAll().isEmpty());
     }
 
     private BookAppointmentResponse book() {

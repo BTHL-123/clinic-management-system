@@ -371,12 +371,12 @@ public class AppointmentServiceImpl implements AppointmentService {
             Long appointmentId,
             CancelAppointmentRequest request,
             Long currentUserId,
-            boolean isReceptionist
+            AppointmentCancellationActor cancellationActor
     ) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Lịch hẹn không tồn tại với id: " + appointmentId));
 
-        if (!isReceptionist) {
+        if (cancellationActor == AppointmentCancellationActor.PATIENT) {
             Long ownerId = null;
             if (appointment.getPatient() != null) {
                 if (appointment.getPatient().getUser() != null) {
@@ -387,6 +387,13 @@ public class AppointmentServiceImpl implements AppointmentService {
             }
             if (ownerId == null || !currentUserId.equals(ownerId)) {
                 throw new BusinessException("Bạn không có quyền hủy lịch hẹn này.");
+            }
+        } else if (cancellationActor == AppointmentCancellationActor.DOCTOR) {
+            Long appointmentDoctorUserId = appointment.getDoctor() != null && appointment.getDoctor().getUser() != null
+                    ? appointment.getDoctor().getUser().getUserId()
+                    : null;
+            if (appointmentDoctorUserId == null || !currentUserId.equals(appointmentDoctorUserId)) {
+                throw new BusinessException("Bác sĩ chỉ có thể hủy lịch hẹn của chính mình.");
             }
         }
 
@@ -427,7 +434,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                 refundService.createForAppointmentCancellation(
                         p.getPaymentId(),
                         appointment.getAppointmentId(),
-                        isReceptionist,
+                        cancellationActor.isClinicInitiated(),
                         currentUser,
                         request.cancellationReason(),
                         request.bankName(),

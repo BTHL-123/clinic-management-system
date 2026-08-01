@@ -130,20 +130,27 @@ public class AppointmentController {
     }
 
     @PutMapping("/{id}/cancel")
-    @PreAuthorize("hasAnyRole('PATIENT', 'RECEPTIONIST', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR', 'RECEPTIONIST', 'ADMIN')")
     public ResponseEntity<ApiResponse<AppointmentResponse>> cancelAppointment(
             @PathVariable Long id,
             @Valid @RequestBody CancelAppointmentRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        boolean isReceptionist = userDetails.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_RECEPTIONIST") || a.getAuthority().equals("ROLE_ADMIN"));
+        AppointmentCancellationActor cancellationActor;
+        if (userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")
+                || a.getAuthority().equals("ROLE_RECEPTIONIST"))) {
+            cancellationActor = AppointmentCancellationActor.STAFF;
+        } else if (userDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_DOCTOR"))) {
+            cancellationActor = AppointmentCancellationActor.DOCTOR;
+        } else {
+            cancellationActor = AppointmentCancellationActor.PATIENT;
+        }
         
         AppointmentResponse response = appointmentService.cancelAppointment(
                 id,
                 request,
                 userDetails.getUser().getUserId(),
-                isReceptionist
+                cancellationActor
         );
         return ResponseEntity.ok(ApiResponse.success("Hủy lịch khám thành công", response));
     }
