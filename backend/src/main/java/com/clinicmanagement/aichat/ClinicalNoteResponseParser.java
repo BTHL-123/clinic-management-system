@@ -55,7 +55,7 @@ final class ClinicalNoteResponseParser {
     private static boolean hasClinicalFields(JsonNode root) {
         return firstPresent(root, "symptoms", "symptom", "trieuChung", "triệu chứng") != null
                 || firstPresent(root, "clinicalFindings", "clinical_findings", "findings", "khamLamSang", "khám lâm sàng") != null
-                || firstPresent(root, "diagnosis", "diagnoses", "chanDoan", "chẩn đoán") != null
+                || firstPresent(root, "diagnosis", "diagnoses", "diagnosisName", "chanDoan", "chẩn đoán", "tenChanDoan", "tên chẩn đoán") != null
                 || firstPresent(root, "treatmentPlan", "treatment_plan", "plan", "keHoachDieuTri", "kế hoạch điều trị", "phacDo", "phác đồ") != null
                 || firstPresent(root, "doctorNote", "doctor_note", "notes", "ghiChuBacSi", "ghi chú bác sĩ", "loiDan", "lời dặn") != null;
     }
@@ -79,20 +79,40 @@ final class ClinicalNoteResponseParser {
     }
 
     private static String readDiagnosis(JsonNode root) {
-        JsonNode diagnosis = firstPresent(root, "diagnosis", "diagnoses", "chanDoan", "chẩn đoán");
+        JsonNode diagnosis = firstPresent(
+                root,
+                "diagnosis",
+                "diagnoses",
+                "diagnosisName",
+                "chanDoan",
+                "chẩn đoán",
+                "tenChanDoan",
+                "tên chẩn đoán"
+        );
         if (diagnosis == null || diagnosis.isNull()) {
             return "";
         }
+        String topLevelCode = readField(root, "icd10", "icdCode", "icd_code", "maIcd", "mã ICD");
         if (!diagnosis.isObject()) {
-            return nodeToText(diagnosis);
+            return formatDiagnosis(topLevelCode, nodeToText(diagnosis));
         }
 
         String code = readField(diagnosis, "code", "icd10", "icdCode", "icd_code", "maIcd", "mã ICD");
         String name = readField(diagnosis, "name", "diagnosis", "description", "text");
-        if (!code.isBlank() && !name.isBlank()) {
-            return "[" + code + "] " + name;
+        return formatDiagnosis(!code.isBlank() ? code : topLevelCode, name);
+    }
+
+    private static String formatDiagnosis(String code, String name) {
+        if (name == null || name.isBlank()) {
+            return "";
         }
-        return !name.isBlank() ? name : code;
+        if (name.matches("^\\[[^]]+]\\s*.*$")) {
+            return name;
+        }
+        if (code != null && !code.isBlank()) {
+            return "[" + code.trim() + "] " + name.trim();
+        }
+        return name.trim();
     }
 
     private static String readField(JsonNode root, String... fieldNames) {
