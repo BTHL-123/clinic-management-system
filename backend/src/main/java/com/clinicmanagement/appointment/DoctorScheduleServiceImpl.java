@@ -347,16 +347,24 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     @Override
     @Transactional(readOnly = true)
     public List<TimeSlotResponse> getSlotsByScheduleId(Long scheduleId) {
-        doctorScheduleRepository.findById(scheduleId)
+        DoctorSchedule schedule = doctorScheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor schedule not found with id: " + scheduleId));
+        LocalDateTime now = LocalDateTime.now();
         return timeSlotRepository.findByDoctorScheduleId(scheduleId).stream()
-                .map(ts -> new TimeSlotResponse(
-                        ts.getId(),
-                        scheduleId,
-                        ts.getStartTime(),
-                        ts.getEndTime(),
-                        ts.getStatus()
-                ))
+                .map(ts -> {
+                    String status = ts.getStatus();
+                    LocalDateTime startsAt = LocalDateTime.of(schedule.getWorkDate(), ts.getStartTime());
+                    if (("AVAILABLE".equals(status) || "LOCKED".equals(status)) && !startsAt.isAfter(now)) {
+                        status = "EXPIRED";
+                    }
+                    return new TimeSlotResponse(
+                            ts.getId(),
+                            scheduleId,
+                            ts.getStartTime(),
+                            ts.getEndTime(),
+                            status
+                    );
+                })
                 .collect(Collectors.toList());
     }
 

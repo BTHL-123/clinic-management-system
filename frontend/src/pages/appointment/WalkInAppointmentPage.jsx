@@ -47,6 +47,20 @@ function formatTime(t) {
   return String(t).slice(0, 5);
 }
 
+function toLocalDateInputValue(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function isPastSlot(appointmentDate, startTime) {
+  const time = formatTime(startTime);
+  if (!appointmentDate || !time) return true;
+  const startsAt = new Date(`${appointmentDate}T${time}:00`);
+  return Number.isNaN(startsAt.getTime()) || startsAt.getTime() <= Date.now();
+}
+
 function FieldError({ msg }) {
   if (!msg) return null;
   return (
@@ -111,7 +125,7 @@ function SuccessCard({ result, onReset }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function WalkInAppointmentPage() {
   const toast = useToast();
-  const today = new Date().toISOString().split("T")[0];
+  const today = toLocalDateInputValue();
   const [selectedDate, setSelectedDate] = useState(today);
 
   // Doctor + schedule state
@@ -207,7 +221,10 @@ export default function WalkInAppointmentPage() {
           const slots = Array.isArray(slotRes?.data) 
             ? slotRes.data 
             : (Array.isArray(slotRes?.content) ? slotRes.content : (Array.isArray(slotRes) ? slotRes : []));
-          slotsMap[schedule.scheduleId] = slots;
+          slotsMap[schedule.scheduleId] = slots.filter((slot) =>
+            !["CANCELLED", "EXPIRED"].includes(slot.status)
+            && !isPastSlot(selectedDate, slot.startTime)
+          );
         } catch (e) {
           slotsMap[schedule.scheduleId] = [];
         }
@@ -590,4 +607,3 @@ export default function WalkInAppointmentPage() {
 function Required() {
   return <span className="text-rose-600 ml-0.5">*</span>;
 }
-
