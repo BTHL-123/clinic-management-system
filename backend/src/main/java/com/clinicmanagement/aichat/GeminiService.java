@@ -357,7 +357,6 @@ public class GeminiService {
         requestBody.put("messages", messages);
         requestBody.put("temperature", 0.1);
         requestBody.put("max_tokens", 500);
-        requestBody.put("response_format", Map.of("type", "json_object"));
 
         String[] result = executeGroqWithRetryAndFallback(requestBody);
         if (result != null) {
