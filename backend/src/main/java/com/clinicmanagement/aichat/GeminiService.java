@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 @Slf4j
 @Service
@@ -163,15 +164,26 @@ public class GeminiService {
     // ==================== GROQ API (OpenAI-compatible) ====================
 
     private String[] executeGroqWithRetryAndFallback(Map<String, Object> requestBody) {
+        return executeGroqWithRetryAndFallback(
+                requestBody,
+                content -> content != null && !content.isBlank(),
+                "GENERAL"
+        );
+    }
+
+    private String[] executeGroqWithRetryAndFallback(
+            Map<String, Object> requestBody,
+            Predicate<String> responseValidator,
+            String operation
+    ) {
         String[] modelsToTry = {groqPrimaryModel, groqFallbackModel};
 
         @SuppressWarnings("unchecked")
         List<?> messagesList = (List<?>) requestBody.get("messages");
         int messageCount = messagesList != null ? messagesList.size() : 0;
 
-        log.debug("Raw Groq payload (chỉ bật khi dev/debug): {}", requestBody);
-
-        int lastErrorCode = 0;
+        // Không log payload vì có thể chứa dữ liệu sức khỏe của bệnh nhân.
+        log.debug("Groq request prepared. Operation={}, Messages Count={}", operation, messageCount);
 
         for (String currentModel : modelsToTry) {
             requestBody.put("model", currentModel);
@@ -198,16 +210,27 @@ public class GeminiService {
                     if (root.has("choices") && root.get("choices").isArray() && root.get("choices").size() > 0) {
                         JsonNode choice = root.get("choices").get(0);
                         if (choice.has("message") && choice.get("message").has("content")) {
-                            String content = choice.get("message").get("content").asText();
-                            String source = currentModel.equals(groqPrimaryModel) ? "GROQ_PRIMARY" : "GROQ_FALLBACK";
-                            log.info("AI_RESPONSE_SOURCE={} - Model: {}. Time taken: {}ms", source, currentModel, duration);
-                            return new String[]{content, currentModel};
+                            String content = choice.get("message").get("content").asText("");
+                            if (responseValidator.test(content)) {
+                                String source = currentModel.equals(groqPrimaryModel) ? "GROQ_PRIMARY" : "GROQ_FALLBACK";
+                                log.info("AI_RESPONSE_SOURCE={} - Model: {}. Operation={}. Time taken: {}ms",
+                                        source, currentModel, operation, duration);
+                                return new String[]{content, currentModel};
+                            }
+
+                            log.warn(
+                                    "GROQ_RESPONSE_REJECTED - Model={}, Operation={}, Attempt={}/{}, Reason=UNUSABLE_CONTENT, ContentLength={}",
+                                    currentModel, operation, attempt, maxRetries, content.length()
+                            );
+                            continue;
                         }
                     }
-                    break;
+                    log.warn(
+                            "GROQ_RESPONSE_REJECTED - Model={}, Operation={}, Attempt={}/{}, Reason=MISSING_CONTENT",
+                            currentModel, operation, attempt, maxRetries
+                    );
                 } catch (org.springframework.web.client.HttpStatusCodeException e) {
                     int statusCode = e.getStatusCode().value();
-                    lastErrorCode = statusCode;
                     String responseBody = e.getResponseBodyAsString();
 
                     if (statusCode == 429) {
@@ -248,6 +271,15 @@ public class GeminiService {
 
         log.error("AI_RESPONSE_SOURCE=MOCK_CHAT due to GROQ_API_ERROR");
         return null;
+    }
+
+    private boolean isUsableClinicalNoteResponse(String content) {
+        try {
+            ClinicalNoteResponseParser.parse(objectMapper, content);
+            return true;
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     private String chatWithGroq(List<AiChatMessage> history, String newMessage, String activeDepartmentsStr) {
@@ -356,13 +388,19 @@ public class GeminiService {
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("messages", messages);
         requestBody.put("temperature", 0.1);
-        requestBody.put("max_tokens", 500);
+        requestBody.put("max_tokens", 800);
 
-        String[] result = executeGroqWithRetryAndFallback(requestBody);
+        String[] result = executeGroqWithRetryAndFallback(
+                requestBody,
+                this::isUsableClinicalNoteResponse,
+                "CLINICAL_NOTE_STANDARDIZATION"
+        );
         if (result != null) {
             return result[0].trim();
         }
-        throw new com.clinicmanagement.common.exception.BusinessException("Lỗi: Không thể kết nối tới Groq API. Vui lòng kiểm tra lại kết nối mạng hoặc API Key.");
+        throw new com.clinicmanagement.common.exception.BusinessException(
+                "AI chưa trả về dữ liệu bệnh án hợp lệ sau nhiều lần thử. Vui lòng thử lại sau giây lát."
+        );
     }
 
     // ==================== PUBLIC ENTRY POINTS ====================
