@@ -9,7 +9,8 @@ export const getPrescriptionById = (prescriptionId) =>
 export const getPrescriptions = (params) =>
   api.get("/prescriptions", { params });
 
-export const createPrescription = (data) => api.post("/prescriptions", data);
+export const createPrescription = (data) =>
+  api.post("/prescriptions", data, { skipErrorToast: true });
 
 export const checkDrugInteractions = (prescriptionId) =>
   api.post(`/prescriptions/${prescriptionId}/check-interactions`);

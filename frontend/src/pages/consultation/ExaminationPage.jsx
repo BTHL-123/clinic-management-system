@@ -16,8 +16,6 @@ import {
   AlertTriangle,
   Trash2,
   Plus,
-  ChevronDown,
-  ChevronUp,
   FileText,
   Sparkles,
   Eye,
@@ -101,6 +99,32 @@ const EMPTY_RX_ITEM = {
   asNeeded: false,
 };
 
+const normalizeMedicationText = (value) =>
+  String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
+const findAllergyMatch = (medicine, patientAllergies) => {
+  const normalizedAllergies = normalizeMedicationText(patientAllergies);
+  if (!normalizedAllergies) return null;
+
+  const ingredients = String(medicine?.activeIngredient || "")
+    .split(/[+,;/]/)
+    .map((ingredient) => ingredient.trim())
+    .filter(Boolean);
+  const candidates = [...ingredients, medicine?.medicineName]
+    .map((candidate) => ({
+      label: String(candidate || "").trim(),
+      normalized: normalizeMedicationText(candidate),
+    }))
+    .filter((candidate) => candidate.normalized.length >= 4);
+
+  return candidates.find((candidate) => normalizedAllergies.includes(candidate.normalized)) || null;
+};
+
 export default function ExaminationPage() {
   const toast = useToast();
   const { consultationId } = useParams();
@@ -132,6 +156,7 @@ export default function ExaminationPage() {
   const [showMedDropdown, setShowMedDropdown] = useState(false);
   const medicineSearchRef = useRef(null);
   const [editingRxIndex, setEditingRxIndex] = useState(null);
+  const [allergyWarning, setAllergyWarning] = useState(null);
 
   const [completing, setCompleting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -144,7 +169,6 @@ export default function ExaminationPage() {
 
   // New UI states
   const [historyRecords, setHistoryRecords] = useState([]);
-  const [showAdvancedDiagnosis, setShowAdvancedDiagnosis] = useState(false);
   const [expandedRxRow, setExpandedRxRow] = useState(null);
   const [showVitalsForm, setShowVitalsForm] = useState(false);
   const [labSearchTerm, setLabSearchTerm] = useState("");
@@ -497,6 +521,20 @@ export default function ExaminationPage() {
       return;
     }
 
+    const allergyMatch = findAllergyMatch(med, patientInfo?.allergies);
+    if (allergyMatch) {
+      setAllergyWarning({
+        medicineName: med.medicineName,
+        activeIngredient: med.activeIngredient,
+        matchedAllergen: allergyMatch.label,
+        patientAllergies: patientInfo.allergies,
+        message: `Bệnh nhân có tiền sử dị ứng liên quan đến ${allergyMatch.label}. Thuốc chưa được thêm vào đơn.`,
+      });
+      setMedSearchTerm("");
+      setShowMedDropdown(false);
+      return;
+    }
+
     const newItem = {
       ...EMPTY_RX_ITEM,
       medicineId: med.medicineId,
@@ -620,7 +658,15 @@ export default function ExaminationPage() {
       setRxNote("");
       showToast("Đã tạo đơn thuốc thành công.");
     } catch (err) {
-      showToast(err.message || "Không thể tạo đơn thuốc.", "error");
+      const message = err.response?.data?.message || err.message || "Không thể tạo đơn thuốc.";
+      if (/dị ứng/i.test(message)) {
+        setAllergyWarning({
+          patientAllergies: patientInfo?.allergies,
+          message,
+        });
+      } else {
+        showToast(message, "error");
+      }
     } finally {
       setSavingRx(false);
     }
@@ -740,9 +786,6 @@ export default function ExaminationPage() {
         doctorNote: standardized.doctorNote || prev.doctorNote,
       }));
 
-      if (standardized.clinicalFindings || standardized.treatmentPlan || standardized.doctorNote) {
-        setShowAdvancedDiagnosis(true);
-      }
       setRawNote("");
       showToast("Đã chuẩn hóa và điền tự động thành công!");
     } catch (err) {
@@ -1527,20 +1570,7 @@ export default function ExaminationPage() {
                 />
               </div>
 
-              {/* Collapsible Action for Clinical Findings and Treatments */}
-              <div className="sm:col-span-12 mt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAdvancedDiagnosis(!showAdvancedDiagnosis)}
-                  className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors focus:outline-none"
-                >
-                  <span>Thông tin mở rộng (Khám thực thể, phác đồ, tái khám)</span>
-                  {showAdvancedDiagnosis ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                </button>
-              </div>
-
-              {showAdvancedDiagnosis && (
-                <div className="sm:col-span-12 grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2 animate-fadeIn">
+              <div className="sm:col-span-12 grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
 
                   {/* Clinical Findings */}
                   <div className="sm:col-span-2 flex flex-col gap-1">
@@ -1605,8 +1635,7 @@ export default function ExaminationPage() {
                     />
                   </div>
 
-                </div>
-              )}
+              </div>
 
             </div>
           </div>
@@ -1838,6 +1867,74 @@ export default function ExaminationPage() {
             )}
           </div>
 
+          {allergyWarning && (
+            <div
+              className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="allergy-warning-title"
+            >
+              <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-rose-100 bg-white shadow-2xl">
+                <div className="flex items-start justify-between border-b border-rose-100 bg-rose-50 px-6 py-5">
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-rose-600">
+                      <AlertTriangle size={22} strokeWidth={2.5} />
+                    </span>
+                    <div>
+                      <h3 id="allergy-warning-title" className="text-base font-extrabold text-rose-900">
+                        Cảnh báo dị ứng thuốc
+                      </h3>
+                      <p className="mt-1 text-xs font-semibold text-rose-700">
+                        Không thể thêm thuốc này vào đơn của bệnh nhân.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAllergyWarning(null)}
+                    className="rounded-lg p-2 text-rose-400 transition-colors hover:bg-rose-100 hover:text-rose-700"
+                    aria-label="Đóng cảnh báo dị ứng"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <div className="space-y-4 px-6 py-5">
+                  {allergyWarning.medicineName && (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Thuốc được chọn</p>
+                      <p className="mt-1 text-sm font-extrabold text-slate-800">{allergyWarning.medicineName}</p>
+                      {allergyWarning.activeIngredient && (
+                        <p className="mt-1 text-xs font-medium text-slate-500">
+                          Hoạt chất: <strong className="text-slate-700">{allergyWarning.activeIngredient}</strong>
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-rose-500">Tiền sử dị ứng của bệnh nhân</p>
+                    <p className="mt-1.5 whitespace-pre-wrap rounded-xl border border-rose-100 bg-rose-50/60 px-4 py-3 text-sm font-bold text-rose-800">
+                      {allergyWarning.patientAllergies || "Có ghi nhận nguy cơ dị ứng thuốc."}
+                    </p>
+                  </div>
+
+                  <p className="text-sm font-medium leading-6 text-slate-600">{allergyWarning.message}</p>
+                </div>
+
+                <div className="flex justify-end border-t border-slate-100 bg-slate-50 px-6 py-4">
+                  <button
+                    type="button"
+                    onClick={() => setAllergyWarning(null)}
+                    className="rounded-xl bg-rose-600 px-5 py-2.5 text-xs font-extrabold text-white shadow-sm transition-colors hover:bg-rose-700"
+                  >
+                    Đã hiểu, chọn thuốc khác
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {editingRxItem && editingMedicine && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="medicine-editor-title">
               <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
@@ -1947,7 +2044,7 @@ export default function ExaminationPage() {
           )}
 
           {/* CARD 3: Subclinical Tests Request (Yêu cầu cận lâm sàng) */}
-          <div className="bg-white border border-slate-100 rounded-[1.5rem] p-6 shadow-[0_4px_25px_rgba(0,0,0,0.015)] transition-all lg:order-2 lg:col-span-7 lg:col-start-6">
+          <div className="bg-white border border-slate-100 rounded-[1.5rem] p-6 shadow-[0_4px_25px_rgba(0,0,0,0.015)] transition-all lg:order-2 lg:col-span-12 lg:col-start-1">
             <div className="flex items-center justify-between pb-3 border-b border-slate-50 mb-5">
               <div className="flex items-center gap-2">
                 <span className="w-7 h-7 rounded-lg bg-cyan-50 text-cyan-650 flex items-center justify-center shrink-0">
