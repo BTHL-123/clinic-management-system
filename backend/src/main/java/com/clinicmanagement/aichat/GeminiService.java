@@ -342,16 +342,14 @@ public class GeminiService {
 
         List<Map<String, String>> messages = new ArrayList<>();
         messages.add(Map.of("role", "system", "content",
-                "Bạn là một AI CHUYÊN TRÍCH XUẤT THÔNG TIN Y TẾ. Nhiệm vụ của bạn LÀ CHUẨN HÓA GHI CHÚ THÔ thành JSON, TUYỆT ĐỐI KHÔNG tự chẩn đoán, KHÔNG tự kê thuốc, KHÔNG suy diễn.\n" +
-                "Đọc ghi chú thô và trích xuất nguyên văn/tóm tắt vào 5 trường sau:\n" +
-                "1. 'symptoms': CHỈ triệu chứng cơ năng bệnh nhân tự cảm nhận (VD: đau bụng, ho, sốt...) VÀ thời gian kéo dài triệu chứng (VD: kéo dài 3 ngày nay, xuất hiện từ hôm qua). Bỏ qua các thông tin cá nhân như (Bệnh nhân nam, nữ, tuổi).\n" +
-                "2. 'clinicalFindings': Kết quả khám thực thể do bác sĩ khám (VD: ấn đau, phản ứng thành bụng, đề kháng, Murphy (+), Rovsing (+), họng đỏ, phổi ran, tim đều...). Ưu tiên đưa vào đây, không để nhầm vào symptoms.\n" +
-                "3. 'diagnosis': Chẩn đoán XÁC ĐỊNH bệnh. Bạn PHẢI tra cứu mã ICD-10 tương ứng và trả về theo định dạng: [MÃ_ICD10] Tên Bệnh (VD: [J02.9] Viêm họng cấp). Chỉ chuyển một chẩn đoán xuống doctorNote khi CHÍNH CỤM CHẨN ĐOÁN đó được bổ nghĩa bởi 'nghi', 'theo dõi', 'rule out', 'chưa loại trừ' hoặc 'khả năng'. KHÔNG được xóa diagnosis chỉ vì các từ này xuất hiện ở câu khác, ví dụ 'theo dõi đáp ứng điều trị'. Nếu ghi chú có 'chẩn đoán xác định: X' và X không mang nghĩa chưa chắc chắn thì BẮT BUỘC điền X vào diagnosis, kể cả chỗ khác có từ 'theo dõi'. Nếu không có chẩn đoán xác định, để rỗng \"\".\n" +
-                "4. 'treatmentPlan': Thuốc, KẾ HOẠCH ĐIỀU TRỊ hoặc CẬN LÂM SÀNG (VD: chỉ định, xét nghiệm, siêu âm, CT, MRI, X-quang, công thức máu, nội soi...). Ưu tiên đưa vào đây.\n" +
-                "5. 'doctorNote': Lời dặn dò của bác sĩ đối với bệnh nhân (kiêng cữ, sinh hoạt), hoặc các chẩn đoán chưa xác định (VD: nghi viêm ruột thừa). KHÔNG ghi lại thông tin hành chính (bệnh nhân nam, tuổi...) trừ khi cần thiết.\n" +
-                "QUAN TRỌNG: Nếu ghi chú chỉ có kế hoạch điều trị, chỉ định, thuốc hoặc lịch tái khám thì vẫn PHẢI điền treatmentPlan/doctorNote tương ứng; không được trả cả 5 trường rỗng khi ghi chú có nội dung y khoa.\n" +
-                "Trả về ĐÚNG MỘT JSON OBJECT với 5 trường trên. Nếu thông tin nào không có, hãy để trống chuỗi (\"\"). Chỉ trả về JSON thuần hợp lệ, không bọc bằng ```json hay markdown, không chứa text nào khác."));
-        messages.add(Map.of("role", "user", "content", "Ghi chú thô:\n" + rawNote + "\nPhân tích và trả về JSON."));
+                "Bạn là một HỆ THỐNG XỬ LÝ VĂN BẢN tự động (Text Processing System). Nhiệm vụ của bạn là sắp xếp lại đoạn văn bản lộn xộn đầu vào thành một JSON với 5 trường. KHÔNG đưa ra lời khuyên, chỉ sắp xếp lại chữ.\n" +
+                "1. 'symptoms': Các biểu hiện, cảm giác hoặc số ngày bị bệnh.\n" +
+                "2. 'clinicalFindings': Các đặc điểm quan sát hoặc sờ thấy được.\n" +
+                "3. 'diagnosis': Tên bệnh. Nếu có thể, hãy định dạng kèm mã: [MÃ] Tên bệnh.\n" +
+                "4. 'treatmentPlan': Hướng giải quyết, đơn thuốc hoặc xét nghiệm.\n" +
+                "5. 'doctorNote': Lời dặn dò thêm. Chú ý: Nếu mục 3 có chữ 'nghi', 'theo dõi' thì hãy dời nó xuống mục 5 này.\n" +
+                "QUAN TRỌNG: Trả về ĐÚNG MỘT JSON OBJECT chứa 5 trường trên. Nếu không tìm thấy, hãy điền chuỗi rỗng \"\". KHÔNG viết thêm bất kỳ câu chữ nào bên ngoài JSON."));
+        messages.add(Map.of("role", "user", "content", "Đoạn văn bản cần sắp xếp thành JSON:\n" + rawNote));
 
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("messages", messages);
