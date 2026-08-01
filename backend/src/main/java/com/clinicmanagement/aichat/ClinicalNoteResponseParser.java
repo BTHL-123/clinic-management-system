@@ -4,6 +4,7 @@ import com.clinicmanagement.aichat.dto.StandardizeNoteResponse;
 import com.clinicmanagement.common.exception.BusinessException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -25,17 +26,18 @@ final class ClinicalNoteResponseParser {
             throw new BusinessException("AI trả về định dạng không hợp lệ. Vui lòng thử lại.");
         }
 
-        JsonNode root = objectMapper.readTree(rawResponse.substring(objectStart, objectEnd + 1));
-        if (root.path("data").isObject() && !hasClinicalFields(root)) {
-            root = root.path("data");
+        JsonNode parsedRoot = objectMapper.readTree(rawResponse.substring(objectStart, objectEnd + 1));
+        JsonNode root = findClinicalRoot(parsedRoot, 0);
+        if (root == null) {
+            root = parsedRoot;
         }
 
         StandardizeNoteResponse response = new StandardizeNoteResponse(
-                readField(root, "symptoms", "symptom"),
-                readField(root, "clinicalFindings", "clinical_findings", "findings"),
+                readField(root, "symptoms", "symptom", "trieuChung", "triệu chứng"),
+                readField(root, "clinicalFindings", "clinical_findings", "findings", "khamLamSang", "khám lâm sàng"),
                 readDiagnosis(root),
-                readField(root, "treatmentPlan", "treatment_plan", "plan"),
-                readField(root, "doctorNote", "doctor_note", "notes")
+                readField(root, "treatmentPlan", "treatment_plan", "plan", "keHoachDieuTri", "kế hoạch điều trị", "phacDo", "phác đồ"),
+                readField(root, "doctorNote", "doctor_note", "notes", "ghiChuBacSi", "ghi chú bác sĩ", "loiDan", "lời dặn")
         );
 
         if (List.of(
@@ -51,13 +53,33 @@ final class ClinicalNoteResponseParser {
     }
 
     private static boolean hasClinicalFields(JsonNode root) {
-        return root.has("symptoms") || root.has("clinicalFindings") || root.has("clinical_findings")
-                || root.has("diagnosis") || root.has("treatmentPlan") || root.has("treatment_plan")
-                || root.has("doctorNote") || root.has("doctor_note");
+        return firstPresent(root, "symptoms", "symptom", "trieuChung", "triệu chứng") != null
+                || firstPresent(root, "clinicalFindings", "clinical_findings", "findings", "khamLamSang", "khám lâm sàng") != null
+                || firstPresent(root, "diagnosis", "diagnoses", "chanDoan", "chẩn đoán") != null
+                || firstPresent(root, "treatmentPlan", "treatment_plan", "plan", "keHoachDieuTri", "kế hoạch điều trị", "phacDo", "phác đồ") != null
+                || firstPresent(root, "doctorNote", "doctor_note", "notes", "ghiChuBacSi", "ghi chú bác sĩ", "loiDan", "lời dặn") != null;
+    }
+
+    private static JsonNode findClinicalRoot(JsonNode node, int depth) {
+        if (node == null || depth > 4) {
+            return null;
+        }
+        if (node.isObject() && hasClinicalFields(node)) {
+            return node;
+        }
+        if (node.isContainerNode()) {
+            for (JsonNode child : node) {
+                JsonNode match = findClinicalRoot(child, depth + 1);
+                if (match != null) {
+                    return match;
+                }
+            }
+        }
+        return null;
     }
 
     private static String readDiagnosis(JsonNode root) {
-        JsonNode diagnosis = firstPresent(root, "diagnosis", "diagnoses");
+        JsonNode diagnosis = firstPresent(root, "diagnosis", "diagnoses", "chanDoan", "chẩn đoán");
         if (diagnosis == null || diagnosis.isNull()) {
             return "";
         }
@@ -65,7 +87,7 @@ final class ClinicalNoteResponseParser {
             return nodeToText(diagnosis);
         }
 
-        String code = readField(diagnosis, "code", "icd10", "icdCode", "icd_code");
+        String code = readField(diagnosis, "code", "icd10", "icdCode", "icd_code", "maIcd", "mã ICD");
         String name = readField(diagnosis, "name", "diagnosis", "description", "text");
         if (!code.isBlank() && !name.isBlank()) {
             return "[" + code + "] " + name;
@@ -85,7 +107,27 @@ final class ClinicalNoteResponseParser {
                 return value;
             }
         }
+        if (root.isObject()) {
+            Iterator<Map.Entry<String, JsonNode>> fields = root.fields();
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> field = fields.next();
+                String actualName = normalizeFieldName(field.getKey());
+                for (String expectedName : fieldNames) {
+                    if (actualName.equals(normalizeFieldName(expectedName)) && !field.getValue().isNull()) {
+                        return field.getValue();
+                    }
+                }
+            }
+        }
         return null;
+    }
+
+    private static String normalizeFieldName(String value) {
+        String withoutMarks = Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .replace('đ', 'd')
+                .replace('Đ', 'D');
+        return withoutMarks.replaceAll("[^A-Za-z0-9]", "").toLowerCase();
     }
 
     private static String nodeToText(JsonNode node) {

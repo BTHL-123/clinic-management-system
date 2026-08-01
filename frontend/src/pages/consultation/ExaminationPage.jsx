@@ -746,7 +746,9 @@ export default function ExaminationPage() {
       setRawNote("");
       showToast("Đã chuẩn hóa và điền tự động thành công!");
     } catch (err) {
-      showToast(err.response?.data?.message || err.message || "Không thể chuẩn hóa bệnh án.", "error");
+      if (!err.toastShown) {
+        showToast(err.response?.data?.message || err.message || "Không thể chuẩn hóa bệnh án.", "error");
+      }
     } finally {
       setAiProcessing(false);
     }

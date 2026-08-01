@@ -61,4 +61,25 @@ class ClinicalNoteResponseParserTest {
                 () -> ClinicalNoteResponseParser.parse(objectMapper, "{\"symptoms\":\"\"}")
         );
     }
+
+    @Test
+    void parsesVietnameseKeysInsideCustomEnvelope() throws Exception {
+        StandardizeNoteResponse response = ClinicalNoteResponseParser.parse(objectMapper, """
+                {
+                  "ket_qua_chuan_hoa": {
+                    "Triệu chứng": "Đau thượng vị",
+                    "Khám lâm sàng": "Ấn đau vùng thượng vị",
+                    "Chẩn đoán": {"ma_icd": "K21.9", "name": "Trào ngược dạ dày thực quản"},
+                    "Kế hoạch điều trị": ["Nội soi dạ dày", "Test vi khuẩn HP"],
+                    "Lời dặn": "Tái khám sau 2 tuần"
+                  }
+                }
+                """);
+
+        assertEquals("Đau thượng vị", response.getSymptoms());
+        assertEquals("Ấn đau vùng thượng vị", response.getClinicalFindings());
+        assertEquals("[K21.9] Trào ngược dạ dày thực quản", response.getDiagnosis());
+        assertEquals("Nội soi dạ dày; Test vi khuẩn HP", response.getTreatmentPlan());
+        assertEquals("Tái khám sau 2 tuần", response.getDoctorNote());
+    }
 }
