@@ -18,5 +18,11 @@ export const createOnlinePaymentUrl = (payload) =>
 export const processPaymentCallback = (payload) =>
   axiosClient.post("/payments/online/callback", payload);
 
-export const verifySePayTransaction = (id, config) =>
-  axiosClient.post(`/payments/${id}/verify-sepay`, null, config);
+export const verifySePayTransaction = async (id, config) => {
+  const response = await axiosClient.post(`/payments/${id}/verify-sepay`, null, config);
+  const payment = response?.data ?? response;
+  if (payment?.status !== "PAID") {
+    throw new Error("Giao dịch chưa được ngân hàng xác nhận.");
+  }
+  return response;
+};

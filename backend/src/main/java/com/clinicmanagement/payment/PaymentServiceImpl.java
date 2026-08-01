@@ -24,6 +24,9 @@ import com.clinicmanagement.payment.dto.PaymentResponse;
 import com.clinicmanagement.user.User;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +43,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.client.RestTemplate;
 
 @Service
@@ -63,6 +67,9 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Value("${app.sepay.transactions-url:https://my.sepay.vn/userapi/transactions/list}")
     private String sepayTransactionsUrl;
+
+    @Value("${app.sepay.bank-account:}")
+    private String sepayBankAccount;
 
     @Transactional(readOnly = true)
     @Override
@@ -193,9 +200,7 @@ public class PaymentServiceImpl implements PaymentService {
                     throw new BusinessException("No SePay transaction found for payment code: " + payment.getPaymentCode());
                 }
                 assertAmountMatches(payment, extractAmount(matchedTransaction));
-                gatewayTransactionId = String.valueOf(
-                        matchedTransaction.getOrDefault("reference_number", matchedTransaction.get("id"))
-                );
+                gatewayTransactionId = extractTransactionId(matchedTransaction);
             }
             markPaymentPaid(payment, null, "SEPAY_CALLBACK", gatewayTransactionId);
         } else {
@@ -211,8 +216,11 @@ public class PaymentServiceImpl implements PaymentService {
     public PaymentResponse verifySePayTransaction(Long paymentId, User currentUser) {
         Payment payment = findOrThrow(paymentId);
 
-        if (!PaymentStatus.PENDING.equals(payment.getStatus())) {
+        if (PaymentStatus.PAID.equals(payment.getStatus())) {
             return PaymentResponse.from(payment);
+        }
+        if (!PaymentStatus.PENDING.equals(payment.getStatus())) {
+            throw new BusinessException("Payment is not pending and cannot be verified");
         }
 
         Map<String, Object> matchedTransaction = findSePayTransaction(payment);
@@ -226,7 +234,7 @@ public class PaymentServiceImpl implements PaymentService {
                 payment,
                 currentUser,
                 "SEPAY",
-                String.valueOf(matchedTransaction.getOrDefault("reference_number", matchedTransaction.get("id")))
+                extractTransactionId(matchedTransaction)
         );
 
         return PaymentResponse.from(payment);
@@ -390,7 +398,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     private void assertAmountMatches(Payment payment, BigDecimal receivedAmount) {
         if (receivedAmount == null) {
-            return;
+            throw new BusinessException("SePay transaction does not contain a valid incoming amount");
         }
         if (payment.getAmount().compareTo(receivedAmount) != 0) {
             throw new BusinessException("Payment amount does not match expected amount");
@@ -408,8 +416,18 @@ public class PaymentServiceImpl implements PaymentService {
             headers.set("Content-Type", "application/json");
 
             HttpEntity<String> entity = new HttpEntity<>(headers);
+            UriComponentsBuilder urlBuilder = UriComponentsBuilder.fromUriString(sepayTransactionsUrl)
+                    .queryParam("limit", 50)
+                    .queryParam("amount_in", payment.getAmount().stripTrailingZeros().toPlainString());
+            if (payment.getCreatedAt() != null) {
+                urlBuilder.queryParam("transaction_date_min", payment.getCreatedAt().toLocalDate());
+            }
+            if (sepayBankAccount != null && !sepayBankAccount.isBlank()) {
+                urlBuilder.queryParam("account_number", sepayBankAccount.trim());
+            }
+
             ResponseEntity<Map> response = restTemplate.exchange(
-                    sepayTransactionsUrl + "?limit=50",
+                    urlBuilder.build().encode().toUriString(),
                     HttpMethod.GET,
                     entity,
                     Map.class
@@ -430,7 +448,7 @@ public class PaymentServiceImpl implements PaymentService {
                     continue;
                 }
                 Map<String, Object> transaction = (Map<String, Object>) rawTransaction;
-                if (matchesPaymentCode(transaction, payment.getPaymentCode())) {
+                if (isValidSePayTransaction(transaction, payment)) {
                     return transaction;
                 }
             }
@@ -438,6 +456,67 @@ public class PaymentServiceImpl implements PaymentService {
         } catch (Exception e) {
             throw new BusinessException("Error connecting to SePay. Please try again later.");
         }
+    }
+
+    private boolean isValidSePayTransaction(Map<String, Object> transaction, Payment payment) {
+        if (!matchesPaymentCode(transaction, payment.getPaymentCode())) {
+            return false;
+        }
+
+        BigDecimal amountIn = extractAmount(transaction);
+        if (amountIn == null
+                || amountIn.compareTo(BigDecimal.ZERO) <= 0
+                || payment.getAmount().compareTo(amountIn) != 0) {
+            return false;
+        }
+
+        Object transferType = transaction.get("transfer_type");
+        if (transferType != null
+                && !List.of("IN", "CREDIT").contains(transferType.toString().trim().toUpperCase())) {
+            return false;
+        }
+
+        LocalDateTime transactionDate = extractTransactionDate(transaction);
+        if (transactionDate == null || payment.getCreatedAt() == null
+                || transactionDate.isBefore(payment.getCreatedAt().minusMinutes(1))) {
+            return false;
+        }
+
+        String transactionId = extractTransactionId(transaction);
+        return transactionId != null
+                && !paymentRepository.existsByGatewayTransactionIdAndPaymentIdNot(
+                        transactionId,
+                        payment.getPaymentId()
+                );
+    }
+
+    private LocalDateTime extractTransactionDate(Map<String, Object> transaction) {
+        Object rawDate = transaction.get("transaction_date");
+        if (rawDate == null) {
+            return null;
+        }
+        String value = rawDate.toString().trim();
+        try {
+            return OffsetDateTime.parse(value).toLocalDateTime();
+        } catch (DateTimeParseException ignored) {
+            // SePay v1 uses yyyy-MM-dd HH:mm:ss without an offset.
+        }
+        try {
+            return LocalDateTime.parse(value, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        } catch (DateTimeParseException ignored) {
+            return null;
+        }
+    }
+
+    private String extractTransactionId(Map<String, Object> transaction) {
+        Object value = transaction.get("reference_number");
+        if (value == null) {
+            value = transaction.get("transaction_id");
+        }
+        if (value == null) {
+            value = transaction.get("id");
+        }
+        return value == null || value.toString().isBlank() ? null : value.toString();
     }
 
     private boolean matchesPaymentCode(Map<String, Object> transaction, String paymentCode) {
