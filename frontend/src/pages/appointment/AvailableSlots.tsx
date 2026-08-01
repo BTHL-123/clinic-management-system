@@ -592,14 +592,27 @@ export default function AvailableSlots() {
       });
       let bookingRes: any = bookingApiRes.data ?? bookingApiRes;
 
+      // A zero-fee appointment is confirmed immediately and does not need a payment QR.
+      if (!bookingRes?.depositPayment && bookingRes?.appointment?.status === "CONFIRMED") {
+        setSubmittingBooking(false);
+        setBookingSuccess(true);
+        window.dispatchEvent(new CustomEvent("appointment-updated"));
+        toast.success("Đặt lịch thành công.");
+        return;
+      }
+
       if (!bookingRes?.paymentUrl) {
          try {
+           const appointmentId = bookingRes?.appointment?.appointmentId ?? bookingRes?.appointmentId;
+           if (!appointmentId) {
+             throw new Error("Không tìm thấy mã lịch hẹn để tạo QR thanh toán.");
+           }
            const paymentApiRes: any = await createOnlinePaymentUrl({
-             appointmentId: bookingRes.appointmentId
+             appointmentId
            });
            const paymentData = paymentApiRes.data ?? paymentApiRes;
            bookingRes = {
-             appointment: bookingRes,
+             appointment: bookingRes?.appointment ?? bookingRes,
              depositPayment: {
                paymentId: paymentData.paymentId,
                paymentCode: paymentData.paymentCode,
@@ -610,8 +623,8 @@ export default function AvailableSlots() {
              amount: paymentData.amount,
              expiresAt: paymentData.expiresAt
            };
-         } catch (e) {
-           throw new Error("Không thể tạo mã QR thanh toán.");
+         } catch (e: any) {
+           throw new Error(e?.message || "Không thể tạo mã QR thanh toán.");
          }
       }
 

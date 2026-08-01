@@ -35,6 +35,8 @@ services:
       APP_ADMIN_FULL_NAME: ${APP_ADMIN_FULL_NAME}
       SEPAY_API_KEY: ${SEPAY_API_KEY}
       SEPAY_BANK_ACCOUNT: ${SEPAY_BANK_ACCOUNT}
+      # Backward compatibility for deployments created before SEPAY_BANK_ACCOUNT was introduced.
+      SEPAY_ACCOUNT_NUMBER: ${SEPAY_ACCOUNT_NUMBER:-}
       SEPAY_BANK_CODE: ${SEPAY_BANK_CODE}
       GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID}
       APP_MAIL_ENABLED: ${APP_MAIL_ENABLED:-false}
