@@ -709,30 +709,39 @@ export default function ExaminationPage() {
     }
     setAiProcessing(true);
     try {
-      const res = await standardizeClinicalNote(rawNote);
-      const data = res.data;
+      const data = await standardizeClinicalNote(rawNote);
+      if (!data || typeof data !== "object") {
+        throw new Error("AI không trả về dữ liệu bệnh án hợp lệ.");
+      }
 
-      const diag = data.diagnosis || "";
+      const standardized = {
+        symptoms: typeof data.symptoms === "string" ? data.symptoms.trim() : "",
+        clinicalFindings: typeof data.clinicalFindings === "string" ? data.clinicalFindings.trim() : "",
+        diagnosis: typeof data.diagnosis === "string" ? data.diagnosis.trim() : "",
+        treatmentPlan: typeof data.treatmentPlan === "string" ? data.treatmentPlan.trim() : "",
+        doctorNote: typeof data.doctorNote === "string" ? data.doctorNote.trim() : "",
+      };
+
+      if (!Object.values(standardized).some(Boolean)) {
+        throw new Error("AI chưa trích xuất được thông tin nào. Vui lòng bổ sung ghi chú rõ hơn.");
+      }
+
+      const diag = standardized.diagnosis;
       const match = diag.match(/^\[(.*?)\]\s*(.*)$/);
-      if (match) {
-        setIcd10(match[1]);
-        setForm((prev) => ({
-          ...prev,
-          symptoms: data.symptoms || prev.symptoms,
-          clinicalFindings: data.clinicalFindings || prev.clinicalFindings,
-          diagnosis: match[2],
-          treatmentPlan: data.treatmentPlan || prev.treatmentPlan,
-          doctorNote: data.doctorNote || prev.doctorNote,
-        }));
-      } else {
-        setForm((prev) => ({
-          ...prev,
-          symptoms: data.symptoms || prev.symptoms,
-          clinicalFindings: data.clinicalFindings || prev.clinicalFindings,
-          diagnosis: diag || prev.diagnosis,
-          treatmentPlan: data.treatmentPlan || prev.treatmentPlan,
-          doctorNote: data.doctorNote || prev.doctorNote,
-        }));
+      if (match?.[1]) {
+        setIcd10(match[1].trim());
+      }
+      setForm((prev) => ({
+        ...prev,
+        symptoms: standardized.symptoms || prev.symptoms,
+        clinicalFindings: standardized.clinicalFindings || prev.clinicalFindings,
+        diagnosis: (match?.[2] || diag) || prev.diagnosis,
+        treatmentPlan: standardized.treatmentPlan || prev.treatmentPlan,
+        doctorNote: standardized.doctorNote || prev.doctorNote,
+      }));
+
+      if (standardized.clinicalFindings || standardized.treatmentPlan || standardized.doctorNote) {
+        setShowAdvancedDiagnosis(true);
       }
       setRawNote("");
       showToast("Đã chuẩn hóa và điền tự động thành công!");
