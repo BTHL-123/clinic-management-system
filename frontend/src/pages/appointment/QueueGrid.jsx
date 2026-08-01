@@ -288,9 +288,8 @@ export default function QueueGrid({ doctors, schedules, slotsBySchedule, onSlotC
                             </span>
                           </button>
                         ) : (
-                          <div className="w-full h-11 px-3 rounded-xl bg-slate-100/60 border border-slate-200/50 text-slate-400 flex items-center justify-between text-xs font-medium cursor-not-allowed">
-                            <span>{formatTime(slot?.startTime || time)}</span>
-                            <span className="text-[10px]">Hết giờ</span>
+                          <div className="h-11 rounded-xl border border-dashed border-slate-200/60 bg-transparent flex items-center justify-center text-[10px] font-medium text-slate-300">
+                            —
                           </div>
                         )}
                       </td>

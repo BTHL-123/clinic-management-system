@@ -351,20 +351,18 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor schedule not found with id: " + scheduleId));
         LocalDateTime now = LocalDateTime.now();
         return timeSlotRepository.findByDoctorScheduleId(scheduleId).stream()
-                .map(ts -> {
-                    String status = ts.getStatus();
+                .filter(ts -> {
                     LocalDateTime startsAt = LocalDateTime.of(schedule.getWorkDate(), ts.getStartTime());
-                    if (("AVAILABLE".equals(status) || "LOCKED".equals(status)) && !startsAt.isAfter(now)) {
-                        status = "EXPIRED";
-                    }
-                    return new TimeSlotResponse(
+                    boolean unused = "AVAILABLE".equals(ts.getStatus()) || "LOCKED".equals(ts.getStatus());
+                    return !(unused && !startsAt.isAfter(now));
+                })
+                .map(ts -> new TimeSlotResponse(
                             ts.getId(),
                             scheduleId,
                             ts.getStartTime(),
                             ts.getEndTime(),
-                            status
-                    );
-                })
+                            ts.getStatus()
+                ))
                 .collect(Collectors.toList());
     }
 

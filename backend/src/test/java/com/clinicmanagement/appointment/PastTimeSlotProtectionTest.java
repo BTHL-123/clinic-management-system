@@ -3,6 +3,7 @@ package com.clinicmanagement.appointment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -88,6 +89,31 @@ class PastTimeSlotProtectionTest {
         assertNull(pastSlot.getLockedUntil());
         assertNull(pastSlot.getLockedByPatientId());
         verify(timeSlotRepository).saveAll(List.of(pastSlot));
+    }
+
+    @Test
+    void scheduleSlotEndpointOmitsUnusedSlotsThatAlreadyStarted() {
+        DoctorScheduleRepository scheduleRepository = mock(DoctorScheduleRepository.class);
+        TimeSlotRepository timeSlotRepository = mock(TimeSlotRepository.class);
+        DoctorScheduleServiceImpl service = new DoctorScheduleServiceImpl(
+                scheduleRepository,
+                timeSlotRepository,
+                mock(DoctorRepository.class),
+                mock(com.clinicmanagement.systemsetting.SystemSettingRepository.class),
+                mock(com.clinicmanagement.auditlog.AuditLogRepository.class),
+                mock(UserRepository.class),
+                mock(AppointmentRepository.class),
+                mock(com.clinicmanagement.payment.PaymentRepository.class)
+        );
+        DoctorSchedule schedule = new DoctorSchedule();
+        schedule.setId(9L);
+        schedule.setWorkDate(LocalDate.now());
+        TimeSlot pastSlot = slotAt(LocalDate.now(), LocalTime.now().minusMinutes(1));
+
+        when(scheduleRepository.findById(9L)).thenReturn(Optional.of(schedule));
+        when(timeSlotRepository.findByDoctorScheduleId(9L)).thenReturn(List.of(pastSlot));
+
+        assertTrue(service.getSlotsByScheduleId(9L).isEmpty());
     }
 
     private TimeSlot slotAt(LocalDate date, LocalTime startTime) {
