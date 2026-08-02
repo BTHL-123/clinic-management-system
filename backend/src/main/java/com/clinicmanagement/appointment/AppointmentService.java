@@ -35,7 +35,12 @@ public interface AppointmentService {
 
     BookAppointmentResponse bookAppointment(BookAppointmentRequest request, Long userId);
 
-    AppointmentResponse cancelAppointment(Long appointmentId, CancelAppointmentRequest request, Long currentUserId, boolean isReceptionist);
+    AppointmentResponse cancelAppointment(
+            Long appointmentId,
+            CancelAppointmentRequest request,
+            Long currentUserId,
+            AppointmentCancellationActor cancellationActor
+    );
 
     AppointmentResponse rescheduleAppointment(
             Long appointmentId,

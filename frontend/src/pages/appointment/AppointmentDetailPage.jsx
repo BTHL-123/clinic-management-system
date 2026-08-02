@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { CalendarDays, Clock, ArrowLeft, XCircle, RefreshCw } from "lucide-react";
+import { CalendarDays, Clock, ArrowLeft, XCircle, RefreshCw, RotateCcw } from "lucide-react";
 import appointmentService from "../../services/appointmentService";
 import RescheduleModal from "./RescheduleModal";
 import { useToast } from "../../context/useToast.js";
@@ -8,7 +8,7 @@ import { useAuth } from "../../context/useAuth.js";
 import PageHeader from "../../components/PageHeader";
 
 // Reuse CancelModal
-function CancelModal({ isOpen, onClose, onConfirm, busy, appointment }) {
+function CancelModal({ isOpen, onClose, onConfirm, busy, appointment, clinicInitiated }) {
   const [reason, setReason] = useState("");
   const [bankName, setBankName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
@@ -20,8 +20,9 @@ function CancelModal({ isOpen, onClose, onConfirm, busy, appointment }) {
   const diffHours = (apptDate - new Date()) / (1000 * 60 * 60);
   const isTooClose = diffHours < 2;
 
-  const requiresRefund = appointment?.status === "CONFIRMED" && appointment?.depositAmount > 0 && !isTooClose;
-  const showNoRefundWarning = appointment?.status === "CONFIRMED" && appointment?.depositAmount > 0 && isTooClose;
+  const hasPaidDeposit = appointment?.status === "CONFIRMED" && Number(appointment?.depositAmount) > 0;
+  const requiresRefund = !clinicInitiated && hasPaidDeposit && !isTooClose;
+  const showNoRefundWarning = !clinicInitiated && hasPaidDeposit && isTooClose;
 
   const isFormValid = reason.trim() && (!requiresRefund || (bankName.trim() && accountNumber.trim() && accountName.trim()));
 
@@ -32,6 +33,18 @@ function CancelModal({ isOpen, onClose, onConfirm, busy, appointment }) {
         <p className="text-[#4A5D59] text-xs font-semibold mb-5">
           Vui lòng nhập lý do hủy lịch hẹn này. Thao tác này sẽ giải phóng ca khám và không thể hoàn tác.
         </p>
+
+        {clinicInitiated && hasPaidDeposit && (
+          <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+            <div className="mb-1 flex items-center gap-2 text-emerald-800">
+              <RotateCcw size={16} />
+              <p className="text-xs font-black">Phòng khám hủy — hoàn 100% tiền cọc</p>
+            </div>
+            <p className="text-xs font-semibold leading-5 text-emerald-700">
+              Hệ thống sẽ tự tạo phiếu hoàn <b>{Number(appointment.depositAmount).toLocaleString("vi-VN")} đ</b> ở trạng thái chờ chuyển tiền cho bệnh nhân.
+            </p>
+          </div>
+        )}
 
         {showNoRefundWarning && (
           <div className="mb-4 bg-red-50 p-3 rounded-xl border border-red-100">
@@ -83,7 +96,9 @@ function CancelModal({ isOpen, onClose, onConfirm, busy, appointment }) {
 export default function AppointmentDetailPage() {
   const toast = useToast();
   const { user } = useAuth();
-  const isPatientMode = user?.roles?.includes("PATIENT");
+  const roles = (user?.roles || []).map((role) => (typeof role === "string" ? role : role.roleName).replace(/^ROLE_/, ""));
+  const isPatientMode = roles.includes("PATIENT") && !roles.some((role) => ["DOCTOR", "RECEPTIONIST", "ADMIN"].includes(role));
+  const isClinicCancellation = roles.some((role) => ["DOCTOR", "RECEPTIONIST", "ADMIN"].includes(role));
   const { id } = useParams();
   const navigate = useNavigate();
   const [appt, setAppt] = useState(null);
@@ -112,7 +127,10 @@ export default function AppointmentDetailPage() {
     try {
       await appointmentService.cancelAppointment(id, payload);
       setCancelModalOpen(false);
-      toast.success("Đã hủy lịch hẹn.");
+      const hasPaidDeposit = appt?.status === "CONFIRMED" && Number(appt?.depositAmount) > 0;
+      toast.success(isClinicCancellation && hasPaidDeposit
+        ? "Đã hủy lịch và tạo phiếu hoàn 100% tiền cọc cho bệnh nhân."
+        : "Đã hủy lịch hẹn.");
       loadData();
     } catch (err) {
       toast.error(err, "Không thể hủy lịch hẹn");
@@ -225,6 +243,7 @@ export default function AppointmentDetailPage() {
         onConfirm={handleCancel}
         busy={cancelling}
         appointment={appt}
+        clinicInitiated={isClinicCancellation}
       />
 
       <RescheduleModal

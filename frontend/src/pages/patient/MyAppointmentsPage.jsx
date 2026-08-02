@@ -15,6 +15,13 @@ import { getDoctors } from "../../services/doctorService.js";
 import { getActiveDepartments } from "../../services/departmentService.js";
 import RefundRequestModal from "./RefundRequestModal.jsx";
 
+const REFUND_STATUS_UI = {
+  PENDING: { label: "Đang chờ duyệt", classes: "border-amber-200 bg-amber-50 text-amber-800" },
+  APPROVED: { label: "Đã duyệt, chờ chuyển tiền", classes: "border-blue-200 bg-blue-50 text-blue-800" },
+  COMPLETED: { label: "Đã hoàn tiền", classes: "border-emerald-200 bg-emerald-50 text-emerald-800" },
+  REJECTED: { label: "Yêu cầu bị từ chối", classes: "border-rose-200 bg-rose-50 text-rose-800" },
+};
+
 // Modal Component for Cancelling Appointment
 function CancelModal({ isOpen, onClose, onConfirm, busy, appointment }) {
   const [reason, setReason] = useState("");
@@ -304,6 +311,7 @@ export default function MyAppointmentsPage() {
 
   // Master-Detail Selection State
   const [selectedApptId, setSelectedApptId] = useState(null);
+  const [refundLookup, setRefundLookup] = useState({ loading: false, refund: null, hasPaidPayment: false });
 
   useEffect(() => {
     const fetchOptions = async () => {
@@ -501,6 +509,38 @@ export default function MyAppointmentsPage() {
     if (!data?.content) return null;
     return data.content.find(a => a.appointmentId === selectedApptId) || null;
   }, [data, selectedApptId]);
+
+  useEffect(() => {
+    let active = true;
+
+    if (selectedAppt?.status !== "CANCELLED" || Number(selectedAppt?.depositAmount) <= 0) {
+      setRefundLookup({ loading: false, refund: null, hasPaidPayment: false });
+      return () => { active = false; };
+    }
+
+    setRefundLookup({ loading: true, refund: null, hasPaidPayment: false });
+    (async () => {
+      try {
+        const payRes = await getPayments({ appointmentId: selectedAppt.appointmentId });
+        const payments = payRes.data?.content || payRes.data || [];
+        const paidPayment = payments.find((payment) => payment.status === "PAID");
+        if (!paidPayment) {
+          if (active) setRefundLookup({ loading: false, refund: null, hasPaidPayment: false });
+          return;
+        }
+
+        const refundRes = await getRefunds({ paymentId: paidPayment.paymentId, size: 1 });
+        const refunds = refundRes.data?.content || refundRes.data || [];
+        if (active) {
+          setRefundLookup({ loading: false, refund: refunds[0] || null, hasPaidPayment: true });
+        }
+      } catch {
+        if (active) setRefundLookup({ loading: false, refund: null, hasPaidPayment: false });
+      }
+    })();
+
+    return () => { active = false; };
+  }, [selectedAppt]);
 
   // Look up doctor info in the loaded doctors database
   const selectedDocDetails = useMemo(() => {
@@ -789,6 +829,22 @@ export default function MyAppointmentsPage() {
                             <span className="text-rose-700 font-bold">{selectedAppt.cancellationReason}</span>
                           </div>
                         )}
+
+                        {selectedAppt.status === "CANCELLED" && refundLookup.refund && (() => {
+                          const refundUi = REFUND_STATUS_UI[refundLookup.refund.status]
+                            || { label: refundLookup.refund.status, classes: "border-slate-200 bg-slate-50 text-slate-700" };
+                          return (
+                            <div className={`col-span-2 rounded-xl border p-3 ${refundUi.classes}`}>
+                              <div className="mb-1 flex items-center gap-2 font-black">
+                                <ShieldCheck size={15} /> Hoàn tiền: {refundUi.label}
+                              </div>
+                              <div className="text-xs font-bold">
+                                Số tiền: {Number(refundLookup.refund.refundAmount || 0).toLocaleString("vi-VN")} đ
+                                {refundLookup.refund.refundCode ? ` · Mã ${refundLookup.refund.refundCode}` : ""}
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       {/* Doctor Info Detail Box (Requirement: "1 phần hiện cả thông tin của bác sĩ từng lịch nữa") */}
@@ -865,7 +921,11 @@ export default function MyAppointmentsPage() {
 
                       {/* Action buttons footer */}
                       <div className="flex flex-wrap justify-end gap-2 pt-4 border-t border-slate-100">
-                        {selectedAppt.status === "CANCELLED" && (
+                        {selectedAppt.status === "CANCELLED" && refundLookup.loading && (
+                          <span className="px-3 py-2 text-xs font-bold text-slate-500">Đang kiểm tra trạng thái hoàn tiền...</span>
+                        )}
+
+                        {selectedAppt.status === "CANCELLED" && !refundLookup.loading && refundLookup.hasPaidPayment && !refundLookup.refund && (
                           <button
                             onClick={() => handleRefundRequest(selectedAppt)}
                             className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-red-200 bg-red-50 text-red-650 hover:bg-red-100 text-xs font-black transition-colors cursor-pointer"
