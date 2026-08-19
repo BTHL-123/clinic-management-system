@@ -28,6 +28,27 @@ operational reporting.
 > deployable product for small and medium-sized clinics. The system connects six
 > operational roles through a single clinical and financial workflow.
 
+## Product Tour
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/images/patient-dashboard.png" alt="Patient dashboard" />
+      <br />
+      <strong>Patient command center</strong><br />
+      A personalized dashboard brings appointments, medical records, care actions,
+      notifications, and specialist discovery into one calm, accessible workspace.
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/images/appointment-booking.png" alt="Doctor and appointment slot booking" />
+      <br />
+      <strong>Doctor and time-slot booking</strong><br />
+      Patients can filter by specialty, compare clinicians, inspect live availability,
+      and select an appointment slot without leaving the scheduling workflow.
+    </td>
+  </tr>
+</table>
+
 ## Why This Project Stands Out
 
 | Capability | Engineering value |
