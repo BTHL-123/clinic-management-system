@@ -1,7 +1,7 @@
 # 🏥 AI Clinic Management System
 
 Hệ thống Quản lý Phòng khám Thông minh tích hợp Trí tuệ nhân tạo (AI), hỗ trợ tối ưu hóa quy trình từ khâu đặt lịch, tiếp đón, khám bệnh cho đến quản lý dược và thanh toán.
-
+Link: https://smart-medical-clinic.vercel.app/
 ---
 
 ## 📌 1. Giới thiệu & Phạm vi (Introduction & Scope)
